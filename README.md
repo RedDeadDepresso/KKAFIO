@@ -1,4 +1,5 @@
 # KKAFIO: Koikatsu Auto File I/O
+<img width="1115" alt="Screenshot 2023-12-10 160912" src="https://github.com/RedDeadDepresso/KKAFIO/assets/94017243/26ee2553-218d-4b11-822f-5037bbd6cdb0">
 
 KKAFIO is a Python-based script to automate file input and output operations for the game Koikatsu which include:
 - Create Backup: It will create a .7z file which include the game Userdata, mods (Sideloader Modpack excluded), BepInEx folders. If a .7z already exists with the same name it will be overwritten.
