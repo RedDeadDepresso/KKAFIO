@@ -27,7 +27,7 @@
   "CreateBackup": {
     "Enable": false,
     "OutputPath": "",
-    "Filename": "homework",
+    "Filename": "",
     "GameFolders": {
       "UserData": false,
       "mods": false,

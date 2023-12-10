@@ -21,7 +21,7 @@ class App(customtkinter.CTk):
         config.load_config()
 
     def configure_window(self):
-        self.title("KAFIO")
+        self.title("KKAFIO")
         self.geometry(f"{1500}x{850}")
         self.iconbitmap('gui/icons/karin.ico')
         """ 
