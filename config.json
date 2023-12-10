@@ -1,0 +1,37 @@
+{
+  "Core": {
+    "GamePath": "",
+    "Tasks": [
+      "CreateBackup",
+      "FCKKS",
+      "InstallChara",
+      "RemoveChara"
+    ]
+  },
+  "InstallChara": {
+    "Enable": false,
+    "InputPath": "",
+    "FileConflicts": "Skip",
+    "ArchivePassword": "Skip",
+    "AbdataZipmod": ""
+  },
+  "RemoveChara": {
+    "Enable": false,
+    "InputPath": ""
+  },
+  "FCKKS": {
+    "Enable": false,
+    "InputPath": "",
+    "Convert": true
+  },
+  "CreateBackup": {
+    "Enable": false,
+    "OutputPath": "",
+    "Filename": "homework",
+    "GameFolders": {
+      "UserData": false,
+      "mods": false,
+      "BepInEx": false
+    }
+  }
+}
