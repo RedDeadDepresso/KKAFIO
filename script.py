@@ -4,13 +4,12 @@ try:
     with open('traceback.log', 'w') as f:
         pass
 
-    from util.config import Config
-    from util.logger import Logger
-    from util.file_manager import FileManager
-    from modules.install_chara import InstallChara
-    from modules.remove_chara import RemoveChara
-    from modules.fc_kks import FilterConvertKKS
-    from modules.create_backup import CreateBackup
+    from app.common.logger import Logger
+    from app.modules.install_chara import InstallChara
+    from app.modules.remove_chara import RemoveChara
+    from app.modules.fc_kks import FilterConvertKKS
+    from app.modules.create_backup import CreateBackup
+    
 
     class Script:
         def __init__(self, config, file_manager):
