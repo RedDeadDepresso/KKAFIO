@@ -1,7 +1,7 @@
 # coding:utf-8
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QFrame
-from qfluentwidgets import PushButton, TextEdit
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QFrame
+from qfluentwidgets import PushButton, TextEdit, DisplayLabel
 
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
@@ -15,7 +15,7 @@ class LoggerInterface(QFrame):
         # setting label
         self.mainLayout = QVBoxLayout()
         self.topLayout = QHBoxLayout()
-        self.loggerLabel = QLabel(self.tr("Log"))
+        self.loggerLabel = DisplayLabel(self.tr("Log"), self)
         self.clearBUtton = PushButton('Clear')
         self.autoscrollButton = PushButton('Autoscroll Off')
         self.loggerBox = TextEdit()
@@ -36,9 +36,9 @@ class LoggerInterface(QFrame):
         self.__connectSignalToSlot()
 
     def __initLayout(self):
-        self.topLayout.addWidget(self.loggerLabel, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.topLayout.addWidget(self.clearBUtton, alignment=Qt.AlignmentFlag.AlignRight)
-        self.topLayout.addWidget(self.autoscrollButton, alignment=Qt.AlignmentFlag.AlignRight)
+        self.topLayout.addWidget(self.loggerLabel, alignment=Qt.AlignLeft)
+        self.topLayout.addWidget(self.clearBUtton, alignment=Qt.AlignRight)
+        self.topLayout.addWidget(self.autoscrollButton, alignment=Qt.AlignRight)
 
         self.mainLayout.addLayout(self.topLayout)
         self.mainLayout.setSpacing(28)

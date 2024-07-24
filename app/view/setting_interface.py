@@ -1,14 +1,14 @@
 # coding:utf-8
-from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, FolderListSettingCard,
+from qfluentwidgets import (SettingCardGroup, SwitchSettingCard,
                             OptionsSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
                             ComboBoxSettingCard, ExpandLayout, Theme, CustomColorSettingCard,
                             setTheme, setThemeColor, RangeSettingCard, isDarkTheme)
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import InfoBar
-from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths
+from qfluentwidgets import InfoBar, DisplayLabel
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QLabel, QFileDialog
+from PySide6.QtWidgets import QWidget
 
 from ..common.config import cfg, HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR, isWin11
 from ..components.line_edit_card import LineEditSettingCard
@@ -25,7 +25,7 @@ class SettingInterface(ScrollArea):
         self.expandLayout = ExpandLayout(self.scrollWidget)
 
         # setting label
-        self.settingLabel = QLabel(self.tr("Settings"), self)
+        self.settingLabel = DisplayLabel(self.tr("Settings"), self)
 
         # core
         self.coreGroup = SettingCardGroup(
