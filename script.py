@@ -4,7 +4,7 @@ try:
     with open('traceback.log', 'w') as f:
         pass
 
-    from app.common.logger import Logger
+    from app.common.logger import logger
     from app.modules.install_chara import InstallChara
     from app.modules.remove_chara import RemoveChara
     from app.modules.fc_kks import FilterConvertKKS
@@ -20,7 +20,7 @@ try:
                 config (Config): BAAuto Config instance
             """
             self.config = config
-            self.file_manager = file_manager
+            fileManager = file_manager
             self.modules = {
                 'InstallChara': None,
                 'RemoveChara': None,
@@ -28,22 +28,22 @@ try:
                 'FCKKS': None,
             }
             if self.config.install_chara['Enable']:
-                self.modules['InstallChara'] = InstallChara(self.config, self.file_manager)
+                self.modules['InstallChara'] = InstallChara(self.config, fileManager)
             if self.config.remove_chara['Enable']:
-                self.modules['RemoveChara'] = RemoveChara(self.config, self.file_manager)
+                self.modules['RemoveChara'] = RemoveChara(self.config, fileManager)
             if self.config.create_backup['Enable']:
-                self.modules['CreateBackup'] = CreateBackup(self.config, self.file_manager)
+                self.modules['CreateBackup'] = CreateBackup(self.config, fileManager)
             if self.config.fc_kks["Enable"]:
-                self.modules['FCKKS'] = FilterConvertKKS(self.config, self.file_manager)
+                self.modules['FCKKS'] = FilterConvertKKS(self.config, fileManager)
 
         def run(self):
             for task in self.config.tasks:
                 if self.modules[task]:
-                    Logger.log_info("SCRIPT", f'Start Task: {task}')
+                    logger.info("SCRIPT", f'Start Task: {task}')
                     try:
                         self.modules[task].logic_wrapper()
                     except:
-                        Logger.log_error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
+                        logger.error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
                         with open('traceback.log', 'a') as f:
                             f.write(f'[{task}]\n')
                             traceback.print_exc(None, f, True)

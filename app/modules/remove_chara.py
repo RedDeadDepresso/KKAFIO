@@ -1,47 +1,48 @@
 import os
 import codecs
-from util.logger import Logger
 
-class RemoveChara:
-    def __init__(self, config, file_manager):
-        """Initializes the Bounty module.
+from app.common.file_manager import fileManager
+from app.common.logger import logger
+from app.modules.handler import Handler
 
-        Args:
-            config (Config): BAAuto Config instance
-        """
-        self.config = config
-        self.file_manager = file_manager
-        self.game_path = self.config.game_path
-        self.input_path = self.config.remove_chara["InputPath"]
 
-    def resolve_png(self, image_path):        
-        with codecs.open(image_path[0], "rb") as card:
+class RemoveChara(Handler):
+    def __str__(self) -> str:
+        return "Remove Chara"
+    
+    def loadConfig(self, config):
+        super().configLoad(config)
+        self.inputPath = self.config["InputPath"]
+
+    def resolvePng(self, imagePath):        
+        with codecs.open(imagePath[0], "rb") as card:
             data = card.read()
         if data.find(b"KoiKatuChara") != -1:
             if data.find(b"KoiKatuCharaSP") != -1 or data.find(b"KoiKatuCharaSun") != -1:
                 return
-            self.file_manager.find_and_remove("CHARA", image_path, self.game_path["chara"])
+            fileManager.findAndRemove("CHARA", imagePath, self.gamePath["chara"])
         elif data.find(b"KoiKatuClothes") != -1:
-            self.file_manager.find_and_remove("COORD",image_path, self.game_path["coordinate"])
+            fileManager.findAndRemove("COORD",imagePath, self.gamePath["coordinate"])
         else:
-            self.file_manager.find_and_remove("OVERLAYS", image_path, self.game_path["Overlays"])
+            fileManager.findAndRemove("OVERLAYS", imagePath, self.gamePath["Overlays"])
 
-    def logic_wrapper(self):
-        foldername = os.path.basename(self.input_path)
-        Logger.log_msg("FOLDER", foldername)
-        file_list, archive_list = self.file_manager.find_all_files(self.input_path)
+    def handle(self, request):
+        foldername = os.path.basename(self.inputPath)
+        logger.info("FOLDER", foldername)
+        fileList, archiveList = fileManager.findAllFiles(self.inputPath)
         
-        for file in file_list:
-            file_extension = file[2]
-            match file_extension:
+        for file in fileList:
+            extension = file[2]
+            match extension:
                 case ".zipmod":
-                    self.file_manager.find_and_remove("MODS", file, self.game_path["mods"])
+                    fileManager.findAndRemove("MODS", file, self.game_path["mods"])
                 case ".png":
-                    self.resolve_png(file)
+                    self.resolvePng(file)
                 case _:
                     pass
-        print("[MSG]")
-
+                
+        logger.line()
+        self.setNext(request)
 
 
     

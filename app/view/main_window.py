@@ -53,10 +53,10 @@ class MainWindow(FluentWindow):
         )
         self.navigationInterface.panel.topLayout.setAlignment(Qt.AlignCenter)
         scrollLayout = self.navigationInterface.panel.scrollLayout
-        scrollLayout.addWidget(NavigationCheckBox('Create Backup', self.settingInterface.backupGroup))
-        scrollLayout.addWidget(NavigationCheckBox('Filter and Convert KKS', self.settingInterface.fckksGroup))
-        scrollLayout.addWidget(NavigationCheckBox('Install Chara', self.settingInterface.installGroup))
-        scrollLayout.addWidget(NavigationCheckBox('Remove Chara', self.settingInterface.removeGroup))
+        scrollLayout.addWidget(NavigationCheckBox('Create Backup', cfg.backupEnable, self.settingInterface.backupGroup))
+        scrollLayout.addWidget(NavigationCheckBox('Filter and Convert KKS', cfg.fckksEnable, self.settingInterface.fckksGroup))
+        scrollLayout.addWidget(NavigationCheckBox('Install Chara', cfg.installEnable, self.settingInterface.installGroup))
+        scrollLayout.addWidget(NavigationCheckBox('Remove Chara', cfg.removeEnable, self.settingInterface.removeGroup))
         scrollLayout.addWidget(NavigationActionButtons())
 
         # add custom widget to bottom

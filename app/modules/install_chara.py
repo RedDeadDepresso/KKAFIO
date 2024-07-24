@@ -1,56 +1,57 @@
 import os
 import codecs
-from util.logger import Logger
 
-class InstallChara:
-    def __init__(self, config, file_manager):
-        """Initializes the Bounty module.
+from app.common.file_manager import fileManager
+from app.common.logger import logger
+from app.modules.handler import Handler
 
-        Args:
-            config (Config): BAAuto Config instance
-        """
-        self.config = config
-        self.file_manager = file_manager
-        self.game_path = self.config.game_path
-        self.input_path = self.config.install_chara["InputPath"]
 
-    def resolve_png(self, image_path):        
-        with codecs.open(image_path[0], "rb") as card:
+class InstallChara(Handler):
+    def __str__(self) -> str:
+        return "Install Chara"
+    
+    def loadConfig(self, config):
+        super().loadConfig(config)
+        self.inputPath = self.config["InputPath"]
+
+    def resolvePng(self, imagePath):        
+        with codecs.open(imagePath[0], "rb") as card:
             data = card.read()
         if data.find(b"KoiKatuChara") != -1:
             if data.find(b"KoiKatuCharaSP") != -1 or data.find(b"KoiKatuCharaSun") != -1:
-                basename = os.path.basename(image_path[0])
-                Logger.log_error("CHARA", f"{basename} is a KKS card")
+                basename = os.path.basename(imagePath[0])
+                logger.error("CHARA", f"{basename} is a KKS card")
                 return
-            self.file_manager.copy_and_paste("CHARA", image_path, self.game_path["chara"])
+            fileManager.copyAndPaste("CHARA", imagePath, self.gamePath["chara"])
         elif data.find(b"KoiKatuClothes") != -1:
-            self.file_manager.copy_and_paste("COORD",image_path, self.game_path["coordinate"])
+            fileManager.copyAndPaste("COORD",imagePath, self.gamePath["coordinate"])
         else:
-            self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
+            fileManager.copyAndPaste("OVERLAYS", imagePath, self.gamePath["Overlays"])
 
-    def logic_wrapper(self, folder_path=None):
-        if folder_path is None:
-            folder_path = self.input_path
-        foldername = os.path.basename(folder_path)
-        Logger.log_msg("FOLDER", foldername)
-        file_list, compressed_file_list = self.file_manager.find_all_files(folder_path)
+    def handle(self, request, folderPath=None):
+        if folderPath is None:
+            folderPath = self.inputPath
+        foldername = os.path.basename(folderPath)
+        logger.log_msg("FOLDER", foldername)
+        fileList, archiveList = fileManager.findAllFiles(folderPath)
         
-        for file in file_list:
-            file_extension = file[2]
-            match file_extension:
+        for file in fileList:
+            extension = file[2]
+            match extension:
                 case ".zipmod":
-                    self.file_manager.copy_and_paste("MODS", file, self.game_path["mods"])
+                    fileManager.copyAndPaste("MODS", file, self.gamePath["mods"])
                 case ".png":
-                    self.resolve_png(file)
+                    self.resolvePng(file)
                 case _:
                     basename = os.path.basename(file[0])
-                    Logger.log_error("UKNOWN", f"Cannot classify {basename}")
-        print("[MSG]")
+                    logger.error("UKNOWN", f"Cannot classify {basename}")
             
-        for compressed in compressed_file_list:
-            extract_path = self.file_manager.extract_archive(compressed[0])
-            if extract_path is not None:
-                self.logic_wrapper(extract_path)
+        for archive in archiveList:
+            extractPath = fileManager.extractArchive(archive[0])
+            if extractPath is not None:
+                self.handle(extractPath)
+
+        self.setNext(request)
 
 
     

@@ -15,7 +15,7 @@ class LoggerInterface(QFrame):
         # setting label
         self.mainLayout = QVBoxLayout()
         self.topLayout = QHBoxLayout()
-        self.settingLabel = QLabel(self.tr("Log"))
+        self.loggerLabel = QLabel(self.tr("Log"))
         self.clearBUtton = PushButton('Clear')
         self.autoscrollButton = PushButton('Autoscroll Off')
         self.loggerBox = TextEdit()
@@ -28,7 +28,7 @@ class LoggerInterface(QFrame):
         self.setObjectName('loggerInterface')
 
         # initialize style sheet
-        self.settingLabel.setObjectName('settingLabel')
+        self.loggerLabel.setObjectName('settingLabel')
         StyleSheet.SETTING_INTERFACE.apply(self)
 
         # initialize layout
@@ -36,7 +36,7 @@ class LoggerInterface(QFrame):
         self.__connectSignalToSlot()
 
     def __initLayout(self):
-        self.topLayout.addWidget(self.settingLabel, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.topLayout.addWidget(self.loggerLabel, alignment=Qt.AlignmentFlag.AlignLeft)
         self.topLayout.addWidget(self.clearBUtton, alignment=Qt.AlignmentFlag.AlignRight)
         self.topLayout.addWidget(self.autoscrollButton, alignment=Qt.AlignmentFlag.AlignRight)
 

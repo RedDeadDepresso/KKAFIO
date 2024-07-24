@@ -60,13 +60,13 @@ class Config(QConfig):
 
     # fckks
     fckksEnable = ConfigItem(
-        "FCKKS", "Enable", False, BoolValidator()
+        "FilterConvertKKS", "Enable", False, BoolValidator()
     )
     fccksPath = ConfigItem(
-        "FCKKS", "InputPath", "", FolderValidator()
+        "FilterConvertKKS", "InputPath", "", FolderValidator()
     )
     convert = ConfigItem(
-        "FCKKS", "Convert", False, BoolValidator()
+        "FilterConvertKKS", "Convert", False, BoolValidator()
     )
 
     # installChara
@@ -101,44 +101,6 @@ class Config(QConfig):
 
     # software update
     checkUpdateAtStartUp = ConfigItem("Update", "CheckUpdateAtStartUp", True, BoolValidator())
-
-    # def validate(self):
-    #     Logger.log_info("SCRIPT", "Validating config")
-    #     self.ok = True
-    #     self.tasks = self.config_data["Core"]["Tasks"]
-    #     self.create_gamepath()
-
-    #     for task in self.tasks:
-    #         if self.config_data[task]["Enable"]:
-    #             if "InputPath" in self.config_data[task]:
-    #                 path = self.config_data[task]["InputPath"]
-    #             elif "OutputPath" in self.config_data[task]:
-    #                 path = self.config_data[task]["OutputPath"]
-    #             if not os.path.exists(path):
-    #                 Logger.log_error("SCRIPT", f"Path invalid for task {task}")
-    #                 raise Exception()
-                
-    #     self.install_chara = self.config_data.get("InstallChara", {})
-    #     self.create_backup = self.config_data.get("CreateBackup", {})
-    #     self.remove_chara = self.config_data.get("RemoveChara", {})
-    #     self.fc_kks = self.config_data.get("FCKKS", {})
-
-    # def create_gamepath(self):
-    #     base = self.config_data["Core"]["GamePath"] 
-    #     self.game_path = {
-    #         "base": base,
-    #         "UserData": os.path.join(base, "UserData"),
-    #         "BepInEx": os.path.join(base, "BepInEx"),
-    #         "mods": os.path.join(base, "mods"),
-    #         "chara": os.path.join(base, "UserData\\chara\\female"),
-    #         "coordinate": os.path.join(base, "UserData\coordinate"),
-    #         "Overlays": os.path.join(base, "UserData\Overlays")
-    #         }
-        
-    #     for path in self.game_path.values():
-    #         if not os.path.exists(path):
-    #             Logger.log_error("SCRIPT", "Game path not valid")
-    #             raise Exception()
 
 
 YEAR = 2023

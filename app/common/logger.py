@@ -26,7 +26,7 @@ class Logger:
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(handler1)
 
-    def __out__(self, message: str, level: int = 1, raw_print=False) -> None:
+    def __out__(self, category: str, message: str, level: int = 1, raw_print=False) -> None:
         """
         Output log
         :param message: log message
@@ -41,10 +41,13 @@ class Logger:
 
         while len(logging.root.handlers) > 0:
             logging.root.handlers.pop()
-        # Status Text: INFO, WARNING, ERROR, CRITICAL
-        status = ['&nbsp;&nbsp;&nbsp;&nbsp;INFO', '&nbsp;WARNING', '&nbsp;&nbsp;&nbsp;ERROR', 'CRITICAL']
-        # Status Color: Blue, Orange, Red, Purple
-        statusColor = ['#2d8cf0', '#f90', '#ed3f14', '#3e0480']
+        # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
+        status = ['&nbsp;&nbsp;&nbsp;&nbsp;INFO', '&nbsp;&nbsp;SUCCESS', '&nbsp;&nbsp;&nbsp;ERROR',
+                '&nbsp;SKIPPED', '&nbsp;REPLACED', '&nbsp;RENAMED', '&nbsp;REMOVED']
+
+        # Status Color: Blue, Red,  Green, Orange,
+        statusColor = ['#2d8cf0', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#00c12b']
+
         # Status HTML: <b style="color:$color">status</b>
         statusHtml = [
             f'<b style="color:{_color};">{status}</b>'
@@ -55,7 +58,7 @@ class Logger:
             message = message.replace('\n', '<br>').replace(' ', '&nbsp;')
             adding = (f'''
                     <div style="font-family: Consolas, monospace;color:{statusColor[level - 1]};">
-                        {statusHtml[level - 1]} | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | {message}
+                        {statusHtml[level - 1]} | {category} | {message}
                     </div>
                         ''')
             self.logs += adding
@@ -63,37 +66,61 @@ class Logger:
         else:
             print(f'{statusHtml[level - 1]} | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | {message}')
 
-    def info(self, message: str) -> None:
+    def info(self, category: str, message: str) -> None:
         """
         :param message: log message
 
         Output info log
         """
-        self.__out__(message, 1)
+        self.__out__(category, message, 1)
 
-    def warning(self, message: str) -> None:
-        """
-        :param message: log message
-
-        Output warn log
-        """
-        self.__out__(message, 2)
-
-    def error(self, message: Union[str, Exception]) -> None:
+    def success(self, category: str, message: Union[str, Exception]) -> None:
         """
         :param message: log message
 
         Output error log
         """
-        self.__out__(message, 3)
+        self.__out__(category, message, 2)
 
-    def critical(self, message: str) -> None:
+    def error(self, category: str, message: Union[str, Exception]) -> None:
         """
         :param message: log message
 
-        Output critical log
+        Output error log
         """
-        self.__out__(message, 4)
+        self.__out__(category, message, 3)
+
+    def skipped(self, category: str, message: str) -> None:
+        """
+        :param message: log message
+
+        Output warn log
+        """
+        self.__out__(category, message, 4)
+
+    def replaced(self, category: str, message: str) -> None:
+        """
+        :param message: log message
+
+        Output warn log
+        """
+        self.__out__(category, message, 5)
+
+    def renamed(self, category: str, message: str) -> None:
+        """
+        :param message: log message
+
+        Output warn log
+        """
+        self.__out__(category, message, 6)
+
+    def removed(self, category: str, message: str) -> None:
+        """
+        :param message: log message
+
+        Output warn log
+        """
+        self.__out__(category, message, 6)
 
     def line(self) -> None:
         """
