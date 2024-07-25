@@ -37,6 +37,7 @@ class NavigationActionButtons(QWidget):
     def __connectSignalToSlot(self):
         self.selectAllButton.clicked.connect(self.onSelectAllClicked)
         self.clearAllButton.clicked.connect(self.onClearAllClicked)
+        self.startButton.clicked.connect(self.onStartClicked)
 
         signalBus.startSignal.connect(lambda: self.startButton.setText("Stop"))
         signalBus.stopSignal.connect(lambda: self.startButton.setText("Start"))

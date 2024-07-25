@@ -4,7 +4,8 @@ class Handler:
     
     def loadConfig(self, config):
         self.gamePath = config.get("Core", "GamePath")
-        self.config = config.get(str(self))
+        key = str(self).replace(" ", "")
+        self.config = config.get(key)
         
     def handle(self, request):
         pass

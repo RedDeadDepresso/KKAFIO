@@ -20,6 +20,7 @@ class LoggerInterface(QFrame):
         self.autoscrollButton = PushButton('Autoscroll Off')
         self.loggerBox = TextEdit()
         self.loggerBox.setReadOnly(True)
+        signalBus.guiMode = True
 
         self.__initWidget()
 

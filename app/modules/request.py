@@ -19,6 +19,9 @@ class Request:
         logger.info("SCRIPT", "Validating config")        
         self.validateGamepath()
         self._handlers = [x for x in self.handlers if self.isTaskEnabled(x)]
+
+        if not self._handlers:
+            logger.error("SCRIPT", "No task enabled")
         if not self._isValid:
             raise Exception()
 

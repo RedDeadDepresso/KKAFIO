@@ -12,6 +12,7 @@ from .logger_interface import LoggerInterface
 from .setting_interface import SettingInterface
 from ..common.config import ZH_SUPPORT_URL, EN_SUPPORT_URL, cfg
 from ..common.signal_bus import signalBus
+from ..common.thread_manager import threadManager
 from ..common import resource
 from ..components.navigation_checkbox import NavigationCheckBox
 from ..components.navigation_action_buttons import NavigationActionButtons

@@ -19,12 +19,23 @@ class Logger:
         # logger box signal is used to output log to logger box
         self.logs = ""
         self.logger_signal = signalBus.loggerSignal
-        self.logger = logging.getLogger("BAAS_Logger")
-        formatter = logging.Formatter("%(levelname)8s |%(asctime)20s | %(message)s ")
+        self.logger = logging.getLogger("KAFFIO_Logger")
+        formatter = logging.Formatter("%(levelname)8s |%(category)s | %(message)s ")
         handler1 = logging.StreamHandler(stream=sys.stdout)
         handler1.setFormatter(formatter)
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(handler1)
+        self.text = ['INFO', 'SUCCESS', 'ERROR', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
+        # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
+        self.status = ['&nbsp;&nbsp;&nbsp;&nbsp;INFO', '&nbsp;&nbsp;SUCCESS', '&nbsp;&nbsp;&nbsp;ERROR',
+                '&nbsp;SKIPPED', '&nbsp;REPLACED', '&nbsp;RENAMED', '&nbsp;REMOVED']
+        # Status Color: Blue, Red,  Green, Orange,
+        self.statusColor = ['#2d8cf0', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#00c12b']
+
+        # Status HTML: <b style="color:$color">status</b>
+        self.statusHtml = [
+            f'<b style="color:{_color};">{status}</b>'
+            for _color, status in zip(self.statusColor, self.status)]
 
     def __out__(self, category: str, message: str, level: int = 1, raw_print=False) -> None:
         """
@@ -41,30 +52,34 @@ class Logger:
 
         while len(logging.root.handlers) > 0:
             logging.root.handlers.pop()
-        # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
-        status = ['&nbsp;&nbsp;&nbsp;&nbsp;INFO', '&nbsp;&nbsp;SUCCESS', '&nbsp;&nbsp;&nbsp;ERROR',
-                '&nbsp;SKIPPED', '&nbsp;REPLACED', '&nbsp;RENAMED', '&nbsp;REMOVED']
 
-        # Status Color: Blue, Red,  Green, Orange,
-        statusColor = ['#2d8cf0', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#00c12b']
-
-        # Status HTML: <b style="color:$color">status</b>
-        statusHtml = [
-            f'<b style="color:{_color};">{status}</b>'
-            for _color, status in zip(statusColor, status)]
         # If logger box is not None, output log to logger box
         # else output log to console
-        if self.logger_signal is not None:
+        if self.logger_signal is not None: 
             message = message.replace('\n', '<br>').replace(' ', '&nbsp;')
             adding = (f'''
-                    <div style="font-family: Consolas, monospace;color:{statusColor[level - 1]};">
-                        {statusHtml[level - 1]} | {category} | {message}
+                    <div style="font-family: Consolas, monospace;color:{self.statusColor[level - 1]};">
+                        {self.statusHtml[level - 1]} | {category} | {message}
                     </div>
                         ''')
             self.logs += adding
             self.logger_signal.emit(adding)
         else:
-            print(f'{statusHtml[level - 1]} | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | {message}')
+            print(f'{self.statusHtml[level - 1]} | {category} | {message}')
+
+    def colorize(self, line):
+        adding = line
+        for i, s in enumerate(self.text):
+            if s in line:
+                adding = (f'''
+                        <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
+                            {line}
+                        </div>
+
+                            ''')
+                break
+        self.logs += adding
+        self.logger_signal.emit(adding)
 
     def info(self, category: str, message: str) -> None:
         """
@@ -120,7 +135,7 @@ class Logger:
 
         Output warn log
         """
-        self.__out__(category, message, 6)
+        self.__out__(category, message, 7)
 
     def line(self) -> None:
         """
