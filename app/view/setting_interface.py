@@ -8,7 +8,7 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar, DisplayLabel
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QFileDialog
 
 from ..common.config import cfg, HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR, isWin11
 from ..components.line_edit_card import LineEditSettingCard
@@ -307,23 +307,29 @@ class SettingInterface(ScrollArea):
             parent=self
         )
 
-    # def __onDownloadFolderCardClicked(self):
-    #     """ download folder card clicked slot """
-    #     folder = QFileDialog.getExistingDirectory(
-    #         self, self.tr("Choose folder"), "./")
-    #     if not folder or cfg.get(cfg.downloadFolder) == folder:
-    #         return
+    def __onFolderCardClicked(self, item, card):
+        """ download folder card clicked slot """
+        folder = QFileDialog.getExistingDirectory(
+            self, self.tr("Choose folder"), "./")
+        if not folder or cfg.get(item) == folder:
+            return
 
-    #     cfg.set(cfg.downloadFolder, folder)
-    #     self.downloadFolderCard.setContent(folder)
+        cfg.set(item, folder)
+        card.setContent(folder)
 
     def __connectSignalToSlot(self):
         """ connect signal to slot """
         cfg.appRestartSig.connect(self.__showRestartTooltip)
-
-        # music in the pc
-        # self.downloadFolderCard.clicked.connect(
-        #     self.__onDownloadFolderCardClicked)
+        # gamePath
+        self.gamePathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.gamePath, self.gamePathCard))
+        # backup
+        self.backupPathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.backupPath, self.backupPathCard))
+        # fckks 
+        self.fckksPathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.fccksPath, self.fckksPathCard))
+        # install
+        self.installPathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.installPath, self.installPathCard))
+        # remove                                     
+        self.removePathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.removePath, self.removePathCard))
 
         # personalization
         self.themeCard.optionChanged.connect(lambda ci: setTheme(cfg.get(ci)))

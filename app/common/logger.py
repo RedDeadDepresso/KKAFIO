@@ -29,8 +29,8 @@ class Logger:
         # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
         self.status = ['&nbsp;&nbsp;&nbsp;&nbsp;INFO', '&nbsp;&nbsp;SUCCESS', '&nbsp;&nbsp;&nbsp;ERROR',
                 '&nbsp;SKIPPED', '&nbsp;REPLACED', '&nbsp;RENAMED', '&nbsp;REMOVED']
-        # Status Color: Blue, Red,  Green, Orange,
-        self.statusColor = ['#2d8cf0', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#00c12b']
+        # Status Color: Blue, Red,  Green, Orange
+        self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90']
 
         # Status HTML: <b style="color:$color">status</b>
         self.statusHtml = [
@@ -69,17 +69,20 @@ class Logger:
 
     def colorize(self, line):
         adding = line
+        print(line)
         for i, s in enumerate(self.text):
             if s in line:
+                print(s)
+                print(self.statusColor[i])
                 adding = (f'''
                         <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
                             {line}
                         </div>
 
                             ''')
-                break
-        self.logs += adding
-        self.logger_signal.emit(adding)
+                self.logs += adding
+                self.logger_signal.emit(adding)
+                return
 
     def info(self, category: str, message: str) -> None:
         """

@@ -36,17 +36,17 @@ class Config(QConfig):
     """ Config of application """
     
     # core
-    gamePath = ConfigItem("Core", "GamePath", "", FolderValidator())
+    gamePath = ConfigItem("Core", "GamePath", "C:/Program Files (x86)/Steam/steamapps/common/Koikatsu Party", FolderValidator())
     
     # createBackup
     backupEnable = ConfigItem(
         "CreateBackup", "Enable", False, BoolValidator()
     )
     backupPath = ConfigItem(
-        "CreateBackup", "OutputPath", "", FolderValidator()
+        "CreateBackup", "OutputPath", "C:/Backup", FolderValidator()
     )
     filename = ConfigItem(
-        "CreateBackup", "Filename", "",
+        "CreateBackup", "Filename", "koikatsu_backup",
     )
     userData = ConfigItem(
         "CreateBackup", "UserData", False, BoolValidator()
@@ -73,7 +73,7 @@ class Config(QConfig):
     installEnable = ConfigItem(
         "InstallChara", "Enable", False, BoolValidator()
     )
-    gamePath = ConfigItem(
+    installPath = ConfigItem(
         "InstallChara", "InputPath", "", FolderValidator())
     fileConflicts = OptionsConfigItem(
         "InstallChara", "FileConflicts", "Skip", OptionsValidator(["Skip", "Replace", "Rename"])
@@ -86,8 +86,8 @@ class Config(QConfig):
     removeEnable = ConfigItem(
         "RemoveChara", "Enable", False, BoolValidator()
     )
-    gamePath = ConfigItem(
-        "InstallChara", "InputPath", "", FolderValidator())
+    removePath = ConfigItem(
+        "RemoveChara", "InputPath", "", FolderValidator())
 
     # main window
     micaEnabled = ConfigItem("MainWindow", "MicaEnabled", isWin11(), BoolValidator())

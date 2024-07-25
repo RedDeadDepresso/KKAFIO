@@ -32,8 +32,9 @@ class ThreadManager:
                 logger.colorize(line)
 
     def stop(self):
-        self._script.terminate()
-        self._script = None
+        if self._script is not None:
+            self._script.terminate()
+            self._script = None
 
 
 threadManager = ThreadManager()
