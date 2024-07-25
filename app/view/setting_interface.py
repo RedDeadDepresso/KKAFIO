@@ -45,7 +45,7 @@ class SettingInterface(ScrollArea):
             self.tr('Choose folder'),
             FIF.ZIP_FOLDER,
             self.tr("Backup directory"),
-            cfg.get(cfg.gamePath),
+            cfg.get(cfg.backupPath),
             self.backupGroup
         )
         self.filenameCard = LineEditSettingCard(
@@ -84,7 +84,7 @@ class SettingInterface(ScrollArea):
             self.tr('Choose folder'),
             FIF.DOWNLOAD,
             self.tr("Input directory"),
-            cfg.get(cfg.gamePath),
+            cfg.get(cfg.fccksPath),
             self.fckksGroup
         )
         self.convertCard = SwitchSettingCard(
@@ -102,7 +102,7 @@ class SettingInterface(ScrollArea):
             self.tr('Choose folder'),
             FIF.DOWNLOAD,
             self.tr("Input directory"),
-            cfg.get(cfg.gamePath),
+            cfg.get(cfg.installPath),
             self.installGroup,
         )
         self.fileConflictsCard = ComboBoxSettingCard(
@@ -128,7 +128,7 @@ class SettingInterface(ScrollArea):
             self.tr('Choose folder'),
             FIF.DOWNLOAD,
             self.tr("Input directory"),
-            cfg.get(cfg.gamePath),
+            cfg.get(cfg.removePath),
             self.removeGroup,
         )
     

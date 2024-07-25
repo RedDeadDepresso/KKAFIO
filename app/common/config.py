@@ -37,13 +37,15 @@ class Config(QConfig):
     
     # core
     gamePath = ConfigItem("Core", "GamePath", "C:/Program Files (x86)/Steam/steamapps/common/Koikatsu Party", FolderValidator())
-    
+    documentsPath = os.path.join(os.path.expanduser('~'), 'Documents')
+    downloadsPath = os.path.join(os.path.expanduser('~'), 'Downloads')
+
     # createBackup
     backupEnable = ConfigItem(
         "CreateBackup", "Enable", False, BoolValidator()
     )
     backupPath = ConfigItem(
-        "CreateBackup", "OutputPath", "C:/Backup", FolderValidator()
+        "CreateBackup", "OutputPath", documentsPath, FolderValidator()
     )
     filename = ConfigItem(
         "CreateBackup", "Filename", "koikatsu_backup",
@@ -63,7 +65,7 @@ class Config(QConfig):
         "FilterConvertKKS", "Enable", False, BoolValidator()
     )
     fccksPath = ConfigItem(
-        "FilterConvertKKS", "InputPath", "", FolderValidator()
+        "FilterConvertKKS", "InputPath", downloadsPath, FolderValidator()
     )
     convert = ConfigItem(
         "FilterConvertKKS", "Convert", False, BoolValidator()
@@ -74,12 +76,12 @@ class Config(QConfig):
         "InstallChara", "Enable", False, BoolValidator()
     )
     installPath = ConfigItem(
-        "InstallChara", "InputPath", "", FolderValidator())
+        "InstallChara", "InputPath", downloadsPath, FolderValidator())
     fileConflicts = OptionsConfigItem(
         "InstallChara", "FileConflicts", "Skip", OptionsValidator(["Skip", "Replace", "Rename"])
     )
     archivePassword = OptionsConfigItem(
-        "InstallChara", "FileConflicts", "Skip", OptionsValidator(["Skip", "Request Password"])
+        "InstallChara", "Password", "Skip", OptionsValidator(["Skip", "Request Password"])
     )
     
     # removeChara
@@ -87,7 +89,7 @@ class Config(QConfig):
         "RemoveChara", "Enable", False, BoolValidator()
     )
     removePath = ConfigItem(
-        "RemoveChara", "InputPath", "", FolderValidator())
+        "RemoveChara", "InputPath", downloadsPath, FolderValidator())
 
     # main window
     micaEnabled = ConfigItem("MainWindow", "MicaEnabled", isWin11(), BoolValidator())

@@ -69,11 +69,8 @@ class Logger:
 
     def colorize(self, line):
         adding = line
-        print(line)
         for i, s in enumerate(self.text):
             if s in line:
-                print(s)
-                print(self.statusColor[i])
                 adding = (f'''
                         <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
                             {line}

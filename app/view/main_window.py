@@ -44,6 +44,7 @@ class MainWindow(FluentWindow):
         signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
         signalBus.switchToSettingGroup.connect(self.switchToSetting)
         signalBus.supportSignal.connect(self.onSupport)
+        signalBus.startSignal.connect(lambda: self.stackedWidget.setCurrentWidget(self.loggerInterface, False))
 
     def initNavigation(self):
         # add navigation items
