@@ -1,6 +1,5 @@
 import logging
 import sys
-from datetime import datetime
 from typing import Union
 
 from app.common.signal_bus import signalBus
@@ -20,14 +19,14 @@ class Logger:
         self.logs = ""
         self.logger_signal = signalBus.loggerSignal
         self.logger = logging.getLogger("KAFFIO_Logger")
-        formatter = logging.Formatter("%(levelname)8s |%(category)s | %(message)s ")
+        formatter = logging.Formatter("%(levelname)s |%(category)s | %(message)s ")
         handler1 = logging.StreamHandler(stream=sys.stdout)
         handler1.setFormatter(formatter)
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(handler1)
         # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
         self.status = ['INFO', 'SUCCESS', 'ERROR', 'WARNING', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
-        # Status Color: Blue, Red,  Green, Orange
+        # Status Color: Blue, Red, Green, Orange
         self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#f90']
         # Create a list with each status padded with spaces
         paddedStatus = [self.align(s) for s in self.status]
@@ -54,11 +53,11 @@ class Logger:
 
         # If logger box is not None, output log to logger box
         # else output log to console
-        if self.logger_signal is not None: 
+        if self.logger_signal is not None:
             category = self.align(category)
             message = message.replace('\n', '<br>').replace(' ', '&nbsp;')
             adding = (f'''
-                    <div style="font-family: Inter;color:{self.statusColor[level - 1]};">
+                    <div style="font-family: Consolas, monospace;color:{self.statusColor[level - 1]};">
                         {self.statusHtml[level - 1]} | {category} | {message}
                     </div>
                         ''')
@@ -69,20 +68,20 @@ class Logger:
 
     def align(self, string, maxLength=8):
         space = '&nbsp;' if self.logger_signal is not None else ' '
-        return f"{space * (maxLength - len(string))}{string}"
+        return f"{string}{space * (maxLength - len(string))}"
 
     def colorize(self, adding):
         for i, s in enumerate(self.status):
             if s in adding:
                 adding = (f'''
-                        <div style="font-family: Inter;color:{self.statusColor[i]};">
+                        <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
                             {adding}
                         </div>
                             ''')
                 self.logs += adding
                 self.logger_signal.emit(adding)
                 return
-    
+
     def info(self, category: str, message: str) -> None:
         """
         :param message: log message
@@ -155,11 +154,11 @@ class Logger:
         # use raw_print=True to output log to logger box
         if self.logger_signal is not None:
             self.__out__("",
-                '<div style="font-family: Consolas, monospace;color:#2d8cf0;">'
-                '--------------------------------------------------------------------'
-                '</div>', raw_print=True)
-        else: 
+                         '<div style="font-family: Consolas, monospace;color:#2d8cf0;">'
+                         '--------------------------------------------------------------------'
+                         '</div>', raw_print=True)
+        else:
             print('--------------------------------------------------------------------')
-        
+
 
 logger = Logger()
