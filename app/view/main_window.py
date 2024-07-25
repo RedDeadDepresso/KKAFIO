@@ -50,7 +50,7 @@ class MainWindow(FluentWindow):
         # add navigation items
         self.navigationInterface.addWidget(
             'Logo',
-            NavigationLogoWidget('gui/icons/karin.png', QSize(160, 160)),
+            NavigationLogoWidget(':/gallery/images/logo.png', QSize(160, 160)),
             position=NavigationItemPosition.TOP
         )
         self.navigationInterface.panel.topLayout.setAlignment(Qt.AlignCenter)
