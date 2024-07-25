@@ -29,10 +29,12 @@ class Logger:
         self.status = ['INFO', 'SUCCESS', 'ERROR', 'WARNING', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
         # Status Color: Blue, Red,  Green, Orange
         self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#f90']
+        # Create a list with each status padded with spaces
+        paddedStatus = [self.align(s) for s in self.status]
         # Status HTML: <b style="color:$color">status</b>
         self.statusHtml = [
             f'<b style="color:{_color};">{status}</b>'
-            for _color, status in zip(self.statusColor, self.status)]
+            for _color, status in zip(self.statusColor, paddedStatus)]
 
     def __out__(self, category: str, message: str, level: int = 1, raw_print=False) -> None:
         """
@@ -53,6 +55,7 @@ class Logger:
         # If logger box is not None, output log to logger box
         # else output log to console
         if self.logger_signal is not None: 
+            category = self.align(category)
             message = message.replace('\n', '<br>').replace(' ', '&nbsp;')
             adding = (f'''
                     <div style="font-family: Inter;color:{self.statusColor[level - 1]};">
@@ -64,20 +67,22 @@ class Logger:
         else:
             print(f'{self.statusHtml[level - 1]} | {category} | {message}')
 
-    def colorize(self, line):
-        adding = line
+    def align(self, string, maxLength=8):
+        space = '&nbsp;' if self.logger_signal is not None else ' '
+        return f"{space * (maxLength - len(string))}{string}"
+
+    def colorize(self, adding):
         for i, s in enumerate(self.status):
-            if s in line:
+            if s in adding:
                 adding = (f'''
                         <div style="font-family: Inter;color:{self.statusColor[i]};">
-                            {line}
+                            {adding}
                         </div>
-
                             ''')
                 self.logs += adding
                 self.logger_signal.emit(adding)
                 return
-
+    
     def info(self, category: str, message: str) -> None:
         """
         :param message: log message

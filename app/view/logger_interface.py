@@ -16,11 +16,9 @@ class LoggerInterface(QFrame):
         self.mainLayout = QVBoxLayout()
         self.topLayout = QHBoxLayout()
         self.loggerLabel = DisplayLabel(self.tr("Log"), self)
-        self.clearBUtton = PushButton('Clear')
-        self.autoscrollButton = PushButton('Autoscroll Off')
+        self.clearButton = PushButton(self.tr('Clear'))
         self.loggerBox = TextEdit()
         self.loggerBox.setReadOnly(True)
-        signalBus.guiMode = True
 
         self.__initWidget()
 
@@ -38,8 +36,7 @@ class LoggerInterface(QFrame):
 
     def __initLayout(self):
         self.topLayout.addWidget(self.loggerLabel, alignment=Qt.AlignLeft)
-        self.topLayout.addWidget(self.clearBUtton, alignment=Qt.AlignRight)
-        self.topLayout.addWidget(self.autoscrollButton, alignment=Qt.AlignRight)
+        self.topLayout.addWidget(self.clearButton, alignment=Qt.AlignRight)
 
         self.mainLayout.addLayout(self.topLayout)
         self.mainLayout.setSpacing(28)
@@ -48,15 +45,6 @@ class LoggerInterface(QFrame):
         self.setLayout(self.mainLayout)
         self.setContentsMargins(36, 10, 36, 28)
 
-    def setAutoscroll(self, text):
-        text = self.autoscrollButton.text()
-        if text == "Autoscroll Off":
-            self.autoscrollButton.setText("Autoscroll On")
-        elif text == "Autoscroll On":
-            self.autoscrollButton.setText("Autoscroll Off")
-
     def __connectSignalToSlot(self):
-        """ connect signal to slot """
         signalBus.loggerSignal.connect(self.loggerBox.append)
-        self.clearBUtton.clicked.connect(self.loggerBox.clear)
-        self.autoscrollButton.clicked.connect(self.setAutoscroll)
+        self.clearButton.clicked.connect(self.loggerBox.clear)
