@@ -1,21 +1,9 @@
 # coding:utf-8
-import os
-import subprocess
-from typing import Union, List
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QLabel, QVBoxLayout
 
-from PySide6.QtCore import (Qt, Signal, QRect, QRectF, QPropertyAnimation, Property, QMargins,
-                          QEasingCurve, QPoint, QEvent, QSize)
-from PySide6.QtGui import QColor, QPainter, QPen, QIcon, QCursor, QFont, QBrush, QPixmap, QImage, QMouseEvent
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QStyle, QStyleOptionButton
-from collections import deque
-
-from qfluentwidgets import BodyLabel, FlyoutAnimationType, Flyout, FlyoutView, PushButton, ToolButton, CheckBox
-from qfluentwidgets.common.config import isDarkTheme
-from qfluentwidgets.common.style_sheet import themeColor
-from qfluentwidgets.common.icon import drawIcon, toQIcon
-from qfluentwidgets.common.icon import FluentIcon as FIF
-from qfluentwidgets.common.font import setFont
-from qfluentwidgets.components.navigation import NavigationAvatarWidget, NavigationWidget
+from qfluentwidgets.components.navigation import NavigationWidget
 
 
 class NavigationLogoWidget(NavigationWidget):

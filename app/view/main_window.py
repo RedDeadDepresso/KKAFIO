@@ -1,11 +1,11 @@
 # coding: utf-8
 from typing import List
-from PySide6.QtCore import Qt, Signal, QEasingCurve, QUrl, QSize
-from PySide6.QtGui import QIcon, QDesktopServices, QColor
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QFrame, QWidget
+from PySide6.QtCore import Qt, QUrl, QSize
+from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtWidgets import QApplication
 
-from qfluentwidgets import (NavigationAvatarWidget, NavigationItemPosition, MessageBox, FluentWindow,
-                            SplashScreen, PushButton)
+from qfluentwidgets import (NavigationItemPosition, FluentWindow,
+                            SplashScreen)
 from qfluentwidgets import FluentIcon as FIF
 
 from .logger_interface import LoggerInterface
@@ -31,6 +31,7 @@ class MainWindow(FluentWindow):
 
         # enable acrylic effect
         self.navigationInterface.setAcrylicEnabled(True)
+        self.navigationInterface.setReturnButtonVisible(False)
         self.navigationInterface.setMenuButtonVisible(False)
         self.navigationInterface.setCollapsible(False)
 
@@ -48,6 +49,7 @@ class MainWindow(FluentWindow):
 
     def initNavigation(self):
         # add navigation items
+        self.navigationInterface.panel.topLayout.addSpacing(40)
         self.navigationInterface.addWidget(
             'Logo',
             NavigationLogoWidget(':/gallery/images/logo.png', QSize(160, 160)),
@@ -77,7 +79,7 @@ class MainWindow(FluentWindow):
 
         # create splash screen
         self.splashScreen = SplashScreen(self.windowIcon(), self)
-        self.splashScreen.setIconSize(QSize(106, 106))
+        self.splashScreen.setIconSize(QSize(160, 160))
         self.splashScreen.raise_()
 
         desktop = QApplication.screens()[0].availableGeometry()
