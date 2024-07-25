@@ -1,6 +1,7 @@
 import os
 import codecs
-from util.logger import Logger
+from app.common.logger import logger
+
 
 class RemoveChara:
     def __init__(self, config, file_manager):
@@ -28,7 +29,7 @@ class RemoveChara:
 
     def logic_wrapper(self):
         foldername = os.path.basename(self.input_path)
-        Logger.log_msg("FOLDER", foldername)
+        logger.info("FOLDER", foldername)
         file_list, archive_list = self.file_manager.find_all_files(self.input_path)
         
         for file in file_list:
@@ -40,7 +41,7 @@ class RemoveChara:
                     self.resolve_png(file)
                 case _:
                     pass
-        print("[MSG]")
+        logger.line()
 
 
 

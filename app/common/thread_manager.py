@@ -10,6 +10,7 @@ class ThreadManager:
     def __init__(self):
         super().__init__()
         self._script = None
+        self._line = '--------------------------------------------------------------------'
 
     def start(self):
         if self._script is not None:
@@ -28,6 +29,8 @@ class ThreadManager:
             line = self._script.stdout.readline().decode('utf-8')
             if not line:
                 signalBus.stopSignal.emit()
+            elif line == self._line:
+                logger.line()
             else:
                 logger.colorize(line)
 

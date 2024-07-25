@@ -2,7 +2,7 @@ import os
 import re as regex
 import codecs
 import shutil
-from util.logger import Logger
+from app.common.logger import logger
 
 class FilterConvertKKS:
     def __init__(self, config, file_manager):
@@ -33,7 +33,7 @@ class FilterConvertKKS:
                     card_type = 2
                 elif data.find(b"KoiKatuCharaSun") != -1:
                     card_type = 3
-            Logger.log_info(f"[{card_type}]", f"{card_path}")
+            logger.info(f"[{card_type}]", f"{card_path}")
         return card_type
 
     def convert_kk(self, card_name, card_path, destination_path):
@@ -65,12 +65,12 @@ class FilterConvertKKS:
 
         count = len(png_list)
         if count > 0:
-            Logger.log_info("SCRIPT", "0: unknown / 1: kk / 2: kksp / 3: kks")
+            logger.info("SCRIPT", "0: unknown / 1: kk / 2: kksp / 3: kks")
             for png in png_list:
                 if self.check_png(png) == 3:
                     kks_card_list.append(png)
         else:
-            Logger.log_success("SCRIPT", f"no PNG found")
+            logger.success("SCRIPT", f"no PNG found")
             return
 
         count = len(kks_card_list)
@@ -83,7 +83,7 @@ class FilterConvertKKS:
                 os.mkdir(target_folder)
 
             if self.convert:
-                Logger.log_info("SCRIPT", f"Conversion to KK is [{self.convert}]")
+                logger.info("SCRIPT", f"Conversion to KK is [{self.convert}]")
                 if not os.path.isdir(target_folder2):
                     os.mkdir(target_folder2)
 
@@ -100,8 +100,8 @@ class FilterConvertKKS:
                 shutil.move(source, target)
 
             if self.convert:
-                Logger.log_success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder, converted and save to [{kks_folder2}] folder")
+                logger.success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder, converted and save to [{kks_folder2}] folder")
             else:
-                Logger.log_success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder")
+                logger.success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder")
         else:
-            Logger.log_success("SCRIPT", f"no KKS card found")
+            logger.success("SCRIPT", f"no KKS card found")

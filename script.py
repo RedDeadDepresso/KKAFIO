@@ -5,7 +5,7 @@ try:
         pass
 
     from util.config import Config
-    from util.logger import Logger
+    from app.common.logger import logger
     from util.file_manager import FileManager
     from modules.install_chara import InstallChara
     from modules.remove_chara import RemoveChara
@@ -21,6 +21,7 @@ try:
             Args:
                 config (Config): BAAuto Config instance
             """
+            logger.logger_signal = None
             self.config = config
             self.file_manager = file_manager
             self.modules = {
@@ -41,11 +42,11 @@ try:
         def run(self):
             for task in self.config.tasks:
                 if self.modules[task]:
-                    Logger.log_info("SCRIPT", f'Start Task: {task}')
+                    logger.info("SCRIPT", f'Start Task: {task}')
                     try:
                         self.modules[task].logic_wrapper()
                     except:
-                        Logger.log_error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
+                        logger.error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
                         with open('traceback.log', 'a') as f:
                             f.write(f'[{task}]\n')
                             traceback.print_exc(None, f, True)

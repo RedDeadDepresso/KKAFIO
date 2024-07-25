@@ -1,11 +1,11 @@
 import sys
 import json
 import os
-from util.logger import Logger
+from app.common.logger import logger
 
 class Config:
     def __init__(self, config_file):
-        Logger.log_info("SCRIPT", "Initializing config module")
+        logger.info("SCRIPT", "Initializing config module")
         self.config_file = config_file
         self.ok = False
         self.initialized = False
@@ -20,31 +20,31 @@ class Config:
             with open(self.config_file, 'r') as json_file:
                 self.config_data = json.load(json_file)
         except FileNotFoundError:
-            Logger.log_error("SCRIPT", f"Config file '{self.config_file}' not found.")
+            logger.error("SCRIPT", f"Config file '{self.config_file}' not found.")
             sys.exit(1)
         except json.JSONDecodeError:
-            Logger.log_error("SCRIPT", f"Invalid JSON format in '{self.config_file}'.")
+            logger.error("SCRIPT", f"Invalid JSON format in '{self.config_file}'.")
             sys.exit(1)
 
         self.validate()
 
         if self.ok and not self.initialized:
-            Logger.log_info("SCRIPT", "Starting KKAFIO!")
+            logger.info("SCRIPT", "Starting KKAFIO!")
             self.initialized = True
             self.changed = True
         elif not self.ok and not self.initialized:
-            Logger.log_error("SCRIPT", "Invalid config. Please check your config file.")
+            logger.error("SCRIPT", "Invalid config. Please check your config file.")
             sys.exit(1)
         elif not self.ok and self.initialized:
-            Logger.log_warning("SCRIPT", "Config change detected, but with problems. Rolling back config.")
+            logger.warning("SCRIPT", "Config change detected, but with problems. Rolling back config.")
             self._rollback_config(backup_config)
         elif self.ok and self.initialized:
             if backup_config != self.__dict__:
-                Logger.log_warning("SCRIPT", "Config change detected. Hot-reloading.")
+                logger.warning("SCRIPT", "Config change detected. Hot-reloading.")
                 self.changed = True
 
     def validate(self):
-        Logger.log_info("SCRIPT", "Validating config")
+        logger.info("SCRIPT", "Validating config")
         self.ok = True
         self.tasks = ["CreateBackup", "FilterConvertKKS", "InstallChara", "RemoveChara"]
         self.create_gamepath()
@@ -56,7 +56,7 @@ class Config:
                 elif "OutputPath" in self.config_data[task]:
                     path = self.config_data[task]["OutputPath"]
                 if not os.path.exists(path):
-                    Logger.log_error("SCRIPT", f"Path invalid for task {task}")
+                    logger.error("SCRIPT", f"Path invalid for task {task}")
                     raise Exception()
                 
         self.install_chara = self.config_data.get("InstallChara", {})
@@ -72,13 +72,13 @@ class Config:
             "BepInEx": os.path.join(base, "BepInEx"),
             "mods": os.path.join(base, "mods"),
             "chara": os.path.join(base, "UserData\\chara\\female"),
-            "coordinate": os.path.join(base, "UserData\coordinate"),
-            "Overlays": os.path.join(base, "UserData\Overlays")
+            "coordinate": os.path.join(base, "UserData\\coordinate"),
+            "Overlays": os.path.join(base, "UserData\\Overlays")
             }
         
         for path in self.game_path.values():
             if not os.path.exists(path):
-                Logger.log_error("SCRIPT", "Game path not valid")
+                logger.error("SCRIPT", "Game path not valid")
                 raise Exception()
             
     def _deepcopy_dict(self, dictionary):

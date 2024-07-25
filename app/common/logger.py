@@ -25,13 +25,10 @@ class Logger:
         handler1.setFormatter(formatter)
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(handler1)
-        self.text = ['INFO', 'SUCCESS', 'ERROR', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
         # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
-        self.status = ['&nbsp;&nbsp;&nbsp;&nbsp;INFO', '&nbsp;&nbsp;SUCCESS', '&nbsp;&nbsp;&nbsp;ERROR',
-                '&nbsp;SKIPPED', '&nbsp;REPLACED', '&nbsp;RENAMED', '&nbsp;REMOVED']
+        self.status = ['INFO', 'SUCCESS', 'ERROR', 'WARNING', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
         # Status Color: Blue, Red,  Green, Orange
-        self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90']
-
+        self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#f90']
         # Status HTML: <b style="color:$color">status</b>
         self.statusHtml = [
             f'<b style="color:{_color};">{status}</b>'
@@ -58,7 +55,7 @@ class Logger:
         if self.logger_signal is not None: 
             message = message.replace('\n', '<br>').replace(' ', '&nbsp;')
             adding = (f'''
-                    <div style="font-family: Consolas, monospace;color:{self.statusColor[level - 1]};">
+                    <div style="font-family: Inter;color:{self.statusColor[level - 1]};">
                         {self.statusHtml[level - 1]} | {category} | {message}
                     </div>
                         ''')
@@ -69,10 +66,10 @@ class Logger:
 
     def colorize(self, line):
         adding = line
-        for i, s in enumerate(self.text):
+        for i, s in enumerate(self.status):
             if s in line:
                 adding = (f'''
-                        <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
+                        <div style="font-family: Inter;color:{self.statusColor[i]};">
                             {line}
                         </div>
 
@@ -113,7 +110,7 @@ class Logger:
         """
         self.__out__(category, message, 4)
 
-    def replaced(self, category: str, message: str) -> None:
+    def warning(self, category: str, message: str) -> None:
         """
         :param message: log message
 
@@ -121,7 +118,7 @@ class Logger:
         """
         self.__out__(category, message, 5)
 
-    def renamed(self, category: str, message: str) -> None:
+    def replaced(self, category: str, message: str) -> None:
         """
         :param message: log message
 
@@ -129,7 +126,7 @@ class Logger:
         """
         self.__out__(category, message, 6)
 
-    def removed(self, category: str, message: str) -> None:
+    def renamed(self, category: str, message: str) -> None:
         """
         :param message: log message
 
@@ -137,16 +134,27 @@ class Logger:
         """
         self.__out__(category, message, 7)
 
+    def removed(self, category: str, message: str) -> None:
+        """
+        :param message: log message
+
+        Output warn log
+        """
+        self.__out__(category, message, 8)
+
     def line(self) -> None:
         """
         Output line
         """
         # While the line print do not need wrapping, we
         # use raw_print=True to output log to logger box
-        self.__out__(
-            '<div style="font-family: Consolas, monospace;color:#2d8cf0;">--------------'
-            '-------------------------------------------------------------'
-            '-------------------</div>', raw_print=True)
+        if self.logger_signal is not None:
+            self.__out__("",
+                '<div style="font-family: Consolas, monospace;color:#2d8cf0;">'
+                '--------------------------------------------------------------------'
+                '</div>', raw_print=True)
+        else: 
+            print('--------------------------------------------------------------------')
         
 
 logger = Logger()
