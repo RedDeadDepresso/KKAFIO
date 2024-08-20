@@ -9,15 +9,15 @@ class CreateBackup:
         """
         self.config = config
         self.file_manager = file_manager
-        self.backup_folders = self.config.create_backup["GameFolders"]
+        self.game_path = self.config.game_path
+        folders = ["mods", "UserData", "BepInEx"]
+        self.folders = [self.game_path[f] for f in folders if self.config.create_backup[f]]
         self.filename = self.config.create_backup["Filename"]
         self.output_path = self.config.create_backup["OutputPath"]
-        self.game_path = self.config.game_path
     
     def logic_wrapper(self):
-        selected_folders = [self.game_path[folder] for folder in self.backup_folders if self.backup_folders[folder]]
         output_path = os.path.join(self.output_path, self.filename)
-        self.file_manager.create_archive(selected_folders, output_path)
+        self.file_manager.create_archive(self.folders, output_path)
 
 
 

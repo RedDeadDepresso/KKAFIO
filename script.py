@@ -5,12 +5,13 @@ try:
         pass
 
     from util.config import Config
-    from util.logger import Logger
+    from app.common.logger import logger
     from util.file_manager import FileManager
     from modules.install_chara import InstallChara
     from modules.remove_chara import RemoveChara
     from modules.fc_kks import FilterConvertKKS
     from modules.create_backup import CreateBackup
+
 
     class Script:
         def __init__(self, config, file_manager):
@@ -20,13 +21,14 @@ try:
             Args:
                 config (Config): BAAuto Config instance
             """
+            logger.logger_signal = None
             self.config = config
             self.file_manager = file_manager
             self.modules = {
                 'InstallChara': None,
                 'RemoveChara': None,
                 'CreateBackup': None,
-                'FCKKS': None,
+                'FilterConvertKKS': None,
             }
             if self.config.install_chara['Enable']:
                 self.modules['InstallChara'] = InstallChara(self.config, self.file_manager)
@@ -35,16 +37,16 @@ try:
             if self.config.create_backup['Enable']:
                 self.modules['CreateBackup'] = CreateBackup(self.config, self.file_manager)
             if self.config.fc_kks["Enable"]:
-                self.modules['FCKKS'] = FilterConvertKKS(self.config, self.file_manager)
+                self.modules['FilterConvertKKS'] = FilterConvertKKS(self.config, self.file_manager)
 
         def run(self):
             for task in self.config.tasks:
                 if self.modules[task]:
-                    Logger.log_info("SCRIPT", f'Start Task: {task}')
+                    logger.info("SCRIPT", f'Start Task: {task}')
                     try:
                         self.modules[task].logic_wrapper()
                     except:
-                        Logger.log_error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
+                        logger.error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
                         with open('traceback.log', 'a') as f:
                             f.write(f'[{task}]\n')
                             traceback.print_exc(None, f, True)
@@ -60,8 +62,9 @@ except:
         f.write('\n')
         sys.exit(1)
 
+
 if __name__ == "__main__":
-    config = Config('config.json')
+    config = Config('app/config/config.json')
     file_manager = FileManager(config)
     script = Script(config, file_manager)
     script.run()

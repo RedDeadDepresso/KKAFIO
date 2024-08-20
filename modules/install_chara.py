@@ -1,6 +1,6 @@
 import os
 import codecs
-from util.logger import Logger
+from app.common.logger import logger
 
 class InstallChara:
     def __init__(self, config, file_manager):
@@ -20,7 +20,7 @@ class InstallChara:
         if data.find(b"KoiKatuChara") != -1:
             if data.find(b"KoiKatuCharaSP") != -1 or data.find(b"KoiKatuCharaSun") != -1:
                 basename = os.path.basename(image_path[0])
-                Logger.log_error("CHARA", f"{basename} is a KKS card")
+                logger.error("CHARA", f"{basename} is a KKS card")
                 return
             self.file_manager.copy_and_paste("CHARA", image_path, self.game_path["chara"])
         elif data.find(b"KoiKatuClothes") != -1:
@@ -32,7 +32,8 @@ class InstallChara:
         if folder_path is None:
             folder_path = self.input_path
         foldername = os.path.basename(folder_path)
-        Logger.log_msg("FOLDER", foldername)
+        logger.line()
+        logger.info("FOLDER", foldername)
         file_list, compressed_file_list = self.file_manager.find_all_files(folder_path)
         
         for file in file_list:
@@ -44,8 +45,8 @@ class InstallChara:
                     self.resolve_png(file)
                 case _:
                     basename = os.path.basename(file[0])
-                    Logger.log_error("UKNOWN", f"Cannot classify {basename}")
-        print("[MSG]")
+                    logger.error("UKNOWN", f"Cannot classify {basename}")
+        logger.line()
             
         for compressed in compressed_file_list:
             extract_path = self.file_manager.extract_archive(compressed[0])

@@ -5,7 +5,7 @@ import patoolib
 import customtkinter
 import subprocess
 import time
-from util.logger import Logger
+from app.common.logger import logger
 
 class FileManager:
 
@@ -41,11 +41,11 @@ class FileManager:
         already_exists =  os.path.exists(destination_path)
 
         if already_exists and conflicts == "Skip":
-            Logger.log_skipped(type, base_name)
+            logger.skipped(type, base_name)
             return
         
         elif already_exists and conflicts == "Replace":
-            Logger.log_replaced(type, base_name)
+            logger.replaced(type, base_name)
         
         elif already_exists and conflicts == "Rename":
             max_retries = 3
@@ -56,7 +56,7 @@ class FileManager:
                     new_source_path = f"{filename}_{new_name}{file_extension}"
                     os.rename(source_path, new_source_path)
                     source_path = new_source_path
-                    Logger.log_renamed(type, base_name)
+                    logger.renamed(type, base_name)
 
                     filename, file_extension = os.path.splitext(destination_path)
                     destination_path = f"{filename}_{new_name}{file_extension}"
@@ -65,20 +65,20 @@ class FileManager:
                     if attempt < max_retries - 1:
                         time.sleep(1)  # Wait for 1 second before retrying
                     else:
-                        Logger.log_error(type, f"Failed to rename {base_name} after {max_retries} attempts.")
+                        logger.error(type, f"Failed to rename {base_name} after {max_retries} attempts.")
                         return
 
         try:
             shutil.copy(source_path, destination_path)
             print(f"File copied successfully from {source_path} to {destination_path}")
             if not already_exists:
-                Logger.log_success(type, base_name)
+                logger.success(type, base_name)
         except FileNotFoundError:
-            Logger.log_error(type, f"{base_name} does not exist.")
+            logger.error(type, f"{base_name} does not exist.")
         except PermissionError:
-            Logger.log_error(type, f"Permission denied for {base_name}")
+            logger.error(type, f"Permission denied for {base_name}")
         except Exception as e:
-            Logger.log_error(type, f"An error occurred: {e}")
+            logger.error(type, f"An error occurred: {e}")
 
     def find_and_remove(self, type, source_path, destination_folder):
         source_path = source_path[0]
@@ -87,15 +87,15 @@ class FileManager:
         if os.path.exists(destination_path):
             try:
                 os.remove(destination_path)
-                Logger.log_removed(type, base_name)
+                logger.removed(type, base_name)
             except OSError as e:
-                Logger.log_error(type, base_name)
+                logger.error(type, base_name)
 
     def create_archive(self, folders, archive_path):
         # Specify the full path to the 7zip executable
         path_to_7zip = patoolib.util.find_program("7z")
         if not path_to_7zip:
-            Logger.log_error("SCRIPT", "7zip not found. Unable to create backup")
+            logger.error("SCRIPT", "7zip not found. Unable to create backup")
             raise Exception()
         
         if os.path.exists(archive_path+".7z"):
@@ -133,7 +133,7 @@ class FileManager:
         # Print the output
         for line in process.stdout.decode().split('\n'):
             if line.strip() != "":
-                Logger.log_info("7-Zip", line)
+                logger.info("7-Zip", line)
         # Check the return code
         if process.returncode not in [0, 1]:
             raise Exception()
@@ -141,7 +141,7 @@ class FileManager:
     def extract_archive(self, archive_path):
         try:
             archive_name = os.path.basename(archive_path)
-            Logger.log_info("ARCHIVE", f"Extracting {archive_name}")
+            logger.info("ARCHIVE", f"Extracting {archive_name}")
             extract_path = os.path.join(f"{os.path.splitext(archive_path)[0]}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}")
             patoolib.extract_archive(archive_path, outdir=extract_path)
             return extract_path
@@ -161,5 +161,5 @@ class FileManager:
                 except:
                     text = f"Wrong password or {archive_name} is corrupted. Please enter password again or click Cancel"
 
-            Logger.log_skipped("ARCHIVE", archive_name)
+            logger.skipped("ARCHIVE", archive_name)
 
