@@ -37,7 +37,7 @@ class ScriptManager(QObject):
                 self._process.start(args[0], args[1:])
             else:
                 self._process.start(args[0])
-                
+
     def readOutput(self):
         if self._process is not None:
             while self._process.canReadLine():
@@ -51,14 +51,14 @@ class ScriptManager(QObject):
         if self._process is not None:
             while self._process.canReadLine():
                 error_line = str(self._process.readLine(), encoding='utf-8').strip()
-                self.logger.colorize(f"Error: {error_line}", color='red')
-
-    def processFinished(self):
-        """Slot called when the process finishes."""
-        self.signalBus.stopSignal.emit()
+                self.logger.error(f"Error: {error_line}", color='red')
 
     def stop(self):
         if self._process is not None:
             self._process.terminate()
-            self._process.waitForFinished()
-            self._process = None
+
+    def processFinished(self):
+        """Slot called when the process finishes."""
+        self._process = None
+        self.signalBus.stopSignal.emit()
+

@@ -59,7 +59,7 @@ class Logger:
                         {self.statusHtml[level - 1]} | {category} | {message}
                     </div>
                         ''')
-            self.logs += adding
+            # self.logs += adding
             self.logger_signal.emit(adding)
         else:
             print(f'{self.paddedStatus[level - 1]} | {category} | {message}')
@@ -76,7 +76,7 @@ class Logger:
                             {adding.replace(' ', '&nbsp;')}
                         </div>
                             ''')
-                self.logs += adding
+                # self.logs += adding
                 self.logger_signal.emit(adding)
                 return
 
