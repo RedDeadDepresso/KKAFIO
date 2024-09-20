@@ -1,6 +1,6 @@
 import os
 import codecs
-from app.common.logger import logger
+from util.logger import logger
 
 
 class RemoveChara:

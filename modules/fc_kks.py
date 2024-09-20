@@ -2,7 +2,7 @@ import os
 import re as regex
 import codecs
 import shutil
-from app.common.logger import logger
+from util.logger import logger
 
 class FilterConvertKKS:
     def __init__(self, config, file_manager):

@@ -1,7 +1,7 @@
 import sys
 import json
 import os
-from app.common.logger import logger
+from util.logger import logger
 
 class Config:
     def __init__(self, config_file):

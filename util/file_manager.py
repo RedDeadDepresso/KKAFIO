@@ -5,7 +5,7 @@ import patoolib
 import customtkinter
 import subprocess
 import time
-from app.common.logger import logger
+from util.logger import logger
 
 class FileManager:
 

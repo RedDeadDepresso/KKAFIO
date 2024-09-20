@@ -5,7 +5,7 @@ try:
         pass
 
     from util.config import Config
-    from app.common.logger import logger
+    from util.logger import logger    
     from util.file_manager import FileManager
     from modules.install_chara import InstallChara
     from modules.remove_chara import RemoveChara

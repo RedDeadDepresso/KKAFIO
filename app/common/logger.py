@@ -2,22 +2,20 @@ import logging
 import sys
 from typing import Union
 
-from app.common.signal_bus import signalBus
-
 
 class Logger:
     """
     Logger class for logging
     """
 
-    def __init__(self):
+    def __init__(self, signalBus=None):
         """
         :param logger_signal: Logger Box signal
         """
         # Init logger box signal, logs and logger
         # logger box signal is used to output log to logger box
         self.logs = ""
-        self.logger_signal = signalBus.loggerSignal
+        self.logger_signal = signalBus.loggerSignal if signalBus else None
         self.logger = logging.getLogger("KAFFIO_Logger")
         formatter = logging.Formatter("%(levelname)s |%(category)s | %(message)s ")
         handler1 = logging.StreamHandler(stream=sys.stdout)
@@ -29,11 +27,11 @@ class Logger:
         # Status Color: Blue, Red, Green, Orange
         self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#f90']
         # Create a list with each status padded with spaces
-        paddedStatus = [self.align(s) for s in self.status]
+        self.paddedStatus = [self.align(s) for s in self.status]
         # Status HTML: <b style="color:$color">status</b>
         self.statusHtml = [
             f'<b style="color:{_color};">{status}</b>'
-            for _color, status in zip(self.statusColor, paddedStatus)]
+            for _color, status in zip(self.statusColor, self.paddedStatus)]
 
     def __out__(self, category: str, message: str, level: int = 1, raw_print=False) -> None:
         """
@@ -53,8 +51,8 @@ class Logger:
 
         # If logger box is not None, output log to logger box
         # else output log to console
+        category = self.align(category)
         if self.logger_signal is not None:
-            category = self.align(category)
             message = message.replace('\n', '<br>').replace(' ', '&nbsp;')
             adding = (f'''
                     <div style="font-family: Consolas, monospace;color:{self.statusColor[level - 1]};">
@@ -64,18 +62,18 @@ class Logger:
             self.logs += adding
             self.logger_signal.emit(adding)
         else:
-            print(f'{self.statusHtml[level - 1]} | {category} | {message}')
+            print(f'{self.paddedStatus[level - 1]} | {category} | {message}')
 
     def align(self, string, maxLength=8):
-        space = '&nbsp;' if self.logger_signal is not None else ' '
+        space = ' '
         return f"{string}{space * (maxLength - len(string))}"
 
-    def colorize(self, adding):
-        for i, s in enumerate(self.status):
+    def colorize(self, adding: str):
+        for i, s in enumerate(self.paddedStatus):
             if s in adding:
                 adding = (f'''
                         <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
-                            {adding}
+                            {adding.replace(' ', '&nbsp;')}
                         </div>
                             ''')
                 self.logs += adding
@@ -106,7 +104,7 @@ class Logger:
         """
         self.__out__(category, message, 3)
 
-    def skipped(self, category: str, message: str) -> None:
+    def warning(self, category: str, message: str) -> None:
         """
         :param message: log message
 
@@ -114,7 +112,7 @@ class Logger:
         """
         self.__out__(category, message, 4)
 
-    def warning(self, category: str, message: str) -> None:
+    def skipped(self, category: str, message: str) -> None:
         """
         :param message: log message
 
@@ -159,6 +157,3 @@ class Logger:
                          '</div>', raw_print=True)
         else:
             print('--------------------------------------------------------------------')
-
-
-logger = Logger()
