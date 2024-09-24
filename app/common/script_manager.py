@@ -55,7 +55,7 @@ class ScriptManager(QObject):
 
     def stop(self):
         if self._process is not None:
-            self._process.terminate()
+            self._process.kill()
 
     def processFinished(self):
         """Slot called when the process finishes."""
