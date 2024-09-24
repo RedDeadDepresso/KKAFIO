@@ -6,6 +6,7 @@ import subprocess
 import time
 from pathlib import Path
 from util.logger import logger
+from typing import Union, Literal
 
 
 class FileManager:
@@ -13,7 +14,7 @@ class FileManager:
     def __init__(self, config):
         self.config = config
 
-    def find_all_files(self, directory):
+    def find_all_files(self, directory: Union[Path, str]) -> tuple[Path, int, str]:
         """Find all files in the given directory."""
         directory = Path(directory)
         file_list = []
@@ -33,9 +34,9 @@ class FileManager:
         archive_list.sort(key=lambda x: x[1])
         return file_list, archive_list
     
-    def copy_and_paste(self, type, source_path, destination_folder):
+    def copy_and_paste(self, type: str, source_path: Union[Path, str], destination_folder: Union[str, Path]):
         """Copy file from source to destination, handling file conflicts."""
-        source_path = Path(source_path[0])
+        source_path = Path(source_path)
         destination_folder = Path(destination_folder)
 
         base_name = source_path.name
@@ -76,22 +77,22 @@ class FileManager:
         except Exception as e:
             logger.error(type, f"An error occurred: {e}")
 
-    def find_and_remove(self, type, source_path, destination_folder_path):
+    def find_and_remove(self, file_type: str, source_path: Union[str, Path], destination_folder: Union[str, Path]):
         """Remove file if it exists at the destination."""
-        source_path = Path(source_path[0])
-        destination_folder_path = Path(destination_folder_path)
+        source_path = Path(source_path)
+        destination_folder = Path(destination_folder)
 
         base_name = source_path.name
-        destination_path = destination_folder_path / base_name
+        destination_path = destination_folder / base_name
 
         if destination_path.exists():
             try:
                 destination_path.unlink()
-                logger.removed(type, base_name)
+                logger.removed(file_type, base_name)
             except OSError as e:
-                logger.error(type, base_name)
+                logger.error(file_type, base_name)
 
-    def create_archive(self, folders, archive_path):
+    def create_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""
         # Specify the full path to the 7zip executable
         path_to_7zip = patoolib.util.find_program("7z")
@@ -138,7 +139,7 @@ class FileManager:
         if process.returncode not in [0, 1]:
             raise Exception()
 
-    def extract_archive(self, archive_path):
+    def extract_archive(self, archive_path: Union[Path, str]):
         """Extract the archive."""
         archive_path = Path(archive_path)
         archive_name = archive_path.name

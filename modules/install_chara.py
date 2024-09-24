@@ -1,6 +1,6 @@
 from pathlib import Path
-import codecs
 from util.logger import logger
+from typing import Optional
 
 
 class InstallChara:
@@ -15,8 +15,8 @@ class InstallChara:
         self.game_path = self.config.game_path
         self.input_path = Path(self.config.install_chara["InputPath"])  # Using Path for input path
 
-    def resolve_png(self, image_path):        
-        with codecs.open(image_path[0], "rb") as card:
+    def resolve_png(self, image_path: Path):        
+        with image_path.open("rb") as card:
             data = card.read()
         if b"KoiKatuChara" in data:
             if b"KoiKatuCharaSP" in data or b"KoiKatuCharaSun" in data:
@@ -29,7 +29,7 @@ class InstallChara:
         else:
             self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
-    def run(self, folder_path=None):
+    def run(self, folder_path: Optional[Path] = None):
         if folder_path is None:
             folder_path = self.input_path
         folder_path = Path(folder_path)
@@ -40,14 +40,14 @@ class InstallChara:
         file_list, archive_list = self.file_manager.find_all_files(folder_path)
         
         for file in file_list:
-            file_extension = file[2]
-            match file_extension:
+            path, size, extension = file
+            match extension:
                 case ".zipmod":
-                    self.file_manager.copy_and_paste("MODS", file, self.game_path["mods"])
+                    self.file_manager.copy_and_paste("MODS", path, self.game_path["mods"])
                 case ".png":
-                    self.resolve_png(file)
+                    self.resolve_png(path)
                 case _:
-                    basename = Path(file[0]).name
+                    basename = Path(path).name
                     logger.error("UNKNOWN", f"Cannot classify {basename}")
         logger.line()
             

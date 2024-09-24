@@ -1,4 +1,4 @@
-import codecs
+from pathlib import Path
 from util.logger import logger
 
 
@@ -14,8 +14,8 @@ class RemoveChara:
         self.game_path = self.config.game_path
         self.input_path = self.config.remove_chara["InputPath"]
 
-    def resolve_png(self, image_path):        
-        with codecs.open(image_path[0], "rb") as card:
+    def resolve_png(self, image_path: Path):        
+        with image_path.open("rb") as card:
             data = card.read()
         if b"KoiKatuChara" in data:
             if b"KoiKatuCharaSP" in data or b"KoiKatuCharaSun" in data:
@@ -32,13 +32,12 @@ class RemoveChara:
         
         file_list, archive_list = self.file_manager.find_all_files(self.input_path)
         
-        for file in file_list:
-            extension = file[2]
+        for path, size, extension in file_list:
             match extension:
                 case ".zipmod":
-                    self.file_manager.find_and_remove("MODS", file, self.game_path["mods"])
+                    self.file_manager.find_and_remove("MODS", path, self.game_path["mods"])
                 case ".png":
-                    self.resolve_png(file)
+                    self.resolve_png(path)
                 case _:
                     pass
         logger.line()
