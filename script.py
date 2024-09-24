@@ -21,39 +21,35 @@ try:
             Args:
                 config (Config): BAAuto Config instance
             """
-            logger.logger_signal = None
             self.config = config
             self.file_manager = file_manager
-            self.modules = {
-                'InstallChara': None,
-                'RemoveChara': None,
-                'CreateBackup': None,
-                'FilterConvertKKS': None,
+            self.task_to_module = {
+                'CreateBackup': CreateBackup,
+                'FilterConvertKKS': FilterConvertKKS,
+                'InstallChara': InstallChara,
+                'RemoveChara': RemoveChara,
             }
-            if self.config.install_chara['Enable']:
-                self.modules['InstallChara'] = InstallChara(self.config, self.file_manager)
-            if self.config.remove_chara['Enable']:
-                self.modules['RemoveChara'] = RemoveChara(self.config, self.file_manager)
-            if self.config.create_backup['Enable']:
-                self.modules['CreateBackup'] = CreateBackup(self.config, self.file_manager)
-            if self.config.fc_kks["Enable"]:
-                self.modules['FilterConvertKKS'] = FilterConvertKKS(self.config, self.file_manager)
 
         def run(self):
-            for task in self.config.tasks:
-                if self.modules[task]:
-                    logger.info("SCRIPT", f'Start Task: {task}')
-                    try:
-                        self.modules[task].logic_wrapper()
-                    except:
-                        logger.error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
-                        with open('traceback.log', 'a') as f:
-                            f.write(f'[{task}]\n')
-                            traceback.print_exc(None, f, True)
-                            f.write('\n')
-                        sys.exit(1)
+            for task, module in self.task_to_module.items():
+                if not self.config.config_data[task]["Enable"]:
+                    continue
+
+                logger.info("SCRIPT", f'Start Task: {task}')
+                try:
+                    module(self.config, self.file_manager).run()
+                except:
+                    logger.error("SCRIPT", f'Task error: {task}. For more info, check the traceback.log file.')
+                    self.write_traceback(task)
+                    sys.exit(1)
             sys.exit(0)
-            
+
+        def write_traceback(self, task):
+            with open('traceback.log', 'a') as f:
+                f.write(f'[{task}]\n')
+                traceback.print_exc(None, f, True)
+                f.write('\n')
+
 except:
     print(f'[ERROR] Script Initialisation Error. For more info, check the traceback.log file.')
     with open('traceback.log', 'w') as f:

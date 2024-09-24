@@ -1,11 +1,12 @@
-import os
 import shutil
 import datetime
 import patoolib
 import customtkinter
 import subprocess
 import time
+from pathlib import Path
 from util.logger import logger
+
 
 class FileManager:
 
@@ -13,32 +14,34 @@ class FileManager:
         self.config = config
 
     def find_all_files(self, directory):
+        """Find all files in the given directory."""
+        directory = Path(directory)
         file_list = []
-        compressed_file_list = []
-        compressed_extensions = [".rar", ".zip", ".7z"]
+        archive_list = []
+        archive_extensions = {".rar", ".zip", ".7z"}
 
-        for root, dirs, files in os.walk(directory):
-            for file in files:
+        for file_path in directory.rglob('*'):
+            file_size = file_path.stat().st_size
+            file_extension = file_path.suffix
 
-                file_path = os.path.join(root, file)
-                file_size = os.path.getsize(file_path)
-                _, file_extension = os.path.splitext(file_path)
-
-                if file_extension in compressed_extensions:
-                    compressed_file_list.append((file_path, file_size, file_extension))
-                else:
-                    file_list.append((file_path, file_size, file_extension))
+            if file_extension in archive_extensions:
+                archive_list.append((file_path, file_size, file_extension))
+            else:
+                file_list.append((file_path, file_size, file_extension))
 
         file_list.sort(key=lambda x: x[1])
-        compressed_file_list.sort(key=lambda x: x[1])
-        return file_list, compressed_file_list
+        archive_list.sort(key=lambda x: x[1])
+        return file_list, archive_list
     
     def copy_and_paste(self, type, source_path, destination_folder):
-        source_path = source_path[0]
-        base_name = os.path.basename(source_path)
-        destination_path = os.path.join(destination_folder, base_name)
+        """Copy file from source to destination, handling file conflicts."""
+        source_path = Path(source_path[0])
+        destination_folder = Path(destination_folder)
+
+        base_name = source_path.name
+        destination_path = destination_folder / base_name
         conflicts = self.config.install_chara["FileConflicts"]
-        already_exists =  os.path.exists(destination_path)
+        already_exists = destination_path.exists()
 
         if already_exists and conflicts == "Skip":
             logger.skipped(type, base_name)
@@ -51,26 +54,19 @@ class FileManager:
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    filename, file_extension = os.path.splitext(source_path)
-                    new_name = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
-                    new_source_path = f"{filename}_{new_name}{file_extension}"
-                    os.rename(source_path, new_source_path)
-                    source_path = new_source_path
                     logger.renamed(type, base_name)
-
-                    filename, file_extension = os.path.splitext(destination_path)
-                    destination_path = f"{filename}_{new_name}{file_extension}"
-                    break  # Exit the loop if renaming is successful
+                    new_name = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
+                    destination_path = destination_path.with_stem(f"{destination_path.stem}_{new_name}")
+                    break
                 except PermissionError:
                     if attempt < max_retries - 1:
-                        time.sleep(1)  # Wait for 1 second before retrying
+                        time.sleep(1)
                     else:
                         logger.error(type, f"Failed to rename {base_name} after {max_retries} attempts.")
                         return
 
         try:
             shutil.copy(source_path, destination_path)
-            print(f"File copied successfully from {source_path} to {destination_path}")
             if not already_exists:
                 logger.success(type, base_name)
         except FileNotFoundError:
@@ -80,70 +76,78 @@ class FileManager:
         except Exception as e:
             logger.error(type, f"An error occurred: {e}")
 
-    def find_and_remove(self, type, source_path, destination_folder):
-        source_path = source_path[0]
-        base_name = os.path.basename(source_path)
-        destination_path = os.path.join(destination_folder, base_name)  
-        if os.path.exists(destination_path):
+    def find_and_remove(self, type, source_path, destination_folder_path):
+        """Remove file if it exists at the destination."""
+        source_path = Path(source_path[0])
+        destination_folder_path = Path(destination_folder_path)
+
+        base_name = source_path.name
+        destination_path = destination_folder_path / base_name
+
+        if destination_path.exists():
             try:
-                os.remove(destination_path)
+                destination_path.unlink()
                 logger.removed(type, base_name)
             except OSError as e:
                 logger.error(type, base_name)
 
     def create_archive(self, folders, archive_path):
+        """Create an archive of the given folders using 7zip."""
         # Specify the full path to the 7zip executable
         path_to_7zip = patoolib.util.find_program("7z")
         if not path_to_7zip:
             logger.error("SCRIPT", "7zip not found. Unable to create backup")
             raise Exception()
         
-        if os.path.exists(archive_path+".7z"):
-            os.remove(archive_path+".7z")
-        
-        path_to_7zip = f'"{path_to_7zip}"'
-        archive_path = f'"{archive_path}"'
+        archive_path = Path(archive_path)
+        archive_file = archive_path.with_suffix(".7z")
+
+        if archive_file.exists():
+            archive_file.unlink()
+
         exclude_folders = [
-            '"Sideloader Modpack"', 
-            '"Sideloader Modpack - Studio"',
-            '"Sideloader Modpack - KK_UncensorSelector"', 
-            '"Sideloader Modpack - Maps"', 
-            '"Sideloader Modpack - KK_MaterialEditor"',
-            '"Sideloader Modpack - Fixes"',
-            '"Sideloader Modpack - Exclusive KK KKS"',
-            '"Sideloader Modpack - Exclusive KK"',
-            '"Sideloader Modpack - Animations"'
+            "Sideloader Modpack", 
+            "Sideloader Modpack - Studio",
+            "Sideloader Modpack - KK_UncensorSelector", 
+            "Sideloader Modpack - Maps", 
+            "Sideloader Modpack - KK_MaterialEditor",
+            "Sideloader Modpack - Fixes",
+            "Sideloader Modpack - Exclusive KK KKS",
+            "Sideloader Modpack - Exclusive KK",
+            "Sideloader Modpack - Animations"
         ] 
 
         # Create a string of folder names to exclude
-        exclude_string = ''
-        for folder in exclude_folders:
-            exclude_string += f'-xr!{folder} '
+        exclude_string = ' '.join([f'-xr!"{folder}"' for folder in exclude_folders])
 
         # Create a string of folder names to include
-        include_string = ''
-        for folder in folders:
-            include_string += f'"{folder}" '
+        include_string = ' '.join([f'"{folder}"' for folder in folders])
 
         # Construct the 7zip command
-        command = f'{path_to_7zip} a -t7z {archive_path} {include_string} {exclude_string}'
+        command = f'"{path_to_7zip}" a -t7z "{archive_file}" {include_string} {exclude_string}'
+
         # Call the command
         process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Print the output
         for line in process.stdout.decode().split('\n'):
-            if line.strip() != "":
+            if line.strip():
                 logger.info("7-Zip", line)
+
         # Check the return code
         if process.returncode not in [0, 1]:
             raise Exception()
 
     def extract_archive(self, archive_path):
+        """Extract the archive."""
+        archive_path = Path(archive_path)
+        archive_name = archive_path.name
+        logger.info("ARCHIVE", f"Extracting {archive_name}")
+
+        extract_path = archive_path.with_stem(f"{archive_path.stem}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+
         try:
-            archive_name = os.path.basename(archive_path)
-            logger.info("ARCHIVE", f"Extracting {archive_name}")
-            extract_path = os.path.join(f"{os.path.splitext(archive_path)[0]}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}")
-            patoolib.extract_archive(archive_path, outdir=extract_path)
+            patoolib.extract_archive(str(archive_path), outdir=str(extract_path))
             return extract_path
         
         except patoolib.util.PatoolError as e:
@@ -153,8 +157,8 @@ class FileManager:
                     dialog = customtkinter.CTkInputDialog(text=text, title="Enter Password")
                     password = dialog.get_input() 
 
-                    if password is not None or "":
-                        patoolib.extract_archive(archive_path, outdir=extract_path, password=password)
+                    if password:
+                        patoolib.extract_archive(str(archive_path), outdir=str(extract_path), password=password)
                         return extract_path                
                     else:
                         break
@@ -162,4 +166,3 @@ class FileManager:
                     text = f"Wrong password or {archive_name} is corrupted. Please enter password again or click Cancel"
 
             logger.skipped("ARCHIVE", archive_name)
-

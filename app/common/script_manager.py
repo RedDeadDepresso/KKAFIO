@@ -1,5 +1,6 @@
-from PySide6.QtCore import QThread, QProcess, Signal, QObject
 import os
+from PySide6.QtCore import QProcess, Signal, QObject
+
 
 class ScriptManager(QObject):
     def __init__(self, signalBus):

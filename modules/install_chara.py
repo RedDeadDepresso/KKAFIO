@@ -1,40 +1,43 @@
-import os
+from pathlib import Path
 import codecs
 from util.logger import logger
 
+
 class InstallChara:
     def __init__(self, config, file_manager):
-        """Initializes the Bounty module.
+        """Initializes the InstallChara module.
 
         Args:
-            config (Config): BAAuto Config instance
+            config (Config): KKAFIO Config instance
         """
         self.config = config
         self.file_manager = file_manager
         self.game_path = self.config.game_path
-        self.input_path = self.config.install_chara["InputPath"]
+        self.input_path = Path(self.config.install_chara["InputPath"])  # Using Path for input path
 
     def resolve_png(self, image_path):        
         with codecs.open(image_path[0], "rb") as card:
             data = card.read()
-        if data.find(b"KoiKatuChara") != -1:
-            if data.find(b"KoiKatuCharaSP") != -1 or data.find(b"KoiKatuCharaSun") != -1:
-                basename = os.path.basename(image_path[0])
+        if b"KoiKatuChara" in data:
+            if b"KoiKatuCharaSP" in data or b"KoiKatuCharaSun" in data:
+                basename = Path(image_path[0]).name  # Use Path's .name to get the basename
                 logger.error("CHARA", f"{basename} is a KKS card")
                 return
             self.file_manager.copy_and_paste("CHARA", image_path, self.game_path["chara"])
-        elif data.find(b"KoiKatuClothes") != -1:
-            self.file_manager.copy_and_paste("COORD",image_path, self.game_path["coordinate"])
+        elif b"KoiKatuClothes" in data:
+            self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
         else:
             self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
-    def logic_wrapper(self, folder_path=None):
+    def run(self, folder_path=None):
         if folder_path is None:
             folder_path = self.input_path
-        foldername = os.path.basename(folder_path)
+        folder_path = Path(folder_path)
+        foldername = folder_path.name
         logger.line()
         logger.info("FOLDER", foldername)
-        file_list, compressed_file_list = self.file_manager.find_all_files(folder_path)
+        
+        file_list, archive_list = self.file_manager.find_all_files(folder_path)
         
         for file in file_list:
             file_extension = file[2]
@@ -44,14 +47,11 @@ class InstallChara:
                 case ".png":
                     self.resolve_png(file)
                 case _:
-                    basename = os.path.basename(file[0])
-                    logger.error("UKNOWN", f"Cannot classify {basename}")
+                    basename = Path(file[0]).name
+                    logger.error("UNKNOWN", f"Cannot classify {basename}")
         logger.line()
             
-        for compressed in compressed_file_list:
-            extract_path = self.file_manager.extract_archive(compressed[0])
+        for archive in archive_list:
+            extract_path = self.file_manager.extract_archive(archive[0])
             if extract_path is not None:
-                self.logic_wrapper(extract_path)
-
-
-    
+                self.run(extract_path)

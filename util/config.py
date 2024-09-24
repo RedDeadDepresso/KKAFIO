@@ -1,7 +1,8 @@
 import sys
 import json
-import os
+from pathlib import Path
 from util.logger import logger
+
 
 class Config:
     def __init__(self, config_file):
@@ -10,15 +11,12 @@ class Config:
         self.ok = False
         self.initialized = False
         self.config_data = None
-        self.changed = False
         self.read()
 
     def read(self):
-        backup_config = self._deepcopy_dict(self.__dict__)
-
         try:
-            with open(self.config_file, 'r') as json_file:
-                self.config_data = json.load(json_file)
+            with open(self.config_file, 'r') as f:
+                self.config_data = json.load(f)
         except FileNotFoundError:
             logger.error("SCRIPT", f"Config file '{self.config_file}' not found.")
             sys.exit(1)
@@ -31,60 +29,54 @@ class Config:
         if self.ok and not self.initialized:
             logger.info("SCRIPT", "Starting KKAFIO!")
             self.initialized = True
-            self.changed = True
         elif not self.ok and not self.initialized:
             logger.error("SCRIPT", "Invalid config. Please check your config file.")
             sys.exit(1)
-        elif not self.ok and self.initialized:
-            logger.warning("SCRIPT", "Config change detected, but with problems. Rolling back config.")
-            self._rollback_config(backup_config)
-        elif self.ok and self.initialized:
-            if backup_config != self.__dict__:
-                logger.warning("SCRIPT", "Config change detected. Hot-reloading.")
-                self.changed = True
 
     def validate(self):
         logger.info("SCRIPT", "Validating config")
         self.ok = True
-        self.tasks = ["CreateBackup", "FilterConvertKKS", "InstallChara", "RemoveChara"]
-        self.create_gamepath()
+        self.validate_gamepath()
+        self.validate_tasks()
 
-        for task in self.tasks:
-            if self.config_data[task]["Enable"]:
-                if "InputPath" in self.config_data[task]:
-                    path = self.config_data[task]["InputPath"]
-                elif "OutputPath" in self.config_data[task]:
-                    path = self.config_data[task]["OutputPath"]
-                if not os.path.exists(path):
-                    logger.error("SCRIPT", f"Path invalid for task {task}")
-                    raise Exception()
-                
-        self.install_chara = self.config_data.get("InstallChara", {})
-        self.create_backup = self.config_data.get("CreateBackup", {})
-        self.remove_chara = self.config_data.get("RemoveChara", {})
-        self.fc_kks = self.config_data.get("FilterConvertKKS", {})
-
-    def create_gamepath(self):
-        base = self.config_data["Core"]["GamePath"] 
+    def validate_gamepath(self):
+        base = Path(self.config_data["Core"]["GamePath"])
         self.game_path = {
             "base": base,
-            "UserData": os.path.join(base, "UserData"),
-            "BepInEx": os.path.join(base, "BepInEx"),
-            "mods": os.path.join(base, "mods"),
-            "chara": os.path.join(base, "UserData\\chara\\female"),
-            "coordinate": os.path.join(base, "UserData\\coordinate"),
-            "Overlays": os.path.join(base, "UserData\\Overlays")
-            }
+            "UserData": base / "UserData",
+            "BepInEx": base / "BepInEx",
+            "mods": base / "mods",
+            "chara": base / "UserData" / "chara" / "female",
+            "coordinate": base / "UserData" / "coordinate",
+            "Overlays": base / "UserData" / "Overlays"
+        }
         
         for path in self.game_path.values():
-            if not os.path.exists(path):
+            if not path.exists():
                 logger.error("SCRIPT", "Game path not valid")
-                raise Exception()
-            
-    def _deepcopy_dict(self, dictionary):
-        from copy import deepcopy
-        return deepcopy(dictionary)
+                raise Exception(f"Game path not valid: {path}")
 
-    def _rollback_config(self, config):
-        for key, value in config.items():
-            setattr(self, key, value)
+    def validate_tasks(self):
+        tasks = ["CreateBackup", "FilterConvertKKS", "InstallChara", "RemoveChara"]
+
+        for task in tasks:
+            task_config = self.config_data[task]
+            if not task_config["Enable"]:
+                continue
+
+            if "InputPath" in task_config:
+                path_obj = Path(task_config["InputPath"])
+                task_config["InputPath"] = path_obj
+                
+            elif "OutputPath" in task_config:
+                path_obj = Path(task_config["OutputPath"])
+                task_config["OutputPath"] = path_obj
+
+            if not path_obj.exists():
+                logger.error("SCRIPT", f"Path invalid for task {task}")
+                raise Exception()
+
+        self.create_backup = self.config_data["CreateBackup"]
+        self.fc_kks = self.config_data["FilterConvertKKS"]
+        self.install_chara = self.config_data["InstallChara"]
+        self.remove_chara = self.config_data["RemoveChara"]

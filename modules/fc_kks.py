@@ -1,43 +1,43 @@
-import os
-import re as regex
-import codecs
 import shutil
+from pathlib import Path
 from util.logger import logger
+
 
 class FilterConvertKKS:
     def __init__(self, config, file_manager):
-        """Initializes the Bounty module.
+        """Initializes the FilterConvertKKS module.
 
         Args:
-            config (Config): BAAuto Config instance
+            config (Config): KKAFIO Config instance
         """
         self.config = config
         self.file_manager = file_manager
         self.convert = self.config.fc_kks["Convert"]
 
     def get_list(self, folder_path):
-        new_list = []
-        for root, dirs, files in os.walk(folder_path):
-            for filename in files:
-                if regex.match(r".*(\.png)$", filename):
-                    new_list.append(os.path.join(root, filename))
-            return new_list
+        """Get list of PNG files in the folder."""
+        folder = Path(folder_path)
+        return [str(file) for file in folder.rglob("*.png")]
 
     def check_png(self, card_path):
-        with codecs.open(card_path, "rb") as card:
+        """Check the PNG file and return its type."""
+        card_path = Path(card_path)
+        with card_path.open("rb") as card:
             data = card.read()
             card_type = 0
-            if data.find(b"KoiKatuChara") != -1:
+            if b"KoiKatuChara" in data:
                 card_type = 1
-                if data.find(b"KoiKatuCharaSP") != -1:
+                if b"KoiKatuCharaSP" in data:
                     card_type = 2
-                elif data.find(b"KoiKatuCharaSun") != -1:
+                elif b"KoiKatuCharaSun" in data:
                     card_type = 3
             logger.info(f"[{card_type}]", f"{card_path}")
         return card_type
 
     def convert_kk(self, card_name, card_path, destination_path):
-        with codecs.open(card_path, mode="rb") as card:
+        """Convert KKS card to KK."""
+        card_path = Path(card_path)  # Convert to Path object
+        with card_path.open(mode="rb") as card:
             data = card.read()
 
             replace_list = [
@@ -46,20 +46,20 @@ class FilterConvertKKS:
                 [b"version\xa50.0.6\xa3sex", b"version\xa50.0.5\xa3sex"],
             ]
 
-            for text in replace_list:
-                data = data.replace(text[0], text[1])
+            for old_text, new_text in replace_list:
+                data = data.replace(old_text, new_text)
 
-            new_file_path = os.path.normpath(os.path.join(destination_path, f"KKS2KK_{card_name}"))
-            # print(f"new_file_path {new_file_path}")
+            new_file_path = Path(destination_path) / f"KKS2KK_{card_name}"
 
-            with codecs.open(new_file_path, "wb") as new_card:
+            with new_file_path.open("wb") as new_card:
                 new_card.write(data)
 
-    def logic_wrapper(self):
-        path = self.config.fc_kks["InputPath"]
+    def run(self):
+        """Main logic for processing the KKS to KK conversion."""
+        path = Path(self.config.fc_kks["InputPath"])
         kks_card_list = []
-        kks_folder = "_KKS_card_"
-        kks_folder2 = "_KKS_to_KK_"
+        kks_folder = path / "_KKS_card_"
+        kks_folder2 = path / "_KKS_to_KK_"
 
         png_list = self.get_list(path)
 
@@ -70,38 +70,34 @@ class FilterConvertKKS:
                 if self.check_png(png) == 3:
                     kks_card_list.append(png)
         else:
-            logger.success("SCRIPT", f"no PNG found")
+            logger.success("SCRIPT", "No PNG files found")
             return
 
         count = len(kks_card_list)
         if count > 0:
             print(kks_card_list)
 
-            target_folder = os.path.normpath(os.path.join(path, kks_folder))
-            target_folder2 = os.path.normpath(os.path.join(path, kks_folder2))
-            if not os.path.isdir(target_folder):
-                os.mkdir(target_folder)
+            # Create target directories if they don't exist
+            kks_folder.mkdir(exist_ok=True)
 
             if self.convert:
                 logger.info("SCRIPT", f"Conversion to KK is [{self.convert}]")
-                if not os.path.isdir(target_folder2):
-                    os.mkdir(target_folder2)
+                kks_folder2.mkdir(exist_ok=True)
 
             for card_path in kks_card_list:
-                source = card_path
-                card = os.path.basename(card_path)
-                target = os.path.normpath(os.path.join(target_folder, card))
+                source = Path(card_path)
+                target = kks_folder / source.name
 
-                # copy & convert before move
+                # Copy & convert before moving
                 if self.convert:
-                    self.convert_kk(card, source, target_folder2)
+                    self.convert_kk(source.name, source, kks_folder2)
 
-                # move file
-                shutil.move(source, target)
+                # Move file
+                shutil.move(str(source), str(target))
 
             if self.convert:
-                logger.success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder, converted and save to [{kks_folder2}] folder")
+                logger.success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder, converted and saved to [{kks_folder2}] folder")
             else:
                 logger.success("SCRIPT", f"[{count}] cards moved to [{kks_folder}] folder")
         else:
-            logger.success("SCRIPT", f"no KKS card found")
+            logger.success("SCRIPT: No KKS cards found")
