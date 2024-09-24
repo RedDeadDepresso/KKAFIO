@@ -99,3 +99,4 @@ class FolderSettingCard(SettingCard):
             self, self.tr("Choose folder"), "./")
         if not folder or cfg.get(self.configItem) == folder:
             return
+        self.lineEdit.setText(folder)
