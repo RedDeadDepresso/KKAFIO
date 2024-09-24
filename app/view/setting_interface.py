@@ -14,6 +14,7 @@ from ..common.config import cfg, HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR, 
 from ..components.line_edit_card import LineEditSettingCard
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
+from ..components.folder_setting_card import FolderSettingCard
 
 
 class SettingInterface(ScrollArea):
@@ -30,23 +31,21 @@ class SettingInterface(ScrollArea):
         # core
         self.coreGroup = SettingCardGroup(
             self.tr("Core"), self.scrollWidget)
-        self.gamePathCard = PushSettingCard(
-            self.tr('Choose folder'),
+        self.gamePathCard = FolderSettingCard(
+            cfg.gamePath,
             FIF.GAME,
             self.tr("Koikatsu directory"),
-            cfg.get(cfg.gamePath),
-            self.coreGroup
+            parent=self.coreGroup
         )
         
         # createBackup
         self.backupGroup = SettingCardGroup(
             self.tr("Create Backup"), self.scrollWidget)
-        self.backupPathCard = PushSettingCard(
-            self.tr('Choose folder'),
+        self.backupPathCard = FolderSettingCard(
+            cfg.backupPath,
             FIF.ZIP_FOLDER,
             self.tr("Backup directory"),
-            cfg.get(cfg.backupPath),
-            self.backupGroup
+            parent=self.backupGroup
         )
         self.filenameCard = LineEditSettingCard(
             cfg.filename,
@@ -80,12 +79,11 @@ class SettingInterface(ScrollArea):
         # fckks
         self.fckksGroup = SettingCardGroup(
             self.tr("Filter & Convert"), self.scrollWidget)
-        self.fckksPathCard = PushSettingCard(
-            self.tr('Choose folder'),
+        self.fckksPathCard = FolderSettingCard(
+            cfg.fccksPath,
             FIF.DOWNLOAD,
-            self.tr("Input directory"),
-            cfg.get(cfg.fccksPath),
-            self.fckksGroup
+            self.tr("Backup directory"),
+            parent=self.fckksGroup
         )
         self.convertCard = SwitchSettingCard(
             FIF.UPDATE,
@@ -98,12 +96,11 @@ class SettingInterface(ScrollArea):
         # installChara
         self.installGroup = SettingCardGroup(
             self.tr("Install Chara"), self.scrollWidget)
-        self.installPathCard = PushSettingCard(
-            self.tr('Choose folder'),
+        self.installPathCard = FolderSettingCard(
+            cfg.installPath,
             FIF.DOWNLOAD,
             self.tr("Input directory"),
-            cfg.get(cfg.installPath),
-            self.installGroup,
+            parent=self.installGroup
         )
         self.fileConflictsCard = ComboBoxSettingCard(
             cfg.fileConflicts,
@@ -124,12 +121,11 @@ class SettingInterface(ScrollArea):
         # removeChara
         self.removeGroup = SettingCardGroup(
             self.tr("Remove Chara"), self.scrollWidget)
-        self.removePathCard = PushSettingCard(
-            self.tr('Choose folder'),
+        self.removePathCard = FolderSettingCard(
+            cfg.removePath,
             FIF.DOWNLOAD,
             self.tr("Input directory"),
-            cfg.get(cfg.removePath),
-            self.removeGroup,
+            parent=self.removeGroup
         )
     
         # personalization
@@ -181,53 +177,53 @@ class SettingInterface(ScrollArea):
         )
 
         # material
-        self.materialGroup = SettingCardGroup(
-            self.tr('Material'), self.scrollWidget)
-        self.blurRadiusCard = RangeSettingCard(
-            cfg.blurRadius,
-            FIF.ALBUM,
-            self.tr('Acrylic blur radius'),
-            self.tr('The greater the radius, the more blurred the image'),
-            self.materialGroup
-        )
+        # self.materialGroup = SettingCardGroup(
+        #     self.tr('Material'), self.scrollWidget)
+        # self.blurRadiusCard = RangeSettingCard(
+        #     cfg.blurRadius,
+        #     FIF.ALBUM,
+        #     self.tr('Acrylic blur radius'),
+        #     self.tr('The greater the radius, the more blurred the image'),
+        #     self.materialGroup
+        # )
 
         # update software
-        self.updateSoftwareGroup = SettingCardGroup(
-            self.tr("Software update"), self.scrollWidget)
-        self.updateOnStartUpCard = SwitchSettingCard(
-            FIF.UPDATE,
-            self.tr('Check for updates when the application starts'),
-            self.tr('The new version will be more stable and have more features'),
-            configItem=cfg.checkUpdateAtStartUp,
-            parent=self.updateSoftwareGroup
-        )
+        # self.updateSoftwareGroup = SettingCardGroup(
+        #     self.tr("Software update"), self.scrollWidget)
+        # self.updateOnStartUpCard = SwitchSettingCard(
+        #     FIF.UPDATE,
+        #     self.tr('Check for updates when the application starts'),
+        #     self.tr('The new version will be more stable and have more features'),
+        #     configItem=cfg.checkUpdateAtStartUp,
+        #     parent=self.updateSoftwareGroup
+        # )
 
         # application
-        self.aboutGroup = SettingCardGroup(self.tr('About'), self.scrollWidget)
-        self.helpCard = HyperlinkCard(
-            HELP_URL,
-            self.tr('Open help page'),
-            FIF.HELP,
-            self.tr('Help'),
-            self.tr(
-                'Discover new features and learn useful tips about PyQt-Fluent-Widgets'),
-            self.aboutGroup
-        )
-        self.feedbackCard = PrimaryPushSettingCard(
-            self.tr('Provide feedback'),
-            FIF.FEEDBACK,
-            self.tr('Provide feedback'),
-            self.tr('Help us improve PyQt-Fluent-Widgets by providing feedback'),
-            self.aboutGroup
-        )
-        self.aboutCard = PrimaryPushSettingCard(
-            self.tr('Check update'),
-            FIF.INFO,
-            self.tr('About'),
-            '© ' + self.tr('Copyright') + f" {YEAR}, {AUTHOR}. " +
-            self.tr('Version') + " " + VERSION,
-            self.aboutGroup
-        )
+        # self.aboutGroup = SettingCardGroup(self.tr('About'), self.scrollWidget)
+        # self.helpCard = HyperlinkCard(
+        #     HELP_URL,
+        #     self.tr('Open help page'),
+        #     FIF.HELP,
+        #     self.tr('Help'),
+        #     self.tr(
+        #         'Discover new features and learn useful tips about PyQt-Fluent-Widgets'),
+        #     self.aboutGroup
+        # )
+        # self.feedbackCard = PrimaryPushSettingCard(
+        #     self.tr('Provide feedback'),
+        #     FIF.FEEDBACK,
+        #     self.tr('Provide feedback'),
+        #     self.tr('Help us improve PyQt-Fluent-Widgets by providing feedback'),
+        #     self.aboutGroup
+        # )
+        # self.aboutCard = PrimaryPushSettingCard(
+        #     self.tr('Check update'),
+        #     FIF.INFO,
+        #     self.tr('About'),
+        #     '© ' + self.tr('Copyright') + f" {YEAR}, {AUTHOR}. " +
+        #     self.tr('Version') + " " + VERSION,
+        #     self.aboutGroup
+        # )
 
         self.__initWidget()
 
@@ -277,13 +273,13 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.languageCard)
 
-        self.materialGroup.addSettingCard(self.blurRadiusCard)
+        # self.materialGroup.addSettingCard(self.blurRadiusCard)
 
-        self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
+        # self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
 
-        self.aboutGroup.addSettingCard(self.helpCard)
-        self.aboutGroup.addSettingCard(self.feedbackCard)
-        self.aboutGroup.addSettingCard(self.aboutCard)
+        # self.aboutGroup.addSettingCard(self.helpCard)
+        # self.aboutGroup.addSettingCard(self.feedbackCard)
+        # self.aboutGroup.addSettingCard(self.aboutCard)
 
         # add setting card group to layout
         self.expandLayout.setSpacing(28)
@@ -294,9 +290,9 @@ class SettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.installGroup)
         self.expandLayout.addWidget(self.removeGroup)
         self.expandLayout.addWidget(self.personalGroup)
-        self.expandLayout.addWidget(self.materialGroup)
-        self.expandLayout.addWidget(self.updateSoftwareGroup)
-        self.expandLayout.addWidget(self.aboutGroup)
+        # self.expandLayout.addWidget(self.materialGroup)
+        # self.expandLayout.addWidget(self.updateSoftwareGroup)
+        # self.expandLayout.addWidget(self.aboutGroup)
 
     def __showRestartTooltip(self):
         """ show restart tooltip """
@@ -307,29 +303,9 @@ class SettingInterface(ScrollArea):
             parent=self
         )
 
-    def __onFolderCardClicked(self, item, card):
-        """ download folder card clicked slot """
-        folder = QFileDialog.getExistingDirectory(
-            self, self.tr("Choose folder"), "./")
-        if not folder or cfg.get(item) == folder:
-            return
-
-        cfg.set(item, folder)
-        card.setContent(folder)
-
     def __connectSignalToSlot(self):
         """ connect signal to slot """
         cfg.appRestartSig.connect(self.__showRestartTooltip)
-        # gamePath
-        self.gamePathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.gamePath, self.gamePathCard))
-        # backup
-        self.backupPathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.backupPath, self.backupPathCard))
-        # fckks 
-        self.fckksPathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.fccksPath, self.fckksPathCard))
-        # install
-        self.installPathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.installPath, self.installPathCard))
-        # remove                                     
-        self.removePathCard.clicked.connect(lambda: self.__onFolderCardClicked(cfg.removePath, self.removePathCard))
 
         # personalization
         self.themeCard.optionChanged.connect(lambda ci: setTheme(cfg.get(ci)))
@@ -337,8 +313,8 @@ class SettingInterface(ScrollArea):
         self.micaCard.checkedChanged.connect(signalBus.micaEnableChanged)
 
         # about
-        self.feedbackCard.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
+        # self.feedbackCard.clicked.connect(
+        #     lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
         
     def scrollToGroup(self, group):
         self.verticalScrollBar().setValue(group.y())
