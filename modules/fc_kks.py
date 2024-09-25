@@ -28,7 +28,7 @@ class FilterConvertKKS:
         folder = Path(folder_path)
         return [str(file) for file in folder.rglob("*.png")]
 
-    def check_png(self, card_path: Path) -> Literal[1, 2, 3]:
+    def check_png(self, card_path: Path) -> CardType:
         """Check the PNG file and return its type."""
         card_path = Path(card_path)
         with card_path.open("rb") as card:
