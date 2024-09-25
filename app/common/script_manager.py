@@ -1,5 +1,5 @@
 import os
-from PySide6.QtCore import QProcess, Signal, QObject
+from PySide6.QtCore import QProcess, Signal, QObject, Slot
 
 
 class ScriptManager(QObject):
@@ -17,6 +17,7 @@ class ScriptManager(QObject):
         self.signalBus.startSignal.connect(self.start)
         self.signalBus.stopSignal.connect(self.stop)
 
+    @Slot()
     def start(self):
         if self._process is not None:
             self.stop()
@@ -39,6 +40,7 @@ class ScriptManager(QObject):
             else:
                 self._process.start(args[0])
 
+    @Slot()
     def readOutput(self):
         if self._process is not None:
             while self._process.canReadLine():
@@ -48,16 +50,19 @@ class ScriptManager(QObject):
                 else:
                     self.logger.colorize(line)
 
+    @Slot()
     def readError(self):
         if self._process is not None:
             while self._process.canReadLine():
                 error_line = str(self._process.readLine(), encoding='utf-8').strip()
                 self.logger.error(f"Error: {error_line}", color='red')
 
+    @Slot()
     def stop(self):
         if self._process is not None:
             self._process.kill()
 
+    @Slot()
     def processFinished(self):
         """Slot called when the process finishes."""
         self._process = None
