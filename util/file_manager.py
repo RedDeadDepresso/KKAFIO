@@ -1,7 +1,6 @@
 import shutil
 import datetime
 import patoolib
-import customtkinter
 import subprocess
 import time
 from pathlib import Path
@@ -140,30 +139,36 @@ class FileManager:
             raise Exception()
 
     def extract_archive(self, archive_path: Union[Path, str]):
+        from app.components.password_dialog import password_dialog
         """Extract the archive."""
         archive_path = Path(archive_path)
         archive_name = archive_path.name
         logger.info("ARCHIVE", f"Extracting {archive_name}")
 
-        extract_path = archive_path.with_stem(f"{archive_path.stem}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+        extract_path = archive_path.with_name(f"{archive_path.stem}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}")
 
         try:
             patoolib.extract_archive(str(archive_path), outdir=str(extract_path))
             return extract_path
-        
-        except patoolib.util.PatoolError as e:
-            text = f"There is an error with the archive {archive_name} but it is impossible to detect the cause. Maybe it requires a password?"
-            while self.config.install_chara["Password"] == "Request Password":
+        except:
+            
+            text = f"There is an error with the archive {archive_name}, but it is impossible to detect the cause. Maybe it requires a password?"
+            while True:
                 try:
-                    dialog = customtkinter.CTkInputDialog(text=text, title="Enter Password")
-                    password = dialog.get_input() 
-
-                    if password:
-                        patoolib.extract_archive(str(archive_path), outdir=str(extract_path), password=password)
-                        return extract_path                
-                    else:
+                    password = password_dialog('Enter Password', text)
+                    
+                    if not password:
                         break
-                except:
-                    text = f"Wrong password or {archive_name} is corrupted. Please enter password again or click Cancel"
-
-            logger.skipped("ARCHIVE", archive_name)
+                    
+                    patoolib.extract_archive(str(archive_path), outdir=str(extract_path), password=password)
+                    return extract_path
+                
+                except patoolib.util.PatoolError as e:
+                    text = f"Wrong password or {archive_name} is corrupted. Please enter password again or click Cancel."
+                    print(f"Error: {str(e)}")
+                
+                except Exception as e:
+                    print(f"An unexpected error occurred: {str(e)}")
+                    break
+                
+                logger.skipped("ARCHIVE", archive_name)
