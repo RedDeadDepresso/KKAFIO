@@ -1,7 +1,7 @@
 import os
-import pathlib
 import subprocess
 
+from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QFileDialog
@@ -49,7 +49,7 @@ class FolderSettingCard(SettingCard):
         self.configItem = configItem
         self.lineEdit = FolderLineEdit()
         self.lineEdit.setText(configItem.value)
-        
+
         self.__initCommandBar()
         self.__initLayout()
         self.__connectSignalToSlot()
@@ -67,9 +67,8 @@ class FolderSettingCard(SettingCard):
     def __initLayout(self):
         self.setFixedHeight(70)
         self.vBoxLayout.addWidget(self.lineEdit)
-        self.hBoxLayout.setStretch(2, 10)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.commandBar, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.setStretch(2, 70)
+        self.hBoxLayout.addWidget(self.commandBar, 0, Qt.AlignBottom | Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(16)
 
     def __connectSignalToSlot(self):
@@ -81,7 +80,7 @@ class FolderSettingCard(SettingCard):
             self.lineEdit.setValid(True)
             return
         
-        path = pathlib.Path(text)
+        path = Path(text)
         if path.is_absolute() and path.is_dir() and path.exists():
             cfg.set(self.configItem, text)
             self.lineEdit.setValid(True)
