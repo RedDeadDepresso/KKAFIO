@@ -13,14 +13,14 @@ class InstallChara:
         self.config = config
         self.file_manager = file_manager
         self.game_path = self.config.game_path
-        self.input_path = Path(self.config.install_chara["InputPath"])  # Using Path for input path
+        self.input_path = Path(self.config.install_chara["InputPath"])
 
     def resolve_png(self, image_path: Path):        
         with image_path.open("rb") as card:
             data = card.read()
         if b"KoiKatuChara" in data:
             if b"KoiKatuCharaSP" in data or b"KoiKatuCharaSun" in data:
-                basename = Path(image_path[0]).name  # Use Path's .name to get the basename
+                basename = Path(image_path).name
                 logger.error("CHARA", f"{basename} is a KKS card")
                 return
             self.file_manager.copy_and_paste("CHARA", image_path, self.game_path["chara"])
