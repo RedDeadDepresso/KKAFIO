@@ -50,7 +50,7 @@ class SettingInterface(ScrollArea):
         self.filenameCard = LineEditSettingCard(
             cfg.filename,
             FIF.ZIP_FOLDER, 
-            self.tr('Name for the backup zip file'),
+            self.tr('Name for the backup 7-zip file'),
             None,
             parent=self.backupGroup
         )

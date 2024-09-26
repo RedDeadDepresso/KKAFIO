@@ -127,16 +127,18 @@ class FileManager:
         command = f'"{path_to_7zip}" a -t7z "{archive_file}" {include_string} {exclude_string}'
 
         # Call the command
-        process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         # Print the output
-        for line in process.stdout.decode().split('\n'):
-            if line.strip():
-                logger.info("7-Zip", line)
+        while process.poll() is None:
+            for line in process.stdout:
+                if line.strip():
+                    logger.info("7-Zip", line)
 
         # Check the return code
         if process.returncode not in [0, 1]:
-            raise Exception()
+            logger.error("7-Zip", f"Exited with return code: {process.returncode}")
+            raise Exception(f"7-zip exited with return code: {process.returncode}")
 
     def extract_archive(self, archive_path: Union[Path, str]):
         from app.components.password_dialog import password_dialog
