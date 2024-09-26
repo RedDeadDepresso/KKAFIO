@@ -8,29 +8,41 @@ from util.logger import logger
 from typing import Union, Literal
 
 
-class FileManager:
+FileEntry = tuple[Path, int, str]
 
+
+class FileManager:
     def __init__(self, config):
         self.config = config
 
-    def find_all_files(self, directory: Union[Path, str]) -> tuple[Path, int, str]:
-        """Find all files in the given directory."""
+    def find_all_files(self, directory: Union[Path, str]) -> tuple[list[FileEntry], list[FileEntry]]:
+        """Find all files and archive files in the given directory.
+
+        Returns:
+            Tuple containing:
+            - A list of regular files (path, size, extension)
+            - A list of archive files (path, size, extension)
+        """
         directory = Path(directory)
-        file_list = []
-        archive_list = []
+        file_list: list[FileEntry] = []
+        archive_list: list[FileEntry] = []
         archive_extensions = {".rar", ".zip", ".7z"}
 
-        for file_path in directory.rglob('*'):
-            file_size = file_path.stat().st_size
-            file_extension = file_path.suffix
+        for file_path in directory.glob('**/*'):
+            if file_path.is_file():
+                file_size = file_path.stat().st_size
+                file_extension = file_path.suffix
 
-            if file_extension in archive_extensions:
-                archive_list.append((file_path, file_size, file_extension))
-            else:
-                file_list.append((file_path, file_size, file_extension))
+                file_entry: FileEntry = (file_path, file_size, file_extension)
 
+                if file_extension in archive_extensions:
+                    archive_list.append(file_entry)
+                else:
+                    file_list.append(file_entry)
+                    
         file_list.sort(key=lambda x: x[1])
         archive_list.sort(key=lambda x: x[1])
+
         return file_list, archive_list
     
     def copy_and_paste(self, type: str, source_path: Union[Path, str], destination_folder: Union[str, Path]):
