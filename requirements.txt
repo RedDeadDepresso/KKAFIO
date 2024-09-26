@@ -1,3 +1,12 @@
-customtkinter
-patool
-
+auto-py-to-exe==2.44.1
+darkdetect==0.8.0
+patool==3.0.0
+PySide6==6.7.2
+PySide6-Fluent-Widgets==1.6.5
+PySide6_Addons==6.7.2
+PySide6_Essentials==6.7.2
+PySideSix-Frameless-Window==0.4.3
+pywin32==306
+setuptools==75.1.0
+shiboken6==6.7.2
+wheel==0.44.0
