@@ -1,6 +1,6 @@
 # KKAFIO: Koikatsu Auto File I/O
 <p align="center">
-  <img width="720" alt="Screenshot 2024-09-20 025946" src="https://github.com/user-attachments/assets/cd98f504-6886-4011-9ccf-ba440e7b5080">
+<img width="720" alt="Screenshot 2024-09-26 023513" src="https://github.com/user-attachments/assets/65da975b-7712-4723-ad8c-c62fd62773ba">
 </p>
 
 ## Features
@@ -35,4 +35,5 @@ Here are some known issues with KKAFIO:
 ## Acknowledgment
 I'd like to express my gratitude to the following individuals, listed in no particular order:
 - [zhiyiYo](https://github.com/zhiyiYo) for providing [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) allowing me to make the GUI.
-- [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) For making KK_SunshineCardFilter open-source allowing me to implement it as a module. Also, they provided the method to distinguish chara and coordinate.
+- [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for making KK_SunshineCardFilter open-source allowing me to implement it as a module. Also, they provided the method to distinguish chara and coordinate.
+- [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for Ryuko Matoi card and image.
