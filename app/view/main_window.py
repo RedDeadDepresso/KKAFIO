@@ -10,9 +10,11 @@ from qfluentwidgets import FluentIcon as FIF
 
 from .logger_interface import LoggerInterface
 from .setting_interface import SettingInterface
+from ..common.notification import notification
 from ..common.config import ZH_SUPPORT_URL, EN_SUPPORT_URL, cfg
 from ..common.signal_bus import signalBus
 from ..common import resource
+from ..components.clear_messagebox import ClearMessageBox
 from ..components.navigation_checkbox import NavigationCheckBox
 from ..components.navigation_action_buttons import NavigationActionButtons
 from ..components.navigation_logo import NavigationLogoWidget
@@ -67,6 +69,10 @@ class MainWindow(FluentWindow):
             self.loggerInterface, FIF.CALENDAR, self.tr('Log'), NavigationItemPosition.BOTTOM)
         self.addSubInterface(
             self.settingInterface, FIF.SETTING, self.tr('Settings'), NavigationItemPosition.BOTTOM)
+        
+        notification.mainWindow = self
+        ClearMessageBox.mainWindow = self
+        
 
     def initWindow(self):
         self.resize(960, 780)

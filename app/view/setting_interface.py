@@ -34,8 +34,10 @@ class SettingInterface(ScrollArea):
         self.gamePathCard = FolderSettingCard(
             cfg.gamePath,
             FIF.GAME,
+            'Core',
             self.tr("Koikatsu directory"),
-            parent=self.coreGroup
+            parent=self.coreGroup,
+            clearable=False
         )
         
         # createBackup
@@ -44,6 +46,7 @@ class SettingInterface(ScrollArea):
         self.backupPathCard = FolderSettingCard(
             cfg.backupPath,
             FIF.ZIP_FOLDER,
+            'Create Backup',
             self.tr("Backup directory"),
             parent=self.backupGroup
         )
@@ -82,7 +85,8 @@ class SettingInterface(ScrollArea):
         self.fckksPathCard = FolderSettingCard(
             cfg.fccksPath,
             FIF.DOWNLOAD,
-            self.tr("Backup directory"),
+            'Filter & Convert',
+            self.tr("Input directory"),
             parent=self.fckksGroup
         )
         self.convertCard = SwitchSettingCard(
@@ -99,6 +103,7 @@ class SettingInterface(ScrollArea):
         self.installPathCard = FolderSettingCard(
             cfg.installPath,
             FIF.DOWNLOAD,
+            'Install Chara',
             self.tr("Input directory"),
             parent=self.installGroup
         )
@@ -124,6 +129,7 @@ class SettingInterface(ScrollArea):
         self.removePathCard = FolderSettingCard(
             cfg.removePath,
             FIF.DOWNLOAD,
+            'Remove Chara',
             self.tr("Input directory"),
             parent=self.removeGroup
         )

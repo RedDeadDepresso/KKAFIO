@@ -1,5 +1,5 @@
 import os
-from PySide6.QtCore import QProcess, Signal, QObject, Slot
+from PySide6.QtCore import QProcess, QObject, Slot
 
 
 class ScriptManager(QObject):
@@ -67,4 +67,7 @@ class ScriptManager(QObject):
         """Slot called when the process finishes."""
         self._process = None
         self.signalBus.stopSignal.emit()
+
+    def scriptRunning(self):
+        return self._process is not None
 

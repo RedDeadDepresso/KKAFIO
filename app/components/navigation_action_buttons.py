@@ -41,6 +41,7 @@ class NavigationActionButtons(QWidget):
 
         signalBus.startSignal.connect(lambda: self.startButton.setText("Stop"))
         signalBus.stopSignal.connect(lambda: self.startButton.setText("Start"))
+        signalBus.disableStartSignal.connect(lambda state: self.startButton.setDisabled(state))
 
     def onSelectAllClicked(self):
         signalBus.selectAllClicked.emit()
