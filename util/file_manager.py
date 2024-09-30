@@ -139,7 +139,7 @@ class FileManager:
         command = f'"{path_to_7zip}" a -t7z "{archive_file}" {include_string} {exclude_string}'
 
         # Call the command
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=self.config.game_path['base'])
 
         # Print the output
         while process.poll() is None:
