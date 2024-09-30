@@ -1,5 +1,27 @@
-import os
-from PySide6.QtCore import QProcess, QObject, Slot
+import json
+import psutil
+
+from pathlib import Path
+from PySide6.QtCore import QProcess, QObject, Slot, QRunnable
+
+
+class ScriptCleaner(QRunnable):
+    def __init__(self, backupInfoPath: Path) -> None:
+        super().__init__()
+        self.backupInfoPath = backupInfoPath
+
+    def run(self):
+        if self.backupInfoPath.exists():
+            try:
+                with open(self.backupInfoPath, "r") as f:
+                    backupInfo = json.load(f)
+                proc7zip = psutil.Process(backupInfo['PID'])
+                proc7zip.terminate()
+                proc7zip.wait()
+                Path(backupInfo['ArchivePath']).unlink(missing_ok=True)
+                self.backupInfoPath.unlink(missing_ok=True)
+            except Exception as e:
+                print(e)
 
 
 class ScriptManager(QObject):
@@ -7,9 +29,7 @@ class ScriptManager(QObject):
         super().__init__()
         self.signalBus = signalBus
         self.logger = signalBus.logger
-
-        self._process = None
-        self._line = '--------------------------------------------------------------------'
+        self.procScript = None
 
         self.__connectSignalToSlot()
 
@@ -19,55 +39,46 @@ class ScriptManager(QObject):
 
     @Slot()
     def start(self):
-        if self._process is not None:
+        if self.procScript is not None:
             self.stop()
         else:
-            if os.path.exists("script.exe"):
+            if Path("script.exe").exists():
                 args = ["script.exe"]
-            elif os.path.exists("script.py"):
+            elif Path("script.py").exists():
                 args = ["python", "script.py"]
             else:
                 self.logger.error("No valid script found to execute.")
                 return
 
-            self._process = QProcess(self)
-            self._process.readyReadStandardOutput.connect(self.readOutput)
-            self._process.readyReadStandardError.connect(self.readError)
-            self._process.finished.connect(self.processFinished)
+            self.procScript = QProcess(self)
+            self.procScript.readyReadStandardOutput.connect(self.readOutput)
+            self.procScript.finished.connect(self.processFinished)
 
             if len(args) > 1:
-                self._process.start(args[0], args[1:])
+                self.procScript.start(args[0], args[1:])
             else:
-                self._process.start(args[0])
+                self.procScript.start(args[0])
 
     @Slot()
     def readOutput(self):
-        if self._process is not None:
-            while self._process.canReadLine():
-                line = str(self._process.readLine(), encoding='utf-8').strip()
-                if line == self._line:
-                    self.logger.line()
-                else:
-                    self.logger.colorize(line)
-
-    @Slot()
-    def readError(self):
-        if self._process is not None:
-            while self._process.canReadLine():
-                error_line = str(self._process.readLine(), encoding='utf-8').strip()
-                self.logger.error(f"Error: {error_line}", color='red')
+        if self.procScript is not None:
+            while self.procScript.canReadLine():
+                line = str(self.procScript.readLine(), encoding='utf-8').strip()
+                self.logger.colorize(line)
 
     @Slot()
     def stop(self):
-        if self._process is not None:
-            self._process.kill()
+        if self.procScript is not None:
+            self.procScript.kill()
+            scriptCleaner = ScriptCleaner(Path('app/config/7zip.json'))
+            self.signalBus.threadPool.start(scriptCleaner)
 
     @Slot()
     def processFinished(self):
         """Slot called when the process finishes."""
-        self._process = None
+        self.procScript = None
         self.signalBus.stopSignal.emit()
 
-    def scriptRunning(self):
-        return self._process is not None
+    def scriptRunning(self) -> bool:
+        return self.procScript is not None
 

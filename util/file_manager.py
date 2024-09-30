@@ -3,6 +3,8 @@ import datetime
 import patoolib
 import subprocess
 import time
+import json
+
 from pathlib import Path
 from util.logger import logger
 from typing import Union, Literal
@@ -14,6 +16,7 @@ FileEntry = tuple[Path, int, str]
 class FileManager:
     def __init__(self, config):
         self.config = config
+        self.backup_info_path = Path('app/config/7zip.json')
 
     def find_all_files(self, directory: Union[Path, str]) -> tuple[list[FileEntry], list[FileEntry]]:
         """Find all files and archive files in the given directory.
@@ -112,10 +115,10 @@ class FileManager:
             raise Exception()
         
         archive_path = Path(archive_path)
-        archive_file = archive_path.with_suffix(".7z")
+        archive_path = archive_path.with_suffix(".7z")
 
-        if archive_file.exists():
-            archive_file.unlink()
+        if archive_path.exists():
+            archive_path.unlink()
 
         exclude_folders = [
             "Sideloader Modpack", 
@@ -136,21 +139,29 @@ class FileManager:
         include_string = ' '.join([f'"{folder}"' for folder in folders])
 
         # Construct the 7zip command
-        command = f'"{path_to_7zip}" a -t7z "{archive_file}" {include_string} {exclude_string}'
+        command = f'"{path_to_7zip}" a -t7z "{archive_path}" {include_string} {exclude_string}'
 
         # Call the command
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=self.config.game_path['base'])
 
+        self.write_backup_info(archive_path, process.pid)
         # Print the output
         while process.poll() is None:
             for line in process.stdout:
                 if line.strip():
                     logger.info("7-Zip", line)
 
+        self.backup_info_path.unlink(missing_ok=True)
+
         # Check the return code
         if process.returncode not in [0, 1]:
             logger.error("7-Zip", f"Exited with return code: {process.returncode}")
             raise Exception(f"7-zip exited with return code: {process.returncode}")
+        
+    def write_backup_info(self, archive_path: Path, pid: int):
+        with open(self.backup_info_path, "w") as f:
+            data = {"ArchivePath": str(archive_path), "PID": pid}
+            json.dump(data, f)
 
     def extract_archive(self, archive_path: Union[Path, str]):
         from app.components.password_dialog import password_dialog

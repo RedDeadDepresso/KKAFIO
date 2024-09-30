@@ -32,6 +32,7 @@ class Logger:
         self.statusHtml = [
             f'<b style="color:{_color};">{status}</b>'
             for _color, status in zip(self.statusColor, self.paddedStatus)]
+        self._line = '--------------------------------------------------------------------'
 
     def __out__(self, category: str, message: str, level: int = 1, raw_print=False) -> None:
         """
@@ -69,16 +70,19 @@ class Logger:
         return f"{string}{space * (maxLength - len(string))}"
 
     def colorize(self, adding: str):
-        for i, s in enumerate(self.paddedStatus):
-            if s in adding:
-                adding = (f'''
-                        <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
-                            {adding.replace(' ', '&nbsp;')}
-                        </div>
-                            ''')
-                # self.logs += adding
-                self.logger_signal.emit(adding)
-                return
+        if adding == self._line:
+            self.line()
+        else:
+            for i, s in enumerate(self.paddedStatus):
+                if s in adding:
+                    adding = (f'''
+                            <div style="font-family: Consolas, monospace;color:{self.statusColor[i]};">
+                                {adding.replace(' ', '&nbsp;')}
+                            </div>
+                                ''')
+                    # self.logs += adding
+                    self.logger_signal.emit(adding)
+                    return
 
     def info(self, category: str, message: str) -> None:
         """
