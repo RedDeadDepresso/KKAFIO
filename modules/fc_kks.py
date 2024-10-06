@@ -1,15 +1,8 @@
 import shutil
-from enum import Enum
+
 from pathlib import Path
-from typing import Literal
+from util.classifier import CardType, get_card_type
 from util.logger import logger
-
-
-class CardType(Enum):
-    UNKNOWN = "UNKNOWN"
-    KK = "KK"
-    KKSP = "KKSP"
-    KKS = "KKS"
 
 
 class FilterConvertKKS:
@@ -23,29 +16,19 @@ class FilterConvertKKS:
         self.file_manager = file_manager
         self.convert = self.config.fc_kks["Convert"]
 
-    def get_list(self, folder_path: Path) -> list[str]:
+    def get_list(self, folder_path: Path) -> list[Path]:
         """Get list of PNG files in the folder."""
-        folder = Path(folder_path)
-        return [str(file) for file in folder.rglob("*.png")]
+        return [file for file in folder_path.rglob("*.png")]
 
     def check_png(self, card_path: Path) -> CardType:
         """Check the PNG file and return its type."""
-        card_path = Path(card_path)
-        with card_path.open("rb") as card:
-            data = card.read()
-            card_type = CardType.UNKNOWN
-            if b"KoiKatuChara" in data:
-                card_type = CardType.KK
-                if b"KoiKatuCharaSP" in data:
-                    card_type = CardType.KKSP
-                elif b"KoiKatuCharaSun" in data:
-                    card_type = CardType.KKS
-            logger.info(f"{card_type.value}", f"{card_path.name}")
+        card_type = get_card_type(card_path)
+        logger.info(f"{card_type.value}", f"{card_path.name}")
         return card_type
 
     def convert_kk(self, card_name: str, card_path: Path, destination_path: Path):
         """Convert KKS card to KK."""
-        card_path = Path(card_path)  # Convert to Path object
+        card_path = Path(card_path)
         with card_path.open(mode="rb") as card:
             data = card.read()
 
@@ -74,7 +57,7 @@ class FilterConvertKKS:
 
         count = len(png_list)
         if count > 0:
-            logger.info("SCRIPT", "kk: Koikatsu / KKSP: Koikatsu Special / KKS: Koikatsu Sunshine")
+            logger.info("SCRIPT", "KK: Koikatsu / KKSP: Koikatsu Special / KKS: Koikatsu Sunshine")
             logger.line()
             logger.info("FOLDER", str(path))
             for png in png_list:
@@ -87,7 +70,6 @@ class FilterConvertKKS:
 
         count = len(kks_card_list)
         if count > 0:
-            print(kks_card_list)
 
             # Create target directories if they don't exist
             kks_folder.mkdir(exist_ok=True)

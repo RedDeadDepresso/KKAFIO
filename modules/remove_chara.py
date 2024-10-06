@@ -1,4 +1,5 @@
 from pathlib import Path
+from util.classifier import CardType, get_card_type, is_male, is_coordinate
 from util.logger import logger
 
 
@@ -15,16 +16,21 @@ class RemoveChara:
         self.input_path = self.config.remove_chara["InputPath"]
 
     def resolve_png(self, image_path: Path):        
-        with image_path.open("rb") as card:
-            data = card.read()
-        if b"KoiKatuChara" in data:
-            if b"KoiKatuCharaSP" in data or b"KoiKatuCharaSun" in data:
-                return
-            self.file_manager.find_and_remove("CHARA", image_path, self.game_path["chara"])
-        elif b"KoiKatuClothes" in data:
-            self.file_manager.find_and_remove("COORD", image_path, self.game_path["coordinate"])
-        else:
-            self.file_manager.find_and_remove("OVERLAYS", image_path, self.game_path["Overlays"])
+        image_bytes = image_path.read_bytes()
+        card_type = get_card_type(image_bytes)
+
+        match card_type:
+            case CardType.KK:
+                if is_male(image_bytes):
+                    self.file_manager.find_and_remove("CHARA M", image_path, self.game_path["charaMale"])
+                else:
+                    self.file_manager.find_and_remove("CHARA F", image_path, self.game_path["charaFemale"])
+
+            case CardType.UNKNOWN:
+                if is_coordinate(image_bytes):
+                    self.file_manager.find_and_remove("COORD", image_path, self.game_path["coordinate"])
+                else:
+                    self.file_manager.find_and_remove("OVERLAYS", image_path, self.game_path["Overlays"])
 
     def run(self):
         foldername = self.input_path.name

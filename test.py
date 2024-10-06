@@ -34,6 +34,7 @@ paths_to_check = [
     GAMEPATH / "UserData",
     GAMEPATH / "BepInEx",
     GAMEPATH / "mods",
+    GAMEPATH / "UserData" / "chara" / "male",
     GAMEPATH / "UserData" / "chara" / "female",
     GAMEPATH / "UserData" / "coordinate",
     GAMEPATH / "UserData" / "Overlays"
@@ -192,8 +193,8 @@ def test_remove():
 
 def main():
     """Main function to run all tests."""
-    kk_cards = download('https://db.bepis.moe/koikatsu?type=base')
-    kks_cards = download('https://db.bepis.moe/koikatsu?type=sunshine')
+    kk_cards = download('https://db.bepis.moe/koikatsu?type=steam&orderby=popularity')
+    kks_cards = download('https://db.bepis.moe/koikatsu?type=sunshine&orderby=popularity')
 
     if kk_cards and kks_cards:
         test_fckss(kk_cards, kks_cards)

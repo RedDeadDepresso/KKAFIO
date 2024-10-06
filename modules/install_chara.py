@@ -1,4 +1,5 @@
 from pathlib import Path
+from util.classifier import CardType, get_card_type, is_male, is_coordinate
 from util.logger import logger
 from typing import Optional
 
@@ -16,18 +17,24 @@ class InstallChara:
         self.input_path = Path(self.config.install_chara["InputPath"])
 
     def resolve_png(self, image_path: Path):        
-        with image_path.open("rb") as card:
-            data = card.read()
-        if b"KoiKatuChara" in data:
-            if b"KoiKatuCharaSP" in data or b"KoiKatuCharaSun" in data:
-                basename = Path(image_path).name
-                logger.error("CHARA", f"{basename} is a KKS card")
-                return
-            self.file_manager.copy_and_paste("CHARA", image_path, self.game_path["chara"])
-        elif b"KoiKatuClothes" in data:
-            self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
-        else:
-            self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
+        image_bytes = image_path.read_bytes()
+        card_type = get_card_type(image_bytes)
+
+        match card_type:
+            case CardType.KK:
+                if is_male(image_bytes):
+                    self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
+                else:
+                    self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
+
+            case CardType.KKS | CardType.KKSP:
+                logger.error("CHARA", f"{image_path.name} is a {card_type.value} card")
+
+            case CardType.UNKNOWN:
+                if is_coordinate(image_bytes):
+                    self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
+                else:
+                    self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
     def run(self, folder_path: Optional[Path] = None):
         if folder_path is None:

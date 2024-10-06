@@ -46,7 +46,8 @@ class Config:
             "UserData": base / "UserData",
             "BepInEx": base / "BepInEx",
             "mods": base / "mods",
-            "chara": base / "UserData" / "chara" / "female",
+            "charaMale": base / "UserData" / "chara" / "male",
+            "charaFemale": base / "UserData" / "chara" / "female",
             "coordinate": base / "UserData" / "coordinate",
             "Overlays": base / "UserData" / "Overlays"
         }
