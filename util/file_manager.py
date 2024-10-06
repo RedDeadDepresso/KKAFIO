@@ -1,10 +1,10 @@
 import shutil
-import datetime
 import patoolib
 import subprocess
 import time
 import json
 
+from datetime import datetime
 from pathlib import Path
 from util.logger import logger
 from typing import Union, Literal
@@ -70,8 +70,9 @@ class FileManager:
             for attempt in range(max_retries):
                 try:
                     logger.renamed(type, base_name)
-                    new_name = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
-                    destination_path = destination_path.with_stem(f"{destination_path.stem}_{new_name}")
+                    new_stem = f"{source_path.stem}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')}"
+                    source_path = source_path.rename(source_path.with_stem(new_stem))
+                    destination_path = destination_path.with_stem(new_stem)
                     break
                 except PermissionError:
                     if attempt < max_retries - 1:
