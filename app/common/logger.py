@@ -1,3 +1,4 @@
+# https://github.com/pur1fying/blue_archive_auto_script/blob/master/core/utils.py
 import logging
 import sys
 from typing import Union
