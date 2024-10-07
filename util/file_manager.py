@@ -171,7 +171,7 @@ class FileManager:
         archive_name = archive_path.name
         logger.info("ARCHIVE", f"Extracting {archive_name}")
 
-        extract_path = archive_path.with_name(f"{archive_path.stem}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+        extract_path = archive_path.with_name(f"{archive_path.stem}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}")
 
         try:
             patoolib.extract_archive(str(archive_path), outdir=str(extract_path))
@@ -179,7 +179,7 @@ class FileManager:
         except:
             
             text = f"There is an error with the archive {archive_name}, but it is impossible to detect the cause. Maybe it requires a password?"
-            while True:
+            while self.config.install_chara["Password"] == "Request Password":
                 try:
                     password = password_dialog('Enter Password', text)
                     
@@ -197,4 +197,4 @@ class FileManager:
                     print(f"An unexpected error occurred: {str(e)}")
                     break
                 
-                logger.skipped("ARCHIVE", archive_name)
+            logger.error("ARCHIVE", archive_name)

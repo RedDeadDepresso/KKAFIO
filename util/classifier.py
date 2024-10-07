@@ -29,4 +29,4 @@ def is_male(image_bytes: bytes):
 
 
 def is_coordinate(image_bytes: bytes):
-    return 'b"KoiKatuClothes"' in image_bytes
+    return b"KoiKatuClothes" in image_bytes
