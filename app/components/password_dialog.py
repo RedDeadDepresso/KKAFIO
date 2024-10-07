@@ -25,9 +25,11 @@ class PasswordDialog(Dialog):
         passwordLayout.addWidget(self.passwordLineEdit, 1, Qt.AlignTop)
         self.vBoxLayout.insertLayout(2, passwordLayout, 1)
         self.setTitleBar(FluentTitleBar(self))
+        self.yesButton.setDefault(True)
 
     def __connectSignalToSlot(self):
         self.passwordLineEdit.textChanged.connect(self.onTextChanged)
+        self.passwordLineEdit.returnPressed.connect(self.yesSignal.emit)
         self.yesSignal.connect(self.onYesSignal)
 
     def onTextChanged(self, text: str):
