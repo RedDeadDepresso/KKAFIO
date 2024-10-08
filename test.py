@@ -127,6 +127,13 @@ def download(bepis_url: str):
 
     return set(filter(None, results))
 
+def create_zipmods():
+    zipmod_paths = set()
+    for i in range(10):
+        path = DOWNLOAD_PATH / f'test_{i}.zipmod'
+        path.touch()
+        zipmod_paths.add(path)
+    return zipmod_paths
 
 def test_fckss(kk_cards, kks_cards):
     """Test FilterConvertKKS functionality."""
@@ -156,18 +163,25 @@ def test_fckss(kk_cards, kks_cards):
         kk_cards.add(converted_kks_path)
 
 
-def test_install(kk_cards):
+def test_install(kk_cards, coordinates, zipmods):
     """Test character installation."""
     install_chara = InstallChara(CONFIG, FILE_MANAGER)
     install_chara.run()
 
     chara_path = GAMEPATH / 'UserData' / 'chara' / 'female'
+    coordinates_path = GAMEPATH / 'UserData' / 'coordinate'
+    zipmods_path = GAMEPATH / 'mods'
 
     for card in kk_cards:
         assert (chara_path / card.name).exists(), f"{card.name} not found in installed cards."
 
+    for coordinate in coordinates:
+        assert (coordinates_path / coordinate.name).exists(), f"{coordinate.name} not found in installed coordinates."
 
-def test_backup(kk_cards):
+    for zipmod in zipmods:
+        assert (zipmods_path / zipmod.name).exists(), f"{zipmod.name} not found in mods."
+
+def test_backup(kk_cards, coordinates, zipmods):
     """Test backup functionality."""
     create_backup = CreateBackup(CONFIG, FILE_MANAGER)
     create_backup.run()
@@ -179,8 +193,13 @@ def test_backup(kk_cards):
     patoolib.extract_archive(str(koikatsu_backup), outdir=str(outdir))
 
     for card in kk_cards:
-        assert (outdir / "UserData" / "chara" / "female" / card.name).exists(), f"{card.name} missing in backup."
+        assert (outdir / "UserData" / "chara" / "female" / card.name).exists(), f"{card.name} missing in chara backup."
 
+    for coordinate in coordinates:
+        assert (outdir / "UserData" / "coordinate" / coordinate.name).exists(), f"{coordinate.name} missing in coordinate backup."
+
+    for zipmod in zipmods:
+        assert (outdir / 'mods' / zipmod.name).exists(), f"{zipmod.name} missing in mods backup."
 
 def test_remove():
     """Test character removal."""
@@ -188,18 +207,24 @@ def test_remove():
     remove_chara.run()
 
     chara_path = GAMEPATH / 'UserData' / 'chara' / 'female'
-    assert not list(chara_path.iterdir()), "Character directory not empty after removal."
+    coordinate_path = GAMEPATH / 'UserData' / 'coordinate'
+    zipmod_path = GAMEPATH / 'mods'
+    assert not list(chara_path.iterdir()), "Chara directory not empty after removal."
+    assert not list(coordinate_path.iterdir()), "Coordinate directory not empty after removal."
+    assert not list(zipmod_path.iterdir()), "Mods directory not empty after removal."
 
 
 def main():
     """Main function to run all tests."""
     kk_cards = download('https://db.bepis.moe/koikatsu?type=steam&orderby=popularity')
     kks_cards = download('https://db.bepis.moe/koikatsu?type=sunshine&orderby=popularity')
+    coordinates = download('https://db.bepis.moe/kkclothing?orderby=popularity')
+    zipmods = create_zipmods()
 
     if kk_cards and kks_cards:
         test_fckss(kk_cards, kks_cards)
-        test_install(kk_cards)
-        test_backup(kk_cards)
+        test_install(kk_cards, coordinates, zipmods)
+        test_backup(kk_cards, coordinates, zipmods)
         test_remove()
         shutil.rmtree(TEST_PATH)
     else:
