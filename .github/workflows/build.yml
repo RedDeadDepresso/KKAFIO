@@ -3,11 +3,11 @@ name: Build KKAFIO
 on:
   push:
     tags:
-      - "v*.*.*" # triggers on version tags like v1.0.0
-  workflow_dispatch: # allows manual runs from the Actions tab
+      - "v*.*.*"
+  workflow_dispatch:
 
 permissions:
-  contents: write # needed to create GitHub Releases
+  contents: write
 
 jobs:
   build:
@@ -29,9 +29,8 @@ jobs:
       # ── Build script.exe ────────────────────────────────────────────────────
       - name: Build script.exe
         run: >
-          uv run pyinstaller --noconfirm --onefile
+          uv run pyinstaller --noconfirm --onedir
           --name "script"
-          --add-data "app/config;app/config"
           --hidden-import "util.config"
           --hidden-import "util.logger"
           --hidden-import "util.file_manager"
@@ -48,7 +47,6 @@ jobs:
           --name "KKAFIO"
           --icon "app/resource/images/logo.ico"
           --add-data "app/resource;app/resource"
-          --add-data "app/config;app/config"
           --collect-data "qfluentwidgets"
           --hidden-import "PySide6.QtSvg"
           --hidden-import "qfluentwidgets"
@@ -58,8 +56,14 @@ jobs:
       - name: Assemble release folder
         shell: pwsh
         run: |
-          Copy-Item "dist\script.exe" "dist\KKAFIO\script.exe"
-          Copy-Item -Recurse "app\config" "dist\KKAFIO\app\config" -Force
+          # Move script.exe into the KKAFIO folder so it shares _internal
+          Copy-Item "dist\script\script.exe" "dist\KKAFIO\script.exe"
+
+          # Merge script's _internal into KKAFIO's _internal,
+          # skipping files that already exist (PySide6, Python runtime, etc.)
+          Copy-Item -Recurse -Force `
+            "dist\script\_internal\*" `
+            "dist\KKAFIO\_internal\"
 
       # ── Zip the release ─────────────────────────────────────────────────────
       - name: Zip release
