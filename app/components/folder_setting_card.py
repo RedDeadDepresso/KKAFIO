@@ -155,20 +155,22 @@ class FolderSettingCard(SettingCard):
 
     @Slot()
     def afterClear(self, path: Path, deleteFolder: bool, successful: bool):
-        if successful:
-            if deleteFolder:
-                self.lineEdit.clear()
-                notification.success(f"Successfully deleted {self.titleGroup}'s directory")
+        try:
+            if successful:
+                if deleteFolder:
+                    self.lineEdit.clear()
+                    notification.success(f"Successfully deleted {self.titleGroup}'s directory")
+                else:
+                    notification.success(f"Successfully cleared {self.titleGroup}'s directory")
             else:
-                notification.success(f"Successfully cleared {self.titleGroup}'s directory")
-        else:
-            notification.error(f"Error clearing {self.titleGroup}'s directory")
+                notification.error(f"Error clearing {self.titleGroup}'s directory")
 
-        self.lineEdit.setDisabled(False)
-        self.clearAction.setDisabled(False)
-        self.clearQueue.remove(path)
-        if not self.clearQueue:
-            signalBus.disableStartSignal.emit(False)
+            self.lineEdit.setDisabled(False)
+            self.clearAction.setDisabled(False)
+        finally:
+            self.clearQueue.discard(path)
+            if not self.clearQueue:
+                signalBus.disableStartSignal.emit(False)
 
     def setDisabledClear(self, value: bool):
         if not self.clearable:

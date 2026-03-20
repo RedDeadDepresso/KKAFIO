@@ -22,9 +22,7 @@ class FilterConvertKKS:
 
     def check_png(self, card_path: Path) -> CardType:
         """Check the PNG file and return its type."""
-        card_type = get_card_type(card_path)
-        logger.info(f"{card_type.value}", f"{card_path.name}")
-        return card_type
+        return get_card_type(card_path.read_bytes())
 
     def convert_kk(self, card_name: str, card_path: Path, destination_path: Path):
         """Convert KKS card to KK."""
@@ -61,7 +59,9 @@ class FilterConvertKKS:
             logger.line()
             logger.info("FOLDER", str(path))
             for png in png_list:
-                if self.check_png(png) == CardType.KKS:
+                card_type = self.check_png(png)
+                if card_type == CardType.KKS:
+                    logger.info(card_type.value, png.name)
                     kks_card_list.append(png)
             logger.line()
         else:

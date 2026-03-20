@@ -65,17 +65,13 @@ class Config:
             if not task_config["Enable"]:
                 continue
 
-            if "InputPath" in task_config:
-                path_obj = Path(task_config["InputPath"])
-                task_config["InputPath"] = path_obj
-                
-            elif "OutputPath" in task_config:
-                path_obj = Path(task_config["OutputPath"])
-                task_config["OutputPath"] = path_obj
-
-            if not path_obj.exists():
-                logger.error("SCRIPT", f"Path invalid for task {task}")
-                raise Exception()
+            for key in ("InputPath", "OutputPath"):
+                if key in task_config:
+                    path_obj = Path(task_config[key])
+                    task_config[key] = path_obj
+                    if not path_obj.exists():
+                        logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
+                        raise Exception()
 
         self.create_backup = self.config_data["CreateBackup"]
         self.fc_kks = self.config_data["FilterConvertKKS"]

@@ -1,4 +1,5 @@
 import json
+import sys
 import psutil
 
 from pathlib import Path
@@ -45,13 +46,14 @@ class ScriptManager(QObject):
             if Path("script.exe").exists():
                 args = ["script.exe"]
             elif Path("script.py").exists():
-                args = ["python", "script.py"]
+                args = [sys.executable, "-u", "script.py"]  # -u disables stdout/stderr buffering
             else:
                 self.logger.error("No valid script found to execute.")
                 return
 
             self.procScript = QProcess(self)
-            self.procScript.readyReadStandardOutput.connect(self.readOutput)
+            self.procScript.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+            self.procScript.readyRead.connect(self.readOutput)
             self.procScript.finished.connect(self.processFinished)
 
             if len(args) > 1:
@@ -64,7 +66,15 @@ class ScriptManager(QObject):
         if self.procScript is not None:
             while self.procScript.canReadLine():
                 line = str(self.procScript.readLine(), encoding='utf-8').strip()
-                self.logger.colorize(line)
+                if line:
+                    self.logger.colorize(line)
+            # Flush any remaining partial line (output not ending in newline)
+            remaining = self.procScript.read(self.procScript.bytesAvailable())
+            if remaining:
+                for line in str(remaining, encoding='utf-8').splitlines():
+                    line = line.strip()
+                    if line:
+                        self.logger.colorize(line)
 
     @Slot()
     def stop(self):
@@ -75,8 +85,10 @@ class ScriptManager(QObject):
 
     @Slot()
     def processFinished(self):
-        """Slot called when the process finishes."""
+        """Slot called when the process finishes naturally."""
         self.procScript = None
+        scriptCleaner = ScriptCleaner(Path('app/config/7zip.json'))
+        self.signalBus.threadPool.start(scriptCleaner)
         self.signalBus.stopSignal.emit()
 
     def scriptRunning(self) -> bool:

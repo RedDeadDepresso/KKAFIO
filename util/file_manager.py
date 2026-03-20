@@ -122,28 +122,22 @@ class FileManager:
             archive_path.unlink()
 
         exclude_folders = [
-            "Sideloader Modpack", 
+            "Sideloader Modpack",
             "Sideloader Modpack - Studio",
-            "Sideloader Modpack - KK_UncensorSelector", 
-            "Sideloader Modpack - Maps", 
+            "Sideloader Modpack - KK_UncensorSelector",
+            "Sideloader Modpack - Maps",
             "Sideloader Modpack - KK_MaterialEditor",
             "Sideloader Modpack - Fixes",
             "Sideloader Modpack - Exclusive KK KKS",
             "Sideloader Modpack - Exclusive KK",
-            "Sideloader Modpack - Animations"
-        ] 
+            "Sideloader Modpack - Animations",
+        ]
 
-        # Create a string of folder names to exclude
-        exclude_string = ' '.join([f'-xr!"{folder}"' for folder in exclude_folders])
+        cmd = [path_to_7zip, "a", "-t7z", str(archive_path)]
+        cmd += [str(f) for f in folders]
+        cmd += [f"-xr!{folder}" for folder in exclude_folders]
 
-        # Create a string of folder names to include
-        include_string = ' '.join([f'"{folder}"' for folder in folders])
-
-        # Construct the 7zip command
-        command = f'"{path_to_7zip}" a -t7z "{archive_path}" {include_string} {exclude_string}'
-
-        # Call the command
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=self.config.game_path['base'])
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=self.config.game_path['base'])
 
         self.write_backup_info(archive_path, process.pid)
         # Print the output
