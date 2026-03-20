@@ -1,0 +1,83 @@
+name: Build KKAFIO
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # triggers on version tags like v1.0.0
+  workflow_dispatch: # allows manual runs from the Actions tab
+
+permissions:
+  contents: write # needed to create GitHub Releases
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies (no dev)
+        run: uv sync --no-dev --group build
+
+      # ── Build script.exe ────────────────────────────────────────────────────
+      - name: Build script.exe
+        run: >
+          uv run pyinstaller --noconfirm --onefile
+          --name "script"
+          --add-data "app/config;app/config"
+          --hidden-import "util.config"
+          --hidden-import "util.logger"
+          --hidden-import "util.file_manager"
+          --hidden-import "modules.install_chara"
+          --hidden-import "modules.remove_chara"
+          --hidden-import "modules.fc_kks"
+          --hidden-import "modules.create_backup"
+          script.py
+
+      # ── Build KKAFIO.exe ────────────────────────────────────────────────────
+      - name: Build KKAFIO.exe
+        run: >
+          uv run pyinstaller --noconfirm --onedir --windowed
+          --name "KKAFIO"
+          --icon "app/resource/images/logo.ico"
+          --add-data "app/resource;app/resource"
+          --add-data "app/config;app/config"
+          --collect-data "qfluentwidgets"
+          --hidden-import "PySide6.QtSvg"
+          --hidden-import "qfluentwidgets"
+          KKAFIO.py
+
+      # ── Assemble final dist folder ──────────────────────────────────────────
+      - name: Assemble release folder
+        shell: pwsh
+        run: |
+          Copy-Item "dist\script.exe" "dist\KKAFIO\script.exe"
+          Copy-Item -Recurse "app\config" "dist\KKAFIO\app\config" -Force
+
+      # ── Zip the release ─────────────────────────────────────────────────────
+      - name: Zip release
+        shell: pwsh
+        run: Compress-Archive -Path "dist\KKAFIO\*" -DestinationPath "KKAFIO-${{ github.ref_name }}.zip"
+
+      # ── Upload artifact (available on every run, not just tagged releases) ──
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KKAFIO-${{ github.ref_name }}
+          path: KKAFIO-${{ github.ref_name }}.zip
+          retention-days: 30
+
+      # ── Create GitHub Release (only on version tags) ─────────────────────────
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: KKAFIO-${{ github.ref_name }}.zip
+          generate_release_notes: true
