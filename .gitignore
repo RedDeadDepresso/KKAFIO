@@ -163,3 +163,4 @@ cython_debug/
 traceback.log
 app/config/
 test/
+.vscode/
