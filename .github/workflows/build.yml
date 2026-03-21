@@ -54,6 +54,16 @@ jobs:
           --hidden-import "qfluentwidgets"
           KKAFIO.py
 
+      # ── Copy SSL DLLs into _internal ────────────────────────────────────────
+      - name: Copy SSL DLLs
+        shell: pwsh
+        run: |
+          $dlls = (uv run python -c "import sys; print(sys.base_prefix)") + "\DLLs"
+          $target = "dist\KKAFIO\_internal"
+          Copy-Item "$dlls\_ssl.pyd"             $target -Force
+          Copy-Item "$dlls\libcrypto-3-x64.dll"  $target -Force
+          Copy-Item "$dlls\libssl-3-x64.dll"     $target -Force
+
       # ── Assemble final dist folder ──────────────────────────────────────────
       - name: Assemble release folder
         shell: pwsh
