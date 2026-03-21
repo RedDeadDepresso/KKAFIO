@@ -26,15 +26,6 @@ jobs:
       - name: Install dependencies (no dev)
         run: uv sync --no-dev --group build
 
-      # ── Find SSL DLLs so we can copy them explicitly ────────────────────────
-      - name: Locate SSL DLLs
-        shell: pwsh
-        run: |
-          $pythonDir = (uv run python -c "import sys; print(sys.base_prefix)")
-          Write-Host "Python dir: $pythonDir"
-          Get-ChildItem -Recurse "$pythonDir" -Include "libssl*.dll","libcrypto*.dll","_ssl*.pyd" -ErrorAction SilentlyContinue |
-            Select-Object FullName
-
       # ── Build script.exe ────────────────────────────────────────────────────
       - name: Build script.exe
         run: >
@@ -64,27 +55,21 @@ jobs:
           --hidden-import "_ssl"
           KKAFIO.py
 
-      # ── Copy SSL DLLs explicitly into _internal ─────────────────────────────
+      # ── Copy SSL DLLs into _internal ────────────────────────────────────────
       - name: Copy SSL DLLs
         shell: pwsh
         run: |
-          $pythonDir = (uv run python -c "import sys; print(sys.base_prefix)")
+          $dlls = (uv run python -c "import sys; print(sys.base_prefix)") + "\DLLs"
           $target = "dist\KKAFIO\_internal"
-          Get-ChildItem -Recurse "$pythonDir" -Include "libssl*.dll","libcrypto*.dll","_ssl*.pyd" -ErrorAction SilentlyContinue |
-            ForEach-Object {
-              Write-Host "Copying $($_.FullName)"
-              Copy-Item $_.FullName $target -Force
-            }
+          Copy-Item "$dlls\_ssl.pyd"             $target -Force
+          Copy-Item "$dlls\libcrypto-3-x64.dll"  $target -Force
+          Copy-Item "$dlls\libssl-3-x64.dll"     $target -Force
 
       # ── Assemble final dist folder ──────────────────────────────────────────
       - name: Assemble release folder
         shell: pwsh
         run: |
-          # Move script.exe into the KKAFIO folder so it shares _internal
           Copy-Item "dist\script\script.exe" "dist\KKAFIO\script.exe"
-
-          # Merge script's _internal into KKAFIO's _internal,
-          # skipping files that already exist (PySide6, Python runtime, etc.)
           Copy-Item -Recurse -Force `
             "dist\script\_internal\*" `
             "dist\KKAFIO\_internal\"
