@@ -54,7 +54,16 @@ jobs:
           --hidden-import "qfluentwidgets"
           KKAFIO.py
 
-      # ── Copy SSL DLLs into both _internal and root ──────────────────────────
+      # ── Assemble final dist folder ──────────────────────────────────────────
+      - name: Assemble release folder
+        shell: pwsh
+        run: |
+          Copy-Item "dist\script\script.exe" "dist\KKAFIO\script.exe"
+          Copy-Item -Recurse -Force `
+            "dist\script\_internal\*" `
+            "dist\KKAFIO\_internal\"
+
+      # ── Copy SSL DLLs AFTER assemble so they are not overwritten ────────────
       - name: Copy SSL DLLs
         shell: pwsh
         run: |
@@ -67,14 +76,24 @@ jobs:
             Copy-Item "$dlls\libssl-3-x64.dll"     $target -Force
           }
 
-      # ── Assemble final dist folder ──────────────────────────────────────────
-      - name: Assemble release folder
+      # ── Verify SSL DLLs are present ─────────────────────────────────────────
+      - name: Verify SSL DLLs
         shell: pwsh
         run: |
-          Copy-Item "dist\script\script.exe" "dist\KKAFIO\script.exe"
-          Copy-Item -Recurse -Force `
-            "dist\script\_internal\*" `
-            "dist\KKAFIO\_internal\"
+          @(
+            "dist\KKAFIO\_internal\_ssl.pyd",
+            "dist\KKAFIO\_internal\libcrypto-3-x64.dll",
+            "dist\KKAFIO\_internal\libssl-3-x64.dll",
+            "dist\KKAFIO\_ssl.pyd",
+            "dist\KKAFIO\libcrypto-3-x64.dll",
+            "dist\KKAFIO\libssl-3-x64.dll"
+          ) | ForEach-Object {
+            if (Test-Path $_) {
+              Write-Host "OK: $_"
+            } else {
+              Write-Error "MISSING: $_"
+            }
+          }
 
       # ── Zip the release ─────────────────────────────────────────────────────
       - name: Zip release
