@@ -49,6 +49,7 @@ jobs:
           --add-data "app/resource;app/resource"
           --collect-data "qfluentwidgets"
           --collect-data "certifi"
+          --copy-metadata "kkafio"
           --hidden-import "PySide6.QtSvg"
           --hidden-import "qfluentwidgets"
           --hidden-import "_ssl"
