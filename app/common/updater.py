@@ -147,7 +147,7 @@ try {{
 Start-Sleep -Seconds 2
 
 Log "Running robocopy from $staging to $target"
-$result = robocopy $staging $target /MIR /IS /IT /IM /NFL /NDL 2>&1
+$result = robocopy $staging $target /MIR /IS /IT /IM /NFL /NDL /XD "$target\app\config" 2>&1
 Log "Robocopy output: $result"
 Log "Robocopy exit code: $LASTEXITCODE"
 
