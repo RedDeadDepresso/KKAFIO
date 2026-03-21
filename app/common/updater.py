@@ -38,7 +38,7 @@ class UpdateChecker(QRunnable):
 
     def __init__(self):
         super().__init__()
-        self.setAutoDelete(True)
+        self.setAutoDelete(False)
         self.signals = UpdaterSignals()
 
     def run(self):
