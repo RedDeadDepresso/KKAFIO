@@ -48,7 +48,6 @@ Please feel free to use and modify KAFIO as you see fit. Your feedback and contr
 ## Known Bugs
 Here are some known issues with KKAFIO:
 
-- When running Create Backup it won't display any output for a while. Don't worry, just wait. You can check if 7-zip is running using Task Mangager.
 - Any .png that cannot be classified as chara or coordinate will be treated as Overlays. It is not a big issue, you can go to Overlays folder, sort by date and delete any files that are not overlays.
 
 ## Acknowledgment

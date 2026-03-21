@@ -133,11 +133,11 @@ class FileManager:
             "Sideloader Modpack - Animations",
         ]
 
-        cmd = [path_to_7zip, "a", "-t7z", str(archive_path)]
+        cmd = [path_to_7zip, "a", "-t7z", "-bsp1", str(archive_path)]
         cmd += [str(f) for f in folders]
         cmd += [f"-xr!{folder}" for folder in exclude_folders]
 
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=self.config.game_path['base'])
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=self.config.game_path['base'])
 
         self.write_backup_info(archive_path, process.pid)
         while True:
