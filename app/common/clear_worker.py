@@ -12,6 +12,7 @@ class ClearSignalBus(QObject):
 class ClearWorker(QRunnable):
     def __init__(self, path: Path, deleteFolder=False) -> None:
         super().__init__()
+        self.setAutoDelete(False)  # prevent thread pool from deleting this before finishSignal is delivered
         self.path = path
         self.deleteFolder = deleteFolder
         self.clearSignalBus = ClearSignalBus()
@@ -31,4 +32,3 @@ class ClearWorker(QRunnable):
     def deleteContents(self):
         for item in self.path.iterdir():
             send2trash(item)
-
