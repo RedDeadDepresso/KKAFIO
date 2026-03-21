@@ -26,6 +26,15 @@ jobs:
       - name: Install dependencies (no dev)
         run: uv sync --no-dev --group build
 
+      # ── Find SSL DLLs so we can copy them explicitly ────────────────────────
+      - name: Locate SSL DLLs
+        shell: pwsh
+        run: |
+          $pythonDir = (uv run python -c "import sys; print(sys.base_prefix)")
+          Write-Host "Python dir: $pythonDir"
+          Get-ChildItem -Recurse "$pythonDir" -Include "libssl*.dll","libcrypto*.dll","_ssl*.pyd" -ErrorAction SilentlyContinue |
+            Select-Object FullName
+
       # ── Build script.exe ────────────────────────────────────────────────────
       - name: Build script.exe
         run: >
@@ -54,6 +63,18 @@ jobs:
           --hidden-import "qfluentwidgets"
           --hidden-import "_ssl"
           KKAFIO.py
+
+      # ── Copy SSL DLLs explicitly into _internal ─────────────────────────────
+      - name: Copy SSL DLLs
+        shell: pwsh
+        run: |
+          $pythonDir = (uv run python -c "import sys; print(sys.base_prefix)")
+          $target = "dist\KKAFIO\_internal"
+          Get-ChildItem -Recurse "$pythonDir" -Include "libssl*.dll","libcrypto*.dll","_ssl*.pyd" -ErrorAction SilentlyContinue |
+            ForEach-Object {
+              Write-Host "Copying $($_.FullName)"
+              Copy-Item $_.FullName $target -Force
+            }
 
       # ── Assemble final dist folder ──────────────────────────────────────────
       - name: Assemble release folder
