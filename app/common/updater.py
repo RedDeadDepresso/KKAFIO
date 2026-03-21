@@ -1,15 +1,12 @@
 # coding: utf-8
 import os
 import sys
-import json
 import shutil
 import zipfile
 import tempfile
 
+import requests
 from pathlib import Path
-from urllib.request import urlopen, urlretrieve
-from urllib.error import URLError
-
 from packaging.version import Version
 from PySide6.QtCore import QRunnable, QObject, Signal, Slot
 from PySide6.QtWidgets import QApplication
@@ -37,8 +34,9 @@ class UpdateChecker(QRunnable):
 
     def run(self):
         try:
-            with urlopen(GITHUB_API, timeout=5) as response:
-                data = json.loads(response.read().decode())
+            response = requests.get(GITHUB_API, timeout=5)
+            response.raise_for_status()
+            data = response.json()
 
             latest = data.get("tag_name", "").lstrip("v")
             if not latest:
@@ -60,8 +58,8 @@ class UpdateChecker(QRunnable):
             else:
                 self.signals.noUpdate.emit()
 
-        except URLError as e:
-            self.signals.error.emit(f"Network error: {e.reason}")
+        except requests.RequestException as e:
+            self.signals.error.emit(f"Network error: {e}")
         except Exception as e:
             self.signals.error.emit(str(e))
 
@@ -80,7 +78,11 @@ class UpdateInstaller(QRunnable):
             tmp_dir = Path(tempfile.mkdtemp())
             zip_path = tmp_dir / "update.zip"
 
-            urlretrieve(self.download_url, zip_path)
+            response = requests.get(self.download_url, stream=True)
+            response.raise_for_status()
+            with open(zip_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
 
             install_dir = Path(sys.executable).parent
 
