@@ -17,6 +17,13 @@ class Logger:
         # logger box signal is used to output log to logger box
         self.logs = ""
         self.logger_signal = signalBus.loggerSignal if signalBus else None
+
+        # When running as script.exe stdout is block-buffered by default,
+        # which causes QProcess in the GUI to only receive output after the
+        # process exits. Reconfigure to line-buffered so each line is flushed
+        # immediately. Only needed when there is no signalBus (i.e. script.exe).
+        if self.logger_signal is None:
+            sys.stdout.reconfigure(line_buffering=True)
         self.logger = logging.getLogger("KAFFIO_Logger")
         formatter = logging.Formatter("%(levelname)s |%(category)s | %(message)s ")
         handler1 = logging.StreamHandler(stream=sys.stdout)
@@ -64,7 +71,7 @@ class Logger:
             # self.logs += adding
             self.logger_signal.emit(adding)
         else:
-            print(f'{self.paddedStatus[level - 1]} | {category} | {message}')
+            print(f'{self.paddedStatus[level - 1]} | {category} | {message}', flush=True)
 
     def align(self, string, maxLength=8):
         space = ' '
@@ -161,4 +168,4 @@ class Logger:
                          '--------------------------------------------------------------------'
                          '</div>', raw_print=True)
         else:
-            print('--------------------------------------------------------------------')
+            print('--------------------------------------------------------------------', flush=True)

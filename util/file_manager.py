@@ -140,11 +140,14 @@ class FileManager:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=self.config.game_path['base'])
 
         self.write_backup_info(archive_path, process.pid)
-        # Print the output
-        while process.poll() is None:
-            for line in process.stdout:
-                if line.strip():
-                    logger.info("7-Zip", line)
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            if line.strip():
+                logger.info("7-Zip", line.strip())
+
+        process.wait()
 
         self.backup_info_path.unlink(missing_ok=True)
 
