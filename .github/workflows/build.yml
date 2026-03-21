@@ -52,6 +52,7 @@ jobs:
           --copy-metadata "kkafio"
           --hidden-import "PySide6.QtSvg"
           --hidden-import "qfluentwidgets"
+          --hidden-import "psutil"
           KKAFIO.py
 
       # ── Assemble final dist folder ──────────────────────────────────────────

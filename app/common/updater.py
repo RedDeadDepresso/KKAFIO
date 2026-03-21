@@ -81,20 +81,67 @@ class UpdateInstaller(QRunnable):
 
     def run(self):
         try:
-            tmp_dir = Path(tempfile.mkdtemp())
+            tmp_dir = Path(tempfile.mkdtemp(prefix="kkafio_update_"))
             zip_path = tmp_dir / "update.zip"
 
             with urlopen(self.download_url, context=_ssl_context()) as response:
                 zip_path.write_bytes(response.read())
 
-            install_dir = Path(sys.executable).parent
-
+            # Extract to a staging folder inside tmp — do NOT extract directly
+            # over the install dir since the running exe locks files in _internal
+            staging_dir = tmp_dir / "staging"
             with zipfile.ZipFile(zip_path, "r") as zf:
-                zf.extractall(install_dir)
+                zf.extractall(staging_dir)
 
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+            install_dir = Path(sys.executable).parent
+            helper_path = install_dir / "_update_helper.py"
 
-            self.signals.updateAvailable.emit("done", "")
+            # Write a helper script that waits for this process to exit,
+            # copies staged files over, then restarts KKAFIO.exe
+            helper_script = f"""\
+import os
+import sys
+import time
+import shutil
+import psutil
+
+pid        = {os.getpid()}
+staging    = r"{staging_dir}"
+target     = r"{install_dir}"
+executable = r"{sys.executable}"
+
+# Wait for KKAFIO.exe to exit
+try:
+    proc = psutil.Process(pid)
+    proc.wait(timeout=30)
+except Exception:
+    pass
+
+# Give the OS a moment to release file handles
+time.sleep(1)
+
+# Copy staged files over the install dir
+for item in os.listdir(staging):
+    src = os.path.join(staging, item)
+    dst = os.path.join(target, item)
+    if os.path.isdir(src):
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+    else:
+        shutil.copy2(src, dst)
+
+# Clean up staging and this helper script
+shutil.rmtree(staging, ignore_errors=True)
+try:
+    os.remove(os.path.join(target, "_update_helper.py"))
+except Exception:
+    pass
+
+# Restart KKAFIO
+os.execv(executable, [executable])
+"""
+            helper_path.write_text(helper_script, encoding="utf-8")
+
+            self.signals.updateAvailable.emit("done", str(helper_path))
 
         except Exception as e:
             self.signals.error.emit(str(e))
@@ -151,15 +198,26 @@ class UpdateManager:
         self.signal_bus.threadPool.start(installer)
 
     @Slot(str, str)
-    def _onInstallDone(self, *_):
+    def _onInstallDone(self, _, helper_path: str):
         dialog = MessageBox(
-            "Update installed",
-            "The update has been installed. KKAFIO will now restart.",
+            "Update ready",
+            "The update has been downloaded. KKAFIO will now close and apply the update, then restart automatically.",
             self.main_window
         )
         dialog.cancelButton.hide()
         dialog.exec()
-        self._restart()
+        self._restart(helper_path)
+
+    @staticmethod
+    def _restart(helper_path: str):
+        import subprocess
+        # Launch helper with pythonw (no console window).
+        # It waits for this process to exit before copying files over.
+        pythonw = Path(sys.executable).parent / "pythonw.exe"
+        if not pythonw.exists():
+            pythonw = Path(sys.executable)
+        subprocess.Popen([str(pythonw), helper_path])
+        sys.exit(0)
 
     @Slot(str)
     def _onInstallError(self, error: str):
@@ -191,7 +249,3 @@ class UpdateManager:
         )
         dialog.cancelButton.hide()
         dialog.exec()
-
-    @staticmethod
-    def _restart():
-        os.execv(sys.executable, [sys.executable] + sys.argv)
