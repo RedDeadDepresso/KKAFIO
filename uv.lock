@@ -109,15 +109,13 @@ wheels = [
 
 [[package]]
 name = "kkafio"
-version = "1.3.3"
+version = "1.3.4"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
     { name = "packaging" },
     { name = "patool" },
     { name = "psutil" },
-    { name = "pyside6" },
-    { name = "pyside6-addons" },
     { name = "pyside6-essentials" },
     { name = "pyside6-fluent-widgets" },
     { name = "pysidesix-frameless-window" },
@@ -140,8 +138,6 @@ requires-dist = [
     { name = "packaging", specifier = ">=26.0" },
     { name = "patool", specifier = ">=3.0.0" },
     { name = "psutil", specifier = ">=6.0.0" },
-    { name = "pyside6", specifier = ">=6.7.2" },
-    { name = "pyside6-addons", specifier = ">=6.7.2" },
     { name = "pyside6-essentials", specifier = ">=6.7.2" },
     { name = "pyside6-fluent-widgets", specifier = ">=1.6.5" },
     { name = "pysidesix-frameless-window", specifier = ">=0.4.3" },
@@ -2758,16 +2754,16 @@ wheels = [
 
 [[package]]
 name = "pysidesix-frameless-window"
-version = "0.8.0"
+version = "0.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pycocoa", marker = "sys_platform == 'darwin'" },
     { name = "pyobjc", marker = "sys_platform == 'darwin'" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/da/96/cf1ce5673b6239d79251a458d9acd8a789f7f1be496f0b8880dd66cc41cf/pysidesix_frameless_window-0.8.0.tar.gz", hash = "sha256:e200e4b68edb1b2e03aa00d76d0e8b8d1daf6f289a5b91fba974578b6700ad94", size = 23286, upload-time = "2026-02-07T07:44:37.677Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/44/ee4b9ead46ec5fcc4d9a303f6ac82cb17b0e188bfe629ef962c4046cded5/pysidesix_frameless_window-0.8.1.tar.gz", hash = "sha256:95eefa64abdaca9d730bc097fd39e2cd07d3443a47a1645cc936a0076996d7cd", size = 23378, upload-time = "2026-03-21T02:04:36.72Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/ea/a7c4890cbc441a6fb543579e092eaaaed72843419cfd80ce8664508e940f/pysidesix_frameless_window-0.8.0-py3-none-any.whl", hash = "sha256:7bf011cf3e3c6edaa23b3578daaaa6e0e361a3fbf9a5317e0e037aaf4c8fe107", size = 31186, upload-time = "2026-02-07T07:44:36.731Z" },
+    { url = "https://files.pythonhosted.org/packages/60/02/13dc76880e9f54102b8d4859a1a14061c6914c12d8c8554dc49ef55ab209/pysidesix_frameless_window-0.8.1-py3-none-any.whl", hash = "sha256:0445e7ce095c3631893ec54edb470a47c2bb05ea64db736f446211550b7c2237", size = 31181, upload-time = "2026-03-21T02:04:35.829Z" },
 ]
 
 [[package]]
