@@ -31,24 +31,25 @@
 
 ## Requirements 
 - 7-Zip installed
-- if running from source code, Python 3.11 or latest, installed and added to your system's PATH.
+- If running from source code, [uv](https://docs.astral.sh/uv/getting-started/installation/) installed.
 
 ## Installation and Usage
 Download the latest version and extract it, then run KKAFIO.exe.
 
-If you want to run from source code, follow these steps to get KAFIO working:
+If you want to run from source code, follow these steps:
 1. Clone or download this repository.
-2. Install the required packages using `pip3` with the command `pip3 install -r requirements.txt`.
-4. Run `KKAFIO.py` and modify the settings to your preference.
-5. Press Start
+2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you haven't already.
+3. Run `uv sync` in the repository folder to create the virtual environment and install dependencies.
+4. Run `uv run KKAFIO.py` and modify the settings to your preference.
+5. Press Start.
 
-**Note**: You may have to run as administrator if Koikatsu is saved in C:\Program Files (x86). To do it run cmd as administrator, type cd with the path of KAFIO folder and then type python KAFIO.py
+**Note**: You may have to run as administrator if Koikatsu is saved in `C:\Program Files (x86)`. To do so, run Command Prompt as administrator, `cd` to the KKAFIO folder and then run `uv run KKAFIO.py`.
 Please feel free to use and modify KAFIO as you see fit. Your feedback and contributions are always welcome.
 
 ## Known Bugs
 Here are some known issues with KKAFIO:
 
-- Any .png that cannot be classified as chara or coordinate will be treated as Overlays. It is not a big issue, you can go to Overlays folder, sort by date and delete any files that are not overlays.
+- Any .png that cannot be classified as chara or coordinate will be treated as Overlays. It is not a big issue, you can go to the Overlays folder, sort by date and delete any files that are not overlays.
 
 ## Acknowledgment
 I'd like to express my gratitude to the following individuals, listed in no particular order:
