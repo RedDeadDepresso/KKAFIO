@@ -1,7 +1,6 @@
 # coding:utf-8
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QVBoxLayout
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QVBoxLayout
 from qfluentwidgets import AvatarWidget
 from qfluentwidgets.components.navigation import NavigationWidget
 

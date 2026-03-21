@@ -8,7 +8,7 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar, DisplayLabel
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QFileDialog
+from PySide6.QtWidgets import QWidget
 
 from ..common.config import cfg, HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR, isWin11
 from ..components.line_edit_card import LineEditSettingCard

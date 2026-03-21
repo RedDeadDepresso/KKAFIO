@@ -1,6 +1,6 @@
 [project]
 name = "kkafio"
-version = "1.3.2"
+version = "1.3.3"
 description = "Koikatsu Auto File I/O. Create backup, filter and convert kks cards, install/remove chara given a folder."
 readme = "README.md"
 requires-python = ">=3.14"

@@ -3,7 +3,6 @@ import os
 import sys
 import ssl
 import json
-import shutil
 import zipfile
 import tempfile
 
@@ -13,7 +12,7 @@ from urllib.request import urlopen
 from urllib.error import URLError
 from packaging.version import Version
 from PySide6.QtCore import QRunnable, QObject, Signal, Slot
-from qfluentwidgets import MessageBox
+from qfluentwidgets import MessageBox, ProgressBar, CaptionLabel
 
 from app.common.config import VERSION, REPO_URL, cfg
 
@@ -29,6 +28,8 @@ class UpdaterSignals(QObject):
     updateAvailable = Signal(str, str)  # (latest_version, download_url)
     noUpdate = Signal()
     error = Signal(str)
+    progress = Signal(int, int)          # (bytes_downloaded, total_bytes)
+    extracting = Signal()                # download done, extraction started
 
 
 class UpdateChecker(QRunnable):
@@ -85,59 +86,78 @@ class UpdateInstaller(QRunnable):
             zip_path = tmp_dir / "update.zip"
 
             with urlopen(self.download_url, context=_ssl_context()) as response:
-                zip_path.write_bytes(response.read())
+                total = int(response.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunk_size = 65536  # 64KB chunks
+                with open(zip_path, "wb") as f:
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        self.signals.progress.emit(downloaded, total)
 
-            # Extract to a staging folder inside tmp — do NOT extract directly
-            # over the install dir since the running exe locks files in _internal
+            self.signals.extracting.emit()
+
+            # Extract to staging — do NOT extract directly over the install dir
+            # since the running exe locks files in _internal
             staging_dir = tmp_dir / "staging"
             with zipfile.ZipFile(zip_path, "r") as zf:
                 zf.extractall(staging_dir)
 
-            install_dir = Path(sys.executable).parent
-            helper_path = install_dir / "_update_helper.py"
+            install_dir  = Path(sys.executable).parent
+            helper_path  = tmp_dir / "_update_helper.ps1"
+            executable   = install_dir / "KKAFIO.exe"
+            log_path     = tmp_dir / "update.log"
 
-            # Write a helper script that waits for this process to exit,
-            # copies staged files over, then restarts KKAFIO.exe
-            helper_script = f"""\
-import os
-import sys
-import time
-import shutil
-import psutil
+            # Use raw Windows paths with backslashes to avoid PowerShell path issues
+            staging_win  = str(staging_dir).replace("/", "\\")
+            target_win   = str(install_dir).replace("/", "\\")
+            exe_win      = str(executable).replace("/", "\\")
+            log_win      = str(log_path).replace("/", "\\")
 
-pid        = {os.getpid()}
-staging    = r"{staging_dir}"
-target     = r"{install_dir}"
-executable = r"{sys.executable}"
+            helper_script = f"""
+$pid_to_wait = {os.getpid()}
+$staging     = '{staging_win}'
+$target      = '{target_win}'
+$executable  = '{exe_win}'
+$log         = '{log_win}'
 
-# Wait for KKAFIO.exe to exit
-try:
-    proc = psutil.Process(pid)
-    proc.wait(timeout=30)
-except Exception:
-    pass
+function Log($msg) {{
+    $ts = Get-Date -Format 'HH:mm:ss'
+    Add-Content -Path $log -Value "[$ts] $msg"
+}}
 
-# Give the OS a moment to release file handles
-time.sleep(1)
+Log "Helper started. Waiting for PID $pid_to_wait to exit."
 
-# Copy staged files over the install dir
-for item in os.listdir(staging):
-    src = os.path.join(staging, item)
-    dst = os.path.join(target, item)
-    if os.path.isdir(src):
-        shutil.copytree(src, dst, dirs_exist_ok=True)
-    else:
-        shutil.copy2(src, dst)
+try {{
+    $proc = Get-Process -Id $pid_to_wait -ErrorAction SilentlyContinue
+    if ($proc) {{
+        Log "Process found, waiting..."
+        $proc.WaitForExit(30000)
+        Log "Process exited."
+    }} else {{
+        Log "Process already gone."
+    }}
+}} catch {{
+    Log "Wait error: $_"
+}}
 
-# Clean up staging and this helper script
-shutil.rmtree(staging, ignore_errors=True)
-try:
-    os.remove(os.path.join(target, "_update_helper.py"))
-except Exception:
-    pass
+Start-Sleep -Seconds 2
 
-# Restart KKAFIO
-os.execv(executable, [executable])
+Log "Running robocopy from $staging to $target"
+$result = robocopy $staging $target /MIR /IS /IT /IM /NFL /NDL 2>&1
+Log "Robocopy output: $result"
+Log "Robocopy exit code: $LASTEXITCODE"
+
+if ($LASTEXITCODE -le 7) {{
+    Log "Copy successful. Launching $executable"
+    Start-Process $executable
+    Log "Launched."
+}} else {{
+    Log "ERROR: robocopy failed with exit code $LASTEXITCODE"
+}}
 """
             helper_path.write_text(helper_script, encoding="utf-8")
 
@@ -145,6 +165,48 @@ os.execv(executable, [executable])
 
         except Exception as e:
             self.signals.error.emit(str(e))
+
+
+class DownloadDialog(MessageBox):
+    """Modal dialog that shows a progress bar while the update is downloading."""
+
+    def __init__(self, parent=None):
+        super().__init__(
+            "Downloading update",
+            "Please wait while the update is being downloaded...",
+            parent
+        )
+        # Hide the buttons — the dialog closes automatically when done
+        self.yesButton.hide()
+        self.cancelButton.hide()
+
+        self.statusLabel = CaptionLabel("Starting download...", self)
+        self.progressBar = ProgressBar(self)
+        self.progressBar.setRange(0, 100)
+        self.progressBar.setValue(0)
+
+        self.textLayout.addWidget(self.statusLabel)
+        self.textLayout.addWidget(self.progressBar)
+
+    @Slot(int, int)
+    def onProgress(self, downloaded: int, total: int):
+        if total > 0:
+            percent = int(downloaded / total * 100)
+            self.progressBar.setValue(percent)
+            self.statusLabel.setText(
+                f"Downloading... {downloaded // (1024*1024):.1f} MB / {total // (1024*1024):.1f} MB"
+            )
+        else:
+            # Content-Length not available — show indeterminate progress
+            self.progressBar.setRange(0, 0)
+            self.statusLabel.setText(
+                f"Downloading... {downloaded // (1024*1024):.1f} MB"
+            )
+
+    @Slot()
+    def onExtracting(self):
+        self.progressBar.setRange(0, 0)
+        self.statusLabel.setText("Extracting...")
 
 
 class UpdateManager:
@@ -192,13 +254,21 @@ class UpdateManager:
             self._install(download_url)
 
     def _install(self, download_url: str):
+        self._download_dialog = DownloadDialog(self.main_window)
+
         installer = UpdateInstaller(download_url)
+        installer.signals.progress.connect(self._download_dialog.onProgress)
+        installer.signals.extracting.connect(self._download_dialog.onExtracting)
         installer.signals.updateAvailable.connect(self._onInstallDone)
         installer.signals.error.connect(self._onInstallError)
+        installer.signals.error.connect(lambda _: self._download_dialog.close())
+
         self.signal_bus.threadPool.start(installer)
+        self._download_dialog.exec()
 
     @Slot(str, str)
     def _onInstallDone(self, _, helper_path: str):
+        self._download_dialog.close()
         dialog = MessageBox(
             "Update ready",
             "The update has been downloaded. KKAFIO will now close and apply the update, then restart automatically.",
@@ -211,12 +281,21 @@ class UpdateManager:
     @staticmethod
     def _restart(helper_path: str):
         import subprocess
-        # Launch helper with pythonw (no console window).
-        # It waits for this process to exit before copying files over.
-        pythonw = Path(sys.executable).parent / "pythonw.exe"
-        if not pythonw.exists():
-            pythonw = Path(sys.executable)
-        subprocess.Popen([str(pythonw), helper_path])
+        import time
+
+        # Use cmd.exe to launch PowerShell so it's fully detached from this process tree.
+        # start /b launches it in the background with no window.
+        cmd = (
+            f'powershell.exe -ExecutionPolicy Bypass -File "{helper_path}"'
+        )
+        subprocess.Popen(
+            f'cmd.exe /c start "" /b {cmd}',
+            shell=True,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+
+        # Brief pause to ensure the process is spawned before we exit
+        time.sleep(0.5)
         sys.exit(0)
 
     @Slot(str)

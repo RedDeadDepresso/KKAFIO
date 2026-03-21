@@ -6,8 +6,7 @@ from importlib.metadata import version, PackageNotFoundError
 
 from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
-                            OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderListValidator, Theme, FolderValidator, ConfigSerializer)
+                            OptionsValidator, RangeConfigItem, RangeValidator, Theme, FolderValidator, ConfigSerializer)
 
 
 class Language(Enum):
