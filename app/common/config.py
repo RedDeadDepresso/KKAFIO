@@ -2,11 +2,12 @@
 import os 
 import sys
 from enum import Enum
+from importlib.metadata import version, PackageNotFoundError
 
 from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderListValidator, Theme, FolderValidator, ConfigSerializer, __version__)
+                            FolderListValidator, Theme, FolderValidator, ConfigSerializer)
 
 
 class Language(Enum):
@@ -106,15 +107,20 @@ class Config(QConfig):
 
 
 YEAR = 2023
-AUTHOR = "zhiyiYo"
-VERSION = __version__
-HELP_URL = "https://qfluentwidgets.com"
-REPO_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets"
-EXAMPLE_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/tree/PySide6/examples"
-FEEDBACK_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/issues"
-RELEASE_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/releases/latest"
-ZH_SUPPORT_URL = "https://qfluentwidgets.com/zh/price/"
-EN_SUPPORT_URL = "https://qfluentwidgets.com/price/"
+AUTHOR = "RedDeadDepresso"
+
+try:
+    VERSION = version("kkafio")
+except PackageNotFoundError:
+    # Fallback for running directly from source without the package installed
+    VERSION = "0.0.0"
+
+HELP_URL = "https://github.com/RedDeadDepresso/KKAFIO/issues"
+REPO_URL = "https://github.com/RedDeadDepresso/KKAFIO"
+FEEDBACK_URL = "https://github.com/RedDeadDepresso/KKAFIO/issues"
+RELEASE_URL = "https://github.com/RedDeadDepresso/KKAFIO/releases/latest"
+ZH_SUPPORT_URL = "https://github.com/RedDeadDepresso/KKAFIO/issues"
+EN_SUPPORT_URL = "https://github.com/RedDeadDepresso/KKAFIO/issues"
 
 
 cfg = Config()

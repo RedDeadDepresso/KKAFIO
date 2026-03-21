@@ -18,6 +18,7 @@ class SignalBus(QObject):
     startSignal = Signal()
     stopSignal = Signal()
     loggerSignal = Signal(str)
+    checkUpdateSignal = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)

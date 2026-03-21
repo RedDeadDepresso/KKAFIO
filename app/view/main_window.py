@@ -13,6 +13,7 @@ from .setting_interface import SettingInterface
 from ..common.notification import notification
 from ..common.config import ZH_SUPPORT_URL, EN_SUPPORT_URL, cfg
 from ..common.signal_bus import signalBus
+from ..common.updater import UpdateManager
 from ..common import resource
 from ..components.clear_messagebox import ClearMessageBox
 from ..components.navigation_checkbox import NavigationCheckBox
@@ -41,6 +42,9 @@ class MainWindow(FluentWindow):
         # add items to navigation interface
         self.initNavigation()
         self.splashScreen.finish()
+
+        self.updateManager = UpdateManager(signalBus, self)
+        self.updateManager.check()
 
     def connectSignalToSlot(self):
         signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
