@@ -5,6 +5,15 @@ import shutil
 import zipfile
 import tempfile
 
+# When running as a PyInstaller exe the SSL DLLs live in _internal alongside
+# the exe. OpenSSL needs to find them via environment variables before the ssl
+# module initialises, which happens on first import of requests/urllib.
+if hasattr(sys, "_MEIPASS"):
+    _internal = sys._MEIPASS
+    os.environ.setdefault("SSL_CERT_FILE", os.path.join(_internal, "certifi", "cacert.pem"))
+    os.environ.setdefault("SSL_CERT_DIR", _internal)
+    os.environ.setdefault("OPENSSL_CONF", os.path.join(_internal, "openssl.cnf"))
+
 import requests
 from pathlib import Path
 from packaging.version import Version

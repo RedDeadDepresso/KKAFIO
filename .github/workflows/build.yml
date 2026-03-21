@@ -48,8 +48,10 @@ jobs:
           --icon "app/resource/images/logo.ico"
           --add-data "app/resource;app/resource"
           --collect-data "qfluentwidgets"
+          --collect-data "certifi"
           --hidden-import "PySide6.QtSvg"
           --hidden-import "qfluentwidgets"
+          --hidden-import "_ssl"
           KKAFIO.py
 
       # ── Assemble final dist folder ──────────────────────────────────────────
