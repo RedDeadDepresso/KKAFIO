@@ -1,27 +1,25 @@
 # coding: utf-8
 import os
 import sys
+import ssl
+import json
 import shutil
 import zipfile
 import tempfile
 
-# When running as a PyInstaller exe the SSL DLLs live in _internal alongside
-# the exe. OpenSSL needs to find them via environment variables before the ssl
-# module initialises, which happens on first import of requests/urllib.
-if hasattr(sys, "_MEIPASS"):
-    _internal = sys._MEIPASS
-    os.environ.setdefault("SSL_CERT_FILE", os.path.join(_internal, "certifi", "cacert.pem"))
-    os.environ.setdefault("SSL_CERT_DIR", _internal)
-    os.environ.setdefault("OPENSSL_CONF", os.path.join(_internal, "openssl.cnf"))
-
-import requests
+import certifi
 from pathlib import Path
+from urllib.request import urlopen
+from urllib.error import URLError
 from packaging.version import Version
 from PySide6.QtCore import QRunnable, QObject, Signal, Slot
-from PySide6.QtWidgets import QApplication
 from qfluentwidgets import MessageBox
 
 from app.common.config import VERSION, REPO_URL, cfg
+
+
+def _ssl_context():
+    return ssl.create_default_context(cafile=certifi.where())
 
 
 GITHUB_API = REPO_URL.replace("https://github.com/", "https://api.github.com/repos/") + "/releases/latest"
@@ -43,9 +41,8 @@ class UpdateChecker(QRunnable):
 
     def run(self):
         try:
-            response = requests.get(GITHUB_API, timeout=5)
-            response.raise_for_status()
-            data = response.json()
+            with urlopen(GITHUB_API, timeout=5, context=_ssl_context()) as response:
+                data = json.loads(response.read().decode())
 
             latest = data.get("tag_name", "").lstrip("v")
             if not latest:
@@ -67,8 +64,8 @@ class UpdateChecker(QRunnable):
             else:
                 self.signals.noUpdate.emit()
 
-        except requests.RequestException as e:
-            self.signals.error.emit(f"Network error: {e}")
+        except URLError as e:
+            self.signals.error.emit(f"Network error: {e.reason}")
         except Exception as e:
             self.signals.error.emit(str(e))
 
@@ -87,11 +84,8 @@ class UpdateInstaller(QRunnable):
             tmp_dir = Path(tempfile.mkdtemp())
             zip_path = tmp_dir / "update.zip"
 
-            response = requests.get(self.download_url, stream=True)
-            response.raise_for_status()
-            with open(zip_path, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+            with urlopen(self.download_url, context=_ssl_context()) as response:
+                zip_path.write_bytes(response.read())
 
             install_dir = Path(sys.executable).parent
 
