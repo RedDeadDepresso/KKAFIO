@@ -146,17 +146,35 @@ try {{
 
 Start-Sleep -Seconds 2
 
-Log "Running robocopy from $staging to $target"
-$result = robocopy $staging $target /MIR /IS /IT /IM /NFL /NDL /XD "$target\app\config" 2>&1
-Log "Robocopy output: $result"
-Log "Robocopy exit code: $LASTEXITCODE"
+Log "Copying files from staging to target"
+$errors = 0
+Get-ChildItem -Path $staging | ForEach-Object {{
+    $dest = Join-Path $target $_.Name
+    try {{
+        if ($_.PSIsContainer) {{
+            $result = robocopy $_.FullName $dest /MIR /IS /IT /IM /NFL /NDL 2>&1
+            if ($LASTEXITCODE -le 7) {{
+                Log "Mirrored dir: $($_.Name)"
+            }} else {{
+                Log "ERROR mirroring dir $($_.Name): exit code $LASTEXITCODE"
+                $errors++
+            }}
+        }} else {{
+            Copy-Item -Path $_.FullName -Destination $dest -Force
+            Log "Copied file: $($_.Name)"
+        }}
+    }} catch {{
+        Log "ERROR copying $($_.Name): $_"
+        $errors++
+    }}
+}}
 
-if ($LASTEXITCODE -le 7) {{
+if ($errors -eq 0) {{
     Log "Copy successful. Launching $executable"
     Start-Process $executable
     Log "Launched."
 }} else {{
-    Log "ERROR: robocopy failed with exit code $LASTEXITCODE"
+    Log "ERROR: $errors item(s) failed to copy"
 }}
 """
             helper_path.write_text(helper_script, encoding="utf-8")
@@ -269,13 +287,6 @@ class UpdateManager:
     @Slot(str, str)
     def _onInstallDone(self, _, helper_path: str):
         self._download_dialog.close()
-        dialog = MessageBox(
-            "Update ready",
-            "The update has been downloaded. KKAFIO will now close and apply the update, then restart automatically.",
-            self.main_window
-        )
-        dialog.cancelButton.hide()
-        dialog.exec()
         self._restart(helper_path)
 
     @staticmethod
