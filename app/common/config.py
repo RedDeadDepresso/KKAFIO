@@ -8,6 +8,8 @@ from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator, Theme, FolderValidator, ConfigSerializer)
 
+from util.constants import CONFIG_PATH
+
 
 class Language(Enum):
     """ Language enumeration """
@@ -124,4 +126,4 @@ EN_SUPPORT_URL = "https://github.com/RedDeadDepresso/KKAFIO/issues"
 
 cfg = Config()
 cfg.themeMode.value = Theme.AUTO
-qconfig.load('app/config/config.json', cfg)
+qconfig.load(str(CONFIG_PATH), cfg)

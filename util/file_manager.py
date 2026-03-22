@@ -9,6 +9,8 @@ from pathlib import Path
 from util.logger import logger
 from typing import Union, Literal
 
+from util.constants import SEVEN_ZIP_PATH
+
 
 FileEntry = tuple[Path, int, str]
 
@@ -16,7 +18,7 @@ FileEntry = tuple[Path, int, str]
 class FileManager:
     def __init__(self, config):
         self.config = config
-        self.backup_info_path = Path('app/config/7zip.json')
+        self.backup_info_path = SEVEN_ZIP_PATH
 
     def find_all_files(self, directory: Union[Path, str]) -> tuple[list[FileEntry], list[FileEntry]]:
         """Find all files and archive files in the given directory.

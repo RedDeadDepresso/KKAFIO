@@ -5,6 +5,7 @@ try:
         pass
 
     from util.config import Config
+    from util.constants import CONFIG_PATH
     from util.logger import logger    
     from util.file_manager import FileManager
     from modules.install_chara import InstallChara
@@ -60,7 +61,7 @@ except:
 
 
 if __name__ == "__main__":
-    config = Config('app/config/config.json')
+    config = Config(str(CONFIG_PATH))
     file_manager = FileManager(config)
     script = Script(config, file_manager)
     script.run()

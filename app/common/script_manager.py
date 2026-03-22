@@ -5,6 +5,8 @@ import psutil
 from pathlib import Path
 from PySide6.QtCore import QProcess, QObject, Slot, QRunnable
 
+from util.constants import SEVEN_ZIP_PATH
+
 
 class ScriptCleaner(QRunnable):
     def __init__(self, backupInfoPath: Path) -> None:
@@ -80,17 +82,16 @@ class ScriptManager(QObject):
     def stop(self):
         if self.procScript is not None:
             self.procScript.kill()
-            scriptCleaner = ScriptCleaner(Path('app/config/7zip.json'))
+            scriptCleaner = ScriptCleaner(SEVEN_ZIP_PATH)
             self.signalBus.threadPool.start(scriptCleaner)
 
     @Slot()
     def processFinished(self):
         """Slot called when the process finishes naturally."""
         self.procScript = None
-        scriptCleaner = ScriptCleaner(Path('app/config/7zip.json'))
+        scriptCleaner = ScriptCleaner(SEVEN_ZIP_PATH)
         self.signalBus.threadPool.start(scriptCleaner)
         self.signalBus.stopSignal.emit()
 
     def scriptRunning(self) -> bool:
         return self.procScript is not None
-
