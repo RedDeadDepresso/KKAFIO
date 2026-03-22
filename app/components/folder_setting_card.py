@@ -18,14 +18,19 @@ class FolderLineEdit(LineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.validButton = LineEditButton(FluentIcon.ACCEPT, self)
+        self.validButton.setToolTip(self.tr("Path is valid"))
         self.hBoxLayout.addWidget(self.validButton, 0, Qt.AlignRight)
         self.setTextMargins(0, 0, 59, 0)
 
     def setValid(self, value: bool):
         if value:
             self.validButton._icon = FluentIcon.ACCEPT
+            self.validButton.setToolTip(self.tr("Path is valid"))
+            self.setError(False)
         else:
             self.validButton._icon = FluentIcon.CLOSE
+            self.validButton.setToolTip(self.tr("Path is invalid"))
+            self.setError(True)
 
 
 class FolderSettingCard(SettingCard):
