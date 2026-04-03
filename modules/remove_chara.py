@@ -20,7 +20,7 @@ class RemoveChara:
         card_type = get_card_type(image_bytes)
 
         match card_type:
-            case CardType.KK:
+            case CardType.KK | CardType.KKSP:
                 if is_male(image_bytes):
                     self.file_manager.find_and_remove("CHARA M", image_path, self.game_path["charaMale"])
                 else:

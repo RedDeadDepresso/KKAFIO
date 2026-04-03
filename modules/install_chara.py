@@ -21,13 +21,13 @@ class InstallChara:
         card_type = get_card_type(image_bytes)
 
         match card_type:
-            case CardType.KK:
+            case CardType.KK | CardType.KKSP:
                 if is_male(image_bytes):
                     self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
                 else:
                     self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
 
-            case CardType.KKS | CardType.KKSP:
+            case CardType.KKS:
                 logger.error("CHARA", f"{image_path.name} is a {card_type.value} card")
 
             case CardType.UNKNOWN:
