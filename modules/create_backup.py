@@ -1,5 +1,9 @@
+from util.config import Config
+from util.file_manager import FileManager
+
+
 class CreateBackup:
-    def __init__(self, config, file_manager):
+    def __init__(self, config: Config, file_manager: FileManager):
         """Initializes the CreateBackup module.
 
         Args:

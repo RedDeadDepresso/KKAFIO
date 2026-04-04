@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from util.logger import logger
-from typing import Union, Literal
+from typing import Literal
 
 from util.constants import SEVEN_ZIP_PATH
 
@@ -20,7 +20,7 @@ class FileManager:
         self.config = config
         self.backup_info_path = SEVEN_ZIP_PATH
 
-    def find_all_files(self, directory: Union[Path, str]) -> tuple[list[FileEntry], list[FileEntry]]:
+    def find_all_files(self, directory: Path | str) -> tuple[list[FileEntry], list[FileEntry]]:
         """Find all files and archive files in the given directory.
 
         Returns:
@@ -50,7 +50,7 @@ class FileManager:
 
         return file_list, archive_list
     
-    def copy_and_paste(self, type: str, source_path: Union[Path, str], destination_folder: Union[str, Path]):
+    def copy_and_paste(self, type: str, source_path: Path | str, destination_folder: str | Path):
         """Copy file from source to destination, handling file conflicts."""
         source_path = Path(source_path)
         destination_folder = Path(destination_folder)
@@ -94,7 +94,7 @@ class FileManager:
         except Exception as e:
             logger.error(type, f"An error occurred: {e}")
 
-    def find_and_remove(self, file_type: str, source_path: Union[str, Path], destination_folder: Union[str, Path]):
+    def find_and_remove(self, file_type: str, source_path: str | Path, destination_folder: str | Path):
         """Remove file if it exists at the destination."""
         source_path = Path(source_path)
         destination_folder = Path(destination_folder)
@@ -109,7 +109,7 @@ class FileManager:
             except OSError as e:
                 logger.error(file_type, base_name)
 
-    def create_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
+    def create_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: str | Path):
         """Create an archive of the given folders using 7zip."""
         # Specify the full path to the 7zip executable
         path_to_7zip = patoolib.util.find_program("7z")
@@ -163,7 +163,7 @@ class FileManager:
             data = {"ArchivePath": str(archive_path), "PID": pid}
             json.dump(data, f)
 
-    def extract_archive(self, archive_path: Union[Path, str]):
+    def extract_archive(self, archive_path: Path | str):
         from app.components.password_dialog import password_dialog
         """Extract the archive."""
         archive_path = Path(archive_path)

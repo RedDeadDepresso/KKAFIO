@@ -1,6 +1,5 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union
 
 
 class CardType(Enum):
@@ -10,7 +9,7 @@ class CardType(Enum):
     KKS = "KKS"
     
 
-def get_card_type(card: Union[str, Path, bytes]):
+def get_card_type(card: str | Path | bytes):
     if isinstance(card, (str, Path)):
         card = Path(card).read_bytes()
 

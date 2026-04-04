@@ -1,10 +1,12 @@
 from pathlib import Path
+from util.config import Config
 from util.classifier import CardType, get_card_type, is_male, is_coordinate
+from util.file_manager import FileManager
 from util.logger import logger
 
 
 class RemoveChara:
-    def __init__(self, config, file_manager):
+    def __init__(self, config: Config, file_manager: FileManager):
         """Initializes the RemoveChara module.
 
         Args:

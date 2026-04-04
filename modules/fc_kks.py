@@ -1,12 +1,14 @@
 import shutil
 
 from pathlib import Path
+from util.config import Config
 from util.classifier import CardType, get_card_type
+from util.file_manager import FileManager
 from util.logger import logger
 
 
 class FilterConvertKKS:
-    def __init__(self, config, file_manager):
+    def __init__(self, config: Config, file_manager: FileManager):
         """Initializes the FilterConvertKKS module.
 
         Args:
