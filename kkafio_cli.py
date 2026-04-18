@@ -12,9 +12,9 @@ Task commands (arguments override config; omit to use config value):
                              [--userdata | --no-userdata]
                              [--bepinex | --no-bepinex]
 
-Shell context menu (Windows Explorer right-click integration):
-    kkafio_cli register      # generate + import .reg file (requires Admin)
-    kkafio_cli unregister    # remove entries (requires Admin)
+Shell context menu:
+    Run register_context_menu.bat as Administrator to add KKAFIO to the
+    Explorer right-click menu.  Run unregister_context_menu.bat to remove it.
 
 Global options:
     --config PATH   use a custom config.json instead of %APPDATA%/KKAFIO/config.json
@@ -36,125 +36,6 @@ def _self_path() -> str:
         return sys.executable
     return os.path.abspath(__file__)
 
-
-# ---------------------------------------------------------------------------
-# Shell context menu — .reg file approach
-#
-# Writing registry keys from Python/winreg is unreliable for Explorer context
-# menus because the shell caches and validates entries in ways that differ
-# across Windows versions.  The proven approach used by tools like 7-Zip is a
-# plain .reg file imported via regedit.  We generate that file dynamically so
-# it always contains the correct absolute path, then invoke regedit /s to
-# import it silently (requires Admin).
-# ---------------------------------------------------------------------------
-
-# Each tuple: (registry key name, visible label, CLI subcommand, extra args)
-# Key names must be plain identifiers — no slashes or special chars.
-# %1 = right-clicked folder  (Directory\shell)
-# %V = open folder background (Directory\Background\shell) — substituted below
-MENU_TASKS = [
-    ("InstallChara", "Install Chara",        "install-chara", '--input "%1"'),
-    ("RemoveChara",  "Remove Chara",          "remove-chara",  '--input "%1"'),
-    ("FilterKKS",    "Filter / Convert KKS", "fc-kks",        '--input "%1"'),
-    ("RunAll",       "Run All (from config)", "run",           ""),
-]
-
-REG_ROOTS = [
-    r"Directory\shell\KKAFIO",
-    r"Directory\Background\shell\KKAFIO",
-]
-
-
-def _reg_esc(path: str) -> str:
-    """Escape backslashes in a path for use inside a .reg REG_SZ value."""
-    return path.replace("\\", "\\\\")
-
-
-def _cmd_prefix() -> str:
-    """Return the command prefix already escaped for a .reg file value.
-
-    Frozen  ->  \\"C:\\\\path\\\\kkafio_cli.exe\\"
-    Source  ->  \\"C:\\\\path\\\\python.exe\\" \\"C:\\\\path\\\\kkafio_cli.py\\"
-    """
-    if getattr(sys, "frozen", False):
-        return '\\"' + _reg_esc(_self_path()) + '\\"'
-    else:
-        python = _reg_esc(os.path.abspath(sys.executable))
-        script = _reg_esc(_self_path())
-        return '\\"' + python + '\\" \\"' + script + '\\"'
-
-
-def _generate_reg(unregister: bool = False) -> str:
-    """Return the full content of a .reg file for register or unregister."""
-    lines = ["Windows Registry Editor Version 5.00", ""]
-
-    if unregister:
-        for root in REG_ROOTS:
-            lines.append("[-HKEY_CLASSES_ROOT\\" + _reg_esc(root) + "]")
-            lines.append("")
-        return "\n".join(lines)
-
-    prefix = _cmd_prefix()
-
-    for root in REG_ROOTS:
-        is_bg = "Background" in root
-        reg_root = "HKEY_CLASSES_ROOT\\" + _reg_esc(root)
-
-        # Parent key — label + cascade indicator
-        lines.append("[" + reg_root + "]")
-        lines.append('@="KKAFIO"')
-        lines.append('"MUIVerb"="KKAFIO"')
-        if getattr(sys, "frozen", False):
-            lines.append('"Icon"="\\"' + _reg_esc(_self_path()) + '\\""')
-        lines.append("")
-
-        for key_name, label, subcmd, extra in MENU_TASKS:
-            actual_extra = extra.replace("%1", "%V") if is_bg and "%1" in extra else extra
-            full_cmd = (prefix + " " + subcmd + " " + actual_extra).strip()
-
-            child = reg_root + "\\\\shell\\\\" + key_name
-            lines.append("[" + child + "]")
-            lines.append('@="' + label + '"')
-            lines.append('"MUIVerb"="' + label + '"')
-            lines.append("")
-            lines.append("[" + child + "\\\\command]")
-            lines.append('@="' + full_cmd + '"')
-            lines.append("")
-
-    return "\n".join(lines)
-
-
-def _run_reg_file(reg_content: str, verb: str) -> None:
-    """Write a temp .reg file and import it silently via regedit (requires Admin)."""
-    import tempfile
-    import subprocess
-
-    # regedit requires UTF-16 LE with BOM for .reg files
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".reg",
-                                     delete=False, encoding="utf-16") as f:
-        f.write(reg_content)
-        tmp_path = f.name
-
-    try:
-        result = subprocess.run(["regedit.exe", "/s", tmp_path], capture_output=True)
-        if result.returncode != 0:
-            print(f"[ERROR] regedit exited with code {result.returncode}.")
-            print("        Make sure you are running as Administrator.")
-            sys.exit(1)
-        print(f"[OK] KKAFIO context menu {verb}.")
-        if verb == "registered":
-            print("     Right-click any folder in Explorer to see it.")
-            print("     To remove:  kkafio_cli unregister")
-    finally:
-        os.unlink(tmp_path)
-
-
-def cmd_register(args):
-    _run_reg_file(_generate_reg(unregister=False), "registered")
-
-
-def cmd_unregister(args):
-    _run_reg_file(_generate_reg(unregister=True), "unregistered")
 
 
 # ---------------------------------------------------------------------------
@@ -382,27 +263,6 @@ def build_parser() -> argparse.ArgumentParser:
     fg.add_argument("--bepinex",      dest="bepinex",      action="store_true", default=False)
     fg.add_argument("--no-bepinex",   dest="no_bepinex",   action="store_true", default=False)
     p.set_defaults(func=cmd_create_backup)
-
-    # register
-    p = sub.add_parser(
-        "register",
-        help="Add KKAFIO to the Explorer folder right-click menu (requires Admin)",
-        description=(
-            "Generates a .reg file with the correct absolute path to this executable\n"
-            "(or Python interpreter when run from source) and imports it via regedit.\n\n"
-            "Requires Administrator privileges.\n\n"
-            "To test from source without building:\n"
-            "  python kkafio_cli.py register"
-        ),
-    )
-    p.set_defaults(func=cmd_register)
-
-    # unregister
-    p = sub.add_parser(
-        "unregister",
-        help="Remove KKAFIO from the Explorer folder right-click menu (requires Admin)",
-    )
-    p.set_defaults(func=cmd_unregister)
 
     return parser
 

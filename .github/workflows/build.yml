@@ -63,6 +63,8 @@ jobs:
           Copy-Item -Recurse -Force `
             "dist\kkafio_cli\_internal\*" `
             "dist\KKAFIO\_internal\"
+          Copy-Item "register_context_menu.bat"   "dist\KKAFIO\register_context_menu.bat"
+          Copy-Item "unregister_context_menu.bat" "dist\KKAFIO\unregister_context_menu.bat"
 
       # ── Copy SSL DLLs AFTER assemble so they are not overwritten ────────────
       - name: Copy SSL DLLs
