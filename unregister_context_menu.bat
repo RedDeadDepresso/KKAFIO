@@ -1,26 +1,20 @@
 @echo off
-:: Removes KKAFIO from the Explorer right-click menu.
-:: Must be run as Administrator.
+:: Removes KKAFIO from the Explorer right-click menu for the current user.
+:: Does NOT require Administrator.
 
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo ERROR: Please run this script as Administrator.
-    pause
-    exit /b 1
-)
+set "REG_FILE=%TEMP%\KKAFIO_unregister.reg"
 
-set "REG_FILE=%~dp0KKAFIO_unregister.reg"
 (
 echo Windows Registry Editor Version 5.00
 echo.
-echo [-HKEY_CLASSES_ROOT\Directory\shell\KKAFIO]
+echo [-HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO]
 echo.
-echo [-HKEY_CLASSES_ROOT\Directory\Background\shell\KKAFIO]
+echo [-HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO]
 ) > "%REG_FILE%"
 
 regedit /s "%REG_FILE%"
 if %errorLevel% neq 0 (
-    echo ERROR: regedit failed. Make sure you are running as Administrator.
+    echo ERROR: regedit failed with code %errorLevel%.
     pause
     exit /b 1
 )
