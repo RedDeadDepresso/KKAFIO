@@ -26,11 +26,11 @@ jobs:
       - name: Install dependencies (no dev)
         run: uv sync --no-dev --group build
 
-      # ── Build script.exe ────────────────────────────────────────────────────
-      - name: Build script.exe
+      # ── Build kkafio_cli.exe ─────────────────────────────────────────────────
+      - name: Build kkafio_cli.exe
         run: >
           uv run pyinstaller --noconfirm --onedir
-          --name "script"
+          --name "kkafio_cli"
           --hidden-import "util.config"
           --hidden-import "util.logger"
           --hidden-import "util.file_manager"
@@ -38,7 +38,7 @@ jobs:
           --hidden-import "modules.remove_chara"
           --hidden-import "modules.fc_kks"
           --hidden-import "modules.create_backup"
-          script.py
+          kkafio_cli.py
 
       # ── Build KKAFIO.exe ────────────────────────────────────────────────────
       - name: Build KKAFIO.exe
@@ -59,9 +59,9 @@ jobs:
       - name: Assemble release folder
         shell: pwsh
         run: |
-          Copy-Item "dist\script\script.exe" "dist\KKAFIO\script.exe"
+          Copy-Item "dist\kkafio_cli\kkafio_cli.exe" "dist\KKAFIO\kkafio_cli.exe"
           Copy-Item -Recurse -Force `
-            "dist\script\_internal\*" `
+            "dist\kkafio_cli\_internal\*" `
             "dist\KKAFIO\_internal\"
 
       # ── Copy SSL DLLs AFTER assemble so they are not overwritten ────────────

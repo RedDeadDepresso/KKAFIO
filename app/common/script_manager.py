@@ -45,10 +45,10 @@ class ScriptManager(QObject):
         if self.procScript is not None:
             self.stop()
         else:
-            if Path("script.exe").exists():
-                args = ["script.exe"]
-            elif Path("script.py").exists():
-                args = [sys.executable, "-u", "script.py"]  # -u disables stdout/stderr buffering
+            if Path("kkafio_cli.exe").exists():
+                args = ["kkafio_cli.exe", "run"]
+            elif Path("kkafio_cli.py").exists():
+                args = [sys.executable, "-u", "kkafio_cli.py", "run"]  # -u disables buffering
             else:
                 self.logger.error("No valid script found to execute.")
                 return
