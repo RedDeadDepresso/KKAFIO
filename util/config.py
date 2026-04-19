@@ -58,7 +58,7 @@ class Config:
                 raise Exception(f"Game path not valid: {path}")
 
     def validate_tasks(self):
-        tasks = ["CreateBackup", "FilterConvertKKS", "InstallChara", "RemoveChara"]
+        tasks = ["CreateBackup", "FilterConvertKKS", "FilterDuplicates", "InstallChara", "RemoveChara"]
 
         for task in tasks:
             task_config = self.config_data[task]
@@ -75,5 +75,6 @@ class Config:
 
         self.create_backup = self.config_data["CreateBackup"]
         self.fc_kks = self.config_data["FilterConvertKKS"]
+        self.filter_duplicates = self.config_data["FilterDuplicates"]
         self.install_chara = self.config_data["InstallChara"]
         self.remove_chara = self.config_data["RemoveChara"]

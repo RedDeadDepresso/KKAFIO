@@ -96,6 +96,55 @@ class SettingInterface(ScrollArea):
             configItem=cfg.convert,
             parent=self.fckksGroup
         )
+        self.fckksExtractArchiveCard = SwitchSettingCard(
+            FIF.ZIP_FOLDER,
+            self.tr('Extract archives'),
+            self.tr('Extract ZIP, RAR and 7z archives found in the input directory before filtering'),
+            configItem=cfg.fckksExtractArchive,
+            parent=self.fckksGroup
+        )
+        self.fckksArchivePasswordCard = ComboBoxSettingCard(
+            cfg.fckksArchivePassword,
+            FIF.QUESTION,
+            self.tr('If password is required for archives:'),
+            texts=["Skip", "Request Password"],
+            parent=self.fckksGroup
+        )
+
+        # filterDuplicates
+        self.filterDuplicatesGroup = SettingCardGroup(
+            self.tr("Filter Duplicates"), self.scrollWidget)
+        self.filterDuplicatesPathCard = FolderSettingCard(
+            cfg.filterDuplicatesPath,
+            FIF.SEARCH,
+            'Filter Duplicates',
+            self.tr("Input directory"),
+            parent=self.filterDuplicatesGroup
+        )
+        self.filterDuplicatesFuzzyCard = SwitchSettingCard(
+            FIF.SEARCH,
+            self.tr('Fuzzy matching for character cards'),
+            self.tr('Use perceptual image hashing to catch updated cards with the same preview pose. May produce false positives.'),
+            configItem=cfg.filterDuplicatesFuzzy,
+            parent=self.filterDuplicatesGroup
+        )
+        self.filterDuplicatesKeepCard = ComboBoxSettingCard(
+            cfg.filterDuplicatesKeep,
+            FIF.PIN,
+            self.tr('Which copy to keep as the original'),
+            self.tr('When duplicates are found, this determines which file is kept in place. All others are moved or deleted.'),
+            texts=["None — move all copies", "Newest", "Oldest",
+                   "Biggest file size", "Smallest file size",
+                   "Last alphabetically", "First alphabetically"],
+            parent=self.filterDuplicatesGroup
+        )
+        self.filterDuplicatesDeleteCard = SwitchSettingCard(
+            FIF.DELETE,
+            self.tr('Send duplicates to recycle bin'),
+            self.tr('Delete duplicates immediately via the recycle bin instead of moving them to a _duplicates_ folder'),
+            configItem=cfg.filterDuplicatesDelete,
+            parent=self.filterDuplicatesGroup
+        )
 
         # installChara
         self.installGroup = SettingCardGroup(
@@ -120,6 +169,13 @@ class SettingInterface(ScrollArea):
             FIF.QUESTION,
             self.tr('If password is required for archives:'),
             texts=["Skip", "Request Password"],
+            parent=self.installGroup
+        )
+        self.installExtractArchiveCard = SwitchSettingCard(
+            FIF.ZIP_FOLDER,
+            self.tr('Extract archives'),
+            self.tr('Extract ZIP, RAR and 7z archives found in the input directory before installing'),
+            configItem=cfg.installExtractArchive,
             parent=self.installGroup
         )
     
@@ -183,15 +239,15 @@ class SettingInterface(ScrollArea):
         )
 
         # material
-        self.materialGroup = SettingCardGroup(
-            self.tr('Material'), self.scrollWidget)
-        self.blurRadiusCard = RangeSettingCard(
-            cfg.blurRadius,
-            FIF.ALBUM,
-            self.tr('Acrylic blur radius'),
-            self.tr('The greater the radius, the more blurred the image'),
-            self.materialGroup
-        )
+        # self.materialGroup = SettingCardGroup(
+        #     self.tr('Material'), self.scrollWidget)
+        # self.blurRadiusCard = RangeSettingCard(
+        #     cfg.blurRadius,
+        #     FIF.ALBUM,
+        #     self.tr('Acrylic blur radius'),
+        #     self.tr('The greater the radius, the more blurred the image'),
+        #     self.materialGroup
+        # )
 
         # update software
         self.updateSoftwareGroup = SettingCardGroup(
@@ -265,9 +321,17 @@ class SettingInterface(ScrollArea):
 
         self.fckksGroup.addSettingCard(self.fckksPathCard)
         self.fckksGroup.addSettingCard(self.convertCard)
+        self.fckksGroup.addSettingCard(self.fckksExtractArchiveCard)
+        self.fckksGroup.addSettingCard(self.fckksArchivePasswordCard)
+
+        self.filterDuplicatesGroup.addSettingCard(self.filterDuplicatesPathCard)
+        self.filterDuplicatesGroup.addSettingCard(self.filterDuplicatesFuzzyCard)
+        self.filterDuplicatesGroup.addSettingCard(self.filterDuplicatesKeepCard)
+        self.filterDuplicatesGroup.addSettingCard(self.filterDuplicatesDeleteCard)
 
         self.installGroup.addSettingCard(self.installPathCard)
         self.installGroup.addSettingCard(self.fileConflictsCard)
+        self.installGroup.addSettingCard(self.installExtractArchiveCard)
         self.installGroup.addSettingCard(self.archivePasswordCard)
 
         self.removeGroup.addSettingCard(self.removePathCard)
@@ -278,7 +342,7 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.languageCard)
 
-        self.materialGroup.addSettingCard(self.blurRadiusCard)
+        # self.materialGroup.addSettingCard(self.blurRadiusCard)
 
         self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
 
@@ -292,10 +356,11 @@ class SettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.coreGroup)
         self.expandLayout.addWidget(self.backupGroup)
         self.expandLayout.addWidget(self.fckksGroup)
+        self.expandLayout.addWidget(self.filterDuplicatesGroup)
         self.expandLayout.addWidget(self.installGroup)
         self.expandLayout.addWidget(self.removeGroup)
         self.expandLayout.addWidget(self.personalGroup)
-        self.expandLayout.addWidget(self.materialGroup)
+        # self.expandLayout.addWidget(self.materialGroup)
         self.expandLayout.addWidget(self.updateSoftwareGroup)
         self.expandLayout.addWidget(self.aboutGroup)
 

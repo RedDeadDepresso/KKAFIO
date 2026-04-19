@@ -72,6 +72,12 @@ class Config(QConfig):
     convert = ConfigItem(
         "FilterConvertKKS", "Convert", False, BoolValidator()
     )
+    fckksExtractArchive = ConfigItem(
+        "FilterConvertKKS", "ExtractArchive", True, BoolValidator()
+    )
+    fckksArchivePassword = OptionsConfigItem(
+        "FilterConvertKKS", "Password", "Skip", OptionsValidator(["Skip", "Request Password"])
+    )
 
     # installChara
     installEnable = ConfigItem(
@@ -85,7 +91,30 @@ class Config(QConfig):
     archivePassword = OptionsConfigItem(
         "InstallChara", "Password", "Skip", OptionsValidator(["Skip", "Request Password"])
     )
+    installExtractArchive = ConfigItem(
+        "InstallChara", "ExtractArchive", True, BoolValidator()
+    )
     
+    # filterDuplicates
+    filterDuplicatesEnable = ConfigItem(
+        "FilterDuplicates", "Enable", False, BoolValidator()
+    )
+    filterDuplicatesPath = ConfigItem(
+        "FilterDuplicates", "InputPath", downloadsPath, FolderValidator()
+    )
+    filterDuplicatesFuzzy = ConfigItem(
+        "FilterDuplicates", "FuzzyChara", False, BoolValidator()
+    )
+    filterDuplicatesKeep = OptionsConfigItem(
+        "FilterDuplicates", "Keep", "Biggest file size",
+        OptionsValidator(["None — move all copies", "Newest", "Oldest",
+                          "Biggest file size", "Smallest file size",
+                          "Last alphabetically", "First alphabetically"])
+    )
+    filterDuplicatesDelete = ConfigItem(
+        "FilterDuplicates", "Delete", False, BoolValidator()
+    )
+
     # removeChara
     removeEnable = ConfigItem(
         "RemoveChara", "Enable", False, BoolValidator()

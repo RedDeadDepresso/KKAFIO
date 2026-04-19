@@ -69,11 +69,15 @@ def _clear_traceback() -> None:
 # Task runners
 # ---------------------------------------------------------------------------
 
-def run_install_chara(config, file_manager, input_path: str | None = None):
+def run_install_chara(config, file_manager, input_path: str | None = None,
+                      extract_archive: bool | None = None, skip_extract: bool = False):
     from modules.install_chara import InstallChara
     from pathlib import Path
     module = InstallChara(config, file_manager)
-    module.run(folder_path=Path(input_path) if input_path else None)
+    if extract_archive is not None:
+        module.extract_archive = extract_archive
+    module.run(folder_path=Path(input_path) if input_path else None,
+               skip_extract=skip_extract)
 
 
 def run_remove_chara(config, file_manager, input_path: str | None = None):
@@ -85,14 +89,34 @@ def run_remove_chara(config, file_manager, input_path: str | None = None):
 
 
 def run_fc_kks(config, file_manager, input_path: str | None = None,
-               convert: bool | None = None):
+               convert: bool | None = None, extract_archive: bool | None = None):
     from modules.fc_kks import FilterConvertKKS
     from pathlib import Path
     if input_path is not None:
         config.fc_kks["InputPath"] = Path(input_path)
     if convert is not None:
         config.fc_kks["Convert"] = convert
-    FilterConvertKKS(config, file_manager).run()
+    module = FilterConvertKKS(config, file_manager)
+    if extract_archive is not None:
+        module.extract_archive = extract_archive
+    module.run()
+
+
+def run_filter_duplicates(config, file_manager, input_path: str | None = None,
+                         delete: bool | None = None, fuzzy: bool | None = None,
+                         keep: str | None = None):
+    from modules.filter_duplicates import FilterDuplicates
+    from pathlib import Path
+    if input_path is not None:
+        config.filter_duplicates["InputPath"] = Path(input_path)
+    module = FilterDuplicates(config, file_manager)
+    if delete is not None:
+        module.delete = delete
+    if fuzzy is not None:
+        module.fuzzy_chara = fuzzy
+    if keep is not None:
+        module.keep = keep
+    module.run()
 
 
 def run_create_backup(config, file_manager, output_path: str | None = None,
@@ -118,16 +142,38 @@ def run_create_backup(config, file_manager, output_path: str | None = None,
 # ---------------------------------------------------------------------------
 
 def cmd_run(args):
+    from pathlib import Path
     from util.logger import logger
     _clear_traceback()
     config, file_manager = _load_core(args.config)
 
+    # If both FilterConvertKKS and InstallChara are enabled and share the same
+    # input path, fc_kks will extract archives first so InstallChara must skip
+    # extraction to avoid double-extracting the same archives.
+    fc_cfg = config.config_data["FilterConvertKKS"]
+    ic_cfg = config.config_data["InstallChara"]
+    fc_enabled = fc_cfg.get("Enable", False)
+    ic_enabled = ic_cfg.get("Enable", False)
+    fc_extracts = fc_cfg.get("ExtractArchive", True)
+    ic_extracts = ic_cfg.get("ExtractArchive", True)
+    same_path = (
+        fc_enabled and ic_enabled and fc_extracts and ic_extracts and
+        "InputPath" in fc_cfg and "InputPath" in ic_cfg and
+        Path(fc_cfg["InputPath"]) == Path(ic_cfg["InputPath"])
+    )
+
     task_map = {
-        "CreateBackup":     lambda: run_create_backup(config, file_manager),
-        "FilterConvertKKS": lambda: run_fc_kks(config, file_manager),
-        "InstallChara":     lambda: run_install_chara(config, file_manager),
-        "RemoveChara":      lambda: run_remove_chara(config, file_manager),
+        "CreateBackup":      lambda: run_create_backup(config, file_manager),
+        "FilterConvertKKS":  lambda: run_fc_kks(config, file_manager),
+        "FilterDuplicates":  lambda: run_filter_duplicates(config, file_manager),
+        "InstallChara":      lambda: run_install_chara(config, file_manager,
+                                                       skip_extract=same_path),
+        "RemoveChara":       lambda: run_remove_chara(config, file_manager),
     }
+
+    if same_path:
+        logger.info("CLI", "FilterConvertKKS and InstallChara share the same input path — "
+                           "archive extraction will run in FilterConvertKKS only")
 
     for task, fn in task_map.items():
         if not config.config_data[task]["Enable"]:
@@ -148,7 +194,13 @@ def cmd_install_chara(args):
     try:
         config, file_manager = _load_core(args.config)
         config.config_data["InstallChara"]["Enable"] = True
-        run_install_chara(config, file_manager, input_path=args.input)
+        extract = None
+        if args.extract_archive is True:
+            extract = True
+        elif args.extract_archive is False:
+            extract = False
+        run_install_chara(config, file_manager, input_path=args.input,
+                          extract_archive=extract)
     except SystemExit:
         raise
     except Exception:
@@ -179,11 +231,41 @@ def cmd_fc_kks(args):
             convert = True
         elif args.convert is False:
             convert = False
-        run_fc_kks(config, file_manager, input_path=args.input, convert=convert)
+        extract = None
+        if args.extract_archive is True:
+            extract = True
+        elif args.extract_archive is False:
+            extract = False
+        run_fc_kks(config, file_manager, input_path=args.input,
+                   convert=convert, extract_archive=extract)
     except SystemExit:
         raise
     except Exception:
         _write_traceback("FilterConvertKKS")
+        sys.exit(1)
+
+
+def cmd_filter_duplicates(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config)
+        config.config_data["FilterDuplicates"]["Enable"] = True
+        delete = None
+        if args.delete is True:
+            delete = True
+        elif args.delete is False:
+            delete = False
+        fuzzy = None
+        if args.fuzzy is True:
+            fuzzy = True
+        elif args.fuzzy is False:
+            fuzzy = False
+        run_filter_duplicates(config, file_manager, input_path=args.input,
+                              delete=delete, fuzzy=fuzzy, keep=args.keep)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("FilterDuplicates")
         sys.exit(1)
 
 
@@ -232,6 +314,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("install-chara", help="Copy cards / mods / overlays into the game")
     p.add_argument("--input", "-i", metavar="DIR", default=None,
                    help="Folder to scan (default: InstallChara.InputPath from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None,
+                   help="Extract ZIP/RAR/7z archives before installing (overrides config)")
+    g.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
+                   help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_install_chara)
 
     # remove-chara
@@ -249,7 +336,40 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Enable KKS->KK conversion (overrides config)")
     g.add_argument("--no-convert", dest="convert", action="store_false",
                    help="Disable KKS->KK conversion (overrides config)")
+    g2 = p.add_mutually_exclusive_group()
+    g2.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None,
+                    help="Extract ZIP/RAR/7z archives before filtering (overrides config)")
+    g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
+                    help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_fc_kks)
+
+    # filter-duplicates
+    p = sub.add_parser(
+        "filter-duplicates",
+        help="Find and handle duplicate PNG cards and zipmod files",
+        description=(
+            "Scans the input folder recursively for duplicate PNG cards and zipmod files. "
+            "Duplicates are identified by content (not filename). "
+            "By default they are moved to a _duplicates_/ subfolder. "
+            "With --delete they are sent to the recycle bin."
+        ),
+    )
+    p.add_argument("--input", "-i", metavar="DIR", default=None,
+                   help="Folder to scan (default: FilterDuplicates.InputPath from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--fuzzy",    dest="fuzzy", action="store_true",  default=None,
+                   help="Enable fuzzy matching for chara cards (overrides config)")
+    g.add_argument("--no-fuzzy", dest="fuzzy", action="store_false",
+                   help="Disable fuzzy matching (overrides config)")
+    p.add_argument("--keep", metavar="STRATEGY", default=None,
+                   choices=['None — move all copies', 'Newest', 'Oldest', 'Biggest file size', 'Smallest file size', 'Last alphabetically', 'First alphabetically'],
+                   help="Which copy to keep as the original (overrides config)")
+    g2 = p.add_mutually_exclusive_group()
+    g2.add_argument("--delete",    dest="delete", action="store_true",  default=None,
+                    help="Send duplicates to recycle bin (overrides config)")
+    g2.add_argument("--no-delete", dest="delete", action="store_false",
+                    help="Move duplicates to _duplicates_/ folder (overrides config)")
+    p.set_defaults(func=cmd_filter_duplicates)
 
     # create-backup
     p = sub.add_parser("create-backup", help="Create a 7-Zip backup of game folders")

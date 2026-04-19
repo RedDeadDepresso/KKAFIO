@@ -71,7 +71,10 @@ class Logger:
             # self.logs += adding
             self.logger_signal.emit(adding)
         else:
-            print(f'{self.paddedStatus[level - 1]} | {category} | {message}', flush=True)
+            try:
+                print(f'{self.paddedStatus[level - 1]} | {category} | {message}', flush=True)
+            except OSError:
+                pass
 
     def align(self, string, maxLength=8):
         space = ' '

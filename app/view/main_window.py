@@ -63,6 +63,7 @@ class MainWindow(FluentWindow):
         scrollLayout = self.navigationInterface.panel.scrollLayout
         scrollLayout.addWidget(NavigationCheckBox('Create Backup', cfg.backupEnable, self.settingInterface.backupGroup))
         scrollLayout.addWidget(NavigationCheckBox('Filter and Convert KKS', cfg.fckksEnable, self.settingInterface.fckksGroup))
+        scrollLayout.addWidget(NavigationCheckBox('Filter Duplicates', cfg.filterDuplicatesEnable, self.settingInterface.filterDuplicatesGroup))
         scrollLayout.addWidget(NavigationCheckBox('Install Chara', cfg.installEnable, self.settingInterface.installGroup))
         scrollLayout.addWidget(NavigationCheckBox('Remove Chara', cfg.removeEnable, self.settingInterface.removeGroup))
         scrollLayout.addWidget(NavigationActionButtons())

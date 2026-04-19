@@ -163,7 +163,7 @@ class FileManager:
             data = {"ArchivePath": str(archive_path), "PID": pid}
             json.dump(data, f)
 
-    def extract_archive(self, archive_path: Path | str):
+    def extract_archive(self, archive_path: Path | str, task_config: dict = None):
         from app.components.password_dialog import password_dialog
         """Extract the archive."""
         archive_path = Path(archive_path)
@@ -178,7 +178,9 @@ class FileManager:
         except:
             
             text = f"There is an error with the archive {archive_name}, but it is impossible to detect the cause. Maybe it requires a password?"
-            while self.config.install_chara["Password"] == "Request Password":
+            if task_config is None:
+                task_config = self.config.install_chara
+            while task_config.get("Password") == "Request Password":
                 try:
                     password = password_dialog('Enter Password', text)
                     

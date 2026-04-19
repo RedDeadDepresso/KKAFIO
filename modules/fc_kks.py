@@ -17,6 +17,7 @@ class FilterConvertKKS:
         self.config = config
         self.file_manager = file_manager
         self.convert = self.config.fc_kks["Convert"]
+        self.extract_archive = self.config.fc_kks.get("ExtractArchive", True)
 
     def get_list(self, folder_path: Path) -> list[Path]:
         """Get list of PNG files in the folder."""
@@ -46,9 +47,22 @@ class FilterConvertKKS:
             with new_file_path.open("wb") as new_card:
                 new_card.write(data)
 
+    def _extract_archives(self, path: Path) -> None:
+        """Extract all archives in path to temporary subdirectories."""
+        _, archive_list = self.file_manager.find_all_files(path)
+        if not archive_list:
+            return
+        logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
+        for archive in archive_list:
+            self.file_manager.extract_archive(archive[0], task_config=self.config.fc_kks)
+
     def run(self):
         """Main logic for processing the KKS to KK conversion."""
         path = Path(self.config.fc_kks["InputPath"])
+
+        if self.extract_archive:
+            self._extract_archives(path)
+
         kks_card_list = []
         kks_folder = path / "_KKS_card_"
         kks_folder2 = path / "_KKS_to_KK_"

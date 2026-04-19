@@ -17,6 +17,17 @@ class InstallChara:
         self.file_manager = file_manager
         self.game_path = self.config.game_path
         self.input_path = Path(self.config.install_chara["InputPath"])
+        self.extract_archive = self.config.install_chara.get("ExtractArchive", True)
+
+    def _fc_kks_shares_input(self) -> bool:
+        """Return True if FilterConvertKKS is enabled and uses the same input path."""
+        fc = self.config.config_data.get("FilterConvertKKS", {})
+        if not fc.get("Enable", False):
+            return False
+        fc_path = fc.get("InputPath")
+        if fc_path is None:
+            return False
+        return Path(fc_path) == self.input_path
 
     def resolve_png(self, image_path: Path):        
         image_bytes = image_path.read_bytes()
@@ -38,7 +49,7 @@ class InstallChara:
                 else:
                     self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
-    def run(self, folder_path: Optional[Path] = None):
+    def run(self, folder_path: Optional[Path] = None, skip_extract: bool = False):
         if folder_path is None:
             folder_path = self.input_path
         folder_path = Path(folder_path)
@@ -59,8 +70,17 @@ class InstallChara:
                     basename = Path(path).name
                     logger.error("UNKNOWN", f"Cannot classify {basename}")
         logger.line()
-            
-        for archive in archive_list:
-            extract_path = self.file_manager.extract_archive(archive[0])
-            if extract_path is not None:
-                self.run(extract_path)
+
+        # Determine whether to extract archives for this call:
+        # - skip_extract=True means the caller (cmd_run) has decided to skip
+        # - self.extract_archive=False means the user disabled it in config
+        should_extract = self.extract_archive and not skip_extract
+
+        if should_extract:
+            for archive in archive_list:
+                extract_path = self.file_manager.extract_archive(archive[0])
+                if extract_path is not None:
+                    self.run(extract_path)
+        elif archive_list:
+            names = ", ".join(Path(a[0]).name for a in archive_list)
+            logger.info("SKIP", f"Archive extraction skipped: {names}")
