@@ -8,13 +8,14 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar, DisplayLabel
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QApplication
 
 from ..common.config import cfg, HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR, isWin11
 from ..components.line_edit_card import LineEditSettingCard
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
 from ..components.folder_setting_card import FolderSettingCard
+from ..components.text_area_card import TextAreaSettingCard
 
 
 class SettingInterface(ScrollArea):
@@ -178,7 +179,7 @@ class SettingInterface(ScrollArea):
             configItem=cfg.installExtractArchive,
             parent=self.installGroup
         )
-    
+
         # removeChara
         self.removeGroup = SettingCardGroup(
             self.tr("Remove Chara"), self.scrollWidget)
@@ -188,6 +189,65 @@ class SettingInterface(ScrollArea):
             'Remove Chara',
             self.tr("Input directory"),
             parent=self.removeGroup
+        )
+
+        # groupChara
+        self.groupCharaGroup = SettingCardGroup(
+            self.tr("Group Chara"), self.scrollWidget)
+        self.groupCharaPathCard = FolderSettingCard(
+            cfg.groupCharaPath,
+            FIF.FOLDER,
+            'Group Chara',
+            self.tr("Input directory"),
+            parent=self.groupCharaGroup
+        )
+        self.groupCharaPromptCard = TextAreaSettingCard(
+            cfg.groupCharaPrompt,
+            FIF.CHAT,
+            self.tr("LLM prompt"),
+            self.tr("Prompt sent to the LLM alongside the character JSON. Edit to customise."),
+            parent=self.groupCharaGroup
+        )
+        self.groupCharaCopyCard = PrimaryPushSettingCard(
+            self.tr("Copy"),
+            FIF.COPY,
+            self.tr("Step 1: Copy"),
+            self.tr("Scan the input folder, build character JSON and copy prompt + JSON to clipboard. Paste it into your LLM."),
+            parent=self.groupCharaGroup
+        )
+        self.groupCharaPasteCard = PrimaryPushSettingCard(
+            self.tr("Paste"),
+            FIF.PASTE,
+            self.tr("Step 2: Paste"),
+            self.tr("After the LLM replies with the filled-in JSON, copy that response and click Paste to save it."),
+            parent=self.groupCharaGroup
+        )
+        self.groupCharaCopyCard.clicked.connect(self.__onGroupCharaCopy)
+        self.groupCharaPasteCard.clicked.connect(self.__onGroupCharaPaste)
+        self.groupCharaIncludeSubfoldersCard = SwitchSettingCard(
+            FIF.FOLDER,
+            self.tr('Include subfolders'),
+            self.tr('Also export character cards from subfolders. Disable to skip already-sorted cards.'),
+            configItem=cfg.groupCharaIncludeSubfolders,
+            parent=self.groupCharaGroup
+        )
+
+        # ungroupChara
+        self.ungroupCharaGroup = SettingCardGroup(
+            self.tr("Ungroup Chara"), self.scrollWidget)
+        self.ungroupCharaPathCard = FolderSettingCard(
+            cfg.ungroupCharaPath,
+            FIF.FOLDER,
+            'Ungroup Chara',
+            self.tr("Input directory"),
+            parent=self.ungroupCharaGroup
+        )
+        self.ungroupCharaDeleteEmptyCard = SwitchSettingCard(
+            FIF.DELETE,
+            self.tr('Delete empty folders'),
+            self.tr('Remove subdirectories that are left empty after moving files to the top level.'),
+            configItem=cfg.ungroupCharaDeleteEmpty,
+            parent=self.ungroupCharaGroup
         )
     
         # personalization
@@ -331,10 +391,19 @@ class SettingInterface(ScrollArea):
 
         self.installGroup.addSettingCard(self.installPathCard)
         self.installGroup.addSettingCard(self.fileConflictsCard)
-        self.installGroup.addSettingCard(self.installExtractArchiveCard)
         self.installGroup.addSettingCard(self.archivePasswordCard)
+        self.installGroup.addSettingCard(self.installExtractArchiveCard)
 
         self.removeGroup.addSettingCard(self.removePathCard)
+
+        self.groupCharaGroup.addSettingCard(self.groupCharaPathCard)
+        self.groupCharaGroup.addSettingCard(self.groupCharaIncludeSubfoldersCard)
+        self.groupCharaGroup.addSettingCard(self.groupCharaPromptCard)
+        self.groupCharaGroup.addSettingCard(self.groupCharaCopyCard)
+        self.groupCharaGroup.addSettingCard(self.groupCharaPasteCard)
+
+        self.ungroupCharaGroup.addSettingCard(self.ungroupCharaPathCard)
+        self.ungroupCharaGroup.addSettingCard(self.ungroupCharaDeleteEmptyCard)
 
         self.personalGroup.addSettingCard(self.micaCard)
         self.personalGroup.addSettingCard(self.themeCard)
@@ -359,6 +428,8 @@ class SettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.filterDuplicatesGroup)
         self.expandLayout.addWidget(self.installGroup)
         self.expandLayout.addWidget(self.removeGroup)
+        self.expandLayout.addWidget(self.groupCharaGroup)
+        self.expandLayout.addWidget(self.ungroupCharaGroup)
         self.expandLayout.addWidget(self.personalGroup)
         # self.expandLayout.addWidget(self.materialGroup)
         self.expandLayout.addWidget(self.updateSoftwareGroup)
@@ -386,6 +457,49 @@ class SettingInterface(ScrollArea):
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
         self.aboutCard.clicked.connect(signalBus.checkUpdateSignal.emit)
+
+    def __onGroupCharaCopy(self):
+        from .group_chara_worker import GroupCharaCopyWorker
+        folder              = cfg.get(cfg.groupCharaPath)
+        prompt              = cfg.get(cfg.groupCharaPrompt)
+        include_subfolders  = cfg.get(cfg.groupCharaIncludeSubfolders)
+        self.groupCharaCopyCard.button.setEnabled(False)
+        self.groupCharaCopyCard.button.setText("Copying...")
+        self._copyWorker = GroupCharaCopyWorker(folder, prompt, include_subfolders)
+        self._copyWorker.finishSignal.connect(self.__onCopyFinished)
+        signalBus.threadPool.start(self._copyWorker)
+
+    def __onCopyFinished(self, text: str, error: str):
+        self.groupCharaCopyCard.button.setEnabled(True)
+        self.groupCharaCopyCard.button.setText("Copy")
+        if error:
+            InfoBar.error(self.tr("Error"), error, parent=self)
+        else:
+            QApplication.clipboard().setText(text)
+            InfoBar.success(self.tr("Copied"),
+                self.tr("Prompt and character JSON copied to clipboard. Paste into your LLM."),
+                parent=self)
+
+    def __onGroupCharaPaste(self):
+        from .group_chara_worker import GroupCharaPasteWorker
+        text = QApplication.clipboard().text().strip()
+        if not text:
+            InfoBar.error(self.tr("Error"), self.tr("Clipboard is empty."), parent=self)
+            return
+        self.groupCharaPasteCard.button.setEnabled(False)
+        self._pasteWorker = GroupCharaPasteWorker(text)
+        self._pasteWorker.finishSignal.connect(self.__onPasteFinished)
+        signalBus.threadPool.start(self._pasteWorker)
+
+    def __onPasteFinished(self, error: str):
+        self.groupCharaPasteCard.button.setEnabled(True)
+        if error:
+            InfoBar.error(self.tr("Error"), error, parent=self)
+        else:
+            cfg.set(cfg.groupCharaResponse, QApplication.clipboard().text().strip())
+            InfoBar.success(self.tr("Saved"),
+                self.tr("the LLM response saved. Enable Group Chara and click Start to move files."),
+                parent=self)
 
     def scrollToGroup(self, group):
         self.verticalScrollBar().setValue(group.y())

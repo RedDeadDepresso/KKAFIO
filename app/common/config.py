@@ -115,6 +115,44 @@ class Config(QConfig):
         "FilterDuplicates", "Delete", False, BoolValidator()
     )
 
+    # groupChara
+    groupCharaEnable = ConfigItem(
+        "GroupChara", "Enable", False, BoolValidator()
+    )
+    groupCharaPath = ConfigItem(
+        "GroupChara", "InputPath", downloadsPath, FolderValidator()
+    )
+    groupCharaPrompt = ConfigItem(
+        "GroupChara", "Prompt",
+        "You will receive a JSON object whose keys identify Koikatsu character card files. "
+        "Each key has the format:  name | personality | hair_rgb\n"
+        "Your task: for every key, write the name of the anime/game series the character is from as the value.\n"
+        "Rules:\n"
+        "- Values must be valid Windows folder names (no \\ / : * ? \" < > | characters).\n"
+        "- Use the official English title of the series.\n"
+        "- If a character appears in multiple series, use the one they are most associated with.\n"
+        "- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n"
+        "- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n"
+        "\nJSON to fill in:\n"
+    )
+    groupCharaResponse = ConfigItem(
+        "GroupChara", "Response", ""
+    )
+    groupCharaIncludeSubfolders = ConfigItem(
+        "GroupChara", "IncludeSubfolders", False, BoolValidator()
+    )
+
+    # ungroupChara
+    ungroupCharaEnable = ConfigItem(
+        "UngroupChara", "Enable", False, BoolValidator()
+    )
+    ungroupCharaPath = ConfigItem(
+        "UngroupChara", "InputPath", downloadsPath, FolderValidator()
+    )
+    ungroupCharaDeleteEmpty = ConfigItem(
+        "UngroupChara", "DeleteEmptyFolders", True, BoolValidator()
+    )
+
     # removeChara
     removeEnable = ConfigItem(
         "RemoveChara", "Enable", False, BoolValidator()

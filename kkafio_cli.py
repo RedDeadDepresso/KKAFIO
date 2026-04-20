@@ -102,6 +102,30 @@ def run_fc_kks(config, file_manager, input_path: str | None = None,
     module.run()
 
 
+def run_ungroup_chara(config, file_manager, input_path: str | None = None,
+                      delete_empty: bool | None = None):
+    from modules.ungroup_chara import UngroupChara
+    from pathlib import Path
+    if input_path is not None:
+        config.ungroup_chara["InputPath"] = Path(input_path)
+    module = UngroupChara(config, file_manager)
+    if delete_empty is not None:
+        module.delete_empty = delete_empty
+    module.run()
+
+
+def run_group_chara(config, file_manager, input_path: str | None = None,
+                    response: str | None = None, include_subfolders: bool | None = None):
+    from modules.group_chara import process
+    from pathlib import Path
+    folder = Path(input_path) if input_path else Path(config.group_chara["InputPath"])
+    json_str = response if response is not None else config.group_chara.get("Response", "")
+    if not json_str:
+        print("[ERROR] No LLM response found. Use --response or paste a response in Settings first.")
+        import sys; sys.exit(1)
+    process(folder, json_str)
+
+
 def run_filter_duplicates(config, file_manager, input_path: str | None = None,
                          delete: bool | None = None, fuzzy: bool | None = None,
                          keep: str | None = None):
@@ -166,9 +190,11 @@ def cmd_run(args):
         "CreateBackup":      lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS":  lambda: run_fc_kks(config, file_manager),
         "FilterDuplicates":  lambda: run_filter_duplicates(config, file_manager),
+        "GroupChara":        lambda: run_group_chara(config, file_manager),
         "InstallChara":      lambda: run_install_chara(config, file_manager,
                                                        skip_extract=same_path),
         "RemoveChara":       lambda: run_remove_chara(config, file_manager),
+        "UngroupChara":      lambda: run_ungroup_chara(config, file_manager),
     }
 
     if same_path:
@@ -242,6 +268,64 @@ def cmd_fc_kks(args):
         raise
     except Exception:
         _write_traceback("FilterConvertKKS")
+        sys.exit(1)
+
+
+def cmd_ungroup_chara(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config)
+        config.config_data["UngroupChara"]["Enable"] = True
+        delete_empty = None
+        if args.delete_empty is True:
+            delete_empty = True
+        elif args.delete_empty is False:
+            delete_empty = False
+        run_ungroup_chara(config, file_manager,
+                          input_path=args.input, delete_empty=delete_empty)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("UngroupChara")
+        sys.exit(1)
+
+
+def cmd_group_chara(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config)
+        config.config_data["GroupChara"]["Enable"] = True
+
+        if args.export:
+            # Print prompt+JSON to stdout so the user can copy-paste into your LLM
+            from modules.group_chara import export
+            from pathlib import Path
+            folder = Path(args.input) if args.input else Path(config.group_chara["InputPath"])
+            prompt = config.group_chara.get("Prompt", "")
+            result = export(folder)
+            if result:
+                # Merge with config prompt if available, otherwise use built-in
+                import json as _json
+                json_start = result.find('{')
+                json_only = result[json_start:] if json_start != -1 else result
+                full = (prompt.rstrip() + "\n" + json_only) if prompt else result
+                print(full)
+        else:
+            # Load response from file path if --response looks like a path
+            response = args.response
+            if response and response.endswith(".json"):
+                from pathlib import Path as _Path
+                try:
+                    response = _Path(response).read_text(encoding="utf-8")
+                except Exception as e:
+                    print(f"[ERROR] Could not read response file: {e}")
+                    sys.exit(1)
+            run_group_chara(config, file_manager,
+                            input_path=args.input, response=response)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("GroupChara")
         sys.exit(1)
 
 
@@ -342,6 +426,38 @@ def build_parser() -> argparse.ArgumentParser:
     g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
                     help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_fc_kks)
+
+    # ungroup-chara
+    p = sub.add_parser(
+        "ungroup-chara",
+        help="Move character cards from subfolders back to the top-level folder",
+    )
+    p.add_argument("--input", "-i", metavar="DIR", default=None,
+                   help="Folder to ungroup (default: UngroupChara.InputPath from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--delete-empty",    dest="delete_empty", action="store_true",  default=None,
+                   help="Remove empty subfolders after moving (overrides config)")
+    g.add_argument("--no-delete-empty", dest="delete_empty", action="store_false",
+                   help="Keep empty subfolders (overrides config)")
+    p.set_defaults(func=cmd_ungroup_chara)
+
+    # group-chara
+    p = sub.add_parser(
+        "group-chara",
+        help="Move character cards into series subfolders using the LLM JSON response",
+        description=(
+            "Step 1: run with --export to scan the input folder and print the prompt+JSON to stdout. "
+            "Paste that into your LLM, copy the response, save it, then run without --export to move files."
+        ),
+    )
+    p.add_argument("--input", "-i", metavar="DIR", default=None,
+                   help="Folder containing character PNGs (default: GroupChara.InputPath from config)")
+    p.add_argument("--response", metavar="JSON_FILE_OR_STRING", default=None,
+                   help="the LLM JSON response as a string or path to a .json file "
+                        "(default: GroupChara.Response from config)")
+    p.add_argument("--export", action="store_true", default=False,
+                   help="Scan folder and print prompt+JSON to stdout instead of moving files")
+    p.set_defaults(func=cmd_group_chara)
 
     # filter-duplicates
     p = sub.add_parser(
