@@ -115,6 +115,35 @@ class Config(QConfig):
         "FilterDuplicates", "Delete", False, BoolValidator()
     )
 
+    # archiveChara
+    archiveCharaEnable = ConfigItem(
+        "ArchiveChara", "Enable", False, BoolValidator()
+    )
+    archiveCharaPaths = ConfigItem(
+        "ArchiveChara", "CharaPaths", []
+    )
+    archiveCharaFormat = OptionsConfigItem(
+        "ArchiveChara", "Format", "7z", OptionsValidator(["7z", "zip"])
+    )
+    archiveCharaAutoResolve = ConfigItem(
+        "ArchiveChara", "AutoResolve", True, BoolValidator()
+    )
+    archiveCharaIncludeModpack = ConfigItem(
+        "ArchiveChara", "IncludeModpack", False, BoolValidator()
+    )
+    archiveCharaCombined = ConfigItem(
+        "ArchiveChara", "CombinedArchive", True, BoolValidator()
+    )
+    archiveCharaModsDir = ConfigItem(
+        "ArchiveChara", "ModsDir", "", FolderValidator()
+    )
+    archiveCharaCoordDir = ConfigItem(
+        "ArchiveChara", "CoordDir", "", FolderValidator()
+    )
+    archiveCharaOutputDir = ConfigItem(
+        "ArchiveChara", "OutputDir", downloadsPath, FolderValidator()
+    )
+
     # groupChara
     groupCharaEnable = ConfigItem(
         "GroupChara", "Enable", False, BoolValidator()

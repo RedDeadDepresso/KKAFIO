@@ -68,6 +68,7 @@ class MainWindow(FluentWindow):
         scrollLayout.addWidget(NavigationCheckBox('Remove Chara', cfg.removeEnable, self.settingInterface.removeGroup))
         scrollLayout.addWidget(NavigationCheckBox('Group Chara', cfg.groupCharaEnable, self.settingInterface.groupCharaGroup))
         scrollLayout.addWidget(NavigationCheckBox('Ungroup Chara', cfg.ungroupCharaEnable, self.settingInterface.ungroupCharaGroup))
+        scrollLayout.addWidget(NavigationCheckBox('Archive Chara', cfg.archiveCharaEnable, self.settingInterface.archiveCharaGroup))
         scrollLayout.addWidget(NavigationActionButtons())
 
         # add custom widget to bottom

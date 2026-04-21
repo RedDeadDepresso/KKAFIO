@@ -102,6 +102,33 @@ def run_fc_kks(config, file_manager, input_path: str | None = None,
     module.run()
 
 
+def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None,
+                      fmt: str | None = None, auto_resolve: bool | None = None,
+                      include_modpack: bool | None = None,
+                      combined: bool | None = None,
+                      mods_dir: str | None = None, coord_dir: str | None = None,
+                      output_dir: str | None = None):
+    from modules.archive_chara import ArchiveChara
+    module = ArchiveChara(config, file_manager)
+    if chara_paths is not None:
+        module.chara_paths = chara_paths
+    if fmt is not None:
+        module.format = fmt
+    if auto_resolve is not None:
+        module.auto_resolve = auto_resolve
+    if include_modpack is not None:
+        module.include_modpack = include_modpack
+    if combined is not None:
+        module.combined_archive = combined
+    if mods_dir is not None:
+        module.mods_dir_str = mods_dir
+    if coord_dir is not None:
+        module.coord_dir_str = coord_dir
+    if output_dir is not None:
+        module.output_dir_str = output_dir
+    module.run()
+
+
 def run_ungroup_chara(config, file_manager, input_path: str | None = None,
                       delete_empty: bool | None = None):
     from modules.ungroup_chara import UngroupChara
@@ -187,6 +214,7 @@ def cmd_run(args):
     )
 
     task_map = {
+        "ArchiveChara":      lambda: run_archive_chara(config, file_manager),
         "CreateBackup":      lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS":  lambda: run_fc_kks(config, file_manager),
         "FilterDuplicates":  lambda: run_filter_duplicates(config, file_manager),
@@ -268,6 +296,29 @@ def cmd_fc_kks(args):
         raise
     except Exception:
         _write_traceback("FilterConvertKKS")
+        sys.exit(1)
+
+
+def cmd_archive_chara(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config)
+        config.config_data["ArchiveChara"]["Enable"] = True
+        chara_paths   = args.chara if args.chara else None
+        auto_resolve  = None if args.auto_resolve is None else bool(args.auto_resolve)
+        include_modpack = None if args.include_modpack is None else bool(args.include_modpack)
+        combined      = None if args.combined is None else bool(args.combined)
+        run_archive_chara(config, file_manager,
+                          chara_paths=chara_paths, fmt=args.format,
+                          auto_resolve=auto_resolve,
+                          include_modpack=include_modpack,
+                          combined=combined,
+                          mods_dir=args.mods_dir, coord_dir=args.coord_dir,
+                          output_dir=args.output_dir)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("ArchiveChara")
         sys.exit(1)
 
 
@@ -426,6 +477,38 @@ def build_parser() -> argparse.ArgumentParser:
     g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
                     help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_fc_kks)
+
+    # archive-chara
+    p = sub.add_parser(
+        "archive-chara",
+        help="Bundle character cards with their zipmods and matching coordinates",
+    )
+    p.add_argument("chara", nargs="*", metavar="CHARA",
+                   help="Character PNG paths (default: ArchiveChara.CharaPaths from config)")
+    p.add_argument("--format", choices=["7z", "zip"], default=None,
+                   help="Archive format (default: ArchiveChara.Format from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
+                   help="Auto-resolve mods and coord dirs (overrides config)")
+    g.add_argument("--no-auto-resolve", dest="auto_resolve", action="store_false",
+                   help="Disable auto-resolution (overrides config)")
+    g2 = p.add_mutually_exclusive_group()
+    g2.add_argument("--include-modpack",    dest="include_modpack", action="store_true",  default=None,
+                    help="Include zipmods from Sideloader Modpack folders (overrides config)")
+    g2.add_argument("--no-include-modpack", dest="include_modpack", action="store_false",
+                    help="Exclude Sideloader Modpack zipmods (overrides config)")
+    g3 = p.add_mutually_exclusive_group()
+    g3.add_argument("--combined",    dest="combined", action="store_true",  default=None,
+                    help="Put all cards in one archive (overrides config)")
+    g3.add_argument("--no-combined", dest="combined", action="store_false",
+                    help="One archive per card (overrides config)")
+    p.add_argument("--mods-dir",   default=None, metavar="DIR",
+                   help="Mods directory override (only used when --no-auto-resolve)")
+    p.add_argument("--coord-dir",  default=None, metavar="DIR",
+                   help="Coordinate directory override")
+    p.add_argument("--output-dir", default=None, metavar="DIR",
+                   help="Output directory (default: same folder as chara card)")
+    p.set_defaults(func=cmd_archive_chara)
 
     # ungroup-chara
     p = sub.add_parser(

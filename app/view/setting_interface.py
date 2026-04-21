@@ -16,6 +16,7 @@ from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
 from ..components.folder_setting_card import FolderSettingCard
 from ..components.text_area_card import TextAreaSettingCard
+from ..components.file_list_setting_card import FileListSettingCard
 
 
 class SettingInterface(ScrollArea):
@@ -40,7 +41,7 @@ class SettingInterface(ScrollArea):
             parent=self.coreGroup,
             clearable=False
         )
-        
+
         # createBackup
         self.backupGroup = SettingCardGroup(
             self.tr("Create Backup"), self.scrollWidget)
@@ -165,18 +166,18 @@ class SettingInterface(ScrollArea):
             texts=["Skip", "Replace", "Rename"],
             parent=self.installGroup
         )
-        self.archivePasswordCard = ComboBoxSettingCard(
-            cfg.archivePassword,
-            FIF.QUESTION,
-            self.tr('If password is required for archives:'),
-            texts=["Skip", "Request Password"],
-            parent=self.installGroup
-        )
         self.installExtractArchiveCard = SwitchSettingCard(
             FIF.ZIP_FOLDER,
             self.tr('Extract archives'),
             self.tr('Extract ZIP, RAR and 7z archives found in the input directory before installing'),
             configItem=cfg.installExtractArchive,
+            parent=self.installGroup
+        )
+        self.archivePasswordCard = ComboBoxSettingCard(
+            cfg.archivePassword,
+            FIF.QUESTION,
+            self.tr('If password is required for archives:'),
+            texts=["Skip", "Request Password"],
             parent=self.installGroup
         )
 
@@ -249,6 +250,69 @@ class SettingInterface(ScrollArea):
             configItem=cfg.ungroupCharaDeleteEmpty,
             parent=self.ungroupCharaGroup
         )
+
+        # archiveChara
+        self.archiveCharaGroup = SettingCardGroup(
+            self.tr("Archive Chara"), self.scrollWidget)
+        self.archiveCharaOutputDirCard = FolderSettingCard(
+            cfg.archiveCharaOutputDir,
+            FIF.FOLDER,
+            "Archive Chara",
+            self.tr("Output directory"),
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaFilesCard = FileListSettingCard(
+            cfg.archiveCharaPaths,
+            FIF.FOLDER,
+            self.tr("Character cards"),
+            self.tr("PNG card files to archive"),
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaFormatCard = ComboBoxSettingCard(
+            cfg.archiveCharaFormat,
+            FIF.SAVE,
+            self.tr("Archive format"),
+            self.tr("Output archive format"),
+            texts=["7z", "zip"],
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaCombinedCard = SwitchSettingCard(
+            FIF.ZIP_FOLDER,
+            self.tr('Combined archive'),
+            self.tr('Put all cards into one archive file. Disable to create one archive per character card.'),
+            configItem=cfg.archiveCharaCombined,
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaAutoResolveCard = SwitchSettingCard(
+            FIF.SEARCH,
+            self.tr("Auto-resolve mods and coordinate paths"),
+            self.tr("Infer mods and coordinate directories from the game path or card location"),
+            configItem=cfg.archiveCharaAutoResolve,
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaModsDirCard = FolderSettingCard(
+            cfg.archiveCharaModsDir,
+            FIF.FOLDER,
+            "Archive Chara",
+            self.tr("Mods directory"),
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaCoordDirCard = FolderSettingCard(
+            cfg.archiveCharaCoordDir,
+            FIF.FOLDER,
+            "Archive Chara",
+            self.tr("Coordinate directory"),
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaIncludeModpackCard = SwitchSettingCard(
+            FIF.FOLDER,
+            self.tr('Include Sideloader Modpack mods'),
+            self.tr('Also bundle zipmods from Sideloader Modpack subfolders (excluded by default)'),
+            configItem=cfg.archiveCharaIncludeModpack,
+            parent=self.archiveCharaGroup
+        )
+        self.archiveCharaAutoResolveCard.checkedChanged.connect(self.__onArchiveAutoResolveChanged)
+        self.__onArchiveAutoResolveChanged(cfg.get(cfg.archiveCharaAutoResolve))
     
         # personalization
         self.personalGroup = SettingCardGroup(
@@ -378,7 +442,7 @@ class SettingInterface(ScrollArea):
         self.backupGroup.addSettingCard(self.modsCard)
         self.backupGroup.addSettingCard(self.userDataCard)
         self.backupGroup.addSettingCard(self.bepInExCard)
-
+        
         self.fckksGroup.addSettingCard(self.fckksPathCard)
         self.fckksGroup.addSettingCard(self.convertCard)
         self.fckksGroup.addSettingCard(self.fckksExtractArchiveCard)
@@ -391,8 +455,8 @@ class SettingInterface(ScrollArea):
 
         self.installGroup.addSettingCard(self.installPathCard)
         self.installGroup.addSettingCard(self.fileConflictsCard)
-        self.installGroup.addSettingCard(self.archivePasswordCard)
         self.installGroup.addSettingCard(self.installExtractArchiveCard)
+        self.installGroup.addSettingCard(self.archivePasswordCard)
 
         self.removeGroup.addSettingCard(self.removePathCard)
 
@@ -404,6 +468,15 @@ class SettingInterface(ScrollArea):
 
         self.ungroupCharaGroup.addSettingCard(self.ungroupCharaPathCard)
         self.ungroupCharaGroup.addSettingCard(self.ungroupCharaDeleteEmptyCard)
+
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaOutputDirCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaFilesCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaFormatCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaCombinedCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaIncludeModpackCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaAutoResolveCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaModsDirCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaCoordDirCard)
 
         self.personalGroup.addSettingCard(self.micaCard)
         self.personalGroup.addSettingCard(self.themeCard)
@@ -430,6 +503,7 @@ class SettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.removeGroup)
         self.expandLayout.addWidget(self.groupCharaGroup)
         self.expandLayout.addWidget(self.ungroupCharaGroup)
+        self.expandLayout.addWidget(self.archiveCharaGroup)
         self.expandLayout.addWidget(self.personalGroup)
         # self.expandLayout.addWidget(self.materialGroup)
         self.expandLayout.addWidget(self.updateSoftwareGroup)
@@ -500,6 +574,10 @@ class SettingInterface(ScrollArea):
             InfoBar.success(self.tr("Saved"),
                 self.tr("the LLM response saved. Enable Group Chara and click Start to move files."),
                 parent=self)
+
+    def __onArchiveAutoResolveChanged(self, enabled: bool) -> None:
+        self.archiveCharaModsDirCard.setDisabled(enabled)
+        self.archiveCharaCoordDirCard.setDisabled(enabled)
 
     def scrollToGroup(self, group):
         self.verticalScrollBar().setValue(group.y())
