@@ -102,6 +102,22 @@ def run_fc_kks(config, file_manager, input_path: str | None = None,
     module.run()
 
 
+def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
+                     auto_resolve: bool | None = None,
+                     mods_dir: str | None = None, coord_dir: str | None = None):
+    from modules.delete_chara import DeleteChara
+    module = DeleteChara(config, file_manager)
+    if chara_paths is not None:
+        module.chara_paths = chara_paths
+    if auto_resolve is not None:
+        module.auto_resolve = auto_resolve
+    if mods_dir is not None:
+        module.mods_dir_str = mods_dir
+    if coord_dir is not None:
+        module.coord_dir_str = coord_dir
+    module.run()
+
+
 def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None,
                       fmt: str | None = None, auto_resolve: bool | None = None,
                       include_modpack: bool | None = None,
@@ -215,6 +231,7 @@ def cmd_run(args):
 
     task_map = {
         "ArchiveChara":      lambda: run_archive_chara(config, file_manager),
+        "DeleteChara":       lambda: run_delete_chara(config, file_manager),
         "CreateBackup":      lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS":  lambda: run_fc_kks(config, file_manager),
         "FilterDuplicates":  lambda: run_filter_duplicates(config, file_manager),
@@ -296,6 +313,23 @@ def cmd_fc_kks(args):
         raise
     except Exception:
         _write_traceback("FilterConvertKKS")
+        sys.exit(1)
+
+
+def cmd_delete_chara(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config)
+        config.config_data["DeleteChara"]["Enable"] = True
+        chara_paths  = args.chara if args.chara else None
+        auto_resolve = None if args.auto_resolve is None else bool(args.auto_resolve)
+        run_delete_chara(config, file_manager,
+                         chara_paths=chara_paths, auto_resolve=auto_resolve,
+                         mods_dir=args.mods_dir, coord_dir=args.coord_dir)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("DeleteChara")
         sys.exit(1)
 
 
@@ -477,6 +511,24 @@ def build_parser() -> argparse.ArgumentParser:
     g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
                     help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_fc_kks)
+
+    # delete-chara
+    p = sub.add_parser(
+        "delete-chara",
+        help="Send character cards and their associated mods/coords to the recycle bin",
+    )
+    p.add_argument("chara", nargs="*", metavar="CHARA",
+                   help="Character PNG paths (default: DeleteChara.CharaPaths from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
+                   help="Auto-resolve mods and coord dirs (overrides config)")
+    g.add_argument("--no-auto-resolve", dest="auto_resolve", action="store_false",
+                   help="Use explicit --mods-dir / --coord-dir instead")
+    p.add_argument("--mods-dir",  default=None, metavar="DIR",
+                   help="Mods directory (only used when --no-auto-resolve)")
+    p.add_argument("--coord-dir", default=None, metavar="DIR",
+                   help="Coordinate directory (only used when --no-auto-resolve)")
+    p.set_defaults(func=cmd_delete_chara)
 
     # archive-chara
     p = sub.add_parser(

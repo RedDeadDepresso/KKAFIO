@@ -313,6 +313,40 @@ class SettingInterface(ScrollArea):
         )
         self.archiveCharaAutoResolveCard.checkedChanged.connect(self.__onArchiveAutoResolveChanged)
         self.__onArchiveAutoResolveChanged(cfg.get(cfg.archiveCharaAutoResolve))
+
+        # deleteChara
+        self.deleteCharaGroup = SettingCardGroup(
+            self.tr("Delete Chara"), self.scrollWidget)
+        self.deleteCharaFilesCard = FileListSettingCard(
+            cfg.deleteCharaPaths,
+            FIF.FOLDER,
+            self.tr("Character cards"),
+            self.tr("PNG card files to delete (with their coords and mods)"),
+            parent=self.deleteCharaGroup
+        )
+        self.deleteCharaAutoResolveCard = SwitchSettingCard(
+            FIF.SEARCH,
+            self.tr("Auto-resolve mods and coordinate paths"),
+            self.tr("Infer mods and coordinate directories from the game path or card location"),
+            configItem=cfg.deleteCharaAutoResolve,
+            parent=self.deleteCharaGroup
+        )
+        self.deleteCharaModsDirCard = FolderSettingCard(
+            cfg.deleteCharaModsDir,
+            FIF.FOLDER,
+            "Delete Chara",
+            self.tr("Mods directory"),
+            parent=self.deleteCharaGroup
+        )
+        self.deleteCharaCoordDirCard = FolderSettingCard(
+            cfg.deleteCharaCoordDir,
+            FIF.FOLDER,
+            "Delete Chara",
+            self.tr("Coordinate directory"),
+            parent=self.deleteCharaGroup
+        )
+        self.deleteCharaAutoResolveCard.checkedChanged.connect(self.__onDeleteAutoResolveChanged)
+        self.__onDeleteAutoResolveChanged(cfg.get(cfg.deleteCharaAutoResolve))
     
         # personalization
         self.personalGroup = SettingCardGroup(
@@ -478,6 +512,11 @@ class SettingInterface(ScrollArea):
         self.archiveCharaGroup.addSettingCard(self.archiveCharaModsDirCard)
         self.archiveCharaGroup.addSettingCard(self.archiveCharaCoordDirCard)
 
+        self.deleteCharaGroup.addSettingCard(self.deleteCharaFilesCard)
+        self.deleteCharaGroup.addSettingCard(self.deleteCharaAutoResolveCard)
+        self.deleteCharaGroup.addSettingCard(self.deleteCharaModsDirCard)
+        self.deleteCharaGroup.addSettingCard(self.deleteCharaCoordDirCard)
+
         self.personalGroup.addSettingCard(self.micaCard)
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.themeColorCard)
@@ -504,6 +543,7 @@ class SettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.groupCharaGroup)
         self.expandLayout.addWidget(self.ungroupCharaGroup)
         self.expandLayout.addWidget(self.archiveCharaGroup)
+        self.expandLayout.addWidget(self.deleteCharaGroup)
         self.expandLayout.addWidget(self.personalGroup)
         # self.expandLayout.addWidget(self.materialGroup)
         self.expandLayout.addWidget(self.updateSoftwareGroup)
@@ -578,6 +618,10 @@ class SettingInterface(ScrollArea):
     def __onArchiveAutoResolveChanged(self, enabled: bool) -> None:
         self.archiveCharaModsDirCard.setDisabled(enabled)
         self.archiveCharaCoordDirCard.setDisabled(enabled)
+
+    def __onDeleteAutoResolveChanged(self, enabled: bool) -> None:
+        self.deleteCharaModsDirCard.setDisabled(enabled)
+        self.deleteCharaCoordDirCard.setDisabled(enabled)
 
     def scrollToGroup(self, group):
         self.verticalScrollBar().setValue(group.y())

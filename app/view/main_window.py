@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import (NavigationItemPosition, FluentWindow,
                             SplashScreen)
 from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
 
 from .logger_interface import LoggerInterface
 from .setting_interface import SettingInterface
@@ -60,7 +61,9 @@ class MainWindow(FluentWindow):
             position=NavigationItemPosition.TOP
         )
         self.navigationInterface.panel.topLayout.setAlignment(Qt.AlignCenter)
-        scrollLayout = self.navigationInterface.panel.scrollLayout
+        panel = self.navigationInterface.panel
+        scrollLayout = panel.scrollLayout
+
         scrollLayout.addWidget(NavigationCheckBox('Create Backup', cfg.backupEnable, self.settingInterface.backupGroup))
         scrollLayout.addWidget(NavigationCheckBox('Filter and Convert KKS', cfg.fckksEnable, self.settingInterface.fckksGroup))
         scrollLayout.addWidget(NavigationCheckBox('Filter Duplicates', cfg.filterDuplicatesEnable, self.settingInterface.filterDuplicatesGroup))
@@ -69,7 +72,18 @@ class MainWindow(FluentWindow):
         scrollLayout.addWidget(NavigationCheckBox('Group Chara', cfg.groupCharaEnable, self.settingInterface.groupCharaGroup))
         scrollLayout.addWidget(NavigationCheckBox('Ungroup Chara', cfg.ungroupCharaEnable, self.settingInterface.ungroupCharaGroup))
         scrollLayout.addWidget(NavigationCheckBox('Archive Chara', cfg.archiveCharaEnable, self.settingInterface.archiveCharaGroup))
-        scrollLayout.addWidget(NavigationActionButtons())
+        scrollLayout.addWidget(NavigationCheckBox('Delete Chara', cfg.deleteCharaEnable, self.settingInterface.deleteCharaGroup))
+
+
+        panel.scrollArea.setFixedHeight(270)
+
+        # Make the scrollbar always visible so users can see there are more items
+        panel.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        panel.scrollArea.scrollDelagate.vScrollBar.setHandleDisplayMode(
+            ScrollBarHandleDisplayMode.ALWAYS)
+
+        # Action buttons live outside the scroll area in the bottom layout
+        panel.bottomLayout.insertWidget(0, NavigationActionButtons(), stretch=1, alignment=Qt.AlignmentFlag.AlignTop)
 
         # add custom widget to bottom
         self.addSubInterface(

@@ -115,6 +115,23 @@ class Config(QConfig):
         "FilterDuplicates", "Delete", False, BoolValidator()
     )
 
+    # deleteChara
+    deleteCharaEnable = ConfigItem(
+        "DeleteChara", "Enable", False, BoolValidator()
+    )
+    deleteCharaPaths = ConfigItem(
+        "DeleteChara", "CharaPaths", []
+    )
+    deleteCharaAutoResolve = ConfigItem(
+        "DeleteChara", "AutoResolve", True, BoolValidator()
+    )
+    deleteCharaModsDir = ConfigItem(
+        "DeleteChara", "ModsDir", "", FolderValidator()
+    )
+    deleteCharaCoordDir = ConfigItem(
+        "DeleteChara", "CoordDir", "", FolderValidator()
+    )
+
     # archiveChara
     archiveCharaEnable = ConfigItem(
         "ArchiveChara", "Enable", False, BoolValidator()
