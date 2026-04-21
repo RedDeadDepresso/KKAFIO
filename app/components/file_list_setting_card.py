@@ -25,13 +25,16 @@ class FileListSettingCard(ExpandSettingCard):
     def __init__(self, configItem: ConfigItem, icon: Union[str, QIcon, FluentIconBase], title: str, content: str = None, file_filter: str = "PNG files (*.png)", parent=None):
         super().__init__(icon, title, content, parent)
         self.configItem = configItem
-        self.addFileButton = PushButton(self.tr('Add chara'), self, FIF.ADD)
+        self.clearAllFileButton = PushButton(self.tr('Clear All'), self, FIF.CLOSE)
+        self.addFileButton = PushButton(self.tr('Add'), self, FIF.ADD)
         self.files = qconfig.get(configItem).copy()   # type:List[str]
+        self.fileItems = set()
         self.file_filter = file_filter
         self.__initWidget()
 
     def __initWidget(self):
         self.addWidget(self.addFileButton)
+        self.addWidget(self.clearAllFileButton)
 
         # initialize layout
         self.viewLayout.setSpacing(0)
@@ -40,6 +43,7 @@ class FileListSettingCard(ExpandSettingCard):
         for file in self.files:
             self.__addFileItem(file)
 
+        self.clearAllFileButton.clicked.connect(self.__removeAllFiles)
         self.addFileButton.clicked.connect(self.__showFildDialog)
 
     def __showFildDialog(self):
@@ -64,6 +68,18 @@ class FileListSettingCard(ExpandSettingCard):
         self.viewLayout.addWidget(item)
         item.show()
         self._adjustViewSize()
+        self.fileItems.add(item)
+
+    def __removeAllFiles(self):
+        for item in self.fileItems:
+            self.viewLayout.removeWidget(item)
+            item.deleteLater()
+            
+        self._adjustViewSize()
+        self.files.clear()
+        self.fileItems.clear()
+        self.fileChanged.emit(self.files)
+        qconfig.set(self.configItem, self.files)
 
     def __removeFile(self, item: FileItem):
         """ remove folder """
@@ -74,6 +90,7 @@ class FileListSettingCard(ExpandSettingCard):
         self.viewLayout.removeWidget(item)
         item.deleteLater()
         self._adjustViewSize()
+        self.fileItems.remove(item)
 
         self.fileChanged.emit(self.files)
         qconfig.set(self.configItem, self.files)
