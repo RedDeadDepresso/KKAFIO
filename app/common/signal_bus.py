@@ -14,6 +14,7 @@ class SignalBus(QObject):
 
     selectAllClicked = Signal()
     clearAllClicked = Signal()
+    checkCountChanged = Signal(bool)  # emitted with the new checked state of a task checkbox
     disableStartSignal = Signal(bool)
     startSignal = Signal()
     stopSignal = Signal()

@@ -43,6 +43,7 @@ class NavigationCheckBox(QWidget):
     def saveCheckState(self, state):
         isChecked = state > 0
         cfg.set(self.configItem, isChecked)
+        signalBus.checkCountChanged.emit(isChecked)
 
 
 
