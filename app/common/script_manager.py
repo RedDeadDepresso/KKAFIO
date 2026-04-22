@@ -45,10 +45,17 @@ class ScriptManager(QObject):
         if self.procScript is not None:
             self.stop()
         else:
-            if Path("kkafio_cli.exe").exists():
-                args = ["kkafio_cli.exe", "run"]
-            elif Path("kkafio_cli.py").exists():
-                args = [sys.executable, "-u", "kkafio_cli.py", "run"]  # -u disables buffering
+            # Use the directory of the running executable as base so the
+            # working directory does not affect discovery (e.g. when launched
+            # from an Explorer context menu the cwd is the right-clicked folder).
+            exe_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[2]
+            cli_exe = exe_dir / "kkafio_cli.exe"
+            cli_py  = exe_dir / "kkafio_cli.py"
+
+            if cli_exe.exists():
+                args = [str(cli_exe), "run"]
+            elif cli_py.exists():
+                args = [sys.executable, "-u", str(cli_py), "run"]
             else:
                 self.logger.error("No valid script found to execute.")
                 return

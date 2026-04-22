@@ -61,7 +61,11 @@ def _write_traceback(task: str) -> None:
 
 
 def _clear_traceback() -> None:
-    with open("traceback.log", "w"):
+    # Only delete existing traceback.log — don't create an empty one.
+    try:
+        from pathlib import Path
+        Path("traceback.log").unlink(missing_ok=True)
+    except Exception:
         pass
 
 
@@ -387,7 +391,8 @@ def cmd_group_chara(args):
             from pathlib import Path
             folder = Path(args.input) if args.input else Path(config.group_chara["InputPath"])
             prompt = config.group_chara.get("Prompt", "")
-            result = export(folder)
+            include_sub = getattr(args, 'include_subfolders', False) or config.group_chara.get('IncludeSubfolders', False)
+            result = export(folder, include_subfolders=include_sub)
             if result:
                 # Merge with config prompt if available, otherwise use built-in
                 import json as _json
@@ -592,6 +597,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "(default: GroupChara.Response from config)")
     p.add_argument("--export", action="store_true", default=False,
                    help="Scan folder and print prompt+JSON to stdout instead of moving files")
+    p.add_argument("--include-subfolders", action="store_true", default=False,
+                   help="Include character cards from subfolders when exporting (overrides config)")
     p.set_defaults(func=cmd_group_chara)
 
     # filter-duplicates
@@ -642,11 +649,7 @@ def build_parser() -> argparse.ArgumentParser:
 # Entry point
 # ---------------------------------------------------------------------------
 
-try:
-    with open("traceback.log", "w"):
-        pass
-except Exception:
-    pass
+# traceback.log is created only when an error occurs — not upfront
 
 try:
     if __name__ == "__main__":

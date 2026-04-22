@@ -1,5 +1,4 @@
 import shutil
-import patoolib
 import subprocess
 import time
 import json
@@ -7,7 +6,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from util.logger import logger
-from typing import Literal
+from typing import Union, Literal
 
 from util.constants import SEVEN_ZIP_PATH
 
@@ -16,6 +15,8 @@ FileEntry = tuple[Path, int, str]
 
 
 class FileManager:
+    _path_to_7zip = None
+
     def __init__(self, config):
         self.config = config
         self.backup_info_path = SEVEN_ZIP_PATH
@@ -109,10 +110,42 @@ class FileManager:
             except OSError as e:
                 logger.error(file_type, base_name)
 
-    def create_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: str | Path):
+    @staticmethod
+    def _get_nt_7z_dir() -> str:
+        """Return 7-Zip directory from registry, or an empty string."""
+        import winreg  # noqa: PLC0415
+        import platform  # noqa: PLC0415
+
+        python_bits = platform.architecture()[0]
+        keyname = r"SOFTWARE\7-Zip"
+        try:
+            if python_bits == '32bit' and platform.machine().endswith('64'):
+                # get 64-bit registry key from 32-bit Python
+                key = winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
+                    keyname,
+                    0,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
+                )
+            else:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, keyname)
+            try:
+                return winreg.QueryValueEx(key, "Path")[0]
+            finally:
+                winreg.CloseKey(key)
+        except OSError:
+            return ""
+
+    @classmethod
+    def find_7zip(cls) -> str | None:
+        """Return the path to 7z.exe, or None if not found."""
+        if cls._path_to_7zip is None:
+            cls._path_to_7zip = shutil.which("7z", path=cls._get_nt_7z_dir())
+        return cls._path_to_7zip
+
+    def create_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""
-        # Specify the full path to the 7zip executable
-        path_to_7zip = patoolib.util.find_program("7z")
+        path_to_7zip = self._find_7zip()
         if not path_to_7zip:
             logger.error("SCRIPT", "7zip not found. Unable to create backup")
             raise Exception()
@@ -163,39 +196,66 @@ class FileManager:
             data = {"ArchivePath": str(archive_path), "PID": pid}
             json.dump(data, f)
 
-    def extract_archive(self, archive_path: Path | str, task_config: dict = None):
-        from app.components.password_dialog import password_dialog
-        """Extract the archive."""
+    def _run_7zip_extract(self, archive_path: Path, extract_path: Path,
+                          password: str | None = None) -> bool:
+        """Run 7-Zip to extract archive_path into extract_path.
+
+        Args:
+            password: password string to use, empty string to attempt
+                      no-password extraction, or None to skip -p flag entirely.
+        Returns True on success, False on failure.
+        """
+        path_to_7zip = self.find_7zip()
+        if not path_to_7zip:
+            logger.error("ARCHIVE", "7-Zip not found. Cannot extract archive.")
+            return False
+
+        cmd = [path_to_7zip, "x", str(archive_path),
+               f"-o{extract_path}", "-y"]
+        if password:
+            cmd.append(f"-p{password}")
+        else:
+            cmd.append("-p")          # prompt-less no-password attempt
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return result.returncode == 0
+
+    def extract_archive(self, archive_path: Union[Path, str], task_config: dict = None):
+        """Extract the archive using 7-Zip."""
+        if task_config is None:
+            task_config = self.config.install_chara
+
         archive_path = Path(archive_path)
         archive_name = archive_path.name
         logger.info("ARCHIVE", f"Extracting {archive_name}")
 
-        extract_path = archive_path.with_name(f"{archive_path.stem}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+        extract_path = archive_path.with_name(
+            f"{archive_path.stem}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}")
 
-        try:
-            patoolib.extract_archive(str(archive_path), outdir=str(extract_path))
+        # First attempt — no password
+        if self._run_7zip_extract(archive_path, extract_path):
             return extract_path
-        except:
-            
-            text = f"There is an error with the archive {archive_name}, but it is impossible to detect the cause. Maybe it requires a password?"
-            if task_config is None:
-                task_config = self.config.install_chara
-            while task_config.get("Password") == "Request Password":
-                try:
-                    password = password_dialog('Enter Password', text)
-                    
-                    if not password:
-                        break
-                    
-                    patoolib.extract_archive(str(archive_path), outdir=str(extract_path), password=password)
-                    return extract_path
-                
-                except patoolib.util.PatoolError as e:
-                    text = f"Wrong password or {archive_name} is corrupted. Please enter password again or click Cancel."
-                    print(f"Error: {str(e)}")
-                
-                except Exception as e:
-                    print(f"An unexpected error occurred: {str(e)}")
-                    break
-                
+
+        # Failed — may need a password
+        text = (f"There is an error with the archive {archive_name}. "
+                f"Maybe it requires a password?")
+
+        if task_config.get("Password") != "Request Password":
             logger.error("ARCHIVE", archive_name)
+            return None
+
+        from app.components.password_dialog import password_dialog
+
+        while True:
+            password = password_dialog("Enter Password", text)
+            if not password:
+                break
+
+            if self._run_7zip_extract(archive_path, extract_path, password=password):
+                return extract_path
+
+            text = (f"Wrong password or {archive_name} is corrupted. "
+                    f"Please enter the password again or click Cancel.")
+
+        logger.error("ARCHIVE", archive_name)
+        return None

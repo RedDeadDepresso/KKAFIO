@@ -26,17 +26,18 @@ This is the same approach validated in find_coordinates.py.
 
 from __future__ import annotations
 
+from datetime import datetime
 import io
+import zipfile
 import msgpack
 import struct
 import subprocess
 import xml.etree.ElementTree as ET
-import zipfile
 from pathlib import Path
 from typing import Literal
 
-import patoolib
-
+from util.config import Config
+from util.file_manager import FileManager
 from util.logger import logger
 
 # ---------------------------------------------------------------------------
@@ -445,7 +446,7 @@ def _resolve_paths(
 # ---------------------------------------------------------------------------
 
 def _create_archive_7z(files: list[Path], output_path: Path) -> None:
-    path_to_7zip = patoolib.util.find_program("7z")
+    path_to_7zip = FileManager.find_7zip()
     if not path_to_7zip:
         raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
     cmd = [path_to_7zip, "a", "-t7z", str(output_path)] + [str(f) for f in files]
@@ -455,18 +456,13 @@ def _create_archive_7z(files: list[Path], output_path: Path) -> None:
 
 
 def _create_archive_zip(files: list[Path], output_path: Path) -> None:
-    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        # Deduplicate filenames inside the zip
-        used: set[str] = set()
-        for f in files:
-            name = f.name
-            stem, ext = f.stem, f.suffix
-            counter = 2
-            while name in used:
-                name = f"{stem}_{counter}{ext}"
-                counter += 1
-            used.add(name)
-            zf.write(f, arcname=name)
+    path_to_7zip = FileManager.find_7zip()
+    if not path_to_7zip:
+        raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
+    cmd = [path_to_7zip, "a", "-tzip", str(output_path)] + [str(f) for f in files]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode not in (0, 1):
+        raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
 
 
 # ---------------------------------------------------------------------------
@@ -474,7 +470,7 @@ def _create_archive_zip(files: list[Path], output_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 class ArchiveChara:
-    def __init__(self, config, file_manager):
+    def __init__(self, config: Config, file_manager: FileManager):
         self.config       = config
         self.file_manager = file_manager
         cfg = self.config.archive_chara
@@ -587,7 +583,7 @@ class ArchiveChara:
             if len(chara_paths) == 1:
                 archive_name = f"{chara_paths[0].stem}_bundle{ext}"
             else:
-                archive_name = f"bundle{ext}"
+                archive_name = f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}"
             archive_path = out_dir / archive_name
 
             logger.line()
