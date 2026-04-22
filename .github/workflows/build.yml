@@ -34,10 +34,21 @@ jobs:
           --hidden-import "util.config"
           --hidden-import "util.logger"
           --hidden-import "util.file_manager"
+          --hidden-import "util.classifier"
           --hidden-import "modules.install_chara"
           --hidden-import "modules.remove_chara"
           --hidden-import "modules.fc_kks"
           --hidden-import "modules.create_backup"
+          --hidden-import "modules.filter_duplicates"
+          --hidden-import "modules.group_chara"
+          --hidden-import "modules.ungroup_chara"
+          --hidden-import "modules.archive_chara"
+          --hidden-import "modules.delete_chara"
+          --hidden-import "kkloader"
+          --hidden-import "kkloader.KoikatuCharaData"
+          --hidden-import "msgpack"
+          --hidden-import "send2trash"
+          --hidden-import "xml.etree.ElementTree"
           kkafio_cli.py
 
       # ── Build KKAFIO.exe ────────────────────────────────────────────────────
@@ -65,6 +76,9 @@ jobs:
             "dist\KKAFIO\_internal\"
           Copy-Item "register_context_menu.bat"   "dist\KKAFIO\register_context_menu.bat"
           Copy-Item "unregister_context_menu.bat" "dist\KKAFIO\unregister_context_menu.bat"
+          Copy-Item "kkafio_archive.bat"            "dist\KKAFIO\kkafio_archive.bat"
+          Copy-Item "kkafio_delete.bat"             "dist\KKAFIO\kkafio_delete.bat"
+          Copy-Item "README.md"                     "dist\KKAFIO\README.md"
 
       # ── Copy SSL DLLs AFTER assemble so they are not overwritten ────────────
       - name: Copy SSL DLLs
