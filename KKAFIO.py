@@ -7,8 +7,8 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator
 
-from app.common.config import cfg
-from app.view.main_window import MainWindow
+from gui.common.config import cfg
+from gui.view.main_window import MainWindow
 
 
 # enable dpi scale

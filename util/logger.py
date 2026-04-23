@@ -1,4 +1,4 @@
-from app.common.logger import Logger
+from gui.common.logger import Logger
 
 
 logger = Logger()

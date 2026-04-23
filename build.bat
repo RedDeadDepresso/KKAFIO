@@ -33,10 +33,10 @@ uv run pyinstaller --noconfirm --onedir ^
 --hidden-import "util.config" ^
 --hidden-import "util.logger" ^
 --hidden-import "util.file_manager" ^
---hidden-import "modules.install_chara" ^
---hidden-import "modules.remove_chara" ^
---hidden-import "modules.fc_kks" ^
---hidden-import "modules.create_backup" ^
+--hidden-import "tasks.install_chara" ^
+--hidden-import "tasks.remove_chara" ^
+--hidden-import "tasks.fc_kks" ^
+--hidden-import "tasks.create_backup" ^
 kkafio_cli.py
 
 if %errorlevel% neq 0 exit /b 1
@@ -45,8 +45,8 @@ REM ── Build KKAFIO.exe ─────────────────�
 echo [INFO] Building KKAFIO.exe...
 uv run pyinstaller --noconfirm --onedir --windowed ^
 --name "KKAFIO" ^
---icon "app/resource/images/logo.ico" ^
---add-data "app/resource;app/resource" ^
+--icon "gui/resource/images/logo.ico" ^
+--add-data "gui/resource;gui/resource" ^
 --collect-data "qfluentwidgets" ^
 --collect-data "certifi" ^
 --copy-metadata "kkafio" ^
@@ -83,10 +83,9 @@ copy "%DLLS%\libssl-3-x64.dll" %%T /Y
 REM ── Verify SSL DLLs ────────────────────────────────────
 echo [INFO] Verifying SSL DLLs...
 for %%F in (
-"dist\KKAFIO_internal_ssl.pyd"
+"dist\KKAFIO_internal\_ssl.pyd"
 "dist\KKAFIO_internal\libcrypto-3-x64.dll"
 "dist\KKAFIO_internal\libssl-3-x64.dll"
-"dist\KKAFIO_ssl.pyd"
 "dist\KKAFIO\libcrypto-3-x64.dll"
 "dist\KKAFIO\libssl-3-x64.dll"
 ) do (

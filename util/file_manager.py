@@ -254,7 +254,7 @@ class FileManager:
             logger.error("ARCHIVE", archive_name)
             return None
 
-        from app.components.password_dialog import password_dialog
+        from gui.components.password_dialog import password_dialog
 
         while True:
             password = password_dialog("Enter Password", text)

@@ -14,7 +14,7 @@ from packaging.version import Version
 from PySide6.QtCore import QRunnable, QObject, Signal, Slot
 from qfluentwidgets import MessageBox, ProgressBar, CaptionLabel
 
-from app.common.config import VERSION, REPO_URL, cfg
+from gui.common.config import VERSION, REPO_URL, cfg
 
 
 def _ssl_context():

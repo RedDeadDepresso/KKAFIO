@@ -1,8 +1,8 @@
 # coding: utf-8
 from PySide6.QtCore import QObject, Signal, QThreadPool
 from qfluentwidgets import SettingCardGroup
-from app.common.logger import Logger
-from app.common.script_manager import ScriptManager
+from gui.common.logger import Logger
+from gui.common.script_manager import ScriptManager
 
 
 class SignalBus(QObject):

@@ -1,7 +1,6 @@
 import concurrent.futures
 import requests
 import json
-import patoolib
 import logging
 import shutil
 
@@ -9,10 +8,10 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from util.config import Config
 from util.file_manager import FileManager
-from modules.create_backup import CreateBackup
-from modules.fc_kks import FilterConvertKKS
-from modules.install_chara import InstallChara
-from modules.remove_chara import RemoveChara
+from tasks.create_backup import CreateBackup
+from tasks.fc_kks import FilterConvertKKS
+from tasks.install_chara import InstallChara
+from tasks.remove_chara import RemoveChara
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -190,7 +189,7 @@ def test_backup(kk_cards, coordinates, zipmods):
     assert koikatsu_backup.exists(), "Backup file does not exist."
 
     outdir = BACKUP_PATH / 'outdir'
-    patoolib.extract_archive(str(koikatsu_backup), outdir=str(outdir))
+    FILE_MANAGER.extract_archive(str(koikatsu_backup))
 
     for card in kk_cards:
         assert (outdir / "UserData" / "chara" / "female" / card.name).exists(), f"{card.name} missing in chara backup."

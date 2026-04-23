@@ -75,7 +75,7 @@ def _clear_traceback() -> None:
 
 def run_install_chara(config, file_manager, input_path: str | None = None,
                       extract_archive: bool | None = None, skip_extract: bool = False):
-    from modules.install_chara import InstallChara
+    from tasks.install_chara import InstallChara
     from pathlib import Path
     module = InstallChara(config, file_manager)
     if extract_archive is not None:
@@ -85,7 +85,7 @@ def run_install_chara(config, file_manager, input_path: str | None = None,
 
 
 def run_remove_chara(config, file_manager, input_path: str | None = None):
-    from modules.remove_chara import RemoveChara
+    from tasks.remove_chara import RemoveChara
     from pathlib import Path
     if input_path is not None:
         config.remove_chara["InputPath"] = Path(input_path)
@@ -94,7 +94,7 @@ def run_remove_chara(config, file_manager, input_path: str | None = None):
 
 def run_fc_kks(config, file_manager, input_path: str | None = None,
                convert: bool | None = None, extract_archive: bool | None = None):
-    from modules.fc_kks import FilterConvertKKS
+    from tasks.fc_kks import FilterConvertKKS
     from pathlib import Path
     if input_path is not None:
         config.fc_kks["InputPath"] = Path(input_path)
@@ -109,7 +109,7 @@ def run_fc_kks(config, file_manager, input_path: str | None = None,
 def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
                      auto_resolve: bool | None = None,
                      mods_dir: str | None = None, coord_dir: str | None = None):
-    from modules.delete_chara import DeleteChara
+    from tasks.delete_chara import DeleteChara
     module = DeleteChara(config, file_manager)
     if chara_paths is not None:
         module.chara_paths = chara_paths
@@ -128,7 +128,7 @@ def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None
                       combined: bool | None = None,
                       mods_dir: str | None = None, coord_dir: str | None = None,
                       output_dir: str | None = None):
-    from modules.archive_chara import ArchiveChara
+    from tasks.archive_chara import ArchiveChara
     module = ArchiveChara(config, file_manager)
     if chara_paths is not None:
         module.chara_paths = chara_paths
@@ -151,7 +151,7 @@ def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None
 
 def run_ungroup_chara(config, file_manager, input_path: str | None = None,
                       delete_empty: bool | None = None):
-    from modules.ungroup_chara import UngroupChara
+    from tasks.ungroup_chara import UngroupChara
     from pathlib import Path
     if input_path is not None:
         config.ungroup_chara["InputPath"] = Path(input_path)
@@ -163,7 +163,7 @@ def run_ungroup_chara(config, file_manager, input_path: str | None = None,
 
 def run_group_chara(config, file_manager, input_path: str | None = None,
                     response: str | None = None, include_subfolders: bool | None = None):
-    from modules.group_chara import process
+    from tasks.group_chara import process
     from pathlib import Path
     folder = Path(input_path) if input_path else Path(config.group_chara["InputPath"])
     json_str = response if response is not None else config.group_chara.get("Response", "")
@@ -176,7 +176,7 @@ def run_group_chara(config, file_manager, input_path: str | None = None,
 def run_filter_duplicates(config, file_manager, input_path: str | None = None,
                          delete: bool | None = None, fuzzy: bool | None = None,
                          keep: str | None = None):
-    from modules.filter_duplicates import FilterDuplicates
+    from tasks.filter_duplicates import FilterDuplicates
     from pathlib import Path
     if input_path is not None:
         config.filter_duplicates["InputPath"] = Path(input_path)
@@ -193,7 +193,7 @@ def run_filter_duplicates(config, file_manager, input_path: str | None = None,
 def run_create_backup(config, file_manager, output_path: str | None = None,
                       filename: str | None = None, mods: bool | None = None,
                       userdata: bool | None = None, bepinex: bool | None = None):
-    from modules.create_backup import CreateBackup
+    from tasks.create_backup import CreateBackup
     from pathlib import Path
     if output_path is not None:
         config.create_backup["OutputPath"] = Path(output_path)
@@ -387,7 +387,7 @@ def cmd_group_chara(args):
 
         if args.export:
             # Print prompt+JSON to stdout so the user can copy-paste into your LLM
-            from modules.group_chara import export
+            from tasks.group_chara import export
             from pathlib import Path
             folder = Path(args.input) if args.input else Path(config.group_chara["InputPath"])
             prompt = config.group_chara.get("Prompt", "")

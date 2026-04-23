@@ -1,19 +1,19 @@
-SOURCES += app/view/main_window.py \
-        app/view/setting_interface.py \
-        app/view/basic_input_interface.py \
-        app/view/dialog_interface.py \
-        app/view/menu_interface.py \
-        app/view/gallery_interface.py \
-        app/view/status_info_interface.py \
-        app/view/scroll_interface.py \
-        app/common/translator.py \
-        app/view/material_interface.py \
-        app/view/layout_interface.py \
-        app/view/text_interface.py \
-        app/view/icon_interface.py \
-        app/view/view_interface.py \
-        app/view/date_time_interface.py \
-        app/view/navigation_view_interface.py \
+SOURCES += gui/view/main_window.py \
+        gui/view/setting_interface.py \
+        gui/view/basic_input_interface.py \
+        gui/view/dialog_interface.py \
+        gui/view/menu_interface.py \
+        gui/view/gallery_interface.py \
+        gui/view/status_info_interface.py \
+        gui/view/scroll_interface.py \
+        gui/common/translator.py \
+        gui/view/material_interface.py \
+        gui/view/layout_interface.py \
+        gui/view/text_interface.py \
+        gui/view/icon_interface.py \
+        gui/view/view_interface.py \
+        gui/view/date_time_interface.py \
+        gui/view/navigation_view_interface.py \
 
-TRANSLATIONS += app/resource/i18n/gallery.zh_CN.ts \
-        app/resource/i18n/gallery.zh_HK.ts
+TRANSLATIONS += gui/resource/i18n/gallery.zh_CN.ts \
+        gui/resource/i18n/gallery.zh_HK.ts

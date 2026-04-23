@@ -6,11 +6,11 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QFileDialog
 from qfluentwidgets import SettingCard, FluentIconBase, FluentIcon, CommandBar, Action, LineEdit, LineEditButton
 from typing import Union
-from app.common.notification import notification
-from app.common.config import cfg
-from app.common.signal_bus import signalBus
-from app.common.clear_worker import ClearWorker
-from app.components.clear_messagebox import ClearMessageBox
+from gui.common.notification import notification
+from gui.common.config import cfg
+from gui.common.signal_bus import signalBus
+from gui.common.clear_worker import ClearWorker
+from gui.components.clear_messagebox import ClearMessageBox
 
 
 class FolderLineEdit(LineEdit):

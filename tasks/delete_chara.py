@@ -8,7 +8,7 @@ from pathlib import Path
 
 from send2trash import send2trash
 
-from modules.base_task import BaseTask
+from tasks.base_task import BaseTask
 from util.chara_ops import (
     find_matching_coords, parse_chara_guids,
     parse_coord_guids, resolve_paths, scan_mods,

@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import ToolButton, CheckBox
 from qfluentwidgets.common.icon import FluentIcon as FIF
 
-from app.common.signal_bus import signalBus
-from app.common.config import cfg
+from gui.common.signal_bus import signalBus
+from gui.common.config import cfg
 
 
 class NavigationCheckBox(QWidget):

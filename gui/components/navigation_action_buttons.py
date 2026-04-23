@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from qfluentwidgets import PushButton, isDarkTheme
 
-from app.common.signal_bus import signalBus
-from app.common.config import cfg
+from gui.common.signal_bus import signalBus
+from gui.common.config import cfg
 
 
 class _BadgePushButton(PushButton):
