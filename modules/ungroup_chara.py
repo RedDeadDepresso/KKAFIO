@@ -6,7 +6,6 @@ moves them up to the top-level folder.  Optionally deletes empty folders after
 moving.
 """
 
-from __future__ import annotations
 
 import shutil
 from pathlib import Path

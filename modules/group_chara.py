@@ -15,7 +15,6 @@ The two steps are intentionally decoupled so the user can inspect and edit
 the LLM response before committing any file moves.
 """
 
-from __future__ import annotations
 
 import json
 import shutil
@@ -130,27 +129,31 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
     logger.info("GROUP", f"Scanning {len(png_files)} PNG file(s) in {folder_path}"
                          + (" (top-level only)" if not include_subfolders else " (recursive)"))
 
-    for png in png_files:
-        # Pre-filter: only attempt kkloader on confirmed KK/KKSP cards.
-        # This avoids confusing errors from plain images (no card payload)
-        # and old-format cards that kkloader cannot parse.
+    def _process_png(png: Path) -> tuple[Path, str | None]:
+        """Read, classify and build the key for one PNG. Runs in a thread pool worker."""
         try:
             raw = png.read_bytes()
-            card_type = get_card_type(raw)
-            if card_type not in (CardType.KK, CardType.KKSP):
-                logger.skipped("GROUP", f"{png.name} (not a KK/KKSP card, skipping)")
-                continue
-        except Exception as e:
-            logger.error("GROUP", f"Could not read {png.name}: {e}")
-            continue
-
-        try:
+            if get_card_type(raw) not in (CardType.KK, CardType.KKSP):
+                return png, None  # not a chara card — skip silently
             kc  = KoikatuCharaData.load(str(png))
-            key = _make_key(kc)
-            if key not in characters:
-                characters[key] = ""
+            return png, _make_key(kc)
         except Exception as e:
-            logger.error("GROUP", f"Could not parse {png.name}: {e}")
+            return png, f"__error__{e}"
+
+    import os
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    workers = min(32, (os.cpu_count() or 4) * 2)
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(_process_png, png): png for png in png_files}
+        for future in as_completed(futures):
+            png, result = future.result()
+            if result is None:
+                pass                    # not a chara card — skip
+            elif result.startswith("__error__"):
+                logger.error("GROUP", f"Could not process {png.name}: {result[9:]}")
+            elif result not in characters:
+                characters[result] = ""
 
     if not characters:
         logger.error("GROUP", "No readable character cards found")

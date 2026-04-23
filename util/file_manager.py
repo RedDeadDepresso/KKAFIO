@@ -143,7 +143,17 @@ class FileManager:
             cls._path_to_7zip = shutil.which("7z", path=cls._get_nt_7z_dir())
         return cls._path_to_7zip
 
-    def create_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
+    def create_archive(self, files: list[Path], output_path: Path, fmt: str) -> None:
+        path_to_7zip = self.find_7zip()
+        if not path_to_7zip:
+            raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
+        flag = "-t7z" if fmt == "7z" else "-tzip"
+        cmd = [path_to_7zip, "a", flag, str(output_path)] + [str(f) for f in files]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode not in (0, 1):
+            raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
+    
+    def create_game_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""
         path_to_7zip = self._find_7zip()
         if not path_to_7zip:

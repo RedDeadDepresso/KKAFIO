@@ -19,7 +19,7 @@ class CreateBackup:
     
     def run(self):
         output_path = self.output_path / self.filename
-        self.file_manager.create_archive(self.folders, output_path)
+        self.file_manager.create_game_archive(self.folders, output_path)
 
 
 
