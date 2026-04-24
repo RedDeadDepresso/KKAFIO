@@ -108,6 +108,7 @@ def run_fc_kks(config, file_manager, input_path: str | None = None,
 
 def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
                      auto_resolve: bool | None = None,
+                     use_cache: bool | None = None,
                      mods_dir: str | None = None, coord_dir: str | None = None):
     from tasks.delete_chara import DeleteChara
     module = DeleteChara(config, file_manager)
@@ -115,6 +116,8 @@ def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
         module.chara_paths = chara_paths
     if auto_resolve is not None:
         module.auto_resolve = auto_resolve
+    if use_cache is not None:
+        module.use_cache = use_cache
     if mods_dir is not None:
         module.mods_dir_str = mods_dir
     if coord_dir is not None:
@@ -124,6 +127,7 @@ def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
 
 def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None,
                       fmt: str | None = None, auto_resolve: bool | None = None,
+                      use_cache: bool | None = None,
                       include_modpack: bool | None = None,
                       combined: bool | None = None,
                       mods_dir: str | None = None, coord_dir: str | None = None,
@@ -136,6 +140,8 @@ def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None
         module.format = fmt
     if auto_resolve is not None:
         module.auto_resolve = auto_resolve
+    if use_cache is not None:
+        module.use_cache = use_cache
     if include_modpack is not None:
         module.include_modpack = include_modpack
     if combined is not None:
@@ -327,8 +333,10 @@ def cmd_delete_chara(args):
         config.config_data["DeleteChara"]["Enable"] = True
         chara_paths  = args.chara if args.chara else None
         auto_resolve = None if args.auto_resolve is None else bool(args.auto_resolve)
+        use_cache    = None if args.use_cache is None else bool(args.use_cache)
         run_delete_chara(config, file_manager,
                          chara_paths=chara_paths, auto_resolve=auto_resolve,
+                         use_cache=use_cache,
                          mods_dir=args.mods_dir, coord_dir=args.coord_dir)
     except SystemExit:
         raise
@@ -344,11 +352,13 @@ def cmd_archive_chara(args):
         config.config_data["ArchiveChara"]["Enable"] = True
         chara_paths   = args.chara if args.chara else None
         auto_resolve  = None if args.auto_resolve is None else bool(args.auto_resolve)
+        use_cache     = None if args.use_cache is None else bool(args.use_cache)
         include_modpack = None if args.include_modpack is None else bool(args.include_modpack)
         combined      = None if args.combined is None else bool(args.combined)
         run_archive_chara(config, file_manager,
                           chara_paths=chara_paths, fmt=args.format,
                           auto_resolve=auto_resolve,
+                          use_cache=use_cache,
                           include_modpack=include_modpack,
                           combined=combined,
                           mods_dir=args.mods_dir, coord_dir=args.coord_dir,
@@ -529,6 +539,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Auto-resolve mods and coord dirs (overrides config)")
     g.add_argument("--no-auto-resolve", dest="auto_resolve", action="store_false",
                    help="Use explicit --mods-dir / --coord-dir instead")
+    g_cache2 = p.add_mutually_exclusive_group()
+    g_cache2.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
+                     help="Cache mod/coord directory scans (overrides config)")
+    g_cache2.add_argument("--no-use-cache", dest="use_cache", action="store_false",
+                     help="Disable cache and do a full scan (overrides config)")
     p.add_argument("--mods-dir",  default=None, metavar="DIR",
                    help="Mods directory (only used when --no-auto-resolve)")
     p.add_argument("--coord-dir", default=None, metavar="DIR",
@@ -549,6 +564,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Auto-resolve mods and coord dirs (overrides config)")
     g.add_argument("--no-auto-resolve", dest="auto_resolve", action="store_false",
                    help="Disable auto-resolution (overrides config)")
+    g_cache = p.add_mutually_exclusive_group()
+    g_cache.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
+                    help="Cache mod/coord directory scans (overrides config)")
+    g_cache.add_argument("--no-use-cache", dest="use_cache", action="store_false",
+                    help="Disable cache and do a full scan (overrides config)")
     g2 = p.add_mutually_exclusive_group()
     g2.add_argument("--include-modpack",    dest="include_modpack", action="store_true",  default=None,
                     help="Include zipmods from Sideloader Modpack folders (overrides config)")

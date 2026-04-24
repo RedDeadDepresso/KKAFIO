@@ -41,7 +41,9 @@ class SettingInterface(ScrollArea):
             parent=self.coreGroup,
             clearable=False
         )
-
+        
+        # deleteChara
+        self
         # createBackup
         self.backupGroup = SettingCardGroup(
             self.tr("Create Backup"), self.scrollWidget)
@@ -304,6 +306,13 @@ class SettingInterface(ScrollArea):
             self.tr("Coordinate directory"),
             parent=self.archiveCharaGroup
         )
+        self.archiveCharaUseCacheCard = SwitchSettingCard(
+            FIF.SPEED_HIGH,
+            self.tr('Use cache'),
+            self.tr('Cache mod and coordinate directory scans using the folder modified date. Disable if results seem stale.'),
+            configItem=cfg.archiveCharaUseCache,
+            parent=self.archiveCharaGroup
+        )
         self.archiveCharaIncludeModpackCard = SwitchSettingCard(
             FIF.FOLDER,
             self.tr('Include Sideloader Modpack mods'),
@@ -329,6 +338,13 @@ class SettingInterface(ScrollArea):
             self.tr("Auto-resolve mods and coordinate paths"),
             self.tr("Infer mods and coordinate directories from the game path or card location"),
             configItem=cfg.deleteCharaAutoResolve,
+            parent=self.deleteCharaGroup
+        )
+        self.deleteCharaUseCacheCard = SwitchSettingCard(
+            FIF.SPEED_HIGH,
+            self.tr('Use cache'),
+            self.tr('Cache mod and coordinate directory scans using the folder modified date. Disable if results seem stale.'),
+            configItem=cfg.deleteCharaUseCache,
             parent=self.deleteCharaGroup
         )
         self.deleteCharaModsDirCard = FolderSettingCard(
@@ -509,11 +525,13 @@ class SettingInterface(ScrollArea):
         self.archiveCharaGroup.addSettingCard(self.archiveCharaCombinedCard)
         self.archiveCharaGroup.addSettingCard(self.archiveCharaIncludeModpackCard)
         self.archiveCharaGroup.addSettingCard(self.archiveCharaAutoResolveCard)
+        self.archiveCharaGroup.addSettingCard(self.archiveCharaUseCacheCard)
         self.archiveCharaGroup.addSettingCard(self.archiveCharaModsDirCard)
         self.archiveCharaGroup.addSettingCard(self.archiveCharaCoordDirCard)
 
         self.deleteCharaGroup.addSettingCard(self.deleteCharaFilesCard)
         self.deleteCharaGroup.addSettingCard(self.deleteCharaAutoResolveCard)
+        self.deleteCharaGroup.addSettingCard(self.deleteCharaUseCacheCard)
         self.deleteCharaGroup.addSettingCard(self.deleteCharaModsDirCard)
         self.deleteCharaGroup.addSettingCard(self.deleteCharaCoordDirCard)
 

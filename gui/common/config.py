@@ -125,6 +125,9 @@ class Config(QConfig):
     deleteCharaAutoResolve = ConfigItem(
         "DeleteChara", "AutoResolve", True, BoolValidator()
     )
+    deleteCharaUseCache = ConfigItem(
+        "DeleteChara", "UseCache", True, BoolValidator()
+    )
     deleteCharaModsDir = ConfigItem(
         "DeleteChara", "ModsDir", "", FolderValidator()
     )
@@ -144,6 +147,9 @@ class Config(QConfig):
     )
     archiveCharaAutoResolve = ConfigItem(
         "ArchiveChara", "AutoResolve", True, BoolValidator()
+    )
+    archiveCharaUseCache = ConfigItem(
+        "ArchiveChara", "UseCache", True, BoolValidator()
     )
     archiveCharaIncludeModpack = ConfigItem(
         "ArchiveChara", "IncludeModpack", False, BoolValidator()

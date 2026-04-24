@@ -12,8 +12,6 @@ from util.chara_ops import (
     find_matching_coords, in_modpack_folder, parse_chara_guids,
     parse_coord_guids, resolve_paths, scan_mods,
 )
-from util.config import Config
-from util.file_manager import FileManager
 from util.logger import logger
 
 ArchiveFormat = Literal["7z", "zip"]
@@ -24,12 +22,13 @@ ArchiveFormat = Literal["7z", "zip"]
 # ---------------------------------------------------------------------------
 
 class ArchiveChara(BaseTask):
-    def __init__(self, config: Config, file_manager: FileManager):
+    def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
         cfg = self.config.archive_chara
         self.chara_paths      : list[str] = cfg.get("CharaPaths", [])
         self.format           : str       = cfg.get("Format", "7z")
         self.auto_resolve     : bool      = cfg.get("AutoResolve", True)
+        self.use_cache        : bool      = cfg.get("UseCache", True)
         self.include_modpack  : bool      = cfg.get("IncludeModpack", False)
         self.combined_archive : bool      = cfg.get("CombinedArchive", True)
         self.mods_dir_str     : str       = cfg.get("ModsDir", "")
@@ -55,7 +54,8 @@ class ArchiveChara(BaseTask):
             from kkloader import KoikatuCharaData
             try:
                 kc = KoikatuCharaData.load(str(chara_path))
-                coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir)
+                coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
+                                                    use_cache=self.use_cache)
                 logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")
                 for cp in coord_paths:
                     logger.info("ARCHV", f"    {cp.name}")
@@ -72,7 +72,8 @@ class ArchiveChara(BaseTask):
             logger.info("ARCHV",
                 f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
             guid_map = scan_mods(mods_dir, all_guids,
-                                 include_modpack=self.include_modpack)
+                                 include_modpack=self.include_modpack,
+                                 use_cache=self.use_cache)
             if not self.include_modpack:
                 skipped = sum(1 for zp in mods_dir.rglob("*.zipmod")
                               if in_modpack_folder(zp, mods_dir))

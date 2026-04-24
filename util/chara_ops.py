@@ -16,6 +16,7 @@ from pathlib import Path
 
 import msgpack
 
+from util.logger import logger
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -305,21 +306,46 @@ def _coord_matches_slot(slot: dict, coord: dict, threshold: float = 0.70) -> boo
     return all(c_col.get(i) == co_col.get(i) for i in shared)
 
 
-def find_matching_coords(chara_coords: list[dict], coord_dir: Path) -> list[Path]:
-    """Return coord PNGs that match any slot in the chara, using a thread pool
-    to parse coord files concurrently (I/O bound).
+def find_matching_coords(chara_coords: list[dict], coord_dir: Path,
+                         use_cache: bool = False) -> list[Path]:
+    """Return coord PNGs that match any slot in the chara.
 
-    Order of results is non-deterministic during parsing but the final list is
-    sorted by path for reproducibility.
+    When use_cache=True, loads (or rebuilds) a JSON cache at
+    coord_dir.parent/kkafio_coord_cache.json keyed by the directory mtime.
+    Parsing is parallelised (I/O bound) in both cached and non-cached paths.
     """
+    if not coord_dir.exists():
+        return []
+
+    if use_cache:
+        coord_map = load_coord_cache(coord_dir)
+        if coord_map is None:
+            logger.info("CACHE", f"Building coordinate cache for {coord_dir.name}...")
+            coord_map = build_coord_cache(coord_dir)
+            logger.info("CACHE", f"Coordinate cache built: {len(coord_map)} files")
+        else:
+            logger.info("CACHE", f"Coordinate cache hit: {len(coord_map)} files")
+
+        matched: list[Path] = []
+        for path_str, fp in coord_map.items():
+            p = Path(path_str)
+            if not p.exists():
+                continue
+            cached = _outfit_from_cache(fp, p)
+            for slot in chara_coords:
+                if _coord_matches_slot_cached(slot, cached):
+                    matched.append(p)
+                    break
+        return sorted(matched)
+
+    # No cache — full parallel parse
     coord_files = sorted(coord_dir.rglob("*.png"))
     if not coord_files:
         return []
 
     import os
     workers = min(32, (os.cpu_count() or 4) * 2)
-
-    matched: list[Path] = []
+    matched = []
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = {ex.submit(_parse_coord_outfit, png): png for png in coord_files}
@@ -333,6 +359,174 @@ def find_matching_coords(chara_coords: list[dict], coord_dir: Path) -> list[Path
                     break
 
     return sorted(matched)
+
+
+# ---------------------------------------------------------------------------
+# Cache helpers
+# ---------------------------------------------------------------------------
+
+import json as _json
+
+MODS_CACHE_FILE  = "kkafio_mods_cache.json"
+COORD_CACHE_FILE = "kkafio_coord_cache.json"
+
+
+def _dir_mtime(directory: Path) -> float:
+    """Return the directory's own mtime (not recursive — fast, O(1))."""
+    try:
+        return directory.stat().st_mtime
+    except Exception:
+        return 0.0
+
+
+def load_mods_cache(mods_dir: Path) -> dict[str, str] | None:
+    """Return {guid: absolute_path} from cache if still valid, else None."""
+    cache_path = mods_dir.parent / MODS_CACHE_FILE
+    try:
+        with cache_path.open("r", encoding="utf-8") as f:
+            data = _json.load(f)
+        if data.get("mods_dir") != str(mods_dir):
+            return None
+        if abs(data.get("mtime", 0) - _dir_mtime(mods_dir)) > 1:
+            return None
+        return data["guids"]           # {guid: str(path)}
+    except Exception:
+        return None
+
+
+def save_mods_cache(mods_dir: Path, guid_map: dict[str, str]) -> None:
+    """Write {guid: str(path)} to the cache file next to mods_dir."""
+    cache_path = mods_dir.parent / MODS_CACHE_FILE
+    data = {
+        "mods_dir": str(mods_dir),
+        "mtime":    _dir_mtime(mods_dir),
+        "guids":    guid_map,
+    }
+    try:
+        with cache_path.open("w", encoding="utf-8") as f:
+            _json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass   # cache write failure is non-fatal
+
+
+def build_mods_cache(mods_dir: Path,
+                     include_modpack: bool = False) -> dict[str, str]:
+    """Scan every zipmod and return {guid: str(abs_path)}, saving to cache."""
+    guid_map: dict[str, str] = {}
+    for zp in mods_dir.rglob("*.zipmod"):
+        if not include_modpack and in_modpack_folder(zp, mods_dir):
+            continue
+        guid = guid_from_zipmod(zp)
+        if guid:
+            guid_map[guid] = str(zp)
+    save_mods_cache(mods_dir, guid_map)
+    return guid_map
+
+
+def load_coord_cache(coord_dir: Path) -> dict[str, dict] | None:
+    """Return {str(path): fingerprint_dict} from cache if still valid, else None."""
+    cache_path = coord_dir.parent / COORD_CACHE_FILE
+    try:
+        with cache_path.open("r", encoding="utf-8") as f:
+            data = _json.load(f)
+        if data.get("coord_dir") != str(coord_dir):
+            return None
+        if abs(data.get("mtime", 0) - _dir_mtime(coord_dir)) > 1:
+            return None
+        return data["coords"]          # {str(path): {clothes_fp, acc_occupied, acc_colors}}
+    except Exception:
+        return None
+
+
+def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict]) -> None:
+    """Write the coordinate fingerprint map to the cache file next to coord_dir."""
+    cache_path = coord_dir.parent / COORD_CACHE_FILE
+    data = {
+        "coord_dir": str(coord_dir),
+        "mtime":     _dir_mtime(coord_dir),
+        "coords":    coord_map,
+    }
+    try:
+        with cache_path.open("w", encoding="utf-8") as f:
+            _json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def _outfit_to_cache(outfit: dict) -> dict:
+    """Convert an outfit dict to a JSON-serialisable fingerprint."""
+    def _conv(v):
+        if isinstance(v, (list, tuple)):
+            return [_conv(i) for i in v]
+        if v is None:
+            return None
+        return v
+
+    return {
+        "clothes_fp":   _conv(_clothes_fp(outfit["clothes"])),
+        "acc_occupied": sorted(list(_acc_fp(outfit["accessory"])[0])),
+        "acc_colors":   {str(k): _conv(v)
+                         for k, v in _acc_fp(outfit["accessory"])[1].items()},
+    }
+
+
+def _outfit_from_cache(fp: dict, path: Path) -> dict:
+    """Reconstruct a fake outfit dict from a cached fingerprint for matching."""
+    # We rebuild minimal clothes/accessory structures that _coord_matches_slot
+    # can compare.  The fingerprint is the only thing that matters.
+    return {
+        "_cached_fp":        fp["clothes_fp"],
+        "_cached_acc_occ":   frozenset(fp["acc_occupied"]),
+        "_cached_acc_col":   {int(k): tuple(tuple(c) if c else None
+                                            for c in v)
+                              for k, v in fp["acc_colors"].items()},
+        "path": path,
+    }
+
+
+def _coord_matches_slot_cached(slot: dict, cached: dict,
+                               threshold: float = 0.70) -> bool:
+    """Match a chara slot against a cached coord fingerprint."""
+    c_fp   = _clothes_fp(slot["clothes"])
+    co_fp  = cached["_cached_fp"]
+    n      = max(len(c_fp), len(co_fp), 1)
+    hits   = sum(1 for a, b in zip(c_fp, co_fp) if list(a) == b)
+    if hits / n < threshold:
+        return False
+
+    c_occ, c_col   = _acc_fp(slot["accessory"])
+    co_occ = cached["_cached_acc_occ"]
+    co_col = cached["_cached_acc_col"]
+    if not co_occ:
+        return True
+    if c_occ != co_occ:
+        return False
+    shared = c_occ & co_occ
+    return all(
+        (tuple(tuple(x) if x else None for x in c_col.get(i, ())) ==
+         co_col.get(i))
+        for i in shared
+    )
+
+
+def build_coord_cache(coord_dir: Path) -> dict[str, dict]:
+    """Parse every coord PNG and return {str(path): fingerprint}, saving to cache."""
+    import os
+    workers  = min(32, (os.cpu_count() or 4) * 2)
+    coord_map: dict[str, dict] = {}
+
+    coord_files = sorted(coord_dir.rglob("*.png"))
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(_parse_coord_outfit, png): png
+                   for png in coord_files}
+        for future in as_completed(futures):
+            outfit = future.result()
+            if outfit is None:
+                continue
+            coord_map[str(outfit["path"])] = _outfit_to_cache(outfit)
+
+    save_coord_cache(coord_dir, coord_map)
+    return coord_map
 
 
 # ---------------------------------------------------------------------------
@@ -365,11 +559,34 @@ def in_modpack_folder(zp: Path, mods_dir: Path) -> bool:
 
 
 def scan_mods(mods_dir: Path, required: set[str],
-              include_modpack: bool = False) -> dict[str, Path]:
-    """Scan mods_dir for zipmods providing the required GUIDs."""
+              include_modpack: bool = False,
+              use_cache: bool = False) -> dict[str, Path]:
+    """Scan mods_dir for zipmods providing the required GUIDs.
+
+    When use_cache=True, loads (or rebuilds) a JSON cache at
+    mods_dir.parent/kkafio_mods_cache.json keyed by the directory mtime.
+    """
     found: dict[str, Path] = {}
     if not mods_dir.exists():
         return found
+
+    if use_cache:
+        guid_str_map = load_mods_cache(mods_dir)
+        if guid_str_map is None:
+            logger.info("CACHE", f"Building mods cache for {mods_dir.name}...")
+            guid_str_map = build_mods_cache(mods_dir, include_modpack=include_modpack)
+            logger.info("CACHE", f"Mods cache built: {len(guid_str_map)} GUIDs")
+        else:
+            logger.info("CACHE", f"Mods cache hit: {len(guid_str_map)} GUIDs")
+        # Resolve required GUIDs from the cache dict
+        for guid in required:
+            if guid in guid_str_map:
+                p = Path(guid_str_map[guid])
+                if p.exists():
+                    found[guid] = p
+        return found
+
+    # No cache — full scan
     for zp in mods_dir.rglob("*.zipmod"):
         if len(found) == len(required):
             break

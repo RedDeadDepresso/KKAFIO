@@ -22,6 +22,7 @@ class DeleteChara(BaseTask):
         cfg = self.config.delete_chara
         self.chara_paths   : list[str] = cfg.get("CharaPaths", [])
         self.auto_resolve  : bool      = cfg.get("AutoResolve", True)
+        self.use_cache     : bool      = cfg.get("UseCache", True)
         self.mods_dir_str  : str       = cfg.get("ModsDir", "")
         self.coord_dir_str : str       = cfg.get("CoordDir", "")
 
@@ -38,7 +39,8 @@ class DeleteChara(BaseTask):
             from kkloader import KoikatuCharaData
             try:
                 kc = KoikatuCharaData.load(str(chara_path))
-                coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir)
+                coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
+                                                    use_cache=self.use_cache)
                 logger.info("DELET", f"  Matching coordinates: {len(coord_paths)}")
                 for cp in coord_paths:
                     logger.info("DELET", f"    {cp.name}")
@@ -58,7 +60,8 @@ class DeleteChara(BaseTask):
             logger.info("DELET",
                 f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
             # include_modpack is intentionally non-configurable here — never touch modpack mods
-            guid_map = scan_mods(mods_dir, all_guids, include_modpack=False)
+            guid_map = scan_mods(mods_dir, all_guids, include_modpack=False,
+                                use_cache=self.use_cache)
             logger.info("DELET",
                 f"  Zipmods found: {len(guid_map)}  "
                 f"missing: {len(all_guids - set(guid_map.keys()))}")
