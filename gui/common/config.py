@@ -115,6 +115,20 @@ class Config(QConfig):
         "FilterDuplicates", "Delete", False, BoolValidator()
     )
 
+    # downloadChara
+    downloadCharaEnable = ConfigItem(
+        "DownloadChara", "Enable", False, BoolValidator()
+    )
+    downloadCharaOutputDir = ConfigItem(
+        "DownloadChara", "OutputDir", downloadsPath, FolderValidator()
+    )
+    downloadCharaSkip = ConfigItem(
+        "DownloadChara", "SkipDownloaded", True, BoolValidator()
+    )
+    downloadCharaLinks = ConfigItem(
+        "DownloadChara", "Links", ""
+    )
+
     # deleteChara
     deleteCharaEnable = ConfigItem(
         "DeleteChara", "Enable", False, BoolValidator()

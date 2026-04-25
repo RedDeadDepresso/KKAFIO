@@ -41,9 +41,7 @@ class SettingInterface(ScrollArea):
             parent=self.coreGroup,
             clearable=False
         )
-        
-        # deleteChara
-        self
+
         # createBackup
         self.backupGroup = SettingCardGroup(
             self.tr("Create Backup"), self.scrollWidget)
@@ -81,6 +79,32 @@ class SettingInterface(ScrollArea):
             None,
             configItem=cfg.bepInEx,
             parent=self.backupGroup
+        )
+
+        # downloadChara
+        self.downloadCharaGroup = SettingCardGroup(
+            self.tr("Download Chara"), self.scrollWidget)
+        self.downloadCharaOutputDirCard = FolderSettingCard(
+            cfg.downloadCharaOutputDir,
+            FIF.DOWNLOAD,
+            'Download Chara',
+            self.tr("Output directory"),
+            parent=self.downloadCharaGroup
+        )
+        self.downloadCharaSkipCard = SwitchSettingCard(
+            FIF.HISTORY,
+            self.tr('Skip already downloaded'),
+            self.tr('Skip URLs that were previously downloaded successfully'),
+            configItem=cfg.downloadCharaSkip,
+            parent=self.downloadCharaGroup
+        )
+        self.downloadCharaLinksCard = TextAreaSettingCard(
+            cfg.downloadCharaLinks,
+            FIF.LINK,
+            self.tr("Download links"),
+            self.tr("One URL per line — supports db.bepis.moe and koikatsucards.com"),
+            placeholder="""https://db.bepis.moe/koikatsu/view/1... # chara\nhttps://db.bepis.moe/koikatsu/... # chara list\nhttps://koikatsucards.com/contents/... # chara\nhttps://koikatsucards.com/search... # chara list""",
+            parent=self.downloadCharaGroup
         )
 
         # fckks
@@ -492,6 +516,10 @@ class SettingInterface(ScrollArea):
         self.backupGroup.addSettingCard(self.modsCard)
         self.backupGroup.addSettingCard(self.userDataCard)
         self.backupGroup.addSettingCard(self.bepInExCard)
+
+        self.downloadCharaGroup.addSettingCard(self.downloadCharaOutputDirCard)
+        self.downloadCharaGroup.addSettingCard(self.downloadCharaLinksCard)
+        self.downloadCharaGroup.addSettingCard(self.downloadCharaSkipCard)
         
         self.fckksGroup.addSettingCard(self.fckksPathCard)
         self.fckksGroup.addSettingCard(self.convertCard)
@@ -554,6 +582,7 @@ class SettingInterface(ScrollArea):
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
         self.expandLayout.addWidget(self.coreGroup)
         self.expandLayout.addWidget(self.backupGroup)
+        self.expandLayout.addWidget(self.downloadCharaGroup)
         self.expandLayout.addWidget(self.fckksGroup)
         self.expandLayout.addWidget(self.filterDuplicatesGroup)
         self.expandLayout.addWidget(self.installGroup)

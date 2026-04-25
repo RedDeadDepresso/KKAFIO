@@ -106,6 +106,20 @@ def run_fc_kks(config, file_manager, input_path: str | None = None,
     module.run()
 
 
+def run_download_chara(config, file_manager, links: str | None = None,
+                       output_dir: str | None = None,
+                       skip_downloaded: bool | None = None):
+    from tasks.download_chara import DownloadChara
+    module = DownloadChara(config, file_manager)
+    if links is not None:
+        module.links = links
+    if output_dir is not None:
+        module.output_dir_str = output_dir
+    if skip_downloaded is not None:
+        module.skip_downloaded = skip_downloaded
+    module.run()
+
+
 def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
                      auto_resolve: bool | None = None,
                      use_cache: bool | None = None,
@@ -242,6 +256,7 @@ def cmd_run(args):
     task_map = {
         "ArchiveChara":      lambda: run_archive_chara(config, file_manager),
         "DeleteChara":       lambda: run_delete_chara(config, file_manager),
+        "DownloadChara":     lambda: run_download_chara(config, file_manager),
         "CreateBackup":      lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS":  lambda: run_fc_kks(config, file_manager),
         "FilterDuplicates":  lambda: run_filter_duplicates(config, file_manager),
@@ -323,6 +338,32 @@ def cmd_fc_kks(args):
         raise
     except Exception:
         _write_traceback("FilterConvertKKS")
+        sys.exit(1)
+
+
+def cmd_download_chara(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config)
+        config.config_data["DownloadChara"]["Enable"] = True
+        # --links may be a newline-separated string or a path to a text file
+        links = None
+        if args.links:
+            from pathlib import Path as _Path
+            p = _Path(args.links)
+            links = p.read_text(encoding="utf-8") if p.is_file() else args.links
+        skip = None
+        if args.skip_downloaded is True:
+            skip = True
+        elif args.skip_downloaded is False:
+            skip = False
+        run_download_chara(config, file_manager, links=links,
+                           output_dir=args.output_dir,
+                           skip_downloaded=skip)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("DownloadChara")
         sys.exit(1)
 
 
@@ -526,6 +567,23 @@ def build_parser() -> argparse.ArgumentParser:
     g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
                     help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_fc_kks)
+
+    # download-chara
+    p = sub.add_parser(
+        "download-chara",
+        help="Download character cards from db.bepis.moe or koikatsucards.com",
+    )
+    p.add_argument("--links", default=None, metavar="URLS_OR_FILE",
+                   help="Newline-separated URLs, or path to a .txt file containing them "
+                        "(default: DownloadChara.Links from config)")
+    p.add_argument("--output-dir", default=None, metavar="DIR",
+                   help="Directory to save downloaded cards (default: DownloadChara.OutputDir from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--skip-downloaded",    dest="skip_downloaded", action="store_true",  default=None,
+                   help="Skip already-downloaded URLs (overrides config)")
+    g.add_argument("--no-skip-downloaded", dest="skip_downloaded", action="store_false",
+                   help="Re-download even if previously downloaded (overrides config)")
+    p.set_defaults(func=cmd_download_chara)
 
     # delete-chara
     p = sub.add_parser(

@@ -1,6 +1,6 @@
 # coding:utf-8
 """
-util/base_task.py — Minimal base class for all KKAFIO task modules.
+util/base_task.py — Minimal base class for all KKAFIO task tasks.
 
 Provides only what is genuinely shared across every task:
   - constructor storing config and file_manager
