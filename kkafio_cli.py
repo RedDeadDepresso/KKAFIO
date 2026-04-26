@@ -5,7 +5,7 @@ kkafio_cli.py — CLI entry point for KKAFIO
 Task commands (arguments override config; omit to use config value):
     kkafio_cli run
     kkafio_cli install-chara [--input DIR]
-    kkafio_cli remove-chara  [--input DIR]
+    kkafio_cli uninstall-chara  [--input DIR]
     kkafio_cli fc-kks        [--input DIR] [--convert | --no-convert]
     kkafio_cli create-backup [--output DIR] [--filename NAME]
                              [--mods | --no-mods]
@@ -570,8 +570,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Skip archive extraction (overrides config)")
     p.set_defaults(func=cmd_install_chara)
 
-    # remove-chara
-    p = sub.add_parser("remove-chara", help="Remove cards / mods from the game")
+    # uninstall-chara
+    p = sub.add_parser("uninstall-chara", help="Remove cards / mods from the game")
     p.add_argument("--input", "-i", metavar="DIR", default=None,
                    help="Folder to scan (default: UninstallChara.InputPath from config)")
     p.set_defaults(func=cmd_uninstall_chara)

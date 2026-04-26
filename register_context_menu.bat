@@ -44,7 +44,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02Uninstal
 echo @="Uninstall Chara"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" remove-chara --input \"%%1\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-chara --input \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterKKS]
 echo @="Filter / Convert KKS"
@@ -93,7 +93,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell
 echo @="Uninstall Chara"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" remove-chara --input \"%%V\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-chara --input \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterKKS]
 echo @="Filter / Convert KKS"
