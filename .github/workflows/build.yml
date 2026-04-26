@@ -122,7 +122,7 @@ jobs:
           --hidden-import "util.file_manager"
           --hidden-import "util.special_tasks"
           --hidden-import "tasks.install_chara"
-          --hidden-import "tasks.remove_chara"
+          --hidden-import "tasks.uninstall_chara"
           --hidden-import "tasks.fc_kks"
           --hidden-import "tasks.create_backup"
           --hidden-import "tasks.delete_chara"
@@ -189,7 +189,7 @@ jobs:
           for size in 512 256 128 64 48 32 24 16; do
             magick "assets/logo.png" -resize ${size}x${size} "icon-${size}.png"
           done
-          
+
           magick icon-512.png icon-256.png icon-128.png icon-64.png icon-48.png \
                  icon-32.png icon-24.png icon-16.png kkafio.ico
 

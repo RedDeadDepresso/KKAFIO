@@ -5,9 +5,9 @@ from util.file_manager import FileManager
 from util.logger import logger
 
 
-class RemoveChara:
+class UninstallChara:
     def __init__(self, config: Config, file_manager: FileManager):
-        """Initializes the RemoveChara module.
+        """Initializes the UninstallChara module.
 
         Args:
             config (Config): KKAFIO Config instance
@@ -15,7 +15,7 @@ class RemoveChara:
         self.config = config
         self.file_manager = file_manager
         self.game_path = self.config.game_path
-        self.input_path = self.config.remove_chara["InputPath"]
+        self.input_path = self.config.uninstall_chara["InputPath"]
 
     def resolve_png(self, image_path: Path):        
         image_bytes = image_path.read_bytes()

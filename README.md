@@ -43,7 +43,7 @@
 - Extracts ZIP / RAR / 7z archives automatically (configurable).
 - If both Filter & Convert KKS and Install Chara are enabled with the same input folder, archive extraction runs in the KKS filter step only to avoid double-extracting.
 
-**5. Remove Chara**
+**5. Uninstall Chara**
 
 - Reverse of Install Chara: given the same folder, deletes the matching files from the game directories.
 - **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
@@ -88,7 +88,7 @@ No Administrator rights required - entries are written to `HKEY_CURRENT_USER`.
 | Entry | Action |
 |---|---|
 | Install Chara | `install-chara --input <folder>` |
-| Remove Chara | `remove-chara --input <folder>` |
+| Uninstall Chara | `remove-chara --input <folder>` |
 | Filter / Convert KKS | `fc-kks --input <folder>` |
 | Filter Duplicates | `filter-duplicates --input <folder>` |
 | Group Chara | `group-chara --input <folder>` |

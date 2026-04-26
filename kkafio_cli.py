@@ -72,12 +72,12 @@ def run_install_chara(config, file_manager, input_path: str | None = None,
                skip_extract=skip_extract)
 
 
-def run_remove_chara(config, file_manager, input_path: str | None = None):
-    from tasks.remove_chara import RemoveChara
+def run_uninstall_chara(config, file_manager, input_path: str | None = None):
+    from tasks.uninstall_chara import UninstallChara
     from pathlib import Path
     if input_path is not None:
-        config.remove_chara["InputPath"] = Path(input_path)
-    RemoveChara(config, file_manager).run()
+        config.uninstall_chara["InputPath"] = Path(input_path)
+    UninstallChara(config, file_manager).run()
 
 
 def run_fc_kks(config, file_manager, input_path: str | None = None,
@@ -262,7 +262,7 @@ def cmd_run(args):
         "GroupChara":       lambda: run_group_chara(config, file_manager),
         "InstallChara":     lambda: run_install_chara(config, file_manager,
                                                       skip_extract=same_path),
-        "RemoveChara":      lambda: run_remove_chara(config, file_manager),
+        "UninstallChara":      lambda: run_uninstall_chara(config, file_manager),
         "UngroupChara":     lambda: run_ungroup_chara(config, file_manager),
     }
 
@@ -323,16 +323,16 @@ def cmd_install_chara(args):
         sys.exit(1)
 
 
-def cmd_remove_chara(args):
+def cmd_uninstall_chara(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["RemoveChara"]["Enable"] = True
-        run_remove_chara(config, file_manager, input_path=args.input)
+        config.config_data["UninstallChara"]["Enable"] = True
+        run_uninstall_chara(config, file_manager, input_path=args.input)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("RemoveChara")
+        _write_traceback("UninstallChara")
         sys.exit(1)
 
 
@@ -573,8 +573,8 @@ def build_parser() -> argparse.ArgumentParser:
     # remove-chara
     p = sub.add_parser("remove-chara", help="Remove cards / mods from the game")
     p.add_argument("--input", "-i", metavar="DIR", default=None,
-                   help="Folder to scan (default: RemoveChara.InputPath from config)")
-    p.set_defaults(func=cmd_remove_chara)
+                   help="Folder to scan (default: UninstallChara.InputPath from config)")
+    p.set_defaults(func=cmd_uninstall_chara)
 
     # fc-kks
     p = sub.add_parser("fc-kks", help="Filter and optionally convert KKS cards")

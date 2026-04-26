@@ -21,7 +21,7 @@ uv run pyinstaller --noconfirm --onedir ^
  --hidden-import "util.file_manager" ^
  --hidden-import "util.special_tasks" ^
  --hidden-import "tasks.install_chara" ^
- --hidden-import "tasks.remove_chara" ^
+ --hidden-import "tasks.uninstall_chara" ^
  --hidden-import "tasks.fc_kks" ^
  --hidden-import "tasks.create_backup" ^
  --hidden-import "tasks.delete_chara" ^

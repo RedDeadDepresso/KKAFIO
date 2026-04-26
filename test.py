@@ -11,7 +11,7 @@ from util.file_manager import FileManager
 from tasks.create_backup import CreateBackup
 from tasks.fc_kks import FilterConvertKKS
 from tasks.install_chara import InstallChara
-from tasks.remove_chara import RemoveChara
+from tasks.uninstall_chara import UninstallChara
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def create_config():
             "Enable": True,
             "InputPath": str(DOWNLOAD_PATH),
         },
-        "RemoveChara": {
+        "UninstallChara": {
             "Enable": True,
             "InputPath": str(DOWNLOAD_PATH),
         },
@@ -202,8 +202,8 @@ def test_backup(kk_cards, coordinates, zipmods):
 
 def test_remove():
     """Test character removal."""
-    remove_chara = RemoveChara(CONFIG, FILE_MANAGER)
-    remove_chara.run()
+    uninstall_chara = UninstallChara(CONFIG, FILE_MANAGER)
+    uninstall_chara.run()
 
     chara_path = GAMEPATH / 'UserData' / 'chara' / 'female'
     coordinate_path = GAMEPATH / 'UserData' / 'coordinate'

@@ -108,7 +108,7 @@ def _extract_special_task_params(opt_values: dict) -> dict:
 
 _TASK_KEY = {
     "InstallChara":     "InstallChara",
-    "RemoveChara":      "RemoveChara",
+    "UninstallChara":      "UninstallChara",
     "FilterConvertKKS": "FilterConvertKKS",
     "DeleteChara":      "DeleteChara",
     "ArchiveChara":     "ArchiveChara",
@@ -121,7 +121,7 @@ _TASK_KEY = {
 
 _TASK_DEFAULTS = {
     "InstallChara":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
-    "RemoveChara":      {"Enable": False, "InputPath": ""},
+    "UninstallChara":      {"Enable": False, "InputPath": ""},
     "FilterConvertKKS": {"Enable": False, "InputPath": "", "Convert": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": False},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": False, "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
@@ -150,7 +150,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
 
-    elif task_name == "RemoveChara":
+    elif task_name == "UninstallChara":
         _set("InputPath", "InputPath")
 
     elif task_name == "FilterConvertKKS":
@@ -359,7 +359,7 @@ class Config:
         self.group_chara      = self.config_data["GroupChara"]
         self.install_chara    = self.config_data["InstallChara"]
         self.ungroup_chara    = self.config_data["UngroupChara"]
-        self.remove_chara     = self.config_data["RemoveChara"]
+        self.uninstall_chara     = self.config_data["UninstallChara"]
 
 
 # ---------------------------------------------------------------------------

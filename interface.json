@@ -148,7 +148,7 @@
       "name": "links",
       "label": "Download Links",
       "description": "One URL per line - supports db.bepis.moe and koikatsucards.com card pages",
-      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 3 | 1",            
+      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 3 | 1",
       "default": "",
       "pipeline_override": {
         "Links": "{links}"
@@ -587,7 +587,7 @@
     },
     {
       "name": "DownloadChara",
-      "label": "⬇️ Download Characters",
+      "label": "📥 Download Characters",
       "entry": "DownloadChara",
       "default_check": false,
       "description": "Download character cards from db.bepis.moe or koikatsucards.com",
@@ -596,7 +596,7 @@
     },
     {
       "name": "FilterConvertKKS",
-      "label": "🔄 Filter & Convert KKS Cards",
+      "label": "🔧 Filter & Convert KKS Cards",
       "entry": "FilterConvertKKS",
       "default_check": false,
       "description": "Filter and optionally convert KKS cards to KK format",
@@ -605,7 +605,7 @@
     },
     {
       "name": "FilterDuplicates",
-      "label": "🔍 Filter Duplicates",
+      "label": "🧹 Filter Duplicates",
       "entry": "FilterDuplicates",
       "default_check": false,
       "description": "Find and handle duplicate PNG cards and zipmod files",
@@ -619,7 +619,7 @@
     },
     {
       "name": "InstallChara",
-      "label": "📥 Install Characters",
+      "label": "📦 Install Characters",
       "entry": "InstallChara",
       "default_check": false,
       "description": "Copy character cards, mods, and overlays into the game",
@@ -632,17 +632,17 @@
       ]
     },
     {
-      "name": "RemoveChara",
-      "label": "🗑️ Remove Characters",
-      "entry": "RemoveChara",
+      "name": "UninstallChara",
+      "label": "↩️ Uninstall Characters",
+      "entry": "UninstallChara",
       "default_check": false,
-      "description": "Remove character cards and their mods from the game",
+      "description": "Uninstall character cards and their mods from the game",
       "group": ["card-management"],
       "option": ["InputPath"]
     },
     {
       "name": "GroupChara",
-      "label": "📂 Group Characters",
+      "label": "🗂️ Group Characters",
       "entry": "GroupChara",
       "default_check": false,
       "description": "Move character cards into series subfolders using LLM",
@@ -657,7 +657,7 @@
     },
     {
       "name": "UngroupChara",
-      "label": "📤 Ungroup Characters",
+      "label": "📂 Ungroup Characters",
       "entry": "UngroupChara",
       "default_check": false,
       "description": "Move cards from subfolders back to top-level folder",
@@ -666,7 +666,7 @@
     },
     {
       "name": "ArchiveChara",
-      "label": "📦 Archive Characters",
+      "label": "🎁 Archive Characters",
       "entry": "ArchiveChara",
       "default_check": false,
       "description": "Bundle character cards with zipmods and coordinates",
@@ -683,7 +683,7 @@
     },
     {
       "name": "DeleteChara",
-      "label": "❌ Delete Characters",
+      "label": "🗑️ Delete Characters",
       "entry": "DeleteChara",
       "default_check": false,
       "description": "Send character cards and associated mods/coords to Recycle Bin",

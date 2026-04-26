@@ -40,10 +40,10 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallChara\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" install-chara --input \"%%1\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02RemoveChara]
-echo @="Remove Chara"
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallChara]
+echo @="Uninstall Chara"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02RemoveChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallChara\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" remove-chara --input \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterKKS]
@@ -89,10 +89,10 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallChara\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" install-chara --input \"%%V\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02RemoveChara]
-echo @="Remove Chara"
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallChara]
+echo @="Uninstall Chara"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02RemoveChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallChara\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" remove-chara --input \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterKKS]
