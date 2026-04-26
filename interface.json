@@ -3,10 +3,11 @@
   "name": "KKAFIO",
   "label": "KKAFIO",
   "title": "KKAFIO - Koikatsu Auto File I/O",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "github": "https://github.com/RedDeadDepresso/KKAFIO",
   "mirrorchyan_rid": "",
   "description": "Automated character card and mod management for Koikatsu / Koikatsu Sunshine",
+  "icon": "assets/logo.png",
   "agent": {
     "child_exec": "python",
     "child_args": ["kkafio_cli.exe", "run"]

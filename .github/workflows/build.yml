@@ -115,7 +115,8 @@ jobs:
       - name: Build kkafio_cli.exe
         run: >
           uv run pyinstaller --noconfirm --onedir
-          --name "kkafio_cli"
+          --distpath "dist"
+          --name "KKAFIO"
           --hidden-import "util.config"
           --hidden-import "util.logger"
           --hidden-import "util.file_manager"
@@ -136,38 +137,28 @@ jobs:
       - name: Assemble release folder
         shell: pwsh
         run: |
-          $src = "dist\kkafio_cli"
           $dst = "dist\KKAFIO"
-
-          # Clean + recreate destination
-          if (Test-Path $dst) {
-            Remove-Item $dst -Recurse -Force
-          }
-
-          New-Item -ItemType Directory -Force -Path $dst | Out-Null
-          New-Item -ItemType Directory -Force -Path "$dst\_internal" | Out-Null
-
-          # CLI exe
-          Copy-Item "$src\kkafio_cli.exe" "$dst\kkafio_cli.exe"
-
-          # Internal files
-          Copy-Item -Recurse -Force "$src\_internal\*" -Destination "$dst\_internal"
 
           # Helper scripts
           if (Test-Path "register_context_menu.bat")   { Copy-Item "register_context_menu.bat"   $dst }
           if (Test-Path "unregister_context_menu.bat") { Copy-Item "unregister_context_menu.bat" $dst }
 
           # interface.json
-          Copy-Item "interface.json" "$dst\interface.json"
+          if (Test-Path "interface.json") { Copy-Item "interface.json" "$dst\interface.json" }
+
+          # logo.png (ensure folder exists)
+          if (!(Test-Path "$dst\assets")) { New-Item -ItemType Directory -Force -Path "$dst\assets" }
+          if (Test-Path "assets\logo.png") { Copy-Item "assets\logo.png" "$dst\assets\logo.png" }
 
           # Install MXU → rename to KKAFIO.exe
           $mxuDir = "downloads\MXU"
           $mxuExe = Get-ChildItem -Path $mxuDir -Filter "mxu.exe" -Recurse | Select-Object -First 1
           if ($mxuExe) {
+            # Note: PyInstaller already created KKAFIO.exe (the CLI), 
+            # so we rename the CLI to kkafio_cli.exe to make room for the GUI.
+            Rename-Item "$dst\KKAFIO.exe" "kkafio_cli.exe"
             Copy-Item $mxuExe.FullName "$dst\KKAFIO.exe"
-            Write-Host "MXU installed as KKAFIO.exe"
-          } else {
-            Write-Warning "mxu.exe not found!"
+            Write-Host "MXU installed as KKAFIO.exe, CLI moved to kkafio_cli.exe"
           }
 
       # ── Copy SSL DLLs ───────────────────────────────────────────────────

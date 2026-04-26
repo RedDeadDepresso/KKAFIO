@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-get_gui.py — Download the latest MXU release and extract mxu.exe as KKAFIO.exe.
+download_gui.py — Download the latest MXU release and extract mxu.exe as KKAFIO.exe.
 
 Usage:
-    python get_gui.py              # latest stable, win-x86_64
-    python get_gui.py --arch aarch64
-    python get_gui.py --tag v1.2.3
-    python get_gui.py --prerelease # include pre-releases
+    python download_gui.py              # latest stable, win-x86_64
+    python download_gui.py --arch aarch64
+    python download_gui.py --tag v1.2.3
+    python download_gui.py --prerelease # include pre-releases
 
 After running, KKAFIO.exe will be placed in the same directory as kkafio_cli.py
 so MXU can load interface.json and spawn kkafio_cli.exe.
@@ -35,7 +35,7 @@ HERE       = Path(__file__).resolve().parent   # KKAFIO project root
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _get(url: str, token: str | None = None) -> bytes:
-    headers = {"Accept": "application/vnd.github+json", "User-Agent": "KKAFIO/get_gui"}
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "KKAFIO/download_gui"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, headers=headers)
@@ -81,7 +81,7 @@ def _find_asset(assets: list[dict], os_tag: str, arch: str) -> dict | None:
 
 
 def _download(url: str, dest: Path, label: str, token: str | None = None) -> None:
-    headers = {"User-Agent": "KKAFIO/get_gui"}
+    headers = {"User-Agent": "KKAFIO/download_gui"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, headers=headers)
