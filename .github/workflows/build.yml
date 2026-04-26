@@ -179,10 +179,17 @@ jobs:
       - name: Convert logo.png to kkafio.ico
         shell: bash
         run: |
-          choco install imagemagick -y --no-progress
+          # Check if logo exists before running
+          if [ ! -f "assets/logo.png" ]; then
+            echo "ERROR: assets/logo.png not found!"
+            exit 1
+          fi
+
+          # Use the correct path to the logo
           for size in 512 256 128 64 48 32 24 16; do
-            magick "logo.png" -resize ${size}x${size} "icon-${size}.png"
+            magick "assets/logo.png" -resize ${size}x${size} "icon-${size}.png"
           done
+          
           magick icon-512.png icon-256.png icon-128.png icon-64.png icon-48.png \
                  icon-32.png icon-24.png icon-16.png kkafio.ico
 
