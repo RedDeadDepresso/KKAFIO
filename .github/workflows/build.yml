@@ -160,48 +160,32 @@ jobs:
           # interface.json
           Copy-Item "interface.json" "$dst\interface.json"
 
-          # Install MXU
+          # Install MXU → rename to KKAFIO.exe
           $mxuDir = "downloads\MXU"
           $mxuExe = Get-ChildItem -Path $mxuDir -Filter "mxu.exe" -Recurse | Select-Object -First 1
           if ($mxuExe) {
-            Copy-Item $mxuExe.FullName "$dst\mxu.exe"
-            Write-Host "MXU installed: $($mxuExe.FullName)"
+            Copy-Item $mxuExe.FullName "$dst\KKAFIO.exe"
+            Write-Host "MXU installed as KKAFIO.exe"
           } else {
             Write-Warning "mxu.exe not found!"
           }
 
-      # ── Copy SSL DLLs ────────────────────────────────────────────────────────
+      # ── Copy SSL DLLs ───────────────────────────────────────────────────
       - name: Copy SSL DLLs
         shell: pwsh
         run: |
           $dlls     = (uv run python -c "import sys; print(sys.base_prefix)") + "\DLLs"
           $internal = "dist\KKAFIO\_internal"
           $root     = "dist\KKAFIO"
+
           foreach ($target in @($internal, $root)) {
             Copy-Item "$dlls\_ssl.pyd"            $target -Force
             Copy-Item "$dlls\libcrypto-3-x64.dll" $target -Force
             Copy-Item "$dlls\libssl-3-x64.dll"    $target -Force
           }
 
-      # ── Verify SSL DLLs ─────────────────────────────────────────────────────
-      - name: Verify SSL DLLs
-        shell: pwsh
-        run: |
-          @(
-            "dist\KKAFIO\_internal\_ssl.pyd",
-            "dist\KKAFIO\_internal\libcrypto-3-x64.dll",
-            "dist\KKAFIO\_internal\libssl-3-x64.dll",
-            "dist\KKAFIO\_ssl.pyd",
-            "dist\KKAFIO\libcrypto-3-x64.dll",
-            "dist\KKAFIO\libssl-3-x64.dll"
-          ) | ForEach-Object {
-            if (Test-Path $_) { Write-Host "OK: $_" }
-            else              { Write-Error "MISSING: $_" }
-          }
-
-      # ── Convert logo.png to logo.ico ─────────────────────────────────────────
+      # ── Convert icon ────────────────────────────────────────────────────
       - name: Convert logo.png to kkafio.ico
-        if: matrix.arch == 'x86_64'
         shell: bash
         run: |
           choco install imagemagick -y --no-progress
@@ -210,40 +194,27 @@ jobs:
           done
           magick icon-512.png icon-256.png icon-128.png icon-64.png icon-48.png \
                  icon-32.png icon-24.png icon-16.png kkafio.ico
-          echo "Created kkafio.ico"
 
-      # ── Patch mxu.exe icon and name ──────────────────────────────────────────
-      - name: Patch mxu.exe icon and name
-        if: matrix.arch == 'x86_64'
+      # ── Patch renamed executable ────────────────────────────────────────
+      - name: Patch KKAFIO.exe icon and metadata
         shell: bash
         run: |
-          curl -sL https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe \
-               -o rcedit.exe
-          MXU_EXE="dist/KKAFIO/mxu.exe"
-          if [[ -f "$MXU_EXE" ]]; then
-            ./rcedit.exe "$MXU_EXE" \
-              --set-icon         "kkafio.ico" \
+          curl -sL https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe -o rcedit.exe
+          EXE="dist/KKAFIO/KKAFIO.exe"
+
+          if [[ -f "$EXE" ]]; then
+            ./rcedit.exe "$EXE" \
+              --set-icon "kkafio.ico" \
               --set-version-string "ProductName"      "KKAFIO" \
               --set-version-string "FileDescription"  "KKAFIO - Koikatsu Auto File I/O" \
               --set-version-string "CompanyName"      "KKAFIO" \
               --set-version-string "InternalName"     "KKAFIO" \
-              --set-version-string "OriginalFilename" "mxu.exe"
-            echo "Patched $MXU_EXE"
+              --set-version-string "OriginalFilename" "KKAFIO.exe"
           else
-            echo "WARNING: $MXU_EXE not found, skipping patch"
+            echo "WARNING: KKAFIO.exe not found"
           fi
 
-      # ── Stamp version into interface.json ────────────────────────────────────
-      - name: Stamp version into interface.json
-        shell: pwsh
-        run: |
-          $tag   = "${{ needs.meta.outputs.tag }}"
-          $iface = Get-Content "dist\KKAFIO\interface.json" -Raw | ConvertFrom-Json
-          $iface.version = $tag
-          $iface | ConvertTo-Json -Depth 10 | Set-Content "dist\KKAFIO\interface.json"
-          Write-Host "Stamped version $tag"
-
-      # ── Zip ──────────────────────────────────────────────────────────────────
+      # ── Zip ─────────────────────────────────────────────────────────────
       - name: Zip release
         shell: pwsh
         run: |
@@ -253,7 +224,6 @@ jobs:
           Compress-Archive -Path "dist\KKAFIO\*" -DestinationPath $name
           Write-Host "Created: $name"
 
-      # ── Upload artifact ───────────────────────────────────────────────────────
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
