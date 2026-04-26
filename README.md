@@ -6,7 +6,23 @@
 
 ## Features
 
-**1. Create Backup**
+**1. Download Chara**
+
+- Downloads character cards from [db.bepis.moe](https://db.bepis.moe) and [koikatsucards.com](https://koikatsucards.com).
+- Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
+- **Pagination formats** (use `|` as separator):
+
+  | Format                                      | Behaviour                        |
+  | ------------------------------------------- | -------------------------------- |
+  | `https://db.bepis.moe/user/cards`           | Single listing page or card page |
+  | `https://db.bepis.moe/user/cards \| all`    | All pages until empty            |
+  | `https://db.bepis.moe/user/cards \| 1 \| 5` | Pages 1 through 5                |
+  | `https://db.bepis.moe/user/cards \| 5 \| 1` | Pages 5 down to 1 (reverse)      |
+
+- Lines starting with `#` are treated as comments and ignored.
+- **Skip already downloaded** (on by default) uses a history file at `%APPDATA%/KKAFIO/download_history.json` to avoid re-downloading files.
+
+**2. Create Backup**
 
 - Automatically creates a `.7z` archive containing:
   - `UserData`
@@ -14,7 +30,7 @@
   - `BepInEx`
 - If an archive with the same name already exists it will be overwritten.
 
-**2. Filter & Convert KKS**
+**3. Filter & Convert KKS**
 
 - Functions similarly to [FlYiNGPoTAToChiP's KK_SunshineCardFilter](https://github.com/FlYiNGPoTAToChiP/KK_SunshineCardFilter).
 - Given a folder, the task:
@@ -23,7 +39,7 @@
   - **Optional:** Extracts ZIP / RAR / 7z archives before filtering
 - Has a separate archive password setting from Install Chara.
 
-**3. Filter Duplicates**
+**4. Filter Duplicates**
 
 - Given a folder, scans recursively for duplicate `.png` cards and `.zipmod` files.
 - Duplicates are detected by **content** (not filename):
@@ -37,18 +53,19 @@
 - **Keep strategy** controls which copy of a duplicate set is kept in place: Newest, Oldest, Biggest file size (default), Smallest file size, Last alphabetically, First alphabetically, or None (move all copies).
 - **Optional:** Send duplicates directly to the recycle bin instead of moving them.
 
-**4. Install Chara**
+**5. Install Chara**
 
 - Given a folder containing chara cards, coordinate cards, overlays, and zipmod files, copies them into their respective game directories.
 - Extracts ZIP / RAR / 7z archives automatically (configurable).
 - If both Filter & Convert KKS and Install Chara are enabled with the same input folder, archive extraction runs in the KKS filter step only to avoid double-extracting.
 
-**5. Uninstall Chara**
+**6. Uninstall Chara**
 
 - Reverse of Install Chara: given the same folder, deletes the matching files from the game directories.
 - **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
+- **Warning:** Uninstall Chara does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
-**6. Group Chara**
+**7. Group Chara**
 
 - Groups character cards into subfolders named after their series, using an LLM.
 - Workflow:
@@ -58,13 +75,16 @@
   3. Copy the LLM response and click **Paste** in KKAFIO to save it.
   4. Enable **Group Chara**, click **Start** - KKAFIO moves each card into `<input>/<series>/`.
 - **Include subfolders** option lets you export already-sorted cards too (off by default to skip them).
+- **Recommended LLMs:**
+  - [DeepSeek](https://chat.deepseek.com) — highly recommended for two reasons: it has a large max chat message length allowing it to process large json files, and it excels at identifying characters from Chinese gacha games (e.g. Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** and **Smart Search** feature for better identification of obscure characters.
+  - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters. Also has a large chat message length.
 
-**7. Ungroup Chara**
+**8. Ungroup Chara**
 
 - Reverse of Group Chara: moves all cards from subfolders back to the top-level input folder.
 - **Optional:** Deletes empty subfolders after moving (on by default).
 
-**8. Archive Chara**
+**9. Archive Chara**
 
 - Given a list of character cards, bundles each card with its matching coordinate files and required zipmods into a single archive.
 - Coordinates are matched by colour fingerprint (not filename), so cards from different mod setups are handled correctly.
@@ -73,22 +93,22 @@
 - Output format: **7z** (default) or **zip**.
 - **Combined archive** option puts all cards into one archive (default), or creates one archive per card.
 
-**9. Delete Chara**
+**10. Delete Chara**
 
 - Given a list of character cards, sends each card together with its matching coordinates and required zipmods to the recycle bin.
 - Uses the same path resolution and coordinate matching as Archive Chara.
 - Never touches Sideloader Modpack mods.
+- **Warning:** Uninstall Chara does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
 ## Context menu integration
 
-Run `register_context_menu.bat` to add an **KKAFIO** submenu to the Windows Explorer right-click menu.  
-No Administrator rights required - entries are written to `HKEY_CURRENT_USER`.
+Run `register_context_menu.bat` to add an **KKAFIO** submenu to the Windows Explorer right-click menu. It uses the selected file/folder as an argument and the remaining ones ​​are extracted from the first configuration instance.
 
 **On folders and folder backgrounds:**
 | Entry | Action |
 |---|---|
 | Install Chara | `install-chara --input <folder>` |
-| Uninstall Chara | `remove-chara --input <folder>` |
+| Uninstall Chara | `uninstall-chara --input <folder>` |
 | Filter / Convert KKS | `fc-kks --input <folder>` |
 | Filter Duplicates | `filter-duplicates --input <folder>` |
 | Group Chara | `group-chara --input <folder>` |
@@ -111,7 +131,7 @@ Run `unregister_context_menu.bat` to remove all entries.
 kkafio_cli run                                    # run all enabled tasks from config
 
 kkafio_cli install-chara [--input DIR] [--extract-archive | --no-extract-archive]
-kkafio_cli remove-chara  [--input DIR]
+kkafio_cli uninstall-chara  [--input DIR]
 kkafio_cli fc-kks        [--input DIR] [--convert | --no-convert]
                          [--extract-archive | --no-extract-archive]
 kkafio_cli filter-duplicates [--input DIR] [--fuzzy | --no-fuzzy]
