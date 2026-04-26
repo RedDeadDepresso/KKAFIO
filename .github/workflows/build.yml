@@ -104,7 +104,7 @@ jobs:
       - name: Download MXU (win-${{ matrix.arch }})
         uses: robinraju/release-downloader@v1
         with:
-          repository: RedDeadDepresso/KKAFIO
+          repository: RedDeadDepresso/MXU-KKAFIO
           fileName: "*win-${{ matrix.arch }}*"
           tag: ${{ needs.meta.outputs.mxu_version }}
           out-file-path: "downloads/MXU"
