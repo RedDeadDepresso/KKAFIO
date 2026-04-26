@@ -139,28 +139,35 @@ jobs:
           $src = "dist\kkafio_cli"
           $dst = "dist\KKAFIO"
 
-          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          # Clean + recreate destination
+          if (Test-Path $dst) {
+            Remove-Item $dst -Recurse -Force
+          }
 
-          # CLI exe + internals
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          New-Item -ItemType Directory -Force -Path "$dst\_internal" | Out-Null
+
+          # CLI exe
           Copy-Item "$src\kkafio_cli.exe" "$dst\kkafio_cli.exe"
-          Copy-Item -Recurse -Force "$src\_internal\*" "$dst\_internal\"
+
+          # Internal files
+          Copy-Item -Recurse -Force "$src\_internal\*" -Destination "$dst\_internal"
 
           # Helper scripts
           if (Test-Path "register_context_menu.bat")   { Copy-Item "register_context_menu.bat"   $dst }
           if (Test-Path "unregister_context_menu.bat") { Copy-Item "unregister_context_menu.bat" $dst }
 
-          # interface.json for MXU
+          # interface.json
           Copy-Item "interface.json" "$dst\interface.json"
 
-          # Install MXU so MXU update system works
+          # Install MXU
           $mxuDir = "downloads\MXU"
-          $mxuExe = Get-ChildItem -Path $mxuDir -Filter "mxu.exe" -Recurse |
-                    Select-Object -First 1
+          $mxuExe = Get-ChildItem -Path $mxuDir -Filter "mxu.exe" -Recurse | Select-Object -First 1
           if ($mxuExe) {
             Copy-Item $mxuExe.FullName "$dst\mxu.exe"
             Write-Host "MXU installed: $($mxuExe.FullName)"
           } else {
-            Write-Warning "mxu.exe not found in downloaded MXU release!"
+            Write-Warning "mxu.exe not found!"
           }
 
       # ── Copy SSL DLLs ────────────────────────────────────────────────────────
