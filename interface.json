@@ -1,0 +1,693 @@
+{
+  "interface_version": 2,
+  "name": "KKAFIO",
+  "label": "KKAFIO",
+  "title": "KKAFIO - Koikatsu Auto File I/O",
+  "version": "0.0.0",
+  "github": "https://github.com/RedDeadDepresso/KKAFIO",
+  "mirrorchyan_rid": "",
+  "description": "Automated character card and mod management for Koikatsu / Koikatsu Sunshine",
+  "agent": {
+    "child_exec": "python",
+    "child_args": ["kkafio_cli.exe", "run"]
+  },
+  "controller": [
+    {
+      "name": "Win32-Game",
+      "label": "Koikatsu (Win32)",
+      "type": "Win32",
+      "win32": {
+        "class_regex": "UnityWndClass",
+        "window_regex": "Koikatsu"
+      }
+    }
+  ],
+  "resource": [
+    {
+      "name": "default",
+      "label": "Default Resources",
+      "path": ["."]
+    }
+  ],
+  "global_option": ["GamePath"],
+  "option": {
+    "GamePath": {
+      "type": "folder",
+      "name": "game_path",
+      "label": "Game Installation Path",
+      "description": "Path to your Koikatsu / Koikatsu Sunshine installation folder",
+      "default": "C:/Program Files (x86)/Steam/steamapps/common/Koikatsu Party",
+      "pipeline_override": {
+        "Core": {
+          "GamePath": "{game_path}"
+        }
+      }
+    },
+    "OutputPath": {
+      "type": "folder",
+      "name": "output_path",
+      "label": "Output Directory",
+      "description": "Where to save output files (backups, archives, etc.)",
+      "default": "",
+      "pipeline_override": {
+        "OutputPath": "{output_path}"
+      }
+    },
+    "BackupFilename": {
+      "type": "input",
+      "label": "Backup Filename",
+      "description": "Name for the backup file (without extension)",
+      "inputs": [
+        {
+          "name": "filename",
+          "label": "Filename",
+          "default": "koikatsu_backup",
+          "pipeline_type": "string"
+        }
+      ],
+      "pipeline_override": {
+        "Filename": "{filename}"
+      }
+    },
+    "BackupMods": {
+      "type": "switch",
+      "label": "Backup mods folder",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Include",
+          "pipeline_override": {
+            "mods": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Exclude",
+          "pipeline_override": {
+            "mods": false
+          }
+        }
+      ]
+    },
+    "BackupUserData": {
+      "type": "switch",
+      "label": "Backup UserData folder",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Include",
+          "pipeline_override": {
+            "UserData": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Exclude",
+          "pipeline_override": {
+            "UserData": false
+          }
+        }
+      ]
+    },
+    "BackupBepInEx": {
+      "type": "switch",
+      "label": "Backup BepInEx folder",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Include",
+          "pipeline_override": {
+            "BepInEx": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Exclude",
+          "pipeline_override": {
+            "BepInEx": false
+          }
+        }
+      ]
+    },
+    "DownloadOutputDir": {
+      "type": "folder",
+      "name": "output_dir",
+      "label": "Download Output Folder",
+      "description": "Where to save downloaded cards. Defaults to the Female chara folder.",
+      "default": "",
+      "pipeline_override": {
+        "OutputDir": "{output_dir}"
+      }
+    },
+    "DownloadLinks": {
+      "type": "textarea",
+      "name": "links",
+      "label": "Download Links",
+      "description": "One URL per line - supports db.bepis.moe and koikatsucards.com card pages",
+      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 3 | 1",            
+      "default": "",
+      "pipeline_override": {
+        "Links": "{links}"
+      }
+    },
+    "SkipDownloaded": {
+      "type": "switch",
+      "label": "Skip Already Downloaded",
+      "description": "Skip cards that have been downloaded before (tracked in download history)",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Skip",
+          "pipeline_override": {
+            "SkipDownloaded": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Re-download",
+          "pipeline_override": {
+            "SkipDownloaded": false
+          }
+        }
+      ]
+    },
+    "InputPath": {
+      "type": "folder",
+      "name": "input_path",
+      "label": "Input Directory",
+      "description": "Folder to scan for character cards / archives",
+      "default": "",
+      "pipeline_override": {
+        "InputPath": "{input_path}"
+      }
+    },
+    "ConvertKKS": {
+      "type": "switch",
+      "label": "Convert KKS to KK",
+      "description": "Convert Koikatsu Sunshine cards to Koikatsu format",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Convert",
+          "pipeline_override": {
+            "Convert": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Don't Convert",
+          "pipeline_override": {
+            "Convert": false
+          }
+        }
+      ]
+    },
+    "ExtractArchive": {
+      "type": "switch",
+      "label": "Extract Archives",
+      "description": "Extract ZIP/RAR/7z files before processing",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Extract",
+          "pipeline_override": {
+            "ExtractArchive": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Skip",
+          "pipeline_override": {
+            "ExtractArchive": false
+          }
+        }
+      ]
+    },
+    "ArchivePassword": {
+      "type": "select",
+      "label": "Archive Password Handling",
+      "description": "How to handle password-protected archives",
+      "default_case": "Skip",
+      "cases": [
+        {
+          "name": "Skip",
+          "label": "Skip Protected",
+          "pipeline_override": {
+            "Password": "Skip"
+          }
+        },
+        {
+          "name": "Request",
+          "label": "Request Password",
+          "pipeline_override": {
+            "Password": "Request Password"
+          }
+        }
+      ]
+    },
+    "FuzzyMatching": {
+      "type": "switch",
+      "label": "Fuzzy Character Matching",
+      "description": "Use fuzzy matching to find duplicate character cards",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Enabled",
+          "pipeline_override": {
+            "FuzzyChara": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Disabled",
+          "pipeline_override": {
+            "FuzzyChara": false
+          }
+        }
+      ]
+    },
+    "KeepStrategy": {
+      "type": "select",
+      "label": "Keep Which Copy",
+      "description": "Which duplicate to keep as the original",
+      "default_case": "Biggest file size",
+      "cases": [
+        {
+          "name": "None",
+          "label": "None - move all copies"
+        },
+        {
+          "name": "Newest",
+          "label": "Newest"
+        },
+        {
+          "name": "Oldest",
+          "label": "Oldest"
+        },
+        {
+          "name": "Biggest file size",
+          "label": "Biggest file size"
+        },
+        {
+          "name": "Smallest file size",
+          "label": "Smallest file size"
+        },
+        {
+          "name": "Last alphabetically",
+          "label": "Last alphabetically"
+        },
+        {
+          "name": "First alphabetically",
+          "label": "First alphabetically"
+        }
+      ],
+      "pipeline_override": {
+        "Keep": "{case.name}"
+      }
+    },
+    "DeleteDuplicates": {
+      "type": "switch",
+      "label": "Delete Duplicates",
+      "description": "Send duplicates to Recycle Bin (otherwise move to _duplicates_ folder)",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Delete",
+          "pipeline_override": {
+            "Delete": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Move to folder",
+          "pipeline_override": {
+            "Delete": false
+          }
+        }
+      ]
+    },
+    "FileConflicts": {
+      "type": "select",
+      "label": "File Conflict Handling",
+      "description": "How to handle existing files with the same name",
+      "default_case": "Skip",
+      "cases": [
+        {
+          "name": "Skip",
+          "label": "Skip",
+          "pipeline_override": {
+            "FileConflicts": "Skip"
+          }
+        },
+        {
+          "name": "Replace",
+          "label": "Replace",
+          "pipeline_override": {
+            "FileConflicts": "Replace"
+          }
+        },
+        {
+          "name": "Rename",
+          "label": "Rename",
+          "pipeline_override": {
+            "FileConflicts": "Rename"
+          }
+        }
+      ]
+    },
+    "GroupCharaPrompt": {
+      "type": "textarea",
+      "name": "prompt",
+      "label": "LLM Prompt",
+      "description": "Prompt template for the LLM (use {json} placeholder for the card JSON)",
+      "placeholder": "You will receive a JSON object whose keys identify Koikatsu character card files…",
+      "default": "You will receive a JSON object whose keys identify Koikatsu character card files. Each key has the format:  name | personality | hair_rgb\nYour task: for every key, write the name of the anime/game series the character is from as the value.\nRules:\n- Values must be valid Windows folder names (no \\ / : * ? \" < > | characters).\n- Use the official English title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object - no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n",
+      "pipeline_override": {
+        "Prompt": "{prompt}"
+      }
+    },
+    "GroupCharaCopyStep1": {
+      "type": "action_button",
+      "action": "group_chara_copy",
+      "label": "Step 1 - Copy",
+      "description": "Scan the input folder, build character JSON and copy prompt + JSON to clipboard. Paste it into your LLM.",
+      "button_label": "Copy"
+    },
+    "GroupCharaCopyStep2": {
+      "type": "action_button",
+      "action": "group_chara_paste",
+      "label": "Step 2 - Paste",
+      "description": "After the LLM replies with the filled-in JSON, copy that response and click Paste to save it.",
+      "button_label": "Paste"
+    },
+    "GroupCharaIncludeSubfolders": {
+      "type": "switch",
+      "label": "Include subfolders",
+      "description": "Also export character cards from subfolders. Disable to skip already-sorted cards.",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Include",
+          "pipeline_override": {
+            "IncludeSubfolders": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Skip subfolders",
+          "pipeline_override": {
+            "IncludeSubfolders": false
+          }
+        }
+      ]
+    },
+    "DeleteEmptyFolders": {
+      "type": "switch",
+      "label": "Delete Empty Folders",
+      "description": "Remove empty subfolders after ungrouping",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Delete",
+          "pipeline_override": {
+            "DeleteEmptyFolders": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Keep",
+          "pipeline_override": {
+            "DeleteEmptyFolders": false
+          }
+        }
+      ]
+    },
+    "ArchiveFormat": {
+      "type": "select",
+      "label": "Archive Format",
+      "description": "Output archive format",
+      "default_case": "7z",
+      "cases": [
+        {
+          "name": "7z",
+          "label": "7-Zip"
+        },
+        {
+          "name": "zip",
+          "label": "ZIP"
+        }
+      ],
+      "pipeline_override": {
+        "Format": "{case.name}"
+      }
+    },
+    "CombinedArchive": {
+      "type": "switch",
+      "label": "Combined Archive",
+      "description": "Put all cards in one archive (otherwise one per card)",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Single archive",
+          "pipeline_override": {
+            "CombinedArchive": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "One per card",
+          "pipeline_override": {
+            "CombinedArchive": false
+          }
+        }
+      ]
+    },
+    "IncludeModpack": {
+      "type": "switch",
+      "label": "Include Sideloader Modpack",
+      "description": "Include zipmods from Sideloader Modpack folders",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Include",
+          "pipeline_override": {
+            "IncludeModpack": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Exclude",
+          "pipeline_override": {
+            "IncludeModpack": false
+          }
+        }
+      ]
+    },
+    "AutoResolve": {
+      "type": "switch",
+      "label": "Auto-Resolve Paths",
+      "description": "Automatically find mods and coordinate directories",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Auto-detect",
+          "pipeline_override": {
+            "AutoResolve": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Specify manually",
+          "pipeline_override": {
+            "AutoResolve": false
+          }
+        }
+      ]
+    },
+    "UseCache": {
+      "type": "switch",
+      "label": "Use Cache",
+      "description": "Use cached mod/coordinate scan results to speed up processing",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Use Cache",
+          "pipeline_override": {
+            "UseCache": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Rescan",
+          "pipeline_override": {
+            "UseCache": false
+          }
+        }
+      ]
+    },
+    "CharaPaths": {
+      "type": "file_list",
+      "name": "chara_paths",
+      "label": "Character Cards",
+      "description": "Select character PNG card files to operate on",
+      "file_filter": "PNG files (*.png)",
+      "default": [],
+      "pipeline_override": {
+        "CharaPaths": "{chara_paths}"
+      }
+    }
+  },
+  "group": [
+    {
+      "name": "card-management",
+      "label": "Card Management",
+      "default_expand": true
+    },
+    {
+      "name": "duplicate-handling",
+      "label": "Duplicate Handling",
+      "default_expand": false
+    },
+    {
+      "name": "backup",
+      "label": "Backup & Restore",
+      "default_expand": false
+    }
+  ],
+  "task": [
+    {
+      "name": "CreateBackup",
+      "label": "💾 Create Backup",
+      "entry": "CreateBackup",
+      "default_check": false,
+      "description": "Create a 7-Zip backup of game folders",
+      "group": ["backup"],
+      "option": [
+        "OutputPath",
+        "BackupFilename",
+        "BackupMods",
+        "BackupUserData",
+        "BackupBepInEx"
+      ]
+    },
+    {
+      "name": "DownloadChara",
+      "label": "⬇️ Download Characters",
+      "entry": "DownloadChara",
+      "default_check": false,
+      "description": "Download character cards from db.bepis.moe or koikatsucards.com",
+      "group": ["card-management"],
+      "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
+    },
+    {
+      "name": "FilterConvertKKS",
+      "label": "🔄 Filter & Convert KKS Cards",
+      "entry": "FilterConvertKKS",
+      "default_check": false,
+      "description": "Filter and optionally convert KKS cards to KK format",
+      "group": ["card-management"],
+      "option": ["InputPath", "ConvertKKS", "ExtractArchive", "ArchivePassword"]
+    },
+    {
+      "name": "FilterDuplicates",
+      "label": "🔍 Filter Duplicates",
+      "entry": "FilterDuplicates",
+      "default_check": false,
+      "description": "Find and handle duplicate PNG cards and zipmod files",
+      "group": ["duplicate-handling"],
+      "option": [
+        "InputPath",
+        "FuzzyMatching",
+        "KeepStrategy",
+        "DeleteDuplicates"
+      ]
+    },
+    {
+      "name": "InstallChara",
+      "label": "📥 Install Characters",
+      "entry": "InstallChara",
+      "default_check": false,
+      "description": "Copy character cards, mods, and overlays into the game",
+      "group": ["card-management"],
+      "option": [
+        "InputPath",
+        "FileConflicts",
+        "ExtractArchive",
+        "ArchivePassword"
+      ]
+    },
+    {
+      "name": "RemoveChara",
+      "label": "🗑️ Remove Characters",
+      "entry": "RemoveChara",
+      "default_check": false,
+      "description": "Remove character cards and their mods from the game",
+      "group": ["card-management"],
+      "option": ["InputPath"]
+    },
+    {
+      "name": "GroupChara",
+      "label": "📂 Group Characters",
+      "entry": "GroupChara",
+      "default_check": false,
+      "description": "Move character cards into series subfolders using LLM",
+      "group": ["card-management"],
+      "option": [
+        "InputPath",
+        "GroupCharaIncludeSubfolders",
+        "GroupCharaPrompt",
+        "GroupCharaCopyStep1",
+        "GroupCharaCopyStep2"
+      ]
+    },
+    {
+      "name": "UngroupChara",
+      "label": "📤 Ungroup Characters",
+      "entry": "UngroupChara",
+      "default_check": false,
+      "description": "Move cards from subfolders back to top-level folder",
+      "group": ["card-management"],
+      "option": ["InputPath", "DeleteEmptyFolders"]
+    },
+    {
+      "name": "ArchiveChara",
+      "label": "📦 Archive Characters",
+      "entry": "ArchiveChara",
+      "default_check": false,
+      "description": "Bundle character cards with zipmods and coordinates",
+      "group": ["card-management"],
+      "option": [
+        "OutputPath",
+        "CharaPaths",
+        "ArchiveFormat",
+        "CombinedArchive",
+        "IncludeModpack",
+        "AutoResolve",
+        "UseCache"
+      ]
+    },
+    {
+      "name": "DeleteChara",
+      "label": "❌ Delete Characters",
+      "entry": "DeleteChara",
+      "default_check": false,
+      "description": "Send character cards and associated mods/coords to Recycle Bin",
+      "group": ["card-management"],
+      "option": ["CharaPaths", "AutoResolve", "UseCache"]
+    }
+  ]
+}

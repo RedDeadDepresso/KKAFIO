@@ -1,32 +1,117 @@
-name: Build KKAFIO
+name: Build and Release KKAFIO
 
 on:
   push:
     tags:
       - "v*.*.*"
+    branches:
+      - "main"
+    paths:
+      - ".github/workflows/build.yml"
+      - "*.py"
+      - "tasks/**"
+      - "util/**"
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - ".github/workflows/build.yml"
+      - "*.py"
+      - "tasks/**"
+      - "util/**"
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# ── Meta job ─────────────────────────────────────────────────────────────────
 jobs:
+  meta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: set_tag
+        run: |
+          is_release=${{ startsWith(github.ref, 'refs/tags/v') }}
+          tag=$(git describe --tags --match "v*" ${{ github.ref }} 2>/dev/null || true)
+          if [[ $tag != v* ]]; then
+            tag=$(curl -sX GET "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
+              --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+              | awk '/tag_name/{print $4}' FS='["]')
+            if [[ $tag != v* ]]; then
+              tag="v0.0.0"
+            fi
+            tag=$(date "+$tag-%y%m%d-$(git rev-parse --short HEAD)")
+          fi
+
+          if ! $($is_release); then
+            prefix=${tag%-*-*}
+            suffix=${tag#$prefix-}
+            tag="$prefix-ci.$suffix"
+          fi
+
+          is_prerelease=false
+          if [[ $tag =~ .*alpha.* || $tag =~ .*beta.* || $tag =~ .*rc.* || $tag =~ .*dev.* || $tag =~ .*-ci.* ]]; then
+            is_prerelease=true
+          fi
+
+          echo "tag=$tag"               | tee -a $GITHUB_OUTPUT
+          echo "is_release=$is_release" | tee -a $GITHUB_OUTPUT
+          echo "is_prerelease=$is_prerelease" | tee -a $GITHUB_OUTPUT
+
+      - id: mxu-latest-release
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          repository: RedDeadDepresso/KKAFIO
+          excludes: >-
+            ${{ (steps.set_tag.outputs.is_release == 'true' &&
+                 steps.set_tag.outputs.is_prerelease == 'false')
+                && 'prerelease, draft' || 'draft' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      tag: ${{ steps.set_tag.outputs.tag }}
+      is_release: ${{ steps.set_tag.outputs.is_release }}
+      is_prerelease: ${{ steps.set_tag.outputs.is_prerelease }}
+      mxu_version: ${{ steps.mxu-latest-release.outputs.release }}
+
+  # ── Build ─────────────────────────────────────────────────────────────────────
   build:
+    needs: meta
+    strategy:
+      matrix:
+        arch: [x86_64]
+      fail-fast: false
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
+      # ── Python / uv ────────────────────────────────────────────────────────
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
       - name: Set up Python
         run: uv python install
 
-      - name: Install dependencies (no dev)
+      - name: Install dependencies
         run: uv sync --no-dev --group build
 
-      # ── Build kkafio_cli.exe ─────────────────────────────────────────────────
+      # ── Download MXU ────────────────────────────────────────────────────────
+      - name: Download MXU (win-${{ matrix.arch }})
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: RedDeadDepresso/KKAFIO
+          fileName: "*win-${{ matrix.arch }}*"
+          tag: ${{ needs.meta.outputs.mxu_version }}
+          out-file-path: "downloads/MXU"
+          extract: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build kkafio_cli.exe ────────────────────────────────────────────────
       - name: Build kkafio_cli.exe
         run: >
           uv run pyinstaller --noconfirm --onedir
@@ -34,64 +119,64 @@ jobs:
           --hidden-import "util.config"
           --hidden-import "util.logger"
           --hidden-import "util.file_manager"
-          --hidden-import "util.classifier"
+          --hidden-import "util.special_tasks"
           --hidden-import "tasks.install_chara"
           --hidden-import "tasks.remove_chara"
           --hidden-import "tasks.fc_kks"
           --hidden-import "tasks.create_backup"
-          --hidden-import "tasks.filter_duplicates"
+          --hidden-import "tasks.delete_chara"
+          --hidden-import "tasks.archive_chara"
           --hidden-import "tasks.group_chara"
           --hidden-import "tasks.ungroup_chara"
-          --hidden-import "tasks.archive_chara"
-          --hidden-import "tasks.delete_chara"
-          --hidden-import "kkloader"
-          --hidden-import "kkloader.KoikatuCharaData"
-          --hidden-import "msgpack"
-          --hidden-import "send2trash"
-          --hidden-import "xml.etree.ElementTree"
+          --hidden-import "tasks.filter_duplicates"
+          --hidden-import "tasks.download_chara"
           kkafio_cli.py
 
-      # ── Build KKAFIO.exe ────────────────────────────────────────────────────
-      - name: Build KKAFIO.exe
-        run: >
-          uv run pyinstaller --noconfirm --onedir --windowed
-          --name "KKAFIO"
-          --icon "gui/resource/images/logo.ico"
-          --add-data "gui/resource;gui/resource"
-          --collect-data "qfluentwidgets"
-          --collect-data "certifi"
-          --copy-metadata "kkafio"
-          --hidden-import "PySide6.QtSvg"
-          --hidden-import "qfluentwidgets"
-          --hidden-import "psutil"
-          KKAFIO.py
-
-      # ── Assemble final dist folder ──────────────────────────────────────────
+      # ── Assemble release folder ─────────────────────────────────────────────
       - name: Assemble release folder
         shell: pwsh
         run: |
-          Copy-Item "dist\kkafio_cli\kkafio_cli.exe" "dist\KKAFIO\kkafio_cli.exe"
-          Copy-Item -Recurse -Force `
-            "dist\kkafio_cli\_internal\*" `
-            "dist\KKAFIO\_internal\"
-          Copy-Item "register_context_menu.bat"   "dist\KKAFIO\register_context_menu.bat"
-          Copy-Item "unregister_context_menu.bat" "dist\KKAFIO\unregister_context_menu.bat"
-          Copy-Item "README.md"                     "dist\KKAFIO\README.md"
+          $src = "dist\kkafio_cli"
+          $dst = "dist\KKAFIO"
 
-      # ── Copy SSL DLLs AFTER assemble so they are not overwritten ────────────
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+
+          # CLI exe + internals
+          Copy-Item "$src\kkafio_cli.exe" "$dst\kkafio_cli.exe"
+          Copy-Item -Recurse -Force "$src\_internal\*" "$dst\_internal\"
+
+          # Helper scripts
+          if (Test-Path "register_context_menu.bat")   { Copy-Item "register_context_menu.bat"   $dst }
+          if (Test-Path "unregister_context_menu.bat") { Copy-Item "unregister_context_menu.bat" $dst }
+
+          # interface.json for MXU
+          Copy-Item "interface.json" "$dst\interface.json"
+
+          # Install MXU so MXU update system works
+          $mxuDir = "downloads\MXU"
+          $mxuExe = Get-ChildItem -Path $mxuDir -Filter "mxu.exe" -Recurse |
+                    Select-Object -First 1
+          if ($mxuExe) {
+            Copy-Item $mxuExe.FullName "$dst\mxu.exe"
+            Write-Host "MXU installed: $($mxuExe.FullName)"
+          } else {
+            Write-Warning "mxu.exe not found in downloaded MXU release!"
+          }
+
+      # ── Copy SSL DLLs ────────────────────────────────────────────────────────
       - name: Copy SSL DLLs
         shell: pwsh
         run: |
-          $dlls = (uv run python -c "import sys; print(sys.base_prefix)") + "\DLLs"
+          $dlls     = (uv run python -c "import sys; print(sys.base_prefix)") + "\DLLs"
           $internal = "dist\KKAFIO\_internal"
           $root     = "dist\KKAFIO"
           foreach ($target in @($internal, $root)) {
-            Copy-Item "$dlls\_ssl.pyd"             $target -Force
-            Copy-Item "$dlls\libcrypto-3-x64.dll"  $target -Force
-            Copy-Item "$dlls\libssl-3-x64.dll"     $target -Force
+            Copy-Item "$dlls\_ssl.pyd"            $target -Force
+            Copy-Item "$dlls\libcrypto-3-x64.dll" $target -Force
+            Copy-Item "$dlls\libssl-3-x64.dll"    $target -Force
           }
 
-      # ── Verify SSL DLLs are present ─────────────────────────────────────────
+      # ── Verify SSL DLLs ─────────────────────────────────────────────────────
       - name: Verify SSL DLLs
         shell: pwsh
         run: |
@@ -103,30 +188,92 @@ jobs:
             "dist\KKAFIO\libcrypto-3-x64.dll",
             "dist\KKAFIO\libssl-3-x64.dll"
           ) | ForEach-Object {
-            if (Test-Path $_) {
-              Write-Host "OK: $_"
-            } else {
-              Write-Error "MISSING: $_"
-            }
+            if (Test-Path $_) { Write-Host "OK: $_" }
+            else              { Write-Error "MISSING: $_" }
           }
 
-      # ── Zip the release ─────────────────────────────────────────────────────
+      # ── Convert logo.png to logo.ico ─────────────────────────────────────────
+      - name: Convert logo.png to kkafio.ico
+        if: matrix.arch == 'x86_64'
+        shell: bash
+        run: |
+          choco install imagemagick -y --no-progress
+          for size in 512 256 128 64 48 32 24 16; do
+            magick "logo.png" -resize ${size}x${size} "icon-${size}.png"
+          done
+          magick icon-512.png icon-256.png icon-128.png icon-64.png icon-48.png \
+                 icon-32.png icon-24.png icon-16.png kkafio.ico
+          echo "Created kkafio.ico"
+
+      # ── Patch mxu.exe icon and name ──────────────────────────────────────────
+      - name: Patch mxu.exe icon and name
+        if: matrix.arch == 'x86_64'
+        shell: bash
+        run: |
+          curl -sL https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe \
+               -o rcedit.exe
+          MXU_EXE="dist/KKAFIO/mxu.exe"
+          if [[ -f "$MXU_EXE" ]]; then
+            ./rcedit.exe "$MXU_EXE" \
+              --set-icon         "kkafio.ico" \
+              --set-version-string "ProductName"      "KKAFIO" \
+              --set-version-string "FileDescription"  "KKAFIO — Koikatsu File I/O Automation" \
+              --set-version-string "CompanyName"      "KKAFIO" \
+              --set-version-string "InternalName"     "KKAFIO" \
+              --set-version-string "OriginalFilename" "mxu.exe"
+            echo "Patched $MXU_EXE"
+          else
+            echo "WARNING: $MXU_EXE not found, skipping patch"
+          fi
+
+      # ── Stamp version into interface.json ────────────────────────────────────
+      - name: Stamp version into interface.json
+        shell: pwsh
+        run: |
+          $tag   = "${{ needs.meta.outputs.tag }}"
+          $iface = Get-Content "dist\KKAFIO\interface.json" -Raw | ConvertFrom-Json
+          $iface.version = $tag
+          $iface | ConvertTo-Json -Depth 10 | Set-Content "dist\KKAFIO\interface.json"
+          Write-Host "Stamped version $tag"
+
+      # ── Zip ──────────────────────────────────────────────────────────────────
       - name: Zip release
         shell: pwsh
-        run: Compress-Archive -Path "dist\KKAFIO\*" -DestinationPath "KKAFIO-${{ github.ref_name }}.zip"
+        run: |
+          $tag  = "${{ needs.meta.outputs.tag }}"
+          $arch = "${{ matrix.arch }}"
+          $name = "KKAFIO-win-$arch-$tag.zip"
+          Compress-Archive -Path "dist\KKAFIO\*" -DestinationPath $name
+          Write-Host "Created: $name"
 
-      # ── Upload artifact (available on every run, not just tagged releases) ──
-      - name: Upload build artifact
+      # ── Upload artifact ───────────────────────────────────────────────────────
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KKAFIO-${{ github.ref_name }}
-          path: KKAFIO-${{ github.ref_name }}.zip
+          name: KKAFIO-win-${{ matrix.arch }}-zip
+          path: KKAFIO-win-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}.zip
           retention-days: 30
 
-      # ── Create GitHub Release (only on version tags) ─────────────────────────
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+  # ── Release ────────────────────────────────────────────────────────────────────
+  release:
+    if: ${{ needs.meta.outputs.is_release == 'true' }}
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          files: KKAFIO-${{ github.ref_name }}.zip
+          pattern: KKAFIO-win-*-zip
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la artifacts/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.zip
+          tag_name: ${{ needs.meta.outputs.tag }}
           generate_release_notes: true
+          draft: false
+          prerelease: ${{ needs.meta.outputs.is_prerelease == 'true' }}

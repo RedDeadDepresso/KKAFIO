@@ -11,44 +11,33 @@ Task commands (arguments override config; omit to use config value):
                              [--mods | --no-mods]
                              [--userdata | --no-userdata]
                              [--bepinex | --no-bepinex]
+    kkafio_cli list-instances
 
 Shell context menu:
     Run register_context_menu.bat as Administrator to add KKAFIO to the
     Explorer right-click menu.  Run unregister_context_menu.bat to remove it.
 
 Global options:
-    --config PATH   use a custom config.json instead of %APPDATA%/KKAFIO/config.json
+    --config PATH   use a custom config.json instead of %APPDATA%/KKAFIO/config/mxu-KKAFIO.json
+    --instance N    use instance N from the config (0-based, default: 0)
 """
 
-import os
 import sys
 import argparse
 import traceback
 
 
 # ---------------------------------------------------------------------------
-# Resolve the executable path
-# ---------------------------------------------------------------------------
-
-def _self_path() -> str:
-    """Return absolute path to this exe (frozen) or this .py file (source)."""
-    if getattr(sys, "frozen", False):
-        return sys.executable
-    return os.path.abspath(__file__)
-
-
-
-# ---------------------------------------------------------------------------
 # Core loader
 # ---------------------------------------------------------------------------
 
-def _load_core(config_path: str | None = None):
+def _load_core(config_path: str | None = None, instance_index: int = 0):
     from util.config import Config
     from util.constants import CONFIG_PATH
     from util.file_manager import FileManager
 
     path = config_path if config_path else str(CONFIG_PATH)
-    config = Config(path)
+    config = Config(path, instance_index=instance_index)
     file_manager = FileManager(config)
     return config, file_manager
 
@@ -61,7 +50,6 @@ def _write_traceback(task: str) -> None:
 
 
 def _clear_traceback() -> None:
-    # Only delete existing traceback.log — don't create an empty one.
     try:
         from pathlib import Path
         Path("traceback.log").unlink(missing_ok=True)
@@ -194,8 +182,8 @@ def run_group_chara(config, file_manager, input_path: str | None = None,
 
 
 def run_filter_duplicates(config, file_manager, input_path: str | None = None,
-                         delete: bool | None = None, fuzzy: bool | None = None,
-                         keep: str | None = None):
+                          delete: bool | None = None, fuzzy: bool | None = None,
+                          keep: str | None = None):
     from tasks.filter_duplicates import FilterDuplicates
     from pathlib import Path
     if input_path is not None:
@@ -232,55 +220,86 @@ def run_create_backup(config, file_manager, output_path: str | None = None,
 # Subcommand handlers
 # ---------------------------------------------------------------------------
 
+def cmd_list_instances(args):
+    """Print all instance names with their indices."""
+    from util.config import list_instances
+    from util.constants import CONFIG_PATH
+    config_path = args.config if args.config else str(CONFIG_PATH)
+    instances = list_instances(config_path)
+    if not instances:
+        print(f"No instances found in '{config_path}'")
+        return
+    for idx, name in instances:
+        marker = " (default)" if idx == 0 else ""
+        print(f"  [{idx}] {name}{marker}")
+
+
 def cmd_run(args):
     from pathlib import Path
     from util.logger import logger
+    from util.special_tasks import is_special_task, run_special_task
+    import threading
     _clear_traceback()
-    config, file_manager = _load_core(args.config)
+    config, file_manager = _load_core(args.config, instance_index=args.instance)
 
-    # If both FilterConvertKKS and InstallChara are enabled and share the same
-    # input path, fc_kks will extract archives first so InstallChara must skip
-    # extraction to avoid double-extracting the same archives.
+    # fc_kks + InstallChara same-path detection
     fc_cfg = config.config_data["FilterConvertKKS"]
     ic_cfg = config.config_data["InstallChara"]
-    fc_enabled = fc_cfg.get("Enable", False)
-    ic_enabled = ic_cfg.get("Enable", False)
-    fc_extracts = fc_cfg.get("ExtractArchive", True)
-    ic_extracts = ic_cfg.get("ExtractArchive", True)
     same_path = (
-        fc_enabled and ic_enabled and fc_extracts and ic_extracts and
+        fc_cfg.get("Enable", False) and ic_cfg.get("Enable", False) and
+        fc_cfg.get("ExtractArchive", True) and ic_cfg.get("ExtractArchive", True) and
         "InputPath" in fc_cfg and "InputPath" in ic_cfg and
         Path(fc_cfg["InputPath"]) == Path(ic_cfg["InputPath"])
     )
 
-    task_map = {
-        "ArchiveChara":      lambda: run_archive_chara(config, file_manager),
-        "DeleteChara":       lambda: run_delete_chara(config, file_manager),
-        "DownloadChara":     lambda: run_download_chara(config, file_manager),
-        "CreateBackup":      lambda: run_create_backup(config, file_manager),
-        "FilterConvertKKS":  lambda: run_fc_kks(config, file_manager),
-        "FilterDuplicates":  lambda: run_filter_duplicates(config, file_manager),
-        "GroupChara":        lambda: run_group_chara(config, file_manager),
-        "InstallChara":      lambda: run_install_chara(config, file_manager,
-                                                       skip_extract=same_path),
-        "RemoveChara":       lambda: run_remove_chara(config, file_manager),
-        "UngroupChara":      lambda: run_ungroup_chara(config, file_manager),
+    kkafio_task_map = {
+        "ArchiveChara":     lambda: run_archive_chara(config, file_manager),
+        "DeleteChara":      lambda: run_delete_chara(config, file_manager),
+        "DownloadChara":    lambda: run_download_chara(config, file_manager),
+        "CreateBackup":     lambda: run_create_backup(config, file_manager),
+        "FilterConvertKKS": lambda: run_fc_kks(config, file_manager),
+        "FilterDuplicates": lambda: run_filter_duplicates(config, file_manager),
+        "GroupChara":       lambda: run_group_chara(config, file_manager),
+        "InstallChara":     lambda: run_install_chara(config, file_manager,
+                                                      skip_extract=same_path),
+        "RemoveChara":      lambda: run_remove_chara(config, file_manager),
+        "UngroupChara":     lambda: run_ungroup_chara(config, file_manager),
     }
 
     if same_path:
         logger.info("CLI", "FilterConvertKKS and InstallChara share the same input path — "
                            "archive extraction will run in FilterConvertKKS only")
 
-    for task, fn in task_map.items():
-        if not config.config_data[task]["Enable"]:
-            continue
-        logger.info("CLI", f"Start Task: {task}")
-        try:
-            fn()
-        except Exception:
-            logger.error("CLI", f"Task error: {task}. See traceback.log for details.")
-            _write_traceback(task)
-            sys.exit(1)
+    # Shared stop event — special tasks check this to abort early
+    stop = threading.Event()
+
+    # Execute tasks in the exact order defined in the MXU instance
+    for entry in config.task_order:
+        task_name = entry["name"]
+        params    = entry.get("params", {})
+
+        if stop.is_set():
+            logger.info("CLI", "Stop requested — aborting remaining tasks")
+            break
+
+        logger.info("CLI", f"Start Task: {task_name}")
+
+        if is_special_task(task_name):
+            ok = run_special_task(task_name, params, stop)
+            if not ok and not stop.is_set():
+                logger.error("CLI", f"Special task failed: {task_name}")
+                sys.exit(1)
+        else:
+            fn = kkafio_task_map.get(task_name)
+            if fn is None:
+                logger.warning("CLI", f"Unknown task '{task_name}', skipping")
+                continue
+            try:
+                fn()
+            except Exception:
+                logger.error("CLI", f"Task error: {task_name}. See traceback.log for details.")
+                _write_traceback(task_name)
+                sys.exit(1)
 
     sys.exit(0)
 
@@ -288,7 +307,7 @@ def cmd_run(args):
 def cmd_install_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["InstallChara"]["Enable"] = True
         extract = None
         if args.extract_archive is True:
@@ -307,7 +326,7 @@ def cmd_install_chara(args):
 def cmd_remove_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["RemoveChara"]["Enable"] = True
         run_remove_chara(config, file_manager, input_path=args.input)
     except SystemExit:
@@ -320,7 +339,7 @@ def cmd_remove_chara(args):
 def cmd_fc_kks(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["FilterConvertKKS"]["Enable"] = True
         convert = None
         if args.convert is True:
@@ -344,9 +363,8 @@ def cmd_fc_kks(args):
 def cmd_download_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["DownloadChara"]["Enable"] = True
-        # --links may be a newline-separated string or a path to a text file
         links = None
         if args.links:
             from pathlib import Path as _Path
@@ -370,7 +388,7 @@ def cmd_download_chara(args):
 def cmd_delete_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["DeleteChara"]["Enable"] = True
         chara_paths  = args.chara if args.chara else None
         auto_resolve = None if args.auto_resolve is None else bool(args.auto_resolve)
@@ -389,13 +407,13 @@ def cmd_delete_chara(args):
 def cmd_archive_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["ArchiveChara"]["Enable"] = True
-        chara_paths   = args.chara if args.chara else None
-        auto_resolve  = None if args.auto_resolve is None else bool(args.auto_resolve)
-        use_cache     = None if args.use_cache is None else bool(args.use_cache)
+        chara_paths     = args.chara if args.chara else None
+        auto_resolve    = None if args.auto_resolve is None else bool(args.auto_resolve)
+        use_cache       = None if args.use_cache is None else bool(args.use_cache)
         include_modpack = None if args.include_modpack is None else bool(args.include_modpack)
-        combined      = None if args.combined is None else bool(args.combined)
+        combined        = None if args.combined is None else bool(args.combined)
         run_archive_chara(config, file_manager,
                           chara_paths=chara_paths, fmt=args.format,
                           auto_resolve=auto_resolve,
@@ -414,7 +432,7 @@ def cmd_archive_chara(args):
 def cmd_ungroup_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["UngroupChara"]["Enable"] = True
         delete_empty = None
         if args.delete_empty is True:
@@ -433,11 +451,10 @@ def cmd_ungroup_chara(args):
 def cmd_group_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["GroupChara"]["Enable"] = True
 
         if args.export:
-            # Print prompt+JSON to stdout so the user can copy-paste into your LLM
             from tasks.group_chara import export
             from pathlib import Path
             folder = Path(args.input) if args.input else Path(config.group_chara["InputPath"])
@@ -445,14 +462,12 @@ def cmd_group_chara(args):
             include_sub = getattr(args, 'include_subfolders', False) or config.group_chara.get('IncludeSubfolders', False)
             result = export(folder, include_subfolders=include_sub)
             if result:
-                # Merge with config prompt if available, otherwise use built-in
                 import json as _json
                 json_start = result.find('{')
                 json_only = result[json_start:] if json_start != -1 else result
                 full = (prompt.rstrip() + "\n" + json_only) if prompt else result
                 print(full)
         else:
-            # Load response from file path if --response looks like a path
             response = args.response
             if response and response.endswith(".json"):
                 from pathlib import Path as _Path
@@ -473,7 +488,7 @@ def cmd_group_chara(args):
 def cmd_filter_duplicates(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["FilterDuplicates"]["Enable"] = True
         delete = None
         if args.delete is True:
@@ -497,7 +512,7 @@ def cmd_filter_duplicates(args):
 def cmd_create_backup(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config)
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["CreateBackup"]["Enable"] = True
         mods     = True if args.mods     else (False if args.no_mods     else None)
         userdata = True if args.userdata else (False if args.no_userdata else None)
@@ -525,14 +540,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--config", "-c", metavar="PATH", default=None,
-        help="Path to a config.json file (default: %%APPDATA%%/KKAFIO/config.json)",
+        help="Path to a config.json file (default: %%APPDATA%%/KKAFIO/config/mxu-KKAFIO.json)",
+    )
+    parser.add_argument(
+        "--instance", "-n", metavar="N", type=int, default=0,
+        help="Zero-based index of the instance to use (default: 0). "
+             "Run 'list-instances' to see all available instances.",
     )
 
     sub = parser.add_subparsers(dest="command", metavar="COMMAND")
     sub.required = True
 
+    # list-instances
+    p = sub.add_parser("list-instances", help="List all instance names and their indices")
+    p.set_defaults(func=cmd_list_instances)
+
     # run
-    p = sub.add_parser("run", help="Run all tasks enabled in config")
+    p = sub.add_parser("run", help="Run all enabled tasks in instance order")
     p.set_defaults(func=cmd_run)
 
     # install-chara
@@ -726,8 +750,6 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
-
-# traceback.log is created only when an error occurs — not upfront
 
 try:
     if __name__ == "__main__":

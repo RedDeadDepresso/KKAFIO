@@ -11,11 +11,6 @@ dependencies = [
     "imagehash>=4.3.2",
     "kkloader>=0.1.20",
     "packaging>=26.0",
-    "pillow>=12.2.0",
-    "psutil>=6.0.0",
-    "pyside6-essentials>=6.7.2",
-    "pyside6-fluent-widgets>=1.6.5",
-    "pysidesix-frameless-window>=0.4.3",
     "send2trash>=1.8.3",
 ]
 
@@ -28,6 +23,11 @@ dev = [
 build = [
     "hatchling>=1.29.0",
     "pyinstaller>=6.19.0",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "kkafio_cli.py",
 ]
 
 [build-system]
