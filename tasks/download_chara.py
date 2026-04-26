@@ -5,8 +5,14 @@ Supports:
   https://db.bepis.moe          — card pages (/view/) and listing pages
   https://koikatsucards.com     — card pages (/contents/) and listing pages
 
-Runs async I/O (httpx + asyncio) inside a regular synchronous run() call so
-it integrates cleanly with the rest of KKAFIO's task system.
+Input line formats (| is the separator — safe because URLs never contain |):
+  https://...                   plain URL — single card page or one listing page
+  https://... | all             listing: download all pages until empty
+  https://... | 3 | 7           listing: pages 3 through 7 inclusive
+  https://... | 7 | 3           listing: pages 7 down to 3 (reverse order)
+  # comment                     lines starting with # are ignored
+
+Both sites use ?page=N for pagination.
 """
 
 from __future__ import annotations
@@ -15,7 +21,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse, urljoin
 
 from tasks.base_task import BaseTask
 from util.logger import logger
@@ -32,6 +38,64 @@ HISTORY_FILE = (
     Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
     / "KKAFIO" / "download_history.json"
 )
+
+# ---------------------------------------------------------------------------
+# URL helpers
+# ---------------------------------------------------------------------------
+
+def _set_page(url: str, page: int) -> str:
+    """Return url with ?page=<page> set or replaced."""
+    parts  = urlparse(url)
+    params = {k: v[0] for k, v in parse_qs(parts.query, keep_blank_values=True).items()}
+    params["page"] = str(page)
+    return urlunparse(parts._replace(query=urlencode(params)))
+
+
+def _strip_page(url: str) -> str:
+    """Return url with ?page removed."""
+    parts  = urlparse(url)
+    params = {k: v[0] for k, v in parse_qs(parts.query, keep_blank_values=True).items()
+              if k != "page"}
+    return urlunparse(parts._replace(query=urlencode(params)))
+
+
+# ---------------------------------------------------------------------------
+# Line parser
+# ---------------------------------------------------------------------------
+
+def _parse_line(raw: str) -> tuple[str, int | None, int | None] | None:
+    """Parse one input line.
+
+    Returns (url, page_start, page_end) where:
+      page_start=None, page_end=None  → plain URL, no pagination
+      page_start=N,    page_end=None  → all pages from N until empty
+      page_start=N,    page_end=M     → pages N through M (inclusive, supports reverse)
+
+    Returns None if the line is invalid.
+    """
+    parts = [p.strip() for p in raw.split("|")]
+    url   = parts[0].strip()
+
+    if not url.startswith("http"):
+        return None
+
+    if len(parts) == 1:
+        return url, None, None
+
+    directive = parts[1].strip().lower()
+
+    if directive == "all":
+        return url, 1, None
+
+    try:
+        p_start = int(parts[1].strip())
+        p_end   = int(parts[2].strip()) if len(parts) > 2 else p_start
+        return url, p_start, p_end
+    except (ValueError, IndexError):
+        logger.error("DLOAD",
+            f"Could not parse: {raw!r} — expected 'url | all' or 'url | N | M'")
+        return None
+
 
 # ---------------------------------------------------------------------------
 # Download history
@@ -101,12 +165,8 @@ def _resolve_filename(response, url: str, default_name: str) -> str:
 # ---------------------------------------------------------------------------
 
 async def _download_file(
-    client,
-    url: str,
-    directory: Path,
-    default_name: str,
-    history: dict[str, str],
-    skip_downloaded: bool,
+    client, url: str, directory: Path, default_name: str,
+    history: dict[str, str], skip_downloaded: bool,
 ) -> tuple[str, Exception | None]:
     if skip_downloaded and url in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
@@ -128,38 +188,62 @@ async def _download_file(
 
 
 async def _download_files(
-    client,
-    file_urls: list[str],
-    directory: Path,
-    default_name_fn,
-    history: dict[str, str],
-    skip_downloaded: bool,
+    client, file_urls: list[str], directory: Path,
+    default_name_fn, history: dict[str, str], skip_downloaded: bool,
 ) -> tuple[int, int]:
-    """Download all URLs concurrently. Returns (succeeded, failed) counts."""
+    """Download all URLs concurrently. Returns (succeeded, failed)."""
     if not file_urls:
-        logger.info("DLOAD", "No files to download.")
         return 0, 0
 
-    logger.info("DLOAD", f"Starting download of {len(file_urls)} file(s)...")
-
+    logger.info("DLOAD", f"  Downloading {len(file_urls)} file(s)...")
     tasks = [
         _download_file(client, url, directory, default_name_fn(url),
                        history, skip_downloaded)
         for url in file_urls
     ]
-
-    succeeded = 0
-    failed    = 0
-
+    succeeded = failed = 0
     for coro in asyncio.as_completed(tasks):
         url, err = await coro
         if err:
             failed += 1
-            logger.error("DLOAD", f"Failed: {url} — {err}")
+            logger.error("DLOAD", f"  Failed: {url} — {err}")
         else:
             succeeded += 1
-
     return succeeded, failed
+
+
+async def _download_pages(
+    client, base_url: str, directory: Path,
+    history: dict, skip: bool,
+    page_start: int, page_end: int | None,
+    get_page_urls_fn, default_name_fn,
+) -> tuple[int, int]:
+    """Download a range of listing pages.
+
+    page_end=None → keep going until a page returns no results.
+    Supports reverse order when page_start > page_end.
+    """
+    total_ok = total_fail = 0
+    clean_url = _strip_page(base_url)
+
+    if page_end is None:
+        page_iter = (p for p in range(page_start, 10 ** 9))
+    else:
+        step      = 1 if page_end >= page_start else -1
+        page_iter = iter(range(page_start, page_end + step, step))
+
+    for page in page_iter:
+        logger.info("DLOAD", f"  Page {page}...")
+        file_urls = await get_page_urls_fn(client, clean_url, page)
+        if not file_urls:
+            logger.info("DLOAD", f"  Page {page} is empty — stopping.")
+            break
+        ok, fail = await _download_files(
+            client, file_urls, directory, default_name_fn, history, skip)
+        total_ok   += ok
+        total_fail += fail
+
+    return total_ok, total_fail
 
 
 # ---------------------------------------------------------------------------
@@ -175,15 +259,15 @@ async def _get_bepis_file_url(client, url: str) -> str:
     r = await client.get(url)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
-    tag = soup.select_one("a.btn.btn-primary.mr-1.flex-grow-1")
+    tag  = soup.select_one("a.btn.btn-primary.mr-1.flex-grow-1")
     if tag and tag.get("href"):
         return urljoin(BEPIS_URL, tag["href"])
     return ""
 
 
-async def _get_bepis_file_urls(client, url: str) -> list[str]:
+async def _get_bepis_page_urls(client, base_url: str, page: int) -> list[str]:
     from bs4 import BeautifulSoup
-    r = await client.get(url)
+    r = await client.get(_set_page(base_url, page))
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
     return [
@@ -193,9 +277,12 @@ async def _get_bepis_file_urls(client, url: str) -> list[str]:
     ]
 
 
-async def _download_bepis(client, url: str, directory: Path,
-                           history: dict, skip: bool) -> tuple[int, int]:
+async def _download_bepis(
+    client, url: str, directory: Path, history: dict, skip: bool,
+    page_start: int | None = None, page_end: int | None = None,
+) -> tuple[int, int]:
     if "/view/" in url:
+        # Single card page — pagination args ignored
         logger.info("DLOAD", f"Scraping card page: {url}")
         file_url = await _get_bepis_file_url(client, url)
         if not file_url:
@@ -204,9 +291,18 @@ async def _download_bepis(client, url: str, directory: Path,
         _, err = await _download_file(
             client, file_url, directory, _bepis_default_name(file_url), history, skip)
         return (1, 0) if not err else (0, 1)
+
+    elif page_start is not None:
+        logger.info("DLOAD",
+            f"Scraping pages {page_start}–{'end' if page_end is None else page_end}: {url}")
+        return await _download_pages(
+            client, url, directory, history, skip,
+            page_start, page_end,
+            _get_bepis_page_urls, _bepis_default_name)
+
     else:
         logger.info("DLOAD", f"Scraping card list: {url}")
-        file_urls = await _get_bepis_file_urls(client, url)
+        file_urls = await _get_bepis_page_urls(client, url, 1)
         return await _download_files(
             client, file_urls, directory, _bepis_default_name, history, skip)
 
@@ -237,29 +333,32 @@ async def _get_koikatsu_file_url(client, url: str) -> str:
     return ""
 
 
-async def _get_koikatsu_file_urls(client, url: str) -> list[str]:
+async def _get_koikatsu_page_urls(client, base_url: str, page: int) -> list[str]:
     from bs4 import BeautifulSoup
-    r = await client.get(url)
+    r = await client.get(_set_page(base_url, page))
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
-
     sub_pages = [
         urljoin(KOIKATSU_URL, tag["href"])
         for tag in soup.select("a.card")
         if tag.get("href")
     ]
-    logger.info("DLOAD", f"Found {len(sub_pages)} card(s), scraping download links...")
-
+    if not sub_pages:
+        return []
+    logger.info("DLOAD", f"  Found {len(sub_pages)} card(s), scraping download links...")
     results = await asyncio.gather(
-        *[_get_koikatsu_file_url(client, page) for page in sub_pages],
+        *[_get_koikatsu_file_url(client, p) for p in sub_pages],
         return_exceptions=True,
     )
     return [r for r in results if isinstance(r, str) and r]
 
 
-async def _download_koikatsu(client, url: str, directory: Path,
-                              history: dict, skip: bool) -> tuple[int, int]:
+async def _download_koikatsu(
+    client, url: str, directory: Path, history: dict, skip: bool,
+    page_start: int | None = None, page_end: int | None = None,
+) -> tuple[int, int]:
     if "/contents/" in url:
+        # Single card page
         logger.info("DLOAD", f"Scraping card page: {url}")
         file_url = await _get_koikatsu_file_url(client, url)
         if not file_url:
@@ -268,9 +367,18 @@ async def _download_koikatsu(client, url: str, directory: Path,
         _, err = await _download_file(
             client, file_url, directory, _koikatsu_default_name(file_url), history, skip)
         return (1, 0) if not err else (0, 1)
+
+    elif page_start is not None:
+        logger.info("DLOAD",
+            f"Scraping pages {page_start}–{'end' if page_end is None else page_end}: {url}")
+        return await _download_pages(
+            client, url, directory, history, skip,
+            page_start, page_end,
+            _get_koikatsu_page_urls, _koikatsu_default_name)
+
     else:
         logger.info("DLOAD", f"Scraping card list: {url}")
-        file_urls = await _get_koikatsu_file_urls(client, url)
+        file_urls = await _get_koikatsu_page_urls(client, url, 1)
         return await _download_files(
             client, file_urls, directory, _koikatsu_default_name, history, skip)
 
@@ -283,54 +391,58 @@ class DownloadChara(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
         cfg = self.config.download_chara
-        self.links          : str  = cfg.get("Links", "")
-        self.output_dir_str : str  = cfg.get("OutputDir", "")
-        self.skip_downloaded: bool = cfg.get("SkipDownloaded", True)
+        self.links           : str  = cfg.get("Links", "")
+        self.output_dir_str  : str  = cfg.get("OutputDir", "")
+        self.skip_downloaded : bool = cfg.get("SkipDownloaded", True)
 
     def run(self) -> None:
-        urls = [
-            line.strip()
-            for line in self.links.splitlines()
-            if line.strip() and line.strip().startswith("http")
-        ]
+        # Parse input lines
+        entries: list[tuple[str, int | None, int | None]] = []
+        for raw_line in self.links.splitlines():
+            raw_line = raw_line.strip()
+            if not raw_line or raw_line.startswith("#"):
+                continue
+            parsed = _parse_line(raw_line)
+            if parsed:
+                entries.append(parsed)
 
-        if not urls:
-            logger.error("DLOAD", "No URLs found. Enter one URL per line in the Download Links field.")
+        if not entries:
+            logger.error("DLOAD",
+                "No valid URLs found. Enter one URL per line in the Download Links field.")
             return
 
         output_dir = (
             Path(self.output_dir_str) if self.output_dir_str
             else Path(self.config.config_data["Core"].get(
-                "DownloadsPath",
-                Path.home() / "Downloads"
-            ))
+                "DownloadsPath", str(Path.home() / "Downloads")))
         )
         output_dir.mkdir(parents=True, exist_ok=True)
 
         self.log_start("DLOAD")
         logger.info("DLOAD", f"Output directory : {output_dir}")
         logger.info("DLOAD", f"Skip downloaded  : {self.skip_downloaded}")
-        logger.info("DLOAD", f"URLs to process  : {len(urls)}")
+        logger.info("DLOAD", f"URLs to process  : {len(entries)}")
 
-        history = _load_history()
-        total_ok = 0
+        history    = _load_history()
+        total_ok   = 0
         total_fail = 0
 
         async def _run_all() -> None:
             nonlocal total_ok, total_fail
             async with _make_client() as client:
-                for url in urls:
+                for url, p_start, p_end in entries:
                     if BEPIS_URL in url:
                         ok, fail = await _download_bepis(
-                            client, url, output_dir, history, self.skip_downloaded)
+                            client, url, output_dir, history,
+                            self.skip_downloaded, p_start, p_end)
                     elif KOIKATSU_URL in url:
                         ok, fail = await _download_koikatsu(
-                            client, url, output_dir, history, self.skip_downloaded)
+                            client, url, output_dir, history,
+                            self.skip_downloaded, p_start, p_end)
                     else:
                         logger.error("DLOAD",
-                            f"Unsupported URL (must be db.bepis.moe or koikatsucards.com): {url}")
-                        fail = 1
-                        ok   = 0
+                            f"Unsupported URL — must be {BEPIS_URL} or {KOIKATSU_URL}: {url}")
+                        ok, fail = 0, 1
                     total_ok   += ok
                     total_fail += fail
 

@@ -103,7 +103,7 @@ class SettingInterface(ScrollArea):
             FIF.LINK,
             self.tr("Download links"),
             self.tr("One URL per line — supports db.bepis.moe and koikatsucards.com"),
-            placeholder="""https://db.bepis.moe/koikatsu/view/1... # chara\nhttps://db.bepis.moe/koikatsu/... # chara list\nhttps://koikatsucards.com/contents/... # chara\nhttps://koikatsucards.com/search... # chara list""",
+            placeholder="https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 3 | 1",            
             parent=self.downloadCharaGroup
         )
 
