@@ -65,7 +65,7 @@ jobs:
       - id: mxu-latest-release
         uses: pozetroninc/github-action-get-latest-release@master
         with:
-          repository: RedDeadDepresso/KKAFIO
+          repository: RedDeadDepresso/MXU-KKAFIO
           excludes: >-
             ${{ (steps.set_tag.outputs.is_release == 'true' &&
                  steps.set_tag.outputs.is_prerelease == 'false')
@@ -217,7 +217,7 @@ jobs:
             ./rcedit.exe "$MXU_EXE" \
               --set-icon         "kkafio.ico" \
               --set-version-string "ProductName"      "KKAFIO" \
-              --set-version-string "FileDescription"  "KKAFIO — Koikatsu File I/O Automation" \
+              --set-version-string "FileDescription"  "KKAFIO - Koikatsu Auto File I/O" \
               --set-version-string "CompanyName"      "KKAFIO" \
               --set-version-string "InternalName"     "KKAFIO" \
               --set-version-string "OriginalFilename" "mxu.exe"
