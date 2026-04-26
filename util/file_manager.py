@@ -245,14 +245,14 @@ class FileManager:
         # First attempt — no password
         if self._run_7zip_extract(archive_path, extract_path):
             return extract_path
+        
+        if task_config.get("Password") != "Request":
+            logger.error("ARCHIVE", archive_name)
+            return None
 
         # Failed — may need a password
         text = (f"There is an error with the archive {archive_name}. "
                 f"Maybe it requires a password?")
-
-        if task_config.get("Password") != "Request Password":
-            logger.error("ARCHIVE", archive_name)
-            return None
 
         from util.password_dialog import password_dialog
 

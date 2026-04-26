@@ -78,7 +78,7 @@ class InstallChara:
 
         if should_extract:
             for archive in archive_list:
-                extract_path = self.file_manager.extract_archive(archive[0])
+                extract_path = self.file_manager.extract_archive(archive[0], self.config.install_chara)
                 if extract_path is not None:
                     self.run(extract_path)
         elif archive_list:
