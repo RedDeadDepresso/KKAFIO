@@ -32,6 +32,13 @@ import json
 from pathlib import Path
 from typing import Any
 from util.logger import logger
+from enum import Enum
+
+
+class GameType(Enum):
+    KOIKATSU = "Koikatsu"
+    KOIKATSU_PARTY = "KoikatsuParty"
+    KOIKATSU_SUNSHINE = "KoikatsuSunshine"
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +116,7 @@ def _extract_special_task_params(opt_values: dict) -> dict:
 _TASK_KEY = {
     "InstallChara":     "InstallChara",
     "UninstallChara":      "UninstallChara",
-    "FilterConvertKKS": "FilterConvertKKS",
+    "FilterConvertChara": "FilterConvertChara",
     "DeleteChara":      "DeleteChara",
     "ArchiveChara":     "ArchiveChara",
     "GroupChara":       "GroupChara",
@@ -122,7 +129,7 @@ _TASK_KEY = {
 _TASK_DEFAULTS = {
     "InstallChara":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallChara":      {"Enable": False, "InputPath": ""},
-    "FilterConvertKKS": {"Enable": False, "InputPath": "", "Convert": False, "ExtractArchive": True, "Password": "Skip"},
+    "FilterConvertChara": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ConvertKK": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": False},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": False, "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
@@ -153,9 +160,10 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
     elif task_name == "UninstallChara":
         _set("InputPath", "InputPath")
 
-    elif task_name == "FilterConvertKKS":
+    elif task_name == "FilterConvertChara":
         _set("InputPath",      "InputPath")
-        _set("Convert",        "ConvertKKS")
+        _set("ConvertKKS",     "ConvertKKS")
+        _set("ConvertKK",      "ConvertKK")
         _set("ExtractArchive", "ExtractArchive")
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
@@ -263,12 +271,35 @@ class Config:
     def _translate(inst: dict, mxu: dict) -> tuple[dict, list[dict]]:
         tasks_list = inst.get("tasks", [])
 
-        # GamePath: prefer globalOptionValues, fall back to scanning task optionValues
+        # GamePath and GameType: read from this instance's globalOptionValues,
+        # then fall back to other instances, then task optionValues.
         game_path = ""
+        game_type = GameType.KOIKATSU.value  # default
+
         global_opt_vals = inst.get("globalOptionValues", {})
+
+        # GameType
+        gt_val = global_opt_vals.get("GameType")
+        if gt_val and isinstance(gt_val, dict) and gt_val.get("type") == "select":
+            game_type = gt_val.get("caseName", GameType.KOIKATSU.value)
+
+        # GamePath — this instance
         gp_val = global_opt_vals.get("GamePath")
         if gp_val and isinstance(gp_val, dict) and gp_val.get("type") == "folder":
             game_path = gp_val.get("path", "")
+
+        # GamePath — other instances fallback
+        if not game_path:
+            for other in mxu.get("instances", []):
+                if other is inst:
+                    continue
+                other_gp = other.get("globalOptionValues", {}).get("GamePath")
+                if other_gp and isinstance(other_gp, dict) and other_gp.get("type") == "folder":
+                    game_path = other_gp.get("path", "")
+                    if game_path:
+                        break
+
+        # GamePath — legacy task optionValues fallback
         if not game_path:
             for t in tasks_list:
                 v = _extract_opt(t.get("optionValues", {}), "GamePath")
@@ -276,7 +307,7 @@ class Config:
                     game_path = v
                     break
 
-        data: dict = {"Core": {"GamePath": game_path}}
+        data: dict = {"Core": {"GamePath": game_path, "GameType": game_type}}
 
         # Start with all-disabled defaults
         for key, defaults in _TASK_DEFAULTS.items():
@@ -317,11 +348,13 @@ class Config:
 
     def validate_gamepath(self):
         game_path_str = self.config_data.get("Core", {}).get("GamePath", "")
+
         if not game_path_str:
             logger.error("SCRIPT", "GamePath is not set. Configure it in MXU.")
             raise Exception("GamePath is not set")
 
         base = Path(game_path_str)
+
         self.game_path = {
             "base":        base,
             "UserData":    base / "UserData",
@@ -332,6 +365,7 @@ class Config:
             "coordinate":  base / "UserData" / "coordinate",
             "Overlays":    base / "UserData" / "Overlays",
         }
+
         for path in self.game_path.values():
             if not path.exists():
                 logger.error("SCRIPT", f"Game path not valid: {path}")
@@ -354,7 +388,7 @@ class Config:
         self.download_chara   = self.config_data["DownloadChara"]
         self.delete_chara     = self.config_data["DeleteChara"]
         self.create_backup    = self.config_data["CreateBackup"]
-        self.fc_kks           = self.config_data["FilterConvertKKS"]
+        self.filter_convert_chara           = self.config_data["FilterConvertChara"]
         self.filter_duplicates= self.config_data["FilterDuplicates"]
         self.group_chara      = self.config_data["GroupChara"]
         self.install_chara    = self.config_data["InstallChara"]

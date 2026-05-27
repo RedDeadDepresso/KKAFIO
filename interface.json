@@ -30,13 +30,41 @@
       "path": ["."]
     }
   ],
-  "global_option": ["GamePath"],
   "option": {
+    "GameType": {
+      "type": "select",
+      "label": "Game Type",
+      "description": "Which Koikatsu game this configuration targets",
+      "default_case": "Koikatsu",
+      "cases": [
+        {
+          "name": "Koikatsu",
+          "label": "Koikatsu",
+          "pipeline_override": {
+            "GameType": "Koikatsu"
+          }
+        },
+        {
+          "name": "KoikatsuParty",
+          "label": "Koikatsu Party",
+          "pipeline_override": {
+            "GameType": "KoikatsuParty"
+          }
+        },
+        {
+          "name": "KoikatsuSunshine",
+          "label": "Koikatsu Sunshine",
+          "pipeline_override": {
+            "GameType": "KoikatsuSunshine"
+          }
+        }
+      ]
+    },
     "GamePath": {
       "type": "folder",
       "name": "game_path",
       "label": "Game Installation Path",
-      "description": "Path to your Koikatsu / Koikatsu Sunshine installation folder",
+      "description": "Path to your Koikatsu / Koikatsu Party / Koikatsu Sunshine installation folder",
       "default": "C:/Program Files (x86)/Steam/steamapps/common/Koikatsu Party",
       "pipeline_override": {
         "Core": {
@@ -188,22 +216,44 @@
     },
     "ConvertKKS": {
       "type": "switch",
-      "label": "Convert KKS to KK",
-      "description": "Convert Koikatsu Sunshine cards to Koikatsu format",
+      "label": "Convert KKS → KK",
+      "description": "Move KKS cards to _KKS_card_/ and produce KK-compatible copies in _KKS_to_KK_/",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
           "label": "Convert",
           "pipeline_override": {
-            "Convert": true
+            "ConvertKKS": true
           }
         },
         {
           "name": "No",
-          "label": "Don't Convert",
+          "label": "Skip",
           "pipeline_override": {
-            "Convert": false
+            "ConvertKKS": false
+          }
+        }
+      ]
+    },
+    "ConvertKK": {
+      "type": "switch",
+      "label": "Convert KK → KKS",
+      "description": "Move KK/KKSP cards to _KK_card_/ and produce KKS-compatible copies in _KK_to_KKS_/",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Convert",
+          "pipeline_override": {
+            "ConvertKK": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Skip",
+          "pipeline_override": {
+            "ConvertKK": false
           }
         }
       ]
@@ -595,13 +645,19 @@
       "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
     },
     {
-      "name": "FilterConvertKKS",
-      "label": "🔧 Filter & Convert KKS Cards",
-      "entry": "FilterConvertKKS",
+      "name": "FilterConvertChara",
+      "label": "🔧 Filter & Convert KK/KKS Cards",
+      "entry": "FilterConvertChara",
       "default_check": false,
-      "description": "Filter and optionally convert KKS cards to KK format",
+      "description": "Filter and optionally convert KKS cards to KK format or KK cards to KKS format",
       "group": ["card-management"],
-      "option": ["InputPath", "ConvertKKS", "ExtractArchive", "ArchivePassword"]
+      "option": [
+        "InputPath",
+        "ConvertKKS",
+        "ConvertKK",
+        "ExtractArchive",
+        "ArchivePassword"
+      ]
     },
     {
       "name": "FilterDuplicates",

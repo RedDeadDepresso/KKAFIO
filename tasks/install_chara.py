@@ -1,5 +1,5 @@
 from pathlib import Path
-from util.config import Config
+from util.config import Config, GameType
 from util.classifier import CardType, get_card_type, is_male, is_coordinate
 from util.file_manager import FileManager
 from util.logger import logger
@@ -18,10 +18,13 @@ class InstallChara:
         self.game_path = self.config.game_path
         self.input_path = Path(self.config.install_chara["InputPath"])
         self.extract_archive = self.config.install_chara.get("ExtractArchive", True)
+        # KoikatsuSunshine installs KKS cards; all other variants install KK cards
+        self.game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
+        self.is_sunshine = self.game_type == GameType.KOIKATSU_SUNSHINE.value
 
-    def _fc_kks_shares_input(self) -> bool:
-        """Return True if FilterConvertKKS is enabled and uses the same input path."""
-        fc = self.config.config_data.get("FilterConvertKKS", {})
+    def _filter_convert_chara_shares_input(self) -> bool:
+        """Return True if FilterConvertChara is enabled and uses the same input path."""
+        fc = self.config.config_data.get("FilterConvertChara", {})
         if not fc.get("Enable", False):
             return False
         fc_path = fc.get("InputPath")
@@ -29,25 +32,39 @@ class InstallChara:
             return False
         return Path(fc_path) == self.input_path
 
-    def resolve_png(self, image_path: Path):        
+    def resolve_png(self, image_path: Path):
         image_bytes = image_path.read_bytes()
         card_type = get_card_type(image_bytes)
 
-        match card_type:
-            case CardType.KK | CardType.KKSP:
-                if is_male(image_bytes):
-                    self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
-                else:
-                    self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
+        if card_type == CardType.UNKNOWN:
+            if is_coordinate(image_bytes):
+                self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
+            else:
+                self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
-            case CardType.KKS:
-                logger.error("CHARA", f"{image_path.name} is a {card_type.value} card")
+        elif self.is_sunshine:
+            # Koikatsu Sunshine install — accept KKS cards, skip KK/KKSP
+            match card_type:
+                case CardType.KKS:
+                    if is_male(image_bytes):
+                        self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
+                    else:
+                        self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
 
-            case CardType.UNKNOWN:
-                if is_coordinate(image_bytes):
-                    self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
-                else:
-                    self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
+                case CardType.KK | CardType.KKSP:
+                    logger.skipped("CHARA", f"{image_path.name} is a {card_type.value} card (KK/KKSP not supported by {GameType.KOIKATSU_SUNSHINE.value})")
+
+        else:
+            # Koikatsu / Koikatsu Party install — accept KK/KKSP cards, skip KKS
+            match card_type:
+                case CardType.KK | CardType.KKSP:
+                    if is_male(image_bytes):
+                        self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
+                    else:
+                        self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
+
+                case CardType.KKS:
+                    logger.skipped("CHARA", f"{image_path.name} is a KKS card (not supported by {self.game_type})")
 
     def run(self, folder_path: Optional[Path] = None, skip_extract: bool = False):
         if folder_path is None:
@@ -56,9 +73,9 @@ class InstallChara:
         foldername = folder_path.name
         logger.line()
         logger.info("FOLDER", foldername)
-        
+
         file_list, archive_list = self.file_manager.find_all_files(folder_path)
-        
+
         for file in file_list:
             path, size, extension = file
             match extension:

@@ -108,12 +108,12 @@ _FUZZY_THRESHOLD = 8
 def _classify(data: bytes) -> Category | None:
     card_type = get_card_type(data)
     match card_type:
-        case CardType.KK | CardType.KKSP:
+        case CardType.KK | CardType.KKSP | CardType.KKS:
             return "chara"
         case CardType.UNKNOWN:
             return "coordinate" if is_coordinate(data) else "overlays"
         case _:
-            return None  # KKS — skip
+            return None  # skip
 
 
 # ---------------------------------------------------------------------------
@@ -441,5 +441,5 @@ class FilterDuplicates:
             f"coordinate: {counts['coordinate']}, "
             f"overlays: {counts['overlays']}, "
             f"mods: {counts['mods']}, "
-            f"skipped (KKS): {counts['skipped']}",
+            f"skipped: {counts['skipped']}",
         )

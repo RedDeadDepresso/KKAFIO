@@ -9,7 +9,7 @@ from pathlib import Path
 from util.config import Config
 from util.file_manager import FileManager
 from tasks.create_backup import CreateBackup
-from tasks.fc_kks import FilterConvertKKS
+from tasks.filter_convert_chara import FilterConvertChara
 from tasks.install_chara import InstallChara
 from tasks.uninstall_chara import UninstallChara
 
@@ -54,7 +54,7 @@ def create_config():
             "mods": False,
             "UserData": False,
         },
-        "FilterConvertKKS": {
+        "FilterConvertChara": {
             "Convert": True,
             "InputPath": str(DOWNLOAD_PATH),
             "Enable": True,
@@ -135,8 +135,8 @@ def create_zipmods():
     return zipmod_paths
 
 def test_fckss(kk_cards, kks_cards):
-    """Test FilterConvertKKS functionality."""
-    fckss = FilterConvertKKS(CONFIG, FILE_MANAGER)
+    """Test FilterConvertChara functionality."""
+    fckss = FilterConvertChara(CONFIG, FILE_MANAGER)
     fckss.run()
     
     filter_path = DOWNLOAD_PATH / '_KKS_card_'
