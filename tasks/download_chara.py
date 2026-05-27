@@ -31,6 +31,7 @@ from util.logger import logger
 # ---------------------------------------------------------------------------
 
 BEPIS_URL     = "https://db.bepis.moe"
+BEPIS_API_URL = "https://db.bepis.moe/api/frontend/search?"
 KOIKATSU_URL  = "https://koikatsucards.com"
 MAX_CONNECTIONS = 10
 
@@ -254,26 +255,43 @@ def _bepis_default_name(url: str) -> str:
     return urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
 
 
-async def _get_bepis_file_url(client, url: str) -> str:
-    from bs4 import BeautifulSoup
-    r = await client.get(url)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
-    tag  = soup.select_one("a.btn.btn-primary.mr-1.flex-grow-1")
-    if tag and tag.get("href"):
-        return urljoin(BEPIS_URL, tag["href"])
-    return ""
+def _get_bepis_card_type(url: str) -> str:
+    card_type = ""
+    if "koikatsu" in url:
+        card_type = "KK"
+    elif "kkscenes" in url:
+        card_type = "KKSCENE"
+    elif "kkclothing" in url:
+        card_type = "KKCLOTHING"
+    return card_type
+
+
+def _get_bepis_file_card_id(card_id: str | int) -> str:
+    card_id = str(card_id)
+    length = len(card_id)
+    if length < 6:
+        return "0" * (6 - length) + card_id
+    return card_id
+
+
+async def _get_bepis_file_url(url: str) -> str:
+    card_type = _get_bepis_card_type(url)
+    card_id = url.split("/")[-1]
+    file_card_id = _get_bepis_file_card_id(card_id)
+    return f"{BEPIS_URL}/card/full/{card_type}_{file_card_id}.png"
 
 
 async def _get_bepis_page_urls(client, base_url: str, page: int) -> list[str]:
-    from bs4 import BeautifulSoup
-    r = await client.get(_set_page(base_url, page))
+    query_string = urlparse(base_url).query
+    card_type = _get_bepis_card_type(base_url)
+    api_url = f"{BEPIS_API_URL}cardType={card_type}&{query_string}"
+    r = await client.get(_set_page(api_url, page))
     r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
+    data = r.json().get("data")
+    cards = data.get("cards", []) if data else []
     return [
-        urljoin(BEPIS_URL, tag["href"])
-        for tag in soup.select(".btn.btn-primary.btn-sm")
-        if tag.get("href")
+        f"{BEPIS_URL}/card/full/{card_type}_{_get_bepis_file_card_id(card["id"])}.png"
+        for card in cards
     ]
 
 
@@ -284,7 +302,7 @@ async def _download_bepis(
     if "/view/" in url:
         # Single card page — pagination args ignored
         logger.info("DLOAD", f"Scraping card page: {url}")
-        file_url = await _get_bepis_file_url(client, url)
+        file_url = await _get_bepis_file_url(url)
         if not file_url:
             logger.error("DLOAD", "Could not find download link on page.")
             return 0, 1

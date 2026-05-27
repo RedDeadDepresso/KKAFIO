@@ -36,7 +36,7 @@ class BaseTask:
             parts.append(f"skipped: {skipped}")
         msg = "Done"
         if parts:
-            msg += " — " + ", ".join(parts)
+            msg += " - " + ", ".join(parts)
         if extra:
             msg += f" ({extra})"
         logger.success(tag, msg)
