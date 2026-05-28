@@ -7,6 +7,7 @@ class CardType(Enum):
     KK = "KK"
     KKSP = "KKSP"
     KKS = "KKS"
+    SCENE = "SCENE"
     
 
 def get_card_type(card: str | Path | bytes):
@@ -20,6 +21,9 @@ def get_card_type(card: str | Path | bytes):
             card_type = CardType.KKSP
         elif b"KoiKatuCharaSun" in card:
             card_type = CardType.KKS
+        elif b"sceneInfo" in card:
+            card_type = CardType.SCENE
+
     return card_type
 
 

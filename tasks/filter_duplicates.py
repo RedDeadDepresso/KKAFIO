@@ -23,7 +23,7 @@ KEEP_SMALLEST  = "Smallest file size"
 KEEP_LAST_LEX  = "Last alphabetically"
 KEEP_FIRST_LEX = "First alphabetically"
 
-Category = Literal["chara", "coordinate", "mods", "overlays"]
+Category = Literal["chara", "coordinate", "mods", "overlays", "scene"]
 
 # ---------------------------------------------------------------------------
 # PNG payload extraction
@@ -110,8 +110,13 @@ def _classify(data: bytes) -> Category | None:
     match card_type:
         case CardType.KK | CardType.KKSP | CardType.KKS:
             return "chara"
+        case CardType.SCENE:
+            return "scene"
         case CardType.UNKNOWN:
-            return "coordinate" if is_coordinate(data) else "overlays"
+            if is_coordinate(data):
+                return "coordinate"
+            else:
+                return "overlays"
         case _:
             return None  # skip
 

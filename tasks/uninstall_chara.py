@@ -24,7 +24,10 @@ class UninstallChara:
         image_bytes = image_path.read_bytes()
         card_type = get_card_type(image_bytes)
 
-        if card_type == CardType.UNKNOWN:
+        if card_type == CardType.SCENE:
+            self.file_manager.find_and_remove("SCENE", image_path, self.game_path["scene"])
+
+        elif card_type == CardType.UNKNOWN:
             if is_coordinate(image_bytes):
                 self.file_manager.find_and_remove("COORD", image_path, self.game_path["coordinate"])
             else:

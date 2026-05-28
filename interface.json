@@ -678,7 +678,7 @@
       "label": "📦 Install Characters",
       "entry": "InstallChara",
       "default_check": false,
-      "description": "Copy character cards, mods, and overlays into the game",
+      "description": "Copy character cards, mods, scenes and overlays into the game",
       "group": ["card-management"],
       "option": [
         "InputPath",

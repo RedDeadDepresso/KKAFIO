@@ -364,6 +364,7 @@ class Config:
             "charaFemale": base / "UserData" / "chara" / "female",
             "coordinate":  base / "UserData" / "coordinate",
             "Overlays":    base / "UserData" / "Overlays",
+            "scene":       base / "UserData" / "Studio" / "scene"
         }
 
         for path in self.game_path.values():
