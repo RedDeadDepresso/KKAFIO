@@ -636,11 +636,11 @@
       ]
     },
     {
-      "name": "DownloadChara",
-      "label": "📥 Download Characters",
-      "entry": "DownloadChara",
+      "name": "DownloadContents",
+      "label": "📥 Download Contents",
+      "entry": "DownloadContents",
       "default_check": false,
-      "description": "Download character cards from db.bepis.moe or koikatsucards.com",
+      "description": "Download chara, coordinates and scenes from db.bepis.moe or koikatsucards.com",
       "group": ["card-management"],
       "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
     },
@@ -660,9 +660,9 @@
       ]
     },
     {
-      "name": "FilterDuplicates",
-      "label": "🧹 Filter Duplicates",
-      "entry": "FilterDuplicates",
+      "name": "FilterDuplicateContents",
+      "label": "🧹 Filter Duplicate Contents",
+      "entry": "FilterDuplicateContents",
       "default_check": false,
       "description": "Find and handle duplicate PNG cards and zipmod files",
       "group": ["duplicate-handling"],
@@ -674,9 +674,9 @@
       ]
     },
     {
-      "name": "InstallChara",
-      "label": "📦 Install Characters",
-      "entry": "InstallChara",
+      "name": "InstallContents",
+      "label": "📦 Install Contents",
+      "entry": "InstallContents",
       "default_check": false,
       "description": "Copy character cards, mods, scenes and overlays into the game",
       "group": ["card-management"],
@@ -688,9 +688,9 @@
       ]
     },
     {
-      "name": "UninstallChara",
-      "label": "↩️ Uninstall Characters",
-      "entry": "UninstallChara",
+      "name": "UninstallContents",
+      "label": "↩️ Uninstall Contents",
+      "entry": "UninstallContents",
       "default_check": false,
       "description": "Uninstall character cards and their mods from the game",
       "group": ["card-management"],

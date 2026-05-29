@@ -4,9 +4,9 @@ kkafio_cli.py — CLI entry point for KKAFIO
 
 Task commands (arguments override config; omit to use config value):
     kkafio_cli run
-    kkafio_cli install-chara [--input DIR]
-    kkafio_cli uninstall-chara  [--input DIR]
-    kkafio_cli fc-kks        [--input DIR] [--convert | --no-convert]
+    kkafio_cli install-contents [--input DIR]
+    kkafio_cli uninstall-contents  [--input DIR]
+    kkafio_cli filter-convert-chara        [--input DIR] [--convert | --no-convert]
     kkafio_cli create-backup [--output DIR] [--filename NAME]
                              [--mods | --no-mods]
                              [--userdata | --no-userdata]
@@ -61,23 +61,23 @@ def _clear_traceback() -> None:
 # Task runners
 # ---------------------------------------------------------------------------
 
-def run_install_chara(config, file_manager, input_path: str | None = None,
+def run_install_contents(config, file_manager, input_path: str | None = None,
                       extract_archive: bool | None = None, skip_extract: bool = False):
-    from tasks.install_chara import InstallChara
+    from tasks.install_contents import InstallContents
     from pathlib import Path
-    module = InstallChara(config, file_manager)
+    module = InstallContents(config, file_manager)
     if extract_archive is not None:
         module.extract_archive = extract_archive
     module.run(folder_path=Path(input_path) if input_path else None,
                skip_extract=skip_extract)
 
 
-def run_uninstall_chara(config, file_manager, input_path: str | None = None):
-    from tasks.uninstall_chara import UninstallChara
+def run_uninstall_contents(config, file_manager, input_path: str | None = None):
+    from tasks.uninstall_contents import UninstallContents
     from pathlib import Path
     if input_path is not None:
-        config.uninstall_chara["InputPath"] = Path(input_path)
-    UninstallChara(config, file_manager).run()
+        config.uninstall_contents["InputPath"] = Path(input_path)
+    UninstallContents(config, file_manager).run()
 
 
 def run_filter_convert_chara(config, file_manager, input_path: str | None = None,
@@ -97,11 +97,11 @@ def run_filter_convert_chara(config, file_manager, input_path: str | None = None
     module.run()
 
 
-def run_download_chara(config, file_manager, links: str | None = None,
+def run_download_contents(config, file_manager, links: str | None = None,
                        output_dir: str | None = None,
                        skip_downloaded: bool | None = None):
-    from tasks.download_chara import DownloadChara
-    module = DownloadChara(config, file_manager)
+    from tasks.download_contents import DownloadContents
+    module = DownloadContents(config, file_manager)
     if links is not None:
         module.links = links
     if output_dir is not None:
@@ -184,14 +184,14 @@ def run_group_chara(config, file_manager, input_path: str | None = None,
     process(folder, json_str)
 
 
-def run_filter_duplicates(config, file_manager, input_path: str | None = None,
+def run_filter_duplicate_contents(config, file_manager, input_path: str | None = None,
                           delete: bool | None = None, fuzzy: bool | None = None,
                           keep: str | None = None):
-    from tasks.filter_duplicates import FilterDuplicates
+    from tasks.filter_duplicate_contents import FilterDuplicateContents
     from pathlib import Path
     if input_path is not None:
-        config.filter_duplicates["InputPath"] = Path(input_path)
-    module = FilterDuplicates(config, file_manager)
+        config.filter_duplicate_contents["InputPath"] = Path(input_path)
+    module = FilterDuplicateContents(config, file_manager)
     if delete is not None:
         module.delete = delete
     if fuzzy is not None:
@@ -245,9 +245,9 @@ def cmd_run(args):
     _clear_traceback()
     config, file_manager = _load_core(args.config, instance_index=args.instance)
 
-    # filter_convert_chara + InstallChara same-path detection
+    # filter_convert_chara + InstallContents same-path detection
     fc_cfg = config.config_data["FilterConvertChara"]
-    ic_cfg = config.config_data["InstallChara"]
+    ic_cfg = config.config_data["InstallContents"]
     same_path = (
         fc_cfg.get("Enable", False) and ic_cfg.get("Enable", False) and
         fc_cfg.get("ExtractArchive", True) and ic_cfg.get("ExtractArchive", True) and
@@ -258,19 +258,19 @@ def cmd_run(args):
     kkafio_task_map = {
         "ArchiveChara":     lambda: run_archive_chara(config, file_manager),
         "DeleteChara":      lambda: run_delete_chara(config, file_manager),
-        "DownloadChara":    lambda: run_download_chara(config, file_manager),
+        "DownloadContents":    lambda: run_download_contents(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
         "FilterConvertChara": lambda: run_filter_convert_chara(config, file_manager),
-        "FilterDuplicates": lambda: run_filter_duplicates(config, file_manager),
+        "FilterDuplicateContents": lambda: run_filter_duplicate_contents(config, file_manager),
         "GroupChara":       lambda: run_group_chara(config, file_manager),
-        "InstallChara":     lambda: run_install_chara(config, file_manager,
+        "InstallContents":     lambda: run_install_contents(config, file_manager,
                                                       skip_extract=same_path),
-        "UninstallChara":      lambda: run_uninstall_chara(config, file_manager),
+        "UninstallContents":      lambda: run_uninstall_contents(config, file_manager),
         "UngroupChara":     lambda: run_ungroup_chara(config, file_manager),
     }
 
     if same_path:
-        logger.info("CLI", "FilterConvertChara and InstallChara share the same input path — "
+        logger.info("CLI", "FilterConvertChara and InstallContents share the same input path — "
                            "archive extraction will run in FilterConvertChara only")
 
     # Shared stop event — special tasks check this to abort early
@@ -307,35 +307,35 @@ def cmd_run(args):
     sys.exit(0)
 
 
-def cmd_install_chara(args):
+def cmd_install_contents(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["InstallChara"]["Enable"] = True
+        config.config_data["InstallContents"]["Enable"] = True
         extract = None
         if args.extract_archive is True:
             extract = True
         elif args.extract_archive is False:
             extract = False
-        run_install_chara(config, file_manager, input_path=args.input,
+        run_install_contents(config, file_manager, input_path=args.input,
                           extract_archive=extract)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("InstallChara")
+        _write_traceback("InstallContents")
         sys.exit(1)
 
 
-def cmd_uninstall_chara(args):
+def cmd_uninstall_contents(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["UninstallChara"]["Enable"] = True
-        run_uninstall_chara(config, file_manager, input_path=args.input)
+        config.config_data["UninstallContents"]["Enable"] = True
+        run_uninstall_contents(config, file_manager, input_path=args.input)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("UninstallChara")
+        _write_traceback("UninstallContents")
         sys.exit(1)
 
 
@@ -369,11 +369,11 @@ def cmd_filter_convert_chara(args):
         sys.exit(1)
 
 
-def cmd_download_chara(args):
+def cmd_download_contents(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["DownloadChara"]["Enable"] = True
+        config.config_data["DownloadContents"]["Enable"] = True
         links = None
         if args.links:
             from pathlib import Path as _Path
@@ -384,13 +384,13 @@ def cmd_download_chara(args):
             skip = True
         elif args.skip_downloaded is False:
             skip = False
-        run_download_chara(config, file_manager, links=links,
+        run_download_contents(config, file_manager, links=links,
                            output_dir=args.output_dir,
                            skip_downloaded=skip)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("DownloadChara")
+        _write_traceback("DownloadContents")
         sys.exit(1)
 
 
@@ -494,11 +494,11 @@ def cmd_group_chara(args):
         sys.exit(1)
 
 
-def cmd_filter_duplicates(args):
+def cmd_filter_duplicate_contents(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["FilterDuplicates"]["Enable"] = True
+        config.config_data["FilterDuplicateContents"]["Enable"] = True
         delete = None
         if args.delete is True:
             delete = True
@@ -509,12 +509,12 @@ def cmd_filter_duplicates(args):
             fuzzy = True
         elif args.fuzzy is False:
             fuzzy = False
-        run_filter_duplicates(config, file_manager, input_path=args.input,
+        run_filter_duplicate_contents(config, file_manager, input_path=args.input,
                               delete=delete, fuzzy=fuzzy, keep=args.keep)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("FilterDuplicates")
+        _write_traceback("FilterDuplicateContents")
         sys.exit(1)
 
 
@@ -568,22 +568,22 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("run", help="Run all enabled tasks in instance order")
     p.set_defaults(func=cmd_run)
 
-    # install-chara
-    p = sub.add_parser("install-chara", help="Copy cards / mods / overlays into the game")
+    # install-contents
+    p = sub.add_parser("install-contents", help="Copy cards / mods / overlays into the game")
     p.add_argument("--input", "-i", metavar="DIR", default=None,
-                   help="Folder to scan (default: InstallChara.InputPath from config)")
+                   help="Folder to scan (default: InstallContents.InputPath from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None,
                    help="Extract ZIP/RAR/7z archives before installing (overrides config)")
     g.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
                    help="Skip archive extraction (overrides config)")
-    p.set_defaults(func=cmd_install_chara)
+    p.set_defaults(func=cmd_install_contents)
 
-    # uninstall-chara
-    p = sub.add_parser("uninstall-chara", help="Remove cards / mods from the game")
+    # uninstall-contents
+    p = sub.add_parser("uninstall-contents", help="Remove cards / mods from the game")
     p.add_argument("--input", "-i", metavar="DIR", default=None,
-                   help="Folder to scan (default: UninstallChara.InputPath from config)")
-    p.set_defaults(func=cmd_uninstall_chara)
+                   help="Folder to scan (default: UninstallContents.InputPath from config)")
+    p.set_defaults(func=cmd_uninstall_contents)
 
     # filter-convert-chara
     p = sub.add_parser("filter-convert-chara", help="Filter and optionally convert KKS/KK cards")
@@ -601,22 +601,22 @@ def build_parser() -> argparse.ArgumentParser:
     g3.add_argument("--no-extract-archive", dest="extract_archive", action="store_false")
     p.set_defaults(func=cmd_filter_convert_chara)
 
-    # download-chara
+    # download-contents
     p = sub.add_parser(
-        "download-chara",
+        "download-contents",
         help="Download character cards from db.bepis.moe or koikatsucards.com",
     )
     p.add_argument("--links", default=None, metavar="URLS_OR_FILE",
                    help="Newline-separated URLs, or path to a .txt file containing them "
-                        "(default: DownloadChara.Links from config)")
+                        "(default: DownloadContents.Links from config)")
     p.add_argument("--output-dir", default=None, metavar="DIR",
-                   help="Directory to save downloaded cards (default: DownloadChara.OutputDir from config)")
+                   help="Directory to save downloaded cards (default: DownloadContents.OutputDir from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--skip-downloaded",    dest="skip_downloaded", action="store_true",  default=None,
                    help="Skip already-downloaded URLs (overrides config)")
     g.add_argument("--no-skip-downloaded", dest="skip_downloaded", action="store_false",
                    help="Re-download even if previously downloaded (overrides config)")
-    p.set_defaults(func=cmd_download_chara)
+    p.set_defaults(func=cmd_download_contents)
 
     # delete-chara
     p = sub.add_parser(
@@ -712,9 +712,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Include character cards from subfolders when exporting (overrides config)")
     p.set_defaults(func=cmd_group_chara)
 
-    # filter-duplicates
+    # filter-duplicate-contents
     p = sub.add_parser(
-        "filter-duplicates",
+        "filter-duplicate-contents",
         help="Find and handle duplicate PNG cards and zipmod files",
         description=(
             "Scans the input folder recursively for duplicate PNG cards and zipmod files. "
@@ -724,7 +724,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument("--input", "-i", metavar="DIR", default=None,
-                   help="Folder to scan (default: FilterDuplicates.InputPath from config)")
+                   help="Folder to scan (default: FilterDuplicateContents.InputPath from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--fuzzy",    dest="fuzzy", action="store_true",  default=None,
                    help="Enable fuzzy matching for chara cards (overrides config)")
@@ -738,7 +738,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="Send duplicates to recycle bin (overrides config)")
     g2.add_argument("--no-delete", dest="delete", action="store_false",
                     help="Move duplicates to _duplicates_/ folder (overrides config)")
-    p.set_defaults(func=cmd_filter_duplicates)
+    p.set_defaults(func=cmd_filter_duplicate_contents)
 
     # create-backup
     p = sub.add_parser("create-backup", help="Create a 7-Zip backup of game folders")

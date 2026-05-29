@@ -240,20 +240,20 @@ def _fuzzy_group(paths: list[Path]) -> list[list[Path]]:
 # Main module class
 # ---------------------------------------------------------------------------
 
-class FilterDuplicates:
+class FilterDuplicateContents:
     DUPLICATES_DIR = "_duplicates_"
 
     def __init__(self, config: Config, file_manager: FileManager):
         self.config       = config
         self.file_manager = file_manager
-        cfg = self.config.filter_duplicates
+        cfg = self.config.filter_duplicate_contents
         self.delete      : bool = cfg.get("Delete",     False)
         self.fuzzy_chara : bool = cfg.get("FuzzyChara", False)
         self.keep        : str  = cfg.get("Keep",       KEEP_BIGGEST)
 
     def run(self, folder_path: Path | None = None) -> None:
         if folder_path is None:
-            folder_path = Path(self.config.filter_duplicates["InputPath"])
+            folder_path = Path(self.config.filter_duplicate_contents["InputPath"])
         folder_path = Path(folder_path)
         duplicates_root = folder_path / self.DUPLICATES_DIR
 

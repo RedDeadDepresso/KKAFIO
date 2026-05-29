@@ -58,7 +58,7 @@ class FileManager:
 
         base_name = source_path.name
         destination_path = destination_folder / base_name
-        conflicts = self.config.install_chara["FileConflicts"]
+        conflicts = self.config.install_contents["FileConflicts"]
         already_exists = destination_path.exists()
 
         if already_exists and conflicts == "Skip":
@@ -233,7 +233,7 @@ class FileManager:
     def extract_archive(self, archive_path: Union[Path, str], task_config: dict = None):
         """Extract the archive using 7-Zip."""
         if task_config is None:
-            task_config = self.config.install_chara
+            task_config = self.config.install_contents
 
         archive_path = Path(archive_path)
         archive_name = archive_path.name

@@ -10,8 +10,8 @@ from util.config import Config
 from util.file_manager import FileManager
 from tasks.create_backup import CreateBackup
 from tasks.filter_convert_chara import FilterConvertChara
-from tasks.install_chara import InstallChara
-from tasks.uninstall_chara import UninstallChara
+from tasks.install_contents import InstallContents
+from tasks.uninstall_contents import UninstallContents
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -59,13 +59,13 @@ def create_config():
             "InputPath": str(DOWNLOAD_PATH),
             "Enable": True,
         },
-        "InstallChara": {
+        "InstallContents": {
             "Password": "Skip",
             "FileConflicts": "Skip",
             "Enable": True,
             "InputPath": str(DOWNLOAD_PATH),
         },
-        "UninstallChara": {
+        "UninstallContents": {
             "Enable": True,
             "InputPath": str(DOWNLOAD_PATH),
         },
@@ -164,8 +164,8 @@ def test_fckss(kk_cards, kks_cards):
 
 def test_install(kk_cards, coordinates, zipmods):
     """Test character installation."""
-    install_chara = InstallChara(CONFIG, FILE_MANAGER)
-    install_chara.run()
+    install_contents = InstallContents(CONFIG, FILE_MANAGER)
+    install_contents.run()
 
     chara_path = GAMEPATH / 'UserData' / 'chara' / 'female'
     coordinates_path = GAMEPATH / 'UserData' / 'coordinate'
@@ -202,8 +202,8 @@ def test_backup(kk_cards, coordinates, zipmods):
 
 def test_remove():
     """Test character removal."""
-    uninstall_chara = UninstallChara(CONFIG, FILE_MANAGER)
-    uninstall_chara.run()
+    uninstall_contents = UninstallContents(CONFIG, FILE_MANAGER)
+    uninstall_contents.run()
 
     chara_path = GAMEPATH / 'UserData' / 'chara' / 'female'
     coordinate_path = GAMEPATH / 'UserData' / 'coordinate'

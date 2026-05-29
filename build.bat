@@ -20,16 +20,16 @@ uv run pyinstaller --noconfirm --onedir ^
  --hidden-import "util.logger" ^
  --hidden-import "util.file_manager" ^
  --hidden-import "util.special_tasks" ^
- --hidden-import "tasks.install_chara" ^
- --hidden-import "tasks.uninstall_chara" ^
+ --hidden-import "tasks.install_contents" ^
+ --hidden-import "tasks.uninstall_contents" ^
  --hidden-import "tasks.filter_convert_chara" ^
  --hidden-import "tasks.create_backup" ^
  --hidden-import "tasks.delete_chara" ^
  --hidden-import "tasks.archive_chara" ^
  --hidden-import "tasks.group_chara" ^
  --hidden-import "tasks.ungroup_chara" ^
- --hidden-import "tasks.filter_duplicates" ^
- --hidden-import "tasks.download_chara" ^
+ --hidden-import "tasks.filter_duplicate_contents" ^
+ --hidden-import "tasks.download_contents" ^
  kkafio_cli.py
 
 if %errorlevel% neq 0 exit /b 1

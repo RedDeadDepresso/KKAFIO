@@ -6,9 +6,9 @@ from util.logger import logger
 from typing import Optional
 
 
-class InstallChara:
+class InstallContents:
     def __init__(self, config: Config, file_manager: FileManager):
-        """Initializes the InstallChara module.
+        """Initializes the InstallContents module.
 
         Args:
             config (Config): KKAFIO Config instance
@@ -16,8 +16,8 @@ class InstallChara:
         self.config = config
         self.file_manager = file_manager
         self.game_path = self.config.game_path
-        self.input_path = Path(self.config.install_chara["InputPath"])
-        self.extract_archive = self.config.install_chara.get("ExtractArchive", True)
+        self.input_path = Path(self.config.install_contents["InputPath"])
+        self.extract_archive = self.config.install_contents.get("ExtractArchive", True)
         # KoikatsuSunshine installs KKS cards; all other variants install KK cards
         self.game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         self.is_sunshine = self.game_type == GameType.KOIKATSU_SUNSHINE.value
@@ -98,7 +98,7 @@ class InstallChara:
 
         if should_extract:
             for archive in archive_list:
-                extract_path = self.file_manager.extract_archive(archive[0], self.config.install_chara)
+                extract_path = self.file_manager.extract_archive(archive[0], self.config.install_contents)
                 if extract_path is not None:
                     self.run(extract_path)
         elif archive_list:

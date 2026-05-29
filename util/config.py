@@ -12,7 +12,7 @@ MXU JSON structure:
         "globalOptionValues": {"GamePath": {"type": "folder", "path": "..."}},
         "tasks": [
           {
-            "taskName": "InstallChara",
+            "taskName": "InstallContents",
             "enabled": true,
             "optionValues": {
               "InputPath":      {"type": "folder",   "path": "D:/cards"},
@@ -114,29 +114,29 @@ def _extract_special_task_params(opt_values: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 _TASK_KEY = {
-    "InstallChara":     "InstallChara",
-    "UninstallChara":      "UninstallChara",
+    "InstallContents":     "InstallContents",
+    "UninstallContents":      "UninstallContents",
     "FilterConvertChara": "FilterConvertChara",
     "DeleteChara":      "DeleteChara",
     "ArchiveChara":     "ArchiveChara",
     "GroupChara":       "GroupChara",
     "UngroupChara":     "UngroupChara",
-    "FilterDuplicates": "FilterDuplicates",
+    "FilterDuplicateContents": "FilterDuplicateContents",
     "CreateBackup":     "CreateBackup",
-    "DownloadChara":    "DownloadChara",
+    "DownloadContents":    "DownloadContents",
 }
 
 _TASK_DEFAULTS = {
-    "InstallChara":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
-    "UninstallChara":      {"Enable": False, "InputPath": ""},
+    "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
+    "UninstallContents":      {"Enable": False, "InputPath": ""},
     "FilterConvertChara": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ConvertKK": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": False},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": False, "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
-    "FilterDuplicates": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
+    "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
-    "DownloadChara":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
+    "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
 }
 
 
@@ -149,7 +149,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         if v is not None:
             cfg[config_key] = v
 
-    if task_name == "InstallChara":
+    if task_name == "InstallContents":
         _set("InputPath",      "InputPath")
         _set("ExtractArchive", "ExtractArchive")
         v = _extract_opt(opt_values, "FileConflicts")
@@ -157,7 +157,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
 
-    elif task_name == "UninstallChara":
+    elif task_name == "UninstallContents":
         _set("InputPath", "InputPath")
 
     elif task_name == "FilterConvertChara":
@@ -194,7 +194,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("InputPath",          "InputPath")
         _set("DeleteEmptyFolders", "DeleteEmptyFolders")
 
-    elif task_name == "FilterDuplicates":
+    elif task_name == "FilterDuplicateContents":
         _set("InputPath",  "InputPath")
         _set("FuzzyChara", "FuzzyMatching")
         v = _extract_opt(opt_values, "KeepStrategy")
@@ -209,7 +209,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("UserData", "BackupUserData")
         _set("BepInEx",  "BackupBepInEx")
 
-    elif task_name == "DownloadChara":
+    elif task_name == "DownloadContents":
         _set("Links",           "DownloadLinks")
         _set("OutputDir",       "DownloadOutputDir")
         _set("SkipDownloaded",  "SkipDownloaded")
@@ -386,15 +386,15 @@ class Config:
                         raise Exception(f"Path invalid: {path_obj}")
 
         self.archive_chara    = self.config_data["ArchiveChara"]
-        self.download_chara   = self.config_data["DownloadChara"]
+        self.download_contents   = self.config_data["DownloadContents"]
         self.delete_chara     = self.config_data["DeleteChara"]
         self.create_backup    = self.config_data["CreateBackup"]
         self.filter_convert_chara           = self.config_data["FilterConvertChara"]
-        self.filter_duplicates= self.config_data["FilterDuplicates"]
+        self.filter_duplicate_contents= self.config_data["FilterDuplicateContents"]
         self.group_chara      = self.config_data["GroupChara"]
-        self.install_chara    = self.config_data["InstallChara"]
+        self.install_contents    = self.config_data["InstallContents"]
         self.ungroup_chara    = self.config_data["UngroupChara"]
-        self.uninstall_chara     = self.config_data["UninstallChara"]
+        self.uninstall_contents     = self.config_data["UninstallContents"]
 
 
 # ---------------------------------------------------------------------------

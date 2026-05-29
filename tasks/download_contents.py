@@ -1,5 +1,5 @@
 """
-download_chara.py — Download Koikatsu character cards from web sources.
+download_contents.py — Download Koikatsu character cards from web sources.
 
 Supports:
   https://db.bepis.moe          — card pages (/view/) and listing pages
@@ -405,10 +405,10 @@ async def _download_koikatsu(
 # Main task class
 # ---------------------------------------------------------------------------
 
-class DownloadChara(BaseTask):
+class DownloadContents(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.download_chara
+        cfg = self.config.download_contents
         self.links           : str  = cfg.get("Links", "")
         self.output_dir_str  : str  = cfg.get("OutputDir", "")
         self.skip_downloaded : bool = cfg.get("SkipDownloaded", True)

@@ -5,9 +5,9 @@ from util.file_manager import FileManager
 from util.logger import logger
 
 
-class UninstallChara:
+class UninstallContents:
     def __init__(self, config: Config, file_manager: FileManager):
-        """Initializes the UninstallChara module.
+        """Initializes the UninstallContents module.
 
         Args:
             config (Config): KKAFIO Config instance
@@ -15,7 +15,7 @@ class UninstallChara:
         self.config = config
         self.file_manager = file_manager
         self.game_path = self.config.game_path
-        self.input_path = Path(self.config.uninstall_chara["InputPath"])
+        self.input_path = Path(self.config.uninstall_contents["InputPath"])
         # KoikatsuSunshine removes KKS cards; all other variants remove KK cards
         self.game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         self.is_sunshine = self.game_type == GameType.KOIKATSU_SUNSHINE.value
