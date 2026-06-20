@@ -136,7 +136,7 @@ _TASK_DEFAULTS = {
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
-    "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
+    "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True, "KkdSession": ""},
 }
 
 
@@ -213,6 +213,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("Links",           "DownloadLinks")
         _set("OutputDir",       "DownloadOutputDir")
         _set("SkipDownloaded",  "SkipDownloaded")
+        v = _extract_opt(opt_values, "KkdSession")
+        if v is not None: cfg["KkdSession"] = v
 
     return cfg
 

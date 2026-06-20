@@ -123,7 +123,7 @@ def _save_history(history: dict[str, str]) -> None:
 # Async HTTP client
 # ---------------------------------------------------------------------------
 
-def _make_client():
+def _make_client(cookies: dict | None = None):
     import httpx
     limits = httpx.Limits(
         max_connections=MAX_CONNECTIONS,
@@ -137,7 +137,7 @@ def _make_client():
         )
     }
     return httpx.AsyncClient(
-        limits=limits, headers=headers,
+        limits=limits, headers=headers, cookies=cookies or {},
         follow_redirects=True, timeout=30,
     )
 
@@ -412,19 +412,20 @@ class DownloadContents(BaseTask):
         self.links           : str  = cfg.get("Links", "")
         self.output_dir_str  : str  = cfg.get("OutputDir", "")
         self.skip_downloaded : bool = cfg.get("SkipDownloaded", True)
+        self.kkd_session    : str  = cfg.get("KkdSession", "")
 
     def run(self) -> None:
         # Parse input lines
-        entries: list[tuple[str, int | None, int | None]] = []
+        urls: list[tuple[str, int | None, int | None]] = []
         for raw_line in self.links.splitlines():
             raw_line = raw_line.strip()
             if not raw_line or raw_line.startswith("#"):
                 continue
             parsed = _parse_line(raw_line)
             if parsed:
-                entries.append(parsed)
+                urls.append(parsed)
 
-        if not entries:
+        if not urls:
             logger.error("DLOAD",
                 "No valid URLs found. Enter one URL per line in the Download Links field.")
             return
@@ -432,35 +433,52 @@ class DownloadContents(BaseTask):
         output_dir = (
             Path(self.output_dir_str) if self.output_dir_str
             else Path(self.config.config_data["Core"].get(
-                "DownloadsPath", str(Path.home() / "Downloads")))
+                "DownloadsPath",
+                Path.home() / "Downloads"
+            ))
         )
         output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Warn if koikatsucards.com URLs are present but no session cookie set
+        has_kk_urls = any(KOIKATSU_URL in u for u in urls)
+        if has_kk_urls and not self.kkd_session:
+            logger.warning("DLOAD",
+                "koikatsucards.com URLs detected but no kkd_session cookie set. "
+                "Downloads may fail. Log in to koikatsucards.com, copy the "
+                "'kkd_session' cookie value from DevTools and paste it in settings.")
 
         self.log_start("DLOAD")
         logger.info("DLOAD", f"Output directory : {output_dir}")
         logger.info("DLOAD", f"Skip downloaded  : {self.skip_downloaded}")
-        logger.info("DLOAD", f"URLs to process  : {len(entries)}")
+        logger.info("DLOAD", f"URLs to process  : {len(urls)}")
+        if self.kkd_session:
+            logger.info("DLOAD", "kkd_session cookie : set")
+        else:
+            logger.info("DLOAD", "kkd_session cookie : not set")
 
-        history    = _load_history()
-        total_ok   = 0
+        history = _load_history()
+        total_ok = 0
         total_fail = 0
+
+        # koikatsucards.com needs the kkd_session cookie; bepis uses no auth
+        kkd_cookies = {"kkd_session": self.kkd_session} if self.kkd_session else None
 
         async def _run_all() -> None:
             nonlocal total_ok, total_fail
-            async with _make_client() as client:
-                for url, p_start, p_end in entries:
+            async with _make_client() as bepis_client, \
+                       _make_client(cookies=kkd_cookies) as kk_client:
+                for url in urls:
                     if BEPIS_URL in url:
                         ok, fail = await _download_bepis(
-                            client, url, output_dir, history,
-                            self.skip_downloaded, p_start, p_end)
+                            bepis_client, url, output_dir, history, self.skip_downloaded)
                     elif KOIKATSU_URL in url:
                         ok, fail = await _download_koikatsu(
-                            client, url, output_dir, history,
-                            self.skip_downloaded, p_start, p_end)
+                            kk_client, url, output_dir, history, self.skip_downloaded)
                     else:
                         logger.error("DLOAD",
-                            f"Unsupported URL — must be {BEPIS_URL} or {KOIKATSU_URL}: {url}")
-                        ok, fail = 0, 1
+                            f"Unsupported URL (must be db.bepis.moe or koikatsucards.com): {url}")
+                        fail = 1
+                        ok   = 0
                     total_ok   += ok
                     total_fail += fail
 
