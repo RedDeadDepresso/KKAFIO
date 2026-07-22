@@ -467,16 +467,21 @@ class DownloadContents(BaseTask):
             nonlocal total_ok, total_fail
             async with _make_client() as bepis_client, \
                        _make_client(cookies=kkd_cookies) as kk_client:
-                for url in urls:
-                    if BEPIS_URL in url:
+                # Unpack the tuple here
+                for url_str, page_start, page_end in urls:
+                    if BEPIS_URL in url_str:
                         ok, fail = await _download_bepis(
-                            bepis_client, url, output_dir, history, self.skip_downloaded)
-                    elif KOIKATSU_URL in url:
+                            bepis_client, url_str, output_dir, history, self.skip_downloaded,
+                            page_start=page_start, page_end=page_end
+                        )
+                    elif KOIKATSU_URL in url_str:
                         ok, fail = await _download_koikatsu(
-                            kk_client, url, output_dir, history, self.skip_downloaded)
+                            kk_client, url_str, output_dir, history, self.skip_downloaded,
+                            page_start=page_start, page_end=page_end
+                        )
                     else:
                         logger.error("DLOAD",
-                            f"Unsupported URL (must be db.bepis.moe or koikatsucards.com): {url}")
+                            f"Unsupported URL (must be db.bepis.moe or koikatsucards.com): {url_str}")
                         fail = 1
                         ok   = 0
                     total_ok   += ok
