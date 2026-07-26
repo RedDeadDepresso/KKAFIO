@@ -207,7 +207,7 @@
     "KkdSession": {
       "type": "input",
       "label": "koikatsucards.com Session Cookie",
-      "description": "Required to download cards from koikatsucards.com.\n\nHow to get it:\n1. Log in to koikatsucards.com in your browser\n2. Open DevTools (F12) → Application → Cookies → https://koikatsucards.com\n3. Find the cookie named 'kkd_session' and copy its Value\n\n⚠ This cookie expires every 7 days — re-copy it after it expires.",
+      "description": "Required to download cards from koikatsucards.com.\n\nHow to get it:\n1. Log in to koikatsucards.com in your browser\n2. Open DevTools (F12) → Application → Cookies → https://koikatsucards.com\n3. Find the cookie named 'kkd_session' and copy its Value\n\n⚠ This cookie expires every 7 days - re-copy it after it expires.",
       "inputs": [
         {
           "name": "kkd_session",
@@ -426,6 +426,96 @@
           "label": "Rename",
           "pipeline_override": {
             "FileConflicts": "Rename"
+          }
+        }
+      ]
+    },
+    "RenameCharaPrompt": {
+      "type": "textarea",
+      "name": "prompt",
+      "label": "Rename Prompt",
+      "description": "Prompt sent to the LLM along with the character JSON. Edit to customise the instructions.",
+      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_rgb\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's well-known English name.\n\nRules:\n- Use Western name order: firstname = given name, lastname = family name.\n- Use the English name the character is commonly known by, not a literal\n  transliteration (e.g. lastname \"Tohsaka\" firstname \"Rin\", not \"Tosaka Rin\").\n- \"nickname\" can be a common short form or the same as firstname.\n- All values must be valid Windows filenames\n  (no  \\\\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object - no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n",
+      "pipeline_override": {
+        "Prompt": "{prompt}"
+      }
+    },
+    "RenameCharaCopyStep1": {
+      "type": "action_button",
+      "action": "rename_chara_copy",
+      "label": "Step 1 - Copy",
+      "description": "Scan the input folder, build the character key JSON and copy prompt + JSON to clipboard. Paste into your LLM.",
+      "button_label": "Copy"
+    },
+    "RenameCharaCopyStep2": {
+      "type": "action_button",
+      "action": "rename_chara_paste",
+      "label": "Step 2 - Paste",
+      "description": "After the LLM replies with the filled-in JSON, copy that response and click Paste to save it.",
+      "button_label": "Paste"
+    },
+    "SkipAlreadyRenamed": {
+      "type": "switch",
+      "label": "Skip Already Renamed",
+      "description": "Skip cards whose filename already matches a known translated name in the cache",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Skip",
+          "pipeline_override": {
+            "SkipAlreadyRenamed": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Rescan",
+          "pipeline_override": {
+            "SkipAlreadyRenamed": false
+          }
+        }
+      ]
+    },
+    "UpdateMetadata": {
+      "type": "switch",
+      "label": "Update Card Metadata",
+      "description": "Write the translated names into the card's internal metadata (lastname / firstname / nickname)",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Update",
+          "pipeline_override": {
+            "UpdateMetadata": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Skip",
+          "pipeline_override": {
+            "UpdateMetadata": false
+          }
+        }
+      ]
+    },
+    "RenameFiles": {
+      "type": "switch",
+      "label": "Rename PNG Files",
+      "description": "Also rename the PNG file on disk to match the translated name (e.g. Tohsaka_Rin.png)",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Rename",
+          "pipeline_override": {
+            "RenameFiles": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Keep",
+          "pipeline_override": {
+            "RenameFiles": false
           }
         }
       ]
@@ -716,6 +806,23 @@
       "description": "Uninstall character cards and their mods from the game",
       "group": ["card-management"],
       "option": ["InputPath"]
+    },
+    {
+      "name": "RenameChara",
+      "label": "✏️ Rename Characters",
+      "entry": "RenameChara",
+      "default_check": false,
+      "description": "Translate character card names to English using an LLM",
+      "group": ["card-management"],
+      "option": [
+        "InputPath",
+        "SkipAlreadyRenamed",
+        "UpdateMetadata",
+        "RenameFiles",
+        "RenameCharaPrompt",
+        "RenameCharaCopyStep1",
+        "RenameCharaCopyStep2"
+      ]
     },
     {
       "name": "GroupChara",

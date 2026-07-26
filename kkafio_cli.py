@@ -176,6 +176,50 @@ def run_ungroup_chara(config, file_manager, input_path: str | None = None,
     module.run()
 
 
+def run_rename_chara(config, file_manager, input_path: str | None = None,
+                     response: str | None = None,
+                     skip_already_renamed: bool | None = None,
+                     update_metadata: bool | None = None,
+                     rename_files: bool | None = None):
+    from tasks.rename_chara import process, export
+    from pathlib import Path
+    cfg = config.rename_chara
+    folder = Path(input_path) if input_path else Path(cfg.get("InputPath", ""))
+    if not folder.exists():
+        from util.logger import logger
+        logger.error("CLI", f"RenameChara input path does not exist: {folder}")
+        import sys; sys.exit(1)
+    r = response if response is not None else cfg.get("Response", "")
+    skip = skip_already_renamed if skip_already_renamed is not None else cfg.get("SkipAlreadyRenamed", True)
+    meta = update_metadata if update_metadata is not None else cfg.get("UpdateMetadata", True)
+    ren  = rename_files if rename_files is not None else cfg.get("RenameFiles", False)
+    if not r:
+        from util.logger import logger
+        logger.error("CLI", "No LLM response. Run with --export first, then paste the response with --response.")
+        import sys; sys.exit(1)
+    process(folder, r, skip_already_renamed=skip, update_metadata=meta, rename_files=ren)
+
+
+def run_rename_chara_export(config, file_manager, input_path: str | None = None,
+                            skip_already_renamed: bool | None = None, delete_empty: bool | None = None):
+    from tasks.rename_chara import export
+    from pathlib import Path
+    cfg = config.rename_chara
+    folder = Path(input_path) if input_path else Path(cfg.get("InputPath", ""))
+    skip = skip_already_renamed if skip_already_renamed is not None else cfg.get("SkipAlreadyRenamed", True)
+    result = export(folder, skip_already_renamed=skip)
+    if result:
+        print(result)
+    from tasks.rename_chara import RenameChara
+    from pathlib import Path
+    if input_path is not None:
+        config.ungroup_chara["InputPath"] = Path(input_path)
+    module = RenameChara(config, file_manager)
+    if delete_empty is not None:
+        module.delete_empty = delete_empty
+    module.run()
+
+
 def run_group_chara(config, file_manager, input_path: str | None = None,
                     response: str | None = None, include_subfolders: bool | None = None):
     from tasks.group_chara import process
@@ -208,7 +252,7 @@ def run_filter_duplicate_contents(config, file_manager, input_path: str | None =
 def run_create_backup(config, file_manager, output_path: str | None = None,
                       filename: str | None = None, mods: bool | None = None,
                       userdata: bool | None = None, bepinex: bool | None = None):
-    from tasks.create_backup import CreateBackup
+    from tasks.create_backup  import CreateBackup
     from pathlib import Path
     if output_path is not None:
         config.create_backup["OutputPath"] = Path(output_path)
@@ -266,6 +310,7 @@ def cmd_run(args):
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
         "FilterConvertChara": lambda: run_filter_convert_chara(config, file_manager),
         "FilterDuplicateContents": lambda: run_filter_duplicate_contents(config, file_manager),
+        "RenameChara":     lambda: run_rename_chara(config, file_manager),
         "GroupChara":       lambda: run_group_chara(config, file_manager),
         "InstallContents":     lambda: run_install_contents(config, file_manager,
                                                       skip_extract=same_path),
@@ -459,6 +504,47 @@ def cmd_ungroup_chara(args):
         raise
     except Exception:
         _write_traceback("UngroupChara")
+        sys.exit(1)
+
+
+def cmd_rename_chara(args):
+    _clear_traceback()
+    try:
+        if args.export:
+            # Export needs only the folder — skip config loading entirely
+            # so no log lines are printed to stdout before the JSON.
+            from tasks.rename_chara import export, PROMPT_TEMPLATE
+            from pathlib import Path
+            folder = Path(args.input) if args.input else Path(".")
+            skip = args.skip_already_renamed if args.skip_already_renamed is not None else True
+            json_only = export(folder, skip_already_renamed=skip)
+            if json_only:
+                # Use prompt from CLI arg if provided, else fall back to default template
+                prompt = getattr(args, 'prompt', None) or PROMPT_TEMPLATE
+                print(prompt.rstrip() + "\n" + json_only, end="")
+            return
+ 
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
+        config.config_data["RenameChara"]["Enable"] = True
+        response = args.response
+        if response:
+            from pathlib import Path as _Path
+            p = _Path(response)
+            if p.is_file():
+                response = p.read_text(encoding="utf-8")
+        skip = None if args.skip_already_renamed is None else bool(args.skip_already_renamed)
+        meta = None if args.update_metadata is None else bool(args.update_metadata)
+        ren  = None if args.rename_files is None else bool(args.rename_files)
+        run_rename_chara(config, file_manager,
+                         input_path=args.input,
+                         response=response,
+                         skip_already_renamed=skip,
+                         update_metadata=meta,
+                         rename_files=ren)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("RenameChara")
         sys.exit(1)
 
 
@@ -699,6 +785,33 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--no-delete-empty", dest="delete_empty", action="store_false",
                    help="Keep empty subfolders (overrides config)")
     p.set_defaults(func=cmd_ungroup_chara)
+
+    # rename-chara
+    p = sub.add_parser("rename-chara",
+                        help="Translate character card names to English using an LLM")
+    p.add_argument("--input", "-i", metavar="DIR", default=None)
+    p.add_argument("--response", metavar="JSON_FILE_OR_STRING", default=None,
+                   help="LLM response JSON string or path to a .json file")
+    p.add_argument("--export", action="store_true", default=False,
+                   help="Scan folder and print prompt+JSON to stdout (pipe to LLM)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--skip-already-renamed",    dest="skip_already_renamed",
+                   action="store_true", default=None)
+    g.add_argument("--no-skip-already-renamed", dest="skip_already_renamed",
+                   action="store_false")
+    g2 = p.add_mutually_exclusive_group()
+    g2.add_argument("--update-metadata",    dest="update_metadata",
+                    action="store_true", default=None,
+                    help="Write translated names into card metadata (default: on)")
+    g2.add_argument("--no-update-metadata", dest="update_metadata",
+                    action="store_false")
+    g3 = p.add_mutually_exclusive_group()
+    g3.add_argument("--rename-files",    dest="rename_files",
+                    action="store_true", default=None,
+                    help="Also rename the PNG file to match the translated name")
+    g3.add_argument("--no-rename-files", dest="rename_files",
+                    action="store_false")
+    p.set_defaults(func=cmd_rename_chara)
 
     # group-chara
     p = sub.add_parser(

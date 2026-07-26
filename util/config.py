@@ -120,6 +120,7 @@ _TASK_KEY = {
     "DeleteChara":      "DeleteChara",
     "ArchiveChara":     "ArchiveChara",
     "GroupChara":       "GroupChara",
+    "RenameChara":      "RenameChara",
     "UngroupChara":     "UngroupChara",
     "FilterDuplicateContents": "FilterDuplicateContents",
     "CreateBackup":     "CreateBackup",
@@ -133,6 +134,7 @@ _TASK_DEFAULTS = {
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": False},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": False, "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
+    "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": True, "RenameFiles": False, "Prompt": "", "Response": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
@@ -188,6 +190,16 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         v = _extract_opt(opt_values, "GroupCharaPrompt")
         if v is not None: cfg["Prompt"] = v
         v = _extract_opt(opt_values, "GroupCharaResponse")
+        if v is not None: cfg["Response"] = v
+
+    elif task_name == "RenameChara":
+        _set("InputPath",          "InputPath")
+        _set("SkipAlreadyRenamed", "SkipAlreadyRenamed")
+        _set("UpdateMetadata",     "UpdateMetadata")
+        _set("RenameFiles",        "RenameFiles")
+        v = _extract_opt(opt_values, "RenameCharaPrompt")
+        if v is not None: cfg["Prompt"] = v
+        v = _extract_opt(opt_values, "RenameCharaResponse")
         if v is not None: cfg["Response"] = v
 
     elif task_name == "UngroupChara":
@@ -393,6 +405,7 @@ class Config:
         self.create_backup    = self.config_data["CreateBackup"]
         self.filter_convert_chara           = self.config_data["FilterConvertChara"]
         self.filter_duplicate_contents= self.config_data["FilterDuplicateContents"]
+        self.rename_chara     = self.config_data["RenameChara"]
         self.group_chara      = self.config_data["GroupChara"]
         self.install_contents    = self.config_data["InstallContents"]
         self.ungroup_chara    = self.config_data["UngroupChara"]
