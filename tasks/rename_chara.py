@@ -158,7 +158,7 @@ def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
     folder_path = Path(folder_path)
     cache       = _load_cache(folder_path)
     known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
-    png_files   = list(folder_path.glob("*.png"))
+    png_files   = list(folder_path.rglob("*.png"))
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in {folder_path}")
 
     def _proc(png: Path):
