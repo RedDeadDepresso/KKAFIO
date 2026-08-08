@@ -1,37 +1,55 @@
-import tkinter as tk
-from tkinter import simpledialog
+"""
+password_dialog.py — Show a native password prompt.
 
+On Windows uses a PowerShell SecureString input box which works on every
+Windows version with no extra runtime or Tcl/Tk needed.
+On macOS/Linux falls back to a terminal prompt.
+"""
 
-class PasswordDialog(simpledialog.Dialog):
-    def __init__(self, title: str, content: str):
-        self.content = content
-        self.password = ''
-        super().__init__(parent=None, title=title)
-
-    def body(self, master):
-        tk.Label(master, text=self.content, wraplength=300).pack(padx=10, pady=10)
-
-        self.entry = tk.Entry(master)
-        self.entry.pack(padx=10, pady=5)
-        self.entry.focus_set()
-
-        return self.entry  # initial focus
-
-    def apply(self):
-        self.password = self.entry.get()
+import sys
 
 
 def password_dialog(title: str, content: str) -> str:
-    root = tk.Tk()
-    root.withdraw()  # hide main window
+    if sys.platform == "win32":
+        return _powershell_dialog(title, content)
+    return _terminal_prompt(title, content)
 
-    dialog = PasswordDialog(title, content)
 
-    root.destroy()  # clean up Tk instance
+def _powershell_dialog(title: str, content: str) -> str:
+    """
+    Show a Windows Forms InputBox via PowerShell.
+    Returns the entered password or '' if cancelled.
+    """
+    import subprocess
 
-    return dialog.password if dialog.password else ''
+    # Escape single quotes in the strings
+    t = title.replace("'", "''")
+    c = content.replace("'", "''")
+
+    ps = (
+        "Add-Type -AssemblyName Microsoft.VisualBasic; "
+        f"[Microsoft.VisualBasic.Interaction]::InputBox('{c}', '{t}', '')"
+    )
+
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            creationflags=0x0800_0000,  # CREATE_NO_WINDOW
+        )
+        return result.stdout.strip()
+    except Exception:
+        return _terminal_prompt(title, content)
+
+
+def _terminal_prompt(title: str, content: str) -> str:
+    import getpass
+    print(f"\n{title}\n{content}")
+    return getpass.getpass("Password: ")
 
 
 if __name__ == "__main__":
-    password = password_dialog("Enter Password", "Please enter the archive password:")
-    print(f"Password: {password}")
+    pwd = password_dialog("Enter Password", "Please enter the archive password:")
+    print(f"Password: {pwd}")
