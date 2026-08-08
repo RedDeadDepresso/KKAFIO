@@ -34,22 +34,22 @@ echo "ExtendedSubCommandsKey"="Directory\\shell\\KKAFIO"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell]
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallChara]
-echo @="Install Chara"
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallContents]
+echo @="Install Contents"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%1\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallChara]
-echo @="Uninstall Chara"
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallContents]
+echo @="Uninstall Contents"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%1\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterKKS]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertChara]
 echo @="Filter / Convert KKS"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterKKS\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertChara\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04FilterDuplicateContents]
@@ -83,22 +83,22 @@ echo "ExtendedSubCommandsKey"="Directory\\Background\\shell\\KKAFIO"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell]
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallChara]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallContents]
 echo @="Install Contents"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%V\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallChara]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallContents]
 echo @="Uninstall Contents"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%V\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterKKS]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertChara]
 echo @="Filter / Convert KK & KKS"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterKKS\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertChara\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04FilterDuplicateContents]
