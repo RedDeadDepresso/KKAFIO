@@ -1,5 +1,5 @@
 """
-util/chara_ops.py — Shared helpers for archive_chara and delete_chara.
+utils/chara_ops.py — Shared helpers for archive_chara and delete_chara.
 
 Extracted here to avoid cross-module imports and keep each task module focused
 on its own logic.  Nothing in this file depends on config or file_manager.

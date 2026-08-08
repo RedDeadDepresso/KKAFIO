@@ -16,10 +16,10 @@ echo [INFO] Building...
 uv run pyinstaller --noconfirm --onedir ^
  --distpath "dist" ^
  --name "KKAFIO" ^
- --hidden-import "util.config" ^
- --hidden-import "util.logger" ^
- --hidden-import "util.file_manager" ^
- --hidden-import "util.special_tasks" ^
+ --hidden-import "utils.config" ^
+ --hidden-import "utils.logger" ^
+ --hidden-import "utils.file_manager" ^
+ --hidden-import "utils.special_tasks" ^
  --hidden-import "tasks.install_contents" ^
  --hidden-import "tasks.uninstall_contents" ^
  --hidden-import "tasks.filter_convert_chara" ^

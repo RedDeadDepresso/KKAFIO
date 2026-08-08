@@ -24,7 +24,7 @@ import threading
 from typing import Any
 
 
-# ── logger forwarded from util.logger ──────────────────────────────────────
+# ── logger forwarded from utils.logger ──────────────────────────────────────
 
 def _log():
     from utils.logger import logger
