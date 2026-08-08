@@ -33,3 +33,17 @@ def is_male(image_bytes: bytes):
 
 def is_coordinate(image_bytes: bytes):
     return b"KoiKatuClothes" in image_bytes
+
+
+PERSONALITIES = [
+    "Sexy Flirt","Ojousama Heiress","Snobby Haughty","Kouhai Underclassman",
+    "Mysterious Enigma","Weirdo Space Case","Yamato Nadeshiko","Boyish Tomboy",
+    "Pure Heart","Girl Next Door","Chuunibyou Delusional","Motherly Figure",
+    "Big Sisterly","Gyaru Airhead","Bad Girl Rebel","Wild Feral",
+    "Honor Student","Crabby Sourpuss","Unlucky Girl","Bookish Bookworm",
+    "Nervous Timid","Classic Heroine","Trendy Fangirl","Otaku Geek",
+    "Yandere","Lazy Slacker","Quiet Introvert","Stubborn Tough Girl",
+    "Old-Fashioned Girl","Docile Loner","Friendly Extrovert","Determined Athlete",
+    "Honest Sincere","Charming Seductress","Returnee","Dialect Girl",
+    "Sadistic","Emotionless","Careful",
+]
