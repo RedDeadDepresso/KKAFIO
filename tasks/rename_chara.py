@@ -231,11 +231,17 @@ def process(folder_path: Path, json_str: str,
     logger.info("RENAME", f"Cache updated: {len(cache)} entries")
 
     known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
-    png_files   = list(folder_path.glob("*.png"))
+    png_files   = list(folder_path.rglob("*.png"))
     logger.info("RENAME", f"Processing {len(png_files)} PNG file(s)")
 
     updated = renamed = skipped = 0
-    used_stems: set[str] = {p.stem for p in folder_path.iterdir() if p.is_file()}
+    # Track used stems per directory so rename collision checks are folder-local
+    used_stems_by_dir: dict[Path, set[str]] = {}
+
+    def _dir_stems(d: Path) -> set[str]:
+        if d not in used_stems_by_dir:
+            used_stems_by_dir[d] = {p.stem for p in d.iterdir() if p.is_file()}
+        return used_stems_by_dir[d]
 
     for png in png_files:
         if skip_already_renamed and png.stem in known_stems:
@@ -280,12 +286,14 @@ def process(folder_path: Path, json_str: str,
         if rename_files:
             stem = _stem_for(nd)
             if stem:
-                candidate = stem
-                counter   = 1
-                while candidate in used_stems and (folder_path / f"{candidate}.png") != png:
+                subfolder   = png.parent
+                used_stems  = _dir_stems(subfolder)
+                candidate   = stem
+                counter     = 1
+                while candidate in used_stems and (subfolder / f"{candidate}.png") != png:
                     candidate = f"{stem}_{counter}"
                     counter  += 1
-                new_path = folder_path / f"{candidate}.png"
+                new_path = subfolder / f"{candidate}.png"
                 if new_path != png:
                     try:
                         png.rename(new_path)
