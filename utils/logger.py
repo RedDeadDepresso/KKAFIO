@@ -9,7 +9,18 @@ class Logger:
     Logger class for logging
     """
 
-    def __init__(self, signalBus=None):
+    COLORS = {
+        "RESET": "\033[0m",
+        "INFO": "\033[94m",     # blue
+        "SUCCESS": "\033[92m",  # green
+        "ERROR": "\033[91m",    # red
+        "SKIPPED": "\033[93m",  # yellow/orange
+        "REPLACED": "\033[93m",  # yellow/orange
+        "RENAMED": "\033[93m",  # yellow/orange
+        "REMOVED": "\033[93m",  # yellow/orange
+    }
+
+    def __init__(self):
         # Init logger box signal, logs and logger
         self.logs = ""
 
@@ -26,8 +37,6 @@ class Logger:
         self.logger.addHandler(handler1)
         # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
         self.status = ['INFO', 'SUCCESS', 'ERROR', 'WARNING', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
-        # Status Color: Blue, Red, Green, Orange
-        self.statusColor = ['#2d8cf0', '#00c12b', '#ed3f14', '#f90', '#f90', '#f90', '#f90', '#f90']
         # Create a list with each status padded with spaces
         self.paddedStatus = [self.align(s) for s in self.status]
         # Status HTML: <b style="color:$color">status</b>
@@ -51,8 +60,12 @@ class Logger:
         # If logger box is not None, output log to logger box
         # else output log to console
         category = self.align(category)
+        status = self.paddedStatus[level - 1]
+        color_key = self.status[level - 1]
+        color = self.COLORS.get(color_key, "")
+        reset = self.COLORS["RESET"]    
         try:
-            print(f'{self.paddedStatus[level - 1]} | {category} | {message}', flush=True)
+            print(f"{color}{status} | {category} | {message}{reset}", flush=True)
         except OSError:
             pass
 
