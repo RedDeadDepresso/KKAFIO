@@ -117,6 +117,7 @@ jobs:
           uv run pyinstaller --noconfirm --onedir
           --distpath "dist"
           --name "KKAFIO"
+          --collect-all "tkinter"
           --hidden-import "utils.chara_ops"
           --hidden-import "utils.classifier"
           --hidden-import "utils.config"
