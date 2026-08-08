@@ -24,7 +24,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse, urljoin
 
 from tasks.base_task import BaseTask
-from util.logger import logger
+from utils.logger import logger
 
 # ---------------------------------------------------------------------------
 # Constants

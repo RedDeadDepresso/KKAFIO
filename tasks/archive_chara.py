@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Literal
 
 from tasks.base_task import BaseTask
-from util.chara_ops import (
+from utils.chara_ops import (
     find_matching_coords, in_modpack_folder, parse_chara_guids,
     parse_coord_guids, resolve_paths, scan_mods,
 )
-from util.logger import logger
+from utils.logger import logger
 
 ArchiveFormat = Literal["7z", "zip"]
 

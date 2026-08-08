@@ -23,8 +23,8 @@ from pathlib import Path
 from kkloader import KoikatuCharaData
 
 from tasks.base_task import BaseTask
-from util.classifier import CardType, get_card_type
-from util.logger import logger
+from utils.classifier import CardType, get_card_type
+from utils.logger import logger
 
 CACHE_FILENAME = "kkafio_rename_cache.json"
 

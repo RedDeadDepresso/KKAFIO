@@ -1,8 +1,8 @@
 from pathlib import Path
-from util.config import Config, GameType
-from util.classifier import CardType, get_card_type, is_male, is_coordinate
-from util.file_manager import FileManager
-from util.logger import logger
+from utils.config import Config, GameType
+from utils.classifier import CardType, get_card_type, is_male, is_coordinate
+from utils.file_manager import FileManager
+from utils.logger import logger
 
 
 class UninstallContents:

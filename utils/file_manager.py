@@ -5,10 +5,10 @@ import json
 
 from datetime import datetime
 from pathlib import Path
-from util.logger import logger
+from utils.logger import logger
 from typing import Union, Literal
 
-from util.constants import SEVEN_ZIP_PATH
+from utils.constants import SEVEN_ZIP_PATH
 
 
 FileEntry = tuple[Path, int, str]
@@ -254,7 +254,7 @@ class FileManager:
         text = (f"There is an error with the archive {archive_name}. "
                 f"Maybe it requires a password?")
 
-        from util.password_dialog import password_dialog
+        from utils.password_dialog import password_dialog
 
         while True:
             password = password_dialog("Enter Password", text)

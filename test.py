@@ -6,8 +6,8 @@ import shutil
 
 from bs4 import BeautifulSoup
 from pathlib import Path
-from util.config import Config
-from util.file_manager import FileManager
+from utils.config import Config
+from utils.file_manager import FileManager
 from tasks.create_backup import CreateBackup
 from tasks.filter_convert_chara import FilterConvertChara
 from tasks.install_contents import InstallContents

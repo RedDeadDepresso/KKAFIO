@@ -14,10 +14,10 @@ Both flags can be on at the same time.
 
 import shutil
 from pathlib import Path
-from util.config import Config
-from util.classifier import CardType, get_card_type
-from util.file_manager import FileManager
-from util.logger import logger
+from utils.config import Config
+from utils.classifier import CardType, get_card_type
+from utils.file_manager import FileManager
+from utils.logger import logger
 
 
 class FilterConvertChara:

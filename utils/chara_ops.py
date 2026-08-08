@@ -16,7 +16,7 @@ from pathlib import Path
 
 import msgpack
 
-from util.logger import logger
+from utils.logger import logger
 
 # ---------------------------------------------------------------------------
 # Constants

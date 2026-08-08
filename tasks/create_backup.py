@@ -1,5 +1,5 @@
-from util.config import Config
-from util.file_manager import FileManager
+from utils.config import Config
+from utils.file_manager import FileManager
 
 
 class CreateBackup:

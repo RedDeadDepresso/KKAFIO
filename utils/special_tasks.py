@@ -27,7 +27,7 @@ from typing import Any
 # ── logger forwarded from util.logger ──────────────────────────────────────
 
 def _log():
-    from util.logger import logger
+    from utils.logger import logger
     return logger
 
 

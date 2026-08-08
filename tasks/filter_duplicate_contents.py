@@ -6,10 +6,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal
 
-from util.classifier import CardType, get_card_type, is_coordinate
-from util.config import Config
-from util.file_manager import FileManager
-from util.logger import logger
+from utils.classifier import CardType, get_card_type, is_coordinate
+from utils.config import Config
+from utils.file_manager import FileManager
+from utils.logger import logger
 
 # ---------------------------------------------------------------------------
 # Keep strategy constants — must match OptionsConfigItem values exactly

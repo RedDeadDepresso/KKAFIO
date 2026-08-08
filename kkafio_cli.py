@@ -32,9 +32,9 @@ import traceback
 # ---------------------------------------------------------------------------
 
 def _load_core(config_path: str | None = None, instance_index: int = 0):
-    from util.config import Config
-    from util.constants import CONFIG_PATH
-    from util.file_manager import FileManager
+    from utils.config import Config
+    from utils.constants import CONFIG_PATH
+    from utils.file_manager import FileManager
 
     path = config_path if config_path else str(CONFIG_PATH)
     config = Config(path, instance_index=instance_index)
@@ -186,7 +186,7 @@ def run_rename_chara(config, file_manager, input_path: str | None = None,
     cfg = config.rename_chara
     folder = Path(input_path) if input_path else Path(cfg.get("InputPath", ""))
     if not folder.exists():
-        from util.logger import logger
+        from utils.logger import logger
         logger.error("CLI", f"RenameChara input path does not exist: {folder}")
         import sys; sys.exit(1)
     r = response if response is not None else cfg.get("Response", "")
@@ -194,7 +194,7 @@ def run_rename_chara(config, file_manager, input_path: str | None = None,
     meta = update_metadata if update_metadata is not None else cfg.get("UpdateMetadata", True)
     ren  = rename_files if rename_files is not None else cfg.get("RenameFiles", False)
     if not r:
-        from util.logger import logger
+        from utils.logger import logger
         logger.error("CLI", "No LLM response. Run with --export first, then paste the response with --response.")
         import sys; sys.exit(1)
     process(folder, r, skip_already_renamed=skip, update_metadata=meta, rename_files=ren)
@@ -273,8 +273,8 @@ def run_create_backup(config, file_manager, output_path: str | None = None,
 
 def cmd_list_instances(args):
     """Print all instance names with their indices."""
-    from util.config import list_instances
-    from util.constants import CONFIG_PATH
+    from utils.config import list_instances
+    from utils.constants import CONFIG_PATH
     config_path = args.config if args.config else str(CONFIG_PATH)
     instances = list_instances(config_path)
     if not instances:
@@ -287,8 +287,8 @@ def cmd_list_instances(args):
 
 def cmd_run(args):
     from pathlib import Path
-    from util.logger import logger
-    from util.special_tasks import is_special_task, run_special_task
+    from utils.logger import logger
+    from utils.special_tasks import is_special_task, run_special_task
     import threading
     _clear_traceback()
     config, file_manager = _load_core(args.config, instance_index=args.instance)

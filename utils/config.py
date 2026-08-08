@@ -31,7 +31,7 @@ import sys
 import json
 from pathlib import Path
 from typing import Any
-from util.logger import logger
+from utils.logger import logger
 from enum import Enum
 
 
@@ -327,7 +327,7 @@ class Config:
         for key, defaults in _TASK_DEFAULTS.items():
             data[key] = dict(defaults)
 
-        from util.special_tasks import is_special_task
+        from utils.special_tasks import is_special_task
         task_order: list[dict] = []
         seen_kkafio: set = set()
 

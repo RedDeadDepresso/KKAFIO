@@ -10,7 +10,7 @@ moving.
 import shutil
 from pathlib import Path
 
-from util.logger import logger
+from utils.logger import logger
 
 
 class UngroupChara:

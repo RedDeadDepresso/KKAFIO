@@ -22,9 +22,9 @@ from pathlib import Path
 
 from kkloader import KoikatuCharaData
 
-from util.classifier import CardType, get_card_type
+from utils.classifier import CardType, get_card_type
 
-from util.logger import logger
+from utils.logger import logger
 
 # ---------------------------------------------------------------------------
 # Personality index → display name (same list as the draft code)
