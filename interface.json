@@ -502,7 +502,7 @@
       "type": "switch",
       "label": "Rename PNG Files",
       "description": "Also rename the PNG file on disk to match the translated name (e.g. Tohsaka_Rin.png)",
-      "default_case": "No",
+      "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
@@ -678,7 +678,7 @@
       "type": "switch",
       "label": "Use Cache",
       "description": "Use cached mod/coordinate scan results to speed up processing",
-      "default_case": "No",
+      "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
@@ -873,6 +873,106 @@
       "description": "Send character cards and associated mods/coords to Recycle Bin",
       "group": ["card-management"],
       "option": ["CharaPaths", "AutoResolve", "UseCache"]
+    }
+  ],
+  "preset": [
+    {
+      "name": "AllTasks",
+      "label": "⚡ All Tasks",
+      "description": "Run all available tasks in order",
+      "task": [
+        {
+          "name": "CreateBackup"
+        },
+        {
+          "name": "DownloadChara"
+        },
+        {
+          "name": "FilterConvertChara"
+        },
+        {
+          "name": "FilterDuplicateContents"
+        },
+        {
+          "name": "InstallContents"
+        },
+        {
+          "name": "UninstallContents"
+        },
+        {
+          "name": "RenameChara"
+        },
+        {
+          "name": "GroupChara"
+        },
+        {
+          "name": "UngroupChara"
+        },
+        {
+          "name": "ArchiveChara"
+        },
+        {
+          "name": "DeleteChara"
+        }
+      ]
+    },
+    {
+      "name": "InstallAndFilter",
+      "label": "📥 Install & Filter",
+      "description": "Filter duplicates, convert KKS cards, then install into the game",
+      "task": [
+        {
+          "name": "FilterDuplicateContents"
+        },
+        {
+          "name": "FilterConvertChara"
+        },
+        {
+          "name": "InstallContents"
+        }
+      ]
+    },
+    {
+      "name": "BackupAndClean",
+      "label": "💾 Backup & Clean",
+      "description": "Create a backup, then archive and delete selected characters",
+      "task": [
+        {
+          "name": "CreateBackup"
+        },
+        {
+          "name": "ArchiveChara"
+        },
+        {
+          "name": "DeleteChara"
+        }
+      ]
+    },
+    {
+      "name": "RenameAndGroup",
+      "label": "✏️ Rename & Group",
+      "description": "Translate card names to English then sort them into series folders",
+      "task": [
+        {
+          "name": "RenameChara"
+        },
+        {
+          "name": "GroupChara"
+        }
+      ]
+    },
+    {
+      "name": "DownloadAndInstall",
+      "label": "⬇️ Download & Install",
+      "description": "Download new cards then install them into the game",
+      "task": [
+        {
+          "name": "DownloadContents"
+        },
+        {
+          "name": "InstallContents"
+        }
+      ]
     }
   ]
 }
