@@ -885,7 +885,7 @@
           "name": "CreateBackup"
         },
         {
-          "name": "DownloadChara"
+          "name": "DownloadContents"
         },
         {
           "name": "FilterConvertChara"
