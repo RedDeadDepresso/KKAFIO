@@ -33,7 +33,7 @@ class ArchiveChara(BaseTask):
         self.combined_archive : bool      = cfg.get("CombinedArchive", True)
         self.mods_dir_str     : str       = cfg.get("ModsDir", "")
         self.coord_dir_str    : str       = cfg.get("CoordDir", "")
-        self.output_dir_str   : str       = cfg.get("OutputDir", "")
+        self.output_dir_str   : str       = cfg.get("OutputPath", "")
 
     def _process_one(self, chara_path: Path, game_base: Path,
                      mods_ov: Path | None,
@@ -126,6 +126,7 @@ class ArchiveChara(BaseTask):
                 return
 
             out_dir = output_dir or chara_paths[0].parent
+            logger.info("DEBUG", self.output_dir_str)
             out_dir.mkdir(parents=True, exist_ok=True)
             archive_name = (f"{chara_paths[0].stem}_bundle{ext}"
                             if len(chara_paths) == 1 else f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}")
