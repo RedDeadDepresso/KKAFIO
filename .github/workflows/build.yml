@@ -152,6 +152,9 @@ jobs:
           # interface.json
           if (Test-Path "interface.json") { Copy-Item "interface.json" "$dst\interface.json" }
 
+          # kkafio_modpack_index.json
+          if (Test-Path "kkafio_modpack_index.json") { Copy-Item "kkafio_modpack_index.json" "$dst\kkafio_modpack_index.json" }
+
           # logo.png (ensure folder exists)
           if (!(Test-Path "$dst\assets")) { New-Item -ItemType Directory -Force -Path "$dst\assets" }
           if (Test-Path "assets\logo.png") { Copy-Item "assets\logo.png" "$dst\assets\logo.png" }

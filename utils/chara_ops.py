@@ -369,6 +369,37 @@ import json as _json
 
 MODS_CACHE_FILE  = "kkafio_mods_cache.json"
 COORD_CACHE_FILE = "kkafio_coord_cache.json"
+MODPACK_INDEX_FILE = "kkafio_modpack_index.json"
+
+
+def load_modpack_index() -> dict[str, str] | None:
+    """Load the pre-built Sideloader Modpack GUID index.
+
+    Searches for kkafio_modpack_index.json in:
+      1. The directory of the running exe / script (shipped with the release)
+      2. mods_dir itself  (user-generated, placed next to mods folder)
+      3. mods_dir.parent  (game root)
+
+    Returns {guid: relative_path_str} or None if not found.
+    """
+    import sys
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).parent
+    else:
+        exe_dir = Path(__file__).resolve().parent.parent  # repo root
+
+    index_path = exe_dir / MODPACK_INDEX_FILE
+
+    if index_path.exists():
+        try:
+            with index_path.open("r", encoding="utf-8") as f:
+                data = _json.load(f)
+            guids = data.get("guids", {})
+            logger.info("CACHE", f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
+            return guids
+        except Exception as e:
+            logger.warning("CACHE", f"Could not load modpack index: {e}")
+    return None
 
 
 def _dir_mtime(directory: Path) -> float:
@@ -563,13 +594,38 @@ def scan_mods(mods_dir: Path, required: set[str],
               use_cache: bool = False) -> dict[str, Path]:
     """Scan mods_dir for zipmods providing the required GUIDs.
 
-    When use_cache=True, loads (or rebuilds) a JSON cache at
-    mods_dir.parent/kkafio_mods_cache.json keyed by the directory mtime.
+    Fast path: if kkafio_modpack_index.json exists, GUIDs found there are
+    resolved instantly (no file I/O per zipmod). GUIDs not in the index are
+    resolved by scanning local non-modpack folders.
+
+    When use_cache=True, also loads/builds a mods cache for the local scan.
     """
     found: dict[str, Path] = {}
     if not mods_dir.exists():
         return found
 
+    remaining = set(required)
+
+    # ── Step 1: check modpack index ────────────────────────────────────────
+    modpack_index = load_modpack_index()
+
+    if modpack_index is not None:
+        for guid in list(remaining):
+            if guid not in modpack_index:
+                continue
+            if include_modpack:
+                rel = modpack_index[guid]
+                abs_path = mods_dir / rel
+                if abs_path.exists():
+                    found[guid] = abs_path
+            # Whether included or skipped, this GUID is resolved via index
+            remaining.discard(guid)
+    # If no index, fall through to full local scan (original behaviour)
+
+    if not remaining:
+        return found
+
+    # ── Step 2: local scan for GUIDs not found in the index ───────────────
     if use_cache:
         guid_str_map = load_mods_cache(mods_dir)
         if guid_str_map is None:
@@ -578,23 +634,28 @@ def scan_mods(mods_dir: Path, required: set[str],
             logger.info("CACHE", f"Mods cache built: {len(guid_str_map)} GUIDs")
         else:
             logger.info("CACHE", f"Mods cache hit: {len(guid_str_map)} GUIDs")
-        # Resolve required GUIDs from the cache dict
-        for guid in required:
+        for guid in remaining:
             if guid in guid_str_map:
                 p = Path(guid_str_map[guid])
                 if p.exists():
                     found[guid] = p
         return found
 
-    # No cache — full scan
+    # No cache — scan local folders only (skip modpack folders when index
+    # is present since those GUIDs were already handled above)
+    skip_modpack = modpack_index is not None and not include_modpack
     for zp in mods_dir.rglob("*.zipmod"):
-        if len(found) == len(required):
+        if not remaining:
             break
-        if not include_modpack and in_modpack_folder(zp, mods_dir):
-            continue
+        if in_modpack_folder(zp, mods_dir):
+            if skip_modpack:
+                continue
+            if not include_modpack:
+                continue
         guid = guid_from_zipmod(zp)
-        if guid and guid in required:
+        if guid and guid in remaining:
             found[guid] = zp
+            remaining.discard(guid)
     return found
 
 
