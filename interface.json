@@ -480,7 +480,7 @@
       "type": "switch",
       "label": "Update Card Metadata",
       "description": "Write the translated names into the card's internal metadata (lastname / firstname / nickname)",
-      "default_case": "Yes",
+      "default_case": "No",
       "cases": [
         {
           "name": "Yes",

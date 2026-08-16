@@ -309,8 +309,8 @@ class RenameChara(BaseTask):
         cfg = self.config.rename_chara
         self.input_path_str       : str  = cfg.get("InputPath", "")
         self.skip_already_renamed : bool = cfg.get("SkipAlreadyRenamed", True)
-        self.update_metadata      : bool = cfg.get("UpdateMetadata", True)
-        self.rename_files         : bool = cfg.get("RenameFiles", False)
+        self.update_metadata      : bool = cfg.get("UpdateMetadata", False)
+        self.rename_files         : bool = cfg.get("RenameFiles", True)
         self.prompt               : str  = cfg.get("Prompt", PROMPT_TEMPLATE)
         self.response             : str  = cfg.get("Response", "")
 

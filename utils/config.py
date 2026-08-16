@@ -134,7 +134,7 @@ _TASK_DEFAULTS = {
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": True},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "IncludeModpack": False, "CombinedArchive": False, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
-    "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": True, "RenameFiles": True, "Prompt": "", "Response": ""},
+    "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": "", "Response": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
