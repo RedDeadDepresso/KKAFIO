@@ -36,16 +36,7 @@ class InstallContents:
         image_bytes = image_path.read_bytes()
         card_type = get_card_type(image_bytes)
 
-        if card_type == CardType.SCENE:
-            self.file_manager.copy_and_paste("SCENE", image_path, self.game_path["scene"])
-
-        elif card_type == CardType.UNKNOWN:
-            if is_coordinate(image_bytes):
-                self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
-            else:
-                self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
-
-        elif self.is_sunshine:
+        if self.is_sunshine:
             # Koikatsu Sunshine install — accept KKS cards, skip KK/KKSP
             match card_type:
                 case CardType.KKS:
@@ -56,6 +47,18 @@ class InstallContents:
 
                 case CardType.KK | CardType.KKSP:
                     logger.skipped("CHARA", f"{image_path.name} is a {card_type.value} card (KK/KKSP not supported by {GameType.KOIKATSU_SUNSHINE.value})")
+
+                case CardType.SCENE:
+                    if "scene" in self.game_path:
+                        self.file_manager.copy_and_paste("SCENE", image_path, self.game_path["scene"])
+                    else:
+                        logger.skipped("SCENE", f"{image_path.name} — Studio not installed, skipping")
+
+                case CardType.UNKNOWN:
+                    if is_coordinate(image_bytes):
+                        self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
+                    else:
+                        self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
         else:
             # Koikatsu / Koikatsu Party install — accept KK/KKSP cards, skip KKS
@@ -68,6 +71,18 @@ class InstallContents:
 
                 case CardType.KKS:
                     logger.skipped("CHARA", f"{image_path.name} is a KKS card (not supported by {self.game_type})")
+
+                case CardType.SCENE:
+                    if "scene" in self.game_path:
+                        self.file_manager.copy_and_paste("SCENE", image_path, self.game_path["scene"])
+                    else:
+                        logger.skipped("SCENE", f"{image_path.name} — Studio not installed, skipping")
+
+                case CardType.UNKNOWN:
+                    if is_coordinate(image_bytes):
+                        self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
+                    else:
+                        self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
 
     def run(self, folder_path: Optional[Path] = None, skip_extract: bool = False):
         if folder_path is None:

@@ -131,7 +131,6 @@ _TASK_DEFAULTS = {
     "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallContents":      {"Enable": False, "InputPath": ""},
     "FilterConvertChara": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ConvertKK": False, "ExtractArchive": True, "Password": "Skip"},
-    "FilterConvertKKS": {"Enable": False, "InputPath": "", "Convert": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
@@ -374,7 +373,8 @@ class Config:
 
         base = Path(game_path_str)
 
-        self.game_path = {
+        # Required paths — must exist for KKAFIO to function
+        required_paths = {
             "base":        base,
             "UserData":    base / "UserData",
             "BepInEx":     base / "BepInEx",
@@ -383,13 +383,25 @@ class Config:
             "charaFemale": base / "UserData" / "chara" / "female",
             "coordinate":  base / "UserData" / "coordinate",
             "Overlays":    base / "UserData" / "Overlays",
-            "scene":       base / "UserData" / "Studio" / "scene"
         }
 
-        for path in self.game_path.values():
+        # Optional paths — present only when Studio is installed
+        optional_paths = {
+            "scene": base / "UserData" / "Studio" / "scene",
+        }
+
+        self.game_path = dict(required_paths)
+
+        for key, path in required_paths.items():
             if not path.exists():
                 logger.error("SCRIPT", f"Game path not valid: {path}")
                 raise Exception(f"Game path not valid: {path}")
+
+        for key, path in optional_paths.items():
+            if path.exists():
+                self.game_path[key] = path
+            else:
+                logger.info("SCRIPT", f"Optional path not found (skipping): {path}")
 
     def validate_tasks(self):
         for task in _TASK_KEY:

@@ -372,7 +372,7 @@ COORD_CACHE_FILE = "kkafio_coord_cache.json"
 MODPACK_INDEX_FILE = "kkafio_modpack_index.json"
 
 
-def load_modpack_index() -> dict[str, str] | None:
+def load_modpack_index(mods_dir: Path | None = None) -> dict[str, str] | None:
     """Load the pre-built Sideloader Modpack GUID index.
 
     Searches for kkafio_modpack_index.json in:
@@ -388,17 +388,21 @@ def load_modpack_index() -> dict[str, str] | None:
     else:
         exe_dir = Path(__file__).resolve().parent.parent  # repo root
 
-    index_path = exe_dir / MODPACK_INDEX_FILE
+    candidates = [exe_dir / MODPACK_INDEX_FILE]
+    if mods_dir is not None:
+        candidates.append(mods_dir / MODPACK_INDEX_FILE)
+        candidates.append(mods_dir.parent / MODPACK_INDEX_FILE)
 
-    if index_path.exists():
-        try:
-            with index_path.open("r", encoding="utf-8") as f:
-                data = _json.load(f)
-            guids = data.get("guids", {})
-            logger.info("CACHE", f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
-            return guids
-        except Exception as e:
-            logger.warning("CACHE", f"Could not load modpack index: {e}")
+    for index_path in candidates:
+        if index_path.exists():
+            try:
+                with index_path.open("r", encoding="utf-8") as f:
+                    data = _json.load(f)
+                guids = data.get("guids", {})
+                logger.info("CACHE", f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
+                return guids
+            except Exception as e:
+                logger.warning("CACHE", f"Could not load modpack index: {e}")
     return None
 
 
@@ -607,7 +611,7 @@ def scan_mods(mods_dir: Path, required: set[str],
     remaining = set(required)
 
     # ── Step 1: check modpack index ────────────────────────────────────────
-    modpack_index = load_modpack_index()
+    modpack_index = load_modpack_index(mods_dir)
 
     if modpack_index is not None:
         for guid in list(remaining):
@@ -638,6 +642,12 @@ def scan_mods(mods_dir: Path, required: set[str],
             if guid in guid_str_map:
                 p = Path(guid_str_map[guid])
                 if p.exists():
+                    # Ensure we don't accidentally return a modpack path
+                    # for a GUID that wasn't in the index (shouldn't happen
+                    # if cache was built with same include_modpack, but guard
+                    # against stale caches)
+                    if not include_modpack and in_modpack_folder(p, mods_dir):
+                        continue
                     found[guid] = p
         return found
 

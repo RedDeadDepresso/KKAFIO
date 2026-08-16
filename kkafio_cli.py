@@ -191,8 +191,8 @@ def run_rename_chara(config, file_manager, input_path: str | None = None,
         import sys; sys.exit(1)
     r = response if response is not None else cfg.get("Response", "")
     skip = skip_already_renamed if skip_already_renamed is not None else cfg.get("SkipAlreadyRenamed", True)
-    meta = update_metadata if update_metadata is not None else cfg.get("UpdateMetadata", True)
-    ren  = rename_files if rename_files is not None else cfg.get("RenameFiles", False)
+    meta = update_metadata if update_metadata is not None else cfg.get("UpdateMetadata", False)
+    ren  = rename_files if rename_files is not None else cfg.get("RenameFiles", True)
     if not r:
         from utils.logger import logger
         logger.error("CLI", "No LLM response. Run with --export first, then paste the response with --response.")
@@ -201,7 +201,7 @@ def run_rename_chara(config, file_manager, input_path: str | None = None,
 
 
 def run_rename_chara_export(config, file_manager, input_path: str | None = None,
-                            skip_already_renamed: bool | None = None, delete_empty: bool | None = None):
+                            skip_already_renamed: bool | None = None):
     from tasks.rename_chara import export
     from pathlib import Path
     cfg = config.rename_chara
@@ -210,14 +210,6 @@ def run_rename_chara_export(config, file_manager, input_path: str | None = None,
     result = export(folder, skip_already_renamed=skip)
     if result:
         print(result)
-    from tasks.rename_chara import RenameChara
-    from pathlib import Path
-    if input_path is not None:
-        config.ungroup_chara["InputPath"] = Path(input_path)
-    module = RenameChara(config, file_manager)
-    if delete_empty is not None:
-        module.delete_empty = delete_empty
-    module.run()
 
 
 def run_group_chara(config, file_manager, input_path: str | None = None,
@@ -551,33 +543,34 @@ def cmd_rename_chara(args):
 def cmd_group_chara(args):
     _clear_traceback()
     try:
-        config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["GroupChara"]["Enable"] = True
-
         if args.export:
+            # Export needs only the folder — skip config loading so no log
+            # lines pollute stdout before the JSON.
             from tasks.group_chara import export
             from pathlib import Path
-            folder = Path(args.input) if args.input else Path(config.group_chara["InputPath"])
-            prompt = config.group_chara.get("Prompt", "")
-            include_sub = getattr(args, 'include_subfolders', False) or config.group_chara.get('IncludeSubfolders', False)
+            folder = Path(args.input) if args.input else Path(".")
+            include_sub = getattr(args, 'include_subfolders', False)
             result = export(folder, include_subfolders=include_sub)
             if result:
-                import json as _json
+                prompt = getattr(args, 'prompt', None) or ""
                 json_start = result.find('{')
                 json_only = result[json_start:] if json_start != -1 else result
                 full = (prompt.rstrip() + "\n" + json_only) if prompt else result
-                print(full)
-        else:
-            response = args.response
-            if response and response.endswith(".json"):
-                from pathlib import Path as _Path
-                try:
-                    response = _Path(response).read_text(encoding="utf-8")
-                except Exception as e:
-                    print(f"[ERROR] Could not read response file: {e}")
-                    sys.exit(1)
-            run_group_chara(config, file_manager,
-                            input_path=args.input, response=response)
+                print(full, end="")
+            return
+
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
+        config.config_data["GroupChara"]["Enable"] = True
+        response = args.response
+        if response and response.endswith(".json"):
+            from pathlib import Path as _Path
+            try:
+                response = _Path(response).read_text(encoding="utf-8")
+            except Exception as e:
+                print(f"[ERROR] Could not read response file: {e}")
+                sys.exit(1)
+        run_group_chara(config, file_manager,
+                        input_path=args.input, response=response)
     except SystemExit:
         raise
     except Exception:
