@@ -1,8 +1,6 @@
 # KKAFIO: Koikatsu Auto File I/O
 
-<p align="center">
-<img width="720" alt="KKAFIO preview" src="https://github.com/user-attachments/assets/5acc50f1-baf3-476f-b625-fc0405bf4e2f">
-</p>
+<img width="1280" height="764" alt="KKAFIO preview" src="assets/preview.png" />
 
 ## Features
 
