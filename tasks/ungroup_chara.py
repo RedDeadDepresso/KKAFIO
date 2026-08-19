@@ -25,6 +25,13 @@ class UngroupChara:
             folder_path = Path(self.config.ungroup_chara["InputPath"])
         folder_path = Path(folder_path)
 
+        if not str(folder_path).strip() or str(folder_path) == ".":
+            logger.error("UNGRP", "InputPath is not set.")
+            return
+        if not folder_path.exists():
+            logger.error("UNGRP", f"InputPath does not exist: {folder_path}")
+            return
+
         logger.line()
         logger.info("UNGRP", f"Input folder    : {folder_path}")
         logger.info("UNGRP", f"Delete empty    : {self.delete_empty}")

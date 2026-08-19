@@ -59,6 +59,12 @@ class UninstallContents:
 
     def run(self):
         folder_path = self.input_path
+        if not str(folder_path).strip() or str(folder_path) == ".":
+            logger.error("UNINST", "InputPath is not set.")
+            return
+        if not folder_path.exists():
+            logger.error("UNINST", f"InputPath does not exist: {folder_path}")
+            return
         foldername = folder_path.name
         logger.line()
         logger.info("FOLDER", foldername)

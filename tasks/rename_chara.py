@@ -144,6 +144,12 @@ def _merge_cache(cache: dict, response: dict) -> dict:
 def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
     folder_path = Path(folder_path)
     cache       = _load_cache(folder_path)
+    if not str(folder_path).strip() or str(folder_path) == ".":
+        logger.error("RENAM", "InputPath is not set.")
+        return ""
+    if not folder_path.exists():
+        logger.error("RENAM", f"InputPath does not exist: {folder_path}")
+        return ""
     known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
     png_files   = list(folder_path.rglob("*.png"))
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in {folder_path}")
@@ -202,6 +208,12 @@ def process(folder_path: Path, json_str: str,
     folder_path = Path(folder_path)
 
     clean = json_str.strip()
+    if not str(folder_path).strip() or str(folder_path) == ".":
+        logger.error("RENAM", "InputPath is not set.")
+        return
+    if not folder_path.exists():
+        logger.error("RENAM", f"InputPath does not exist: {folder_path}")
+        return
     if clean.startswith("```"):
         clean = "\n".join(clean.splitlines()[1:])
     if clean.endswith("```"):

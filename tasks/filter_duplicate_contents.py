@@ -257,6 +257,13 @@ class FilterDuplicateContents:
         folder_path = Path(folder_path)
         duplicates_root = folder_path / self.DUPLICATES_DIR
 
+        if not str(folder_path).strip() or str(folder_path) == ".":
+            logger.error("DUPLIC", "InputPath is not set.")
+            return
+        if not folder_path.exists():
+            logger.error("DUPLIC", f"InputPath does not exist: {folder_path}")
+            return
+
         logger.line()
         logger.info("DUPLIC", f"Scanning      : {folder_path}")
         logger.info("DUPLIC", f"Keep strategy : {self.keep}")

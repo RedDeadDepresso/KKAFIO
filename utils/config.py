@@ -368,7 +368,7 @@ class Config:
         game_path_str = self.config_data.get("Core", {}).get("GamePath", "")
 
         if not game_path_str:
-            logger.error("SCRIPT", "GamePath is not set. Configure it in MXU.")
+            logger.error("SCRIPT", "GamePath is not set.")
             raise Exception("GamePath is not set")
 
         base = Path(game_path_str)

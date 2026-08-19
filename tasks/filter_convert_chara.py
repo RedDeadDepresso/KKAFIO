@@ -85,6 +85,13 @@ class FilterConvertChara:
     def run(self) -> None:
         path = Path(self.config.filter_convert_chara["InputPath"])
 
+        if not str(path).strip() or str(path) == ".":
+            logger.error("FILTER", "InputPath is not set.")
+            return
+        if not path.exists():
+            logger.error("FILTER", f"InputPath does not exist: {path}")
+            return
+
         if self.extract_archive:
             self._extract_archives(path)
 

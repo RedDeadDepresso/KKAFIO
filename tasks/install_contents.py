@@ -88,6 +88,13 @@ class InstallContents:
         if folder_path is None:
             folder_path = self.input_path
         folder_path = Path(folder_path)
+
+        if not str(folder_path).strip() or str(folder_path) == ".":
+            logger.error("INSTALL", "InputPath is not set.")
+            return
+        if not folder_path.exists():
+            logger.error("INSTALL", f"InputPath does not exist: {folder_path}")
+            return
         foldername = folder_path.name
         logger.line()
         logger.info("FOLDER", foldername)
