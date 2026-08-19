@@ -82,6 +82,19 @@ class ArchiveChara(BaseTask):
                         f"  Skipped {skipped} zipmod(s) in Sideloader Modpack folder(s)")
             zipmod_paths = list(guid_map.values())
             missing = all_guids - set(guid_map.keys())
+
+            # When include_modpack is off, GUIDs that are in the Sideloader
+            # Modpack index are intentionally excluded — don't warn about them
+            if not self.include_modpack and missing:
+                from utils.chara_ops import load_modpack_index
+                modpack_index = load_modpack_index(mods_dir)
+                if modpack_index:
+                    in_modpack = missing & set(modpack_index.keys())
+                    if in_modpack:
+                        logger.info("ARCHV",
+                            f"  {len(in_modpack)} GUID(s) belong to Sideloader Modpack (excluded by setting)")
+                    missing = missing - in_modpack
+
             logger.info("ARCHV",
                 f"  Zipmods found: {len(zipmod_paths)}  missing: {len(missing)}")
             for m in sorted(missing):
