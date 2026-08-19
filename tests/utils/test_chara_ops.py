@@ -107,7 +107,13 @@ class TestLoadModpackIndex:
 
     def test_returns_none_when_not_found(self, tmp_path):
         from utils.chara_ops import load_modpack_index
-        result = load_modpack_index(tmp_path / "nonexistent")
+        import sys
+        # Point exe dir to an empty tmp dir so no real index is found
+        empty = tmp_path / "empty_exe"
+        empty.mkdir()
+        with patch.object(sys, "frozen", True, create=True):
+            with patch("sys.executable", str(empty / "kkafio_cli.exe")):
+                result = load_modpack_index(tmp_path / "nonexistent_mods")
         assert result is None
 
     def test_returns_none_for_corrupt_json(self, tmp_path):
