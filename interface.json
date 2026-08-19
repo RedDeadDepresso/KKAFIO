@@ -828,23 +828,6 @@
       "option": ["InputPath"]
     },
     {
-      "name": "RenameChara",
-      "label": "✏️ Rename Characters",
-      "entry": "RenameChara",
-      "default_check": false,
-      "description": "Translate character card names to English using an LLM",
-      "group": ["card-management"],
-      "option": [
-        "InputPath",
-        "SkipAlreadyRenamed",
-        "UpdateMetadata",
-        "RenameFiles",
-        "RenameCharaPrompt",
-        "RenameCharaCopyStep1",
-        "RenameCharaCopyStep2"
-      ]
-    },
-    {
       "name": "GroupChara",
       "label": "🗂️ Group Characters",
       "entry": "GroupChara",
@@ -867,6 +850,23 @@
       "description": "Move cards from subfolders back to top-level folder",
       "group": ["card-management"],
       "option": ["InputPath", "DeleteEmptyFolders"]
+    },
+    {
+      "name": "RenameChara",
+      "label": "✏️ Rename Characters",
+      "entry": "RenameChara",
+      "default_check": false,
+      "description": "Translate character card names to English using an LLM",
+      "group": ["card-management"],
+      "option": [
+        "InputPath",
+        "SkipAlreadyRenamed",
+        "UpdateMetadata",
+        "RenameFiles",
+        "RenameCharaPrompt",
+        "RenameCharaCopyStep1",
+        "RenameCharaCopyStep2"
+      ]
     },
     {
       "name": "ArchiveChara",
@@ -922,13 +922,13 @@
           "name": "UninstallContents"
         },
         {
-          "name": "RenameChara"
-        },
-        {
           "name": "GroupChara"
         },
         {
           "name": "UngroupChara"
+        },
+        {
+          "name": "RenameChara"
         },
         {
           "name": "ArchiveChara"
@@ -971,15 +971,15 @@
       ]
     },
     {
-      "name": "RenameAndGroup",
-      "label": "✏️ Rename & Group",
-      "description": "Translate card names to English then sort them into series folders",
+      "name": "GroupAndRename",
+      "label": "✏️ Group & Rename",
+      "description": "sort them into series folders then translate card names to English",
       "task": [
         {
-          "name": "RenameChara"
+          "name": "GroupChara"
         },
         {
-          "name": "GroupChara"
+          "name": "RenameChara"
         }
       ]
     },

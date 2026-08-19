@@ -69,23 +69,7 @@
 - **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
 - **Warning:** Uninstall Contents does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
-**7. Rename Chara**
-
-- Translates character card names to English using an LLM.
-- Workflow:
-  1. Select an input folder and click **Copy**.  
-     KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, merges it with the prompt, and copies the result to the clipboard.
-  2. Paste into your LLM of choice. The LLM fills in the English name for each key.
-  3. Copy the LLM response and click **Paste** in KKAFIO to save it.
-  4. Enable **Rename Chara**, click **Start** — KKAFIO writes the translated names into each card's internal metadata (`Parameter.lastname / firstname / nickname`).
-- **Update card metadata** (on by default): writes the translated names into the card file.
-- **Rename PNG files** (off by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
-- **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
-- Results are cached in `kkafio_rename_cache.json` inside the input folder and reused across runs.
-- The prompt is fully editable in the settings panel.
-- **Recommended LLMs:** same as Group Chara (see below).
-
-**8. Group Chara**
+**7. Group Chara**
 
 - Groups character cards into subfolders named after their series, using an LLM.
 - Workflow:
@@ -99,10 +83,28 @@
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
 
-**9. Ungroup Chara**
+**8. Ungroup Chara**
 
 - Reverse of Group Chara: moves all cards from subfolders back to the top-level input folder.
 - **Optional:** Deletes empty subfolders after moving (on by default).
+
+**9. Rename Chara**
+
+- Translates character card names to English using an LLM.
+- Workflow:
+  1. Select an input folder and click **Copy**.  
+     KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, merges it with the prompt, and copies the result to the clipboard.
+  2. Paste into your LLM of choice. The LLM fills in the English name for each key.
+  3. Copy the LLM response and click **Paste** in KKAFIO to save it.
+  4. Enable **Rename Chara**, click **Start** — KKAFIO writes the translated names into each card's internal metadata (`Parameter.lastname / firstname / nickname`).
+- **Update card metadata** (off by default): writes the translated names into the card file.
+- **Rename PNG files** (on by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
+- **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
+- Results are cached in `kkafio_rename_cache.json` inside the input folder and reused across runs.
+- The prompt is fully editable in the settings panel.
+- **Recommended LLMs:** same as Group Chara (see above).
+- **Warning:** Group Chara uses card metadata to extract character names. It is recommended to use **Rename Chara after Group Chara if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
+- **Warning:** It is possible to modify the prompt to allow for transliteration, rather than limiting it to just the character's English name. However, the transliteration of Chinese characters can differ significantly from that of English characters. Transliterating Japanese characters tends to yield better results, although there may be exceptions.
 
 **10. Archive Chara**
 
