@@ -96,7 +96,7 @@
   4. Enable **Group Chara**, click **Start** — KKAFIO moves each card into `<input>/<series>/`.
 - **Include subfolders** option lets you export already-sorted cards too (off by default to skip them).
 - **Recommended LLMs:**
-  - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** and **Smart Search** for better identification of obscure characters.
+  - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
 
 **9. Ungroup Chara**
@@ -148,7 +148,7 @@ The updated `kkafio_modpack_index.json` is written to the mods folder. Copy it n
 
 ## Context Menu Integration
 
-Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
+Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance. It is recommended to set `⚡ All Tasks` preset as the first configuration instance.
 
 **On folders and folder backgrounds:**
 
