@@ -81,7 +81,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell
 echo @="Filter & Convert KKS Cards"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02FilterConvertKKS\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%V\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-kks --input \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03InstallContents]
 echo @="Install Contents"
