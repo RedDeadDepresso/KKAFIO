@@ -34,29 +34,29 @@ echo "ExtendedSubCommandsKey"="Directory\\shell\\KKAFIO"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell]
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallContents]
-echo @="Install Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01InstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallContents]
-echo @="Uninstall Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertKKS]
-echo @="Filter & Convert KKS Cards"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertKKS\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-kks --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04FilterDuplicateContents]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01FilterDuplicateContents]
 echo @="Filter Duplicate Contents"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04FilterDuplicateContents\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01FilterDuplicateContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" filter-duplicate-contents --input \"%%1\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02FilterConvertKKS]
+echo @="Filter & Convert KKS Cards"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02FilterConvertKKS\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-kks --input \"%%1\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03InstallContents]
+echo @="Install Contents"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03InstallContents\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%1\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04UninstallContents]
+echo @="Uninstall Contents"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04UninstallContents\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07RunGUI]
 echo @="Run GUI"
@@ -71,29 +71,29 @@ echo "ExtendedSubCommandsKey"="Directory\\Background\\shell\\KKAFIO"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell]
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallContents]
-echo @="Install Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01InstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallContents]
-echo @="Uninstall Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertKKS]
-echo @="Filter & Convert KKS Cards"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertKKS\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04FilterDuplicateContents]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01FilterDuplicateContents]
 echo @="Filter Duplicate Contents"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04FilterDuplicateContents\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01FilterDuplicateContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" filter-duplicate-contents --input \"%%V\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02FilterConvertKKS]
+echo @="Filter & Convert KKS Cards"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02FilterConvertKKS\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%V\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03InstallContents]
+echo @="Install Contents"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03InstallContents\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%V\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04UninstallContents]
+echo @="Uninstall Contents"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04UninstallContents\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07RunGUI]
 echo @="Run GUI"

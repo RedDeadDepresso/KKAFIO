@@ -154,10 +154,10 @@ Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explo
 
 | Entry                     | Action                                       |
 | ------------------------- | -------------------------------------------- |
+| Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
+| Filter / Convert KKS Cards| `filter-convert-kks --input <folder>`        |
 | Install Contents          | `install-contents --input <folder>`          |
 | Uninstall Contents        | `uninstall-contents --input <folder>`        |
-| Filter / Convert KKS Cards| `filter-convert-kks --input <folder>`      |
-| Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
 
 **On PNG files (single or multi-select):**
 
