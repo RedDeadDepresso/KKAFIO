@@ -252,28 +252,6 @@
         }
       ]
     },
-    "ConvertKK": {
-      "type": "switch",
-      "label": "Convert KK → KKS",
-      "description": "Move KK/KKSP cards to _KK_card_/ and produce KKS-compatible copies in _KK_to_KKS_/",
-      "default_case": "No",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Convert",
-          "pipeline_override": {
-            "ConvertKK": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "Skip",
-          "pipeline_override": {
-            "ConvertKK": false
-          }
-        }
-      ]
-    },
     "ExtractArchive": {
       "type": "switch",
       "label": "Extract Archives",
@@ -776,19 +754,13 @@
       ]
     },
     {
-      "name": "FilterConvertChara",
-      "label": "🔧 Filter & Convert Characters",
-      "entry": "FilterConvertChara",
+      "name": "FilterConvertKKS",
+      "label": "🔧 Filter & Convert KKS Cards",
+      "entry": "FilterConvertKKS",
       "default_check": false,
-      "description": "Filter and optionally convert KKS cards to KK format or KK cards to KKS format",
+      "description": "Filter and optionally convert KKS cards to KK format",
       "group": ["card-management"],
-      "option": [
-        "InputPath",
-        "ConvertKKS",
-        "ConvertKK",
-        "ExtractArchive",
-        "ArchivePassword"
-      ]
+      "option": ["InputPath", "ConvertKKS", "ExtractArchive", "ArchivePassword"]
     },
     {
       "name": "FilterDuplicateContents",
@@ -910,7 +882,7 @@
           "name": "DownloadContents"
         },
         {
-          "name": "FilterConvertChara"
+          "name": "FilterConvertKKS"
         },
         {
           "name": "FilterDuplicateContents"
@@ -947,7 +919,7 @@
           "name": "FilterDuplicateContents"
         },
         {
-          "name": "FilterConvertChara"
+          "name": "FilterConvertKKS"
         },
         {
           "name": "InstallContents"

@@ -29,15 +29,13 @@
   - `BepInEx`
 - If an archive with the same name already exists it will be overwritten.
 
-**3. Filter & Convert Chara**
+**3. Filter & Convert KKS Cards**
 
 - Functions similarly to [FlYiNGPoTAToChiP's KK_SunshineCardFilter](https://github.com/FlYiNGPoTAToChiP/KK_SunshineCardFilter).
 - Given a folder, the task:
   - Finds all **KKS** (Koikatsu Sunshine) cards and moves them into `_KKS_card_/`
   - Finds all **KK / KKSP** cards and moves them into `_KK_card_/`
-- Two independent conversion options:
   - **Convert KKS → KK**: produces KK-compatible copies in `_KKS_to_KK_/`
-  - **Convert KK → KKS**: produces KKS-compatible copies in `_KK_to_KKS_/`
 - **Optional:** Extracts ZIP / RAR / 7z archives before filtering.
 - Has a separate archive password setting from Install Contents.
 
@@ -58,10 +56,10 @@
 **5. Install Contents**
 
 - Given a folder containing chara cards, coordinate cards, overlays, and zipmod files, copies them into their respective game directories.
-- Respects the configured **Game Type**: Koikatsu Sunshine installs KKS cards; Koikatsu / Koikatsu Party installs KK and KKSP cards. Cards of the wrong type are skipped with a log message.
+- Respects the configured **Game Type**: Koikatsu Sunshine installs all card types; Koikatsu / Koikatsu Party installs KK and KKSP cards. Cards of the wrong type are skipped with a log message.
 - Scene cards (Studio) are installed only if the Studio `scene` folder is present.
 - Extracts ZIP / RAR / 7z archives automatically (configurable).
-- If both Filter & Convert Chara and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
+- If both Filter & Convert KKS Cards and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
 **6. Uninstall Contents**
 
@@ -130,7 +128,7 @@ Configure the game type in the instance settings at the top of the task list:
 | ------------------ | ------------------- | ------------- |
 | Koikatsu (default) | KK, KKSP            | KKS           |
 | Koikatsu Party     | KK, KKSP            | KKS           |
-| Koikatsu Sunshine  | KKS                 | KK, KKSP      |
+| Koikatsu Sunshine  | KKS, KK, KKSP       |               |
 
 The game type also determines which executable is launched by the **Run Game** button and affects scene card installation (Studio must be installed separately).
 
@@ -158,7 +156,7 @@ Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explo
 | ------------------------- | -------------------------------------------- |
 | Install Contents          | `install-contents --input <folder>`          |
 | Uninstall Contents        | `uninstall-contents --input <folder>`        |
-| Filter / Convert Chara    | `filter-convert-chara --input <folder>`      |
+| Filter / Convert KKS Cards| `filter-convert-kks --input <folder>`      |
 | Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
 
 **On PNG files (single or multi-select):**
@@ -186,9 +184,8 @@ kkafio_cli create-backup  [--output DIR] [--filename NAME]
                           [--userdata | --no-userdata]
                           [--bepinex | --no-bepinex]
 
-kkafio_cli filter-convert-chara [--input DIR]
+kkafio_cli filter-convert-kks [--input DIR]
                                 [--convert-kks | --no-convert-kks]
-                                [--convert-kk  | --no-convert-kk]
                                 [--extract-archive | --no-extract-archive]
 
 kkafio_cli filter-duplicate-contents [--input DIR]

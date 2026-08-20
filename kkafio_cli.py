@@ -6,7 +6,7 @@ Task commands (arguments override config; omit to use config value):
     kkafio_cli run
     kkafio_cli install-contents [--input DIR]
     kkafio_cli uninstall-contents  [--input DIR]
-    kkafio_cli filter-convert-chara        [--input DIR] [--convert | --no-convert]
+    kkafio_cli filter-convert-kks        [--input DIR] [--convert | --no-convert]
     kkafio_cli create-backup [--output DIR] [--filename NAME]
                              [--mods | --no-mods]
                              [--userdata | --no-userdata]
@@ -80,18 +80,16 @@ def run_uninstall_contents(config, file_manager, input_path: str | None = None):
     UninstallContents(config, file_manager).run()
 
 
-def run_filter_convert_chara(config, file_manager, input_path: str | None = None,
-               convert_kks: bool | None = None, convert_kk: bool | None = None,
+def run_filter_convert_kks(config, file_manager, input_path: str | None = None,
+               convert_kks: bool | None = None,
                extract_archive: bool | None = None):
-    from tasks.filter_convert_chara import FilterConvertChara
+    from tasks.filter_convert_kks import FilterConvertKKS
     from pathlib import Path
     if input_path is not None:
-        config.filter_convert_chara["InputPath"] = Path(input_path)
+        config.filter_convert_kks["InputPath"] = Path(input_path)
     if convert_kks is not None:
-        config.filter_convert_chara["ConvertKKS"] = convert_kks
-    if convert_kk is not None:
-        config.filter_convert_chara["ConvertKK"] = convert_kk
-    module = FilterConvertChara(config, file_manager)
+        config.filter_convert_kks["ConvertKKS"] = convert_kks
+    module = FilterConvertKKS(config, file_manager)
     if extract_archive is not None:
         module.extract_archive = extract_archive
     module.run()
@@ -285,8 +283,8 @@ def cmd_run(args):
     _clear_traceback()
     config, file_manager = _load_core(args.config, instance_index=args.instance)
 
-    # filter_convert_chara + InstallContents same-path detection
-    fc_cfg = config.config_data["FilterConvertChara"]
+    # filter_convert_kks + InstallContents same-path detection
+    fc_cfg = config.config_data["FilterConvertKKS"]
     ic_cfg = config.config_data["InstallContents"]
     same_path = (
         fc_cfg.get("Enable", False) and ic_cfg.get("Enable", False) and
@@ -300,7 +298,7 @@ def cmd_run(args):
         "DeleteChara":      lambda: run_delete_chara(config, file_manager),
         "DownloadContents":    lambda: run_download_contents(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
-        "FilterConvertChara": lambda: run_filter_convert_chara(config, file_manager),
+        "FilterConvertKKS": lambda: run_filter_convert_kks(config, file_manager),
         "FilterDuplicateContents": lambda: run_filter_duplicate_contents(config, file_manager),
         "RenameChara":     lambda: run_rename_chara(config, file_manager),
         "GroupChara":       lambda: run_group_chara(config, file_manager),
@@ -311,8 +309,8 @@ def cmd_run(args):
     }
 
     if same_path:
-        logger.info("CLI", "FilterConvertChara and InstallContents share the same input path — "
-                           "archive extraction will run in FilterConvertChara only")
+        logger.info("CLI", "FilterConvertKKS and InstallContents share the same input path — "
+                           "archive extraction will run in FilterConvertKKS only")
 
     # Shared stop event — special tasks check this to abort early
     stop = threading.Event()
@@ -380,33 +378,28 @@ def cmd_uninstall_contents(args):
         sys.exit(1)
 
 
-def cmd_filter_convert_chara(args):
+def cmd_filter_convert_kks(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["FilterConvertChara"]["Enable"] = True
+        config.config_data["FilterConvertKKS"]["Enable"] = True
         convert_kks = None
         if args.convert_kks is True:
             convert_kks = True
         elif args.convert_kks is False:
             convert_kks = False
-        convert_kk = None
-        if args.convert_kk is True:
-            convert_kk = True
-        elif args.convert_kk is False:
-            convert_kk = False
         extract = None
         if args.extract_archive is True:
             extract = True
         elif args.extract_archive is False:
             extract = False
-        run_filter_convert_chara(config, file_manager, input_path=args.input,
-                   convert_kks=convert_kks, convert_kk=convert_kk,
+        run_filter_convert_kks(config, file_manager, input_path=args.input,
+                   convert_kks=convert_kks,
                    extract_archive=extract)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("FilterConvertChara")
+        _write_traceback("FilterConvertKKS")
         sys.exit(1)
 
 
@@ -669,21 +662,17 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Folder to scan (default: UninstallContents.InputPath from config)")
     p.set_defaults(func=cmd_uninstall_contents)
 
-    # filter-convert-chara
-    p = sub.add_parser("filter-convert-chara", help="Filter and optionally convert KKS/KK cards")
+    # filter-convert-kks
+    p = sub.add_parser("filter-convert-kks", help="Filter and optionally convert KKS cards")
     p.add_argument("--input", "-i", metavar="DIR", default=None)
     g = p.add_mutually_exclusive_group()
     g.add_argument("--convert-kks",    dest="convert_kks", action="store_true",  default=None,
                    help="Move KKS cards to _KKS_card_/ and produce KK-compatible copies in _KKS_to_KK_/")
     g.add_argument("--no-convert-kks", dest="convert_kks", action="store_false")
     g2 = p.add_mutually_exclusive_group()
-    g2.add_argument("--convert-kk",    dest="convert_kk",  action="store_true",  default=None,
-                    help="Move KK/KKSP cards to _KK_card_/ and produce KKS-compatible copies in _KK_to_KKS_/")
-    g2.add_argument("--no-convert-kk", dest="convert_kk",  action="store_false")
-    g3 = p.add_mutually_exclusive_group()
-    g3.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None)
-    g3.add_argument("--no-extract-archive", dest="extract_archive", action="store_false")
-    p.set_defaults(func=cmd_filter_convert_chara)
+    g2.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None)
+    g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false")
+    p.set_defaults(func=cmd_filter_convert_kks)
 
     # download-contents
     p = sub.add_parser(

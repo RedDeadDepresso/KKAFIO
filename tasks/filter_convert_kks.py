@@ -1,15 +1,10 @@
 """
-FilterConvertChara
+FilterConvertKKS
 ================
 Scans a folder for PNG character cards and separates them by type.
 
-Two independent conversion flags:
-  ConvertKKS — move KKS cards to _KKS_card_/ and produce a KK-compatible
-                copy in _KKS_to_KK_/  (binary header patch)
-  ConvertKK  — move KK/KKSP cards to _KK_card_/ and produce a KKS-compatible
-                copy in _KK_to_KKS_/  (binary header patch)
-
-Both flags can be on at the same time.
+ConvertKKS — move KKS cards to _KKS_card_/ and produce a KK-compatible
+            copy in _KKS_to_KK_/  (binary header patch)
 """
 
 import shutil
@@ -20,13 +15,12 @@ from utils.file_manager import FileManager
 from utils.logger import logger
 
 
-class FilterConvertChara:
+class FilterConvertKKS:
     def __init__(self, config: Config, file_manager: FileManager):
         self.config          = config
         self.file_manager    = file_manager
-        self.convert_kks     = self.config.filter_convert_chara.get("ConvertKKS", False)
-        self.convert_kk      = self.config.filter_convert_chara.get("ConvertKK",  False)
-        self.extract_archive = self.config.filter_convert_chara.get("ExtractArchive", True)
+        self.convert_kks     = self.config.filter_convert_kks.get("ConvertKKS", False)
+        self.extract_archive = self.config.filter_convert_kks.get("ExtractArchive", True)
 
     # ------------------------------------------------------------------
     # Card-type helpers
@@ -39,7 +33,7 @@ class FilterConvertChara:
         return get_card_type(card_path.read_bytes())
 
     # ------------------------------------------------------------------
-    # Binary conversion helpers
+    # Binary conversion helper
     # ------------------------------------------------------------------
 
     def _patch_kks_to_kk(self, card_path: Path, destination_path: Path) -> None:
@@ -54,18 +48,6 @@ class FilterConvertChara:
         out = destination_path / f"KKS2KK_{card_path.name}"
         out.write_bytes(data)
 
-    def _patch_kk_to_kks(self, card_path: Path, destination_path: Path) -> None:
-        """Patch a KK/KKSP card binary so it loads as a KKS card."""
-        data = card_path.read_bytes()
-        for old, new in [
-            (b"\x12\xe3\x80\x90KoiKatuChara",      b"\x15\xe3\x80\x90KoiKatuCharaSun"),
-            (b"Parameter\xa7version\xa50.0.5",      b"Parameter\xa7version\xa50.0.6"),
-            (b"version\xa50.0.5\xa3sex",             b"version\xa50.0.6\xa3sex"),
-        ]:
-            data = data.replace(old, new)
-        out = destination_path / f"KK2KKS_{card_path.name}"
-        out.write_bytes(data)
-
     # ------------------------------------------------------------------
     # Archive extraction
     # ------------------------------------------------------------------
@@ -76,14 +58,14 @@ class FilterConvertChara:
             return
         logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
         for archive in archive_list:
-            self.file_manager.extract_archive(archive[0], task_config=self.config.filter_convert_chara)
+            self.file_manager.extract_archive(archive[0], task_config=self.config.filter_convert_kks)
 
     # ------------------------------------------------------------------
     # Main
     # ------------------------------------------------------------------
 
     def run(self) -> None:
-        path = Path(self.config.filter_convert_chara["InputPath"])
+        path = Path(self.config.filter_convert_kks["InputPath"])
 
         if not str(path).strip() or str(path) == ".":
             logger.error("FILTER", "InputPath is not set.")
@@ -147,22 +129,11 @@ class FilterConvertChara:
             kk_folder = path / "_KK_card_"
             kk_folder.mkdir(exist_ok=True)
 
-            if self.convert_kk:
-                kk_to_kks_folder = path / "_KK_to_KKS_"
-                kk_to_kks_folder.mkdir(exist_ok=True)
-
             for card in kk_cards:
-                if self.convert_kk:
-                    self._patch_kk_to_kks(card, kk_to_kks_folder)
                 shutil.move(str(card), str(kk_folder / card.name))
 
-            if self.convert_kk:
-                logger.success("SCRIPT",
-                    f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}], "
-                    f"converted copies -> [{kk_to_kks_folder.name}]")
-            else:
-                logger.success("SCRIPT",
-                    f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}]")
+            logger.success("SCRIPT",
+                f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}]")
         else:
             if self.convert_kk:
                 logger.success("SCRIPT", "No KK/KKSP cards found to convert")

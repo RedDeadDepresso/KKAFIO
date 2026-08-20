@@ -34,16 +34,13 @@ class UninstallContents:
                 self.file_manager.find_and_remove("OVERLAYS", image_path, self.game_path["Overlays"])
 
         elif self.is_sunshine:
-            # Koikatsu Sunshine — remove KKS cards only
+            # Koikatsu Sunshine — remove all card types
             match card_type:
-                case CardType.KKS:
+                case CardType.KKS | CardType.KK | CardType.KKSP:
                     if is_male(image_bytes):
                         self.file_manager.find_and_remove("CHARA M", image_path, self.game_path["charaMale"])
                     else:
                         self.file_manager.find_and_remove("CHARA F", image_path, self.game_path["charaFemale"])
-
-                case CardType.KK | CardType.KKSP:
-                    logger.skipped("CHARA", f"{image_path.name} is a {card_type.value} card (KK/KKSP not in {GameType.KOIKATSU_SUNSHINE.value} install)")
 
         else:
             # Koikatsu / Koikatsu Party — remove KK/KKSP cards only

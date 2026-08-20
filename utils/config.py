@@ -116,7 +116,7 @@ def _extract_special_task_params(opt_values: dict) -> dict:
 _TASK_KEY = {
     "InstallContents":     "InstallContents",
     "UninstallContents":      "UninstallContents",
-    "FilterConvertChara": "FilterConvertChara",
+    "FilterConvertKKS": "FilterConvertKKS",
     "DeleteChara":      "DeleteChara",
     "ArchiveChara":     "ArchiveChara",
     "GroupChara":       "GroupChara",
@@ -130,7 +130,7 @@ _TASK_KEY = {
 _TASK_DEFAULTS = {
     "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallContents":      {"Enable": False, "InputPath": ""},
-    "FilterConvertChara": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ConvertKK": False, "ExtractArchive": True, "Password": "Skip"},
+    "FilterConvertKKS": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
     "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
@@ -162,10 +162,9 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
     elif task_name == "UninstallContents":
         _set("InputPath", "InputPath")
 
-    elif task_name == "FilterConvertChara":
+    elif task_name == "FilterConvertKKS":
         _set("InputPath",      "InputPath")
         _set("ConvertKKS",     "ConvertKKS")
-        _set("ConvertKK",      "ConvertKK")
         _set("ExtractArchive", "ExtractArchive")
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
@@ -420,7 +419,7 @@ class Config:
         self.download_contents   = self.config_data["DownloadContents"]
         self.delete_chara     = self.config_data["DeleteChara"]
         self.create_backup    = self.config_data["CreateBackup"]
-        self.filter_convert_chara           = self.config_data["FilterConvertChara"]
+        self.filter_convert_kks           = self.config_data["FilterConvertKKS"]
         self.filter_duplicate_contents= self.config_data["FilterDuplicateContents"]
         self.rename_chara     = self.config_data["RenameChara"]
         self.group_chara      = self.config_data["GroupChara"]

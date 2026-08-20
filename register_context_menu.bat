@@ -46,11 +46,11 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02UninstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%1\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertChara]
-echo @="Filter & Convert Characters"
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertKKS]
+echo @="Filter & Convert KKS Cards"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%1\"\""
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03FilterConvertKKS\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-kks --input \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04FilterDuplicateContents]
 echo @="Filter Duplicate Contents"
@@ -83,10 +83,10 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02UninstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%V\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertChara]
-echo @="Filter & Convert Characters"
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertKKS]
+echo @="Filter & Convert KKS Cards"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertChara\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03FilterConvertKKS\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-chara --input \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04FilterDuplicateContents]

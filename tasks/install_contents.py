@@ -22,9 +22,9 @@ class InstallContents:
         self.game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         self.is_sunshine = self.game_type == GameType.KOIKATSU_SUNSHINE.value
 
-    def _filter_convert_chara_shares_input(self) -> bool:
-        """Return True if FilterConvertChara is enabled and uses the same input path."""
-        fc = self.config.config_data.get("FilterConvertChara", {})
+    def _filter_convert_kks_shares_input(self) -> bool:
+        """Return True if FilterConvertKKS is enabled and uses the same input path."""
+        fc = self.config.config_data.get("FilterConvertKKS", {})
         if not fc.get("Enable", False):
             return False
         fc_path = fc.get("InputPath")
@@ -37,16 +37,13 @@ class InstallContents:
         card_type = get_card_type(image_bytes)
 
         if self.is_sunshine:
-            # Koikatsu Sunshine install — accept KKS cards, skip KK/KKSP
+            # Koikatsu Sunshine install — accept all card types
             match card_type:
-                case CardType.KKS:
+                case CardType.KKS | CardType.KK | CardType.KKSP:
                     if is_male(image_bytes):
                         self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
                     else:
                         self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
-
-                case CardType.KK | CardType.KKSP:
-                    logger.skipped("CHARA", f"{image_path.name} is a {card_type.value} card (KK/KKSP not supported by {GameType.KOIKATSU_SUNSHINE.value})")
 
                 case CardType.SCENE:
                     if "scene" in self.game_path:

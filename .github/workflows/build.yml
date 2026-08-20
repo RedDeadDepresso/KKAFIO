@@ -130,7 +130,7 @@ jobs:
           --hidden-import "tasks.create_backup"
           --hidden-import "tasks.delete_chara"
           --hidden-import "tasks.download_contents"
-          --hidden-import "tasks.filter_convert_chara"
+          --hidden-import "tasks.filter_convert_kks"
           --hidden-import "tasks.filter_duplicate_contents"
           --hidden-import "tasks.group_chara"
           --hidden-import "tasks.install_contents"
