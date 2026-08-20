@@ -882,10 +882,10 @@
           "name": "DownloadContents"
         },
         {
-          "name": "FilterConvertKKS"
+          "name": "FilterDuplicateContents"
         },
         {
-          "name": "FilterDuplicateContents"
+          "name": "FilterConvertKKS"
         },
         {
           "name": "InstallContents"
