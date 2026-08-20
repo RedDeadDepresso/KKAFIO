@@ -91,10 +91,10 @@ class InstallContents:
 
         if not str(folder_path).strip() or str(folder_path) == ".":
             logger.error("INSTALL", "InputPath is not set.")
-            return
+            raise Exception("InputPath is not set")
         if not folder_path.exists():
             logger.error("INSTALL", f"InputPath does not exist: {folder_path}")
-            return
+            raise Exception(f"InputPath does not exist: {folder_path}")
         foldername = folder_path.name
         logger.line()
         logger.info("FOLDER", foldername)

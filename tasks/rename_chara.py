@@ -146,10 +146,10 @@ def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
     cache       = _load_cache(folder_path)
     if not str(folder_path).strip() or str(folder_path) == ".":
         logger.error("RENAM", "InputPath is not set.")
-        return ""
+        raise Exception("InputPath is not set")
     if not folder_path.exists():
         logger.error("RENAM", f"InputPath does not exist: {folder_path}")
-        return ""
+        raise Exception(f"InputPath does not exist: {folder_path}")
     known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
     png_files   = list(folder_path.rglob("*.png"))
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in {folder_path}")
@@ -210,10 +210,10 @@ def process(folder_path: Path, json_str: str,
     clean = json_str.strip()
     if not str(folder_path).strip() or str(folder_path) == ".":
         logger.error("RENAM", "InputPath is not set.")
-        return
+        raise Exception("InputPath is not set")
     if not folder_path.exists():
         logger.error("RENAM", f"InputPath does not exist: {folder_path}")
-        return
+        raise Exception(f"InputPath does not exist: {folder_path}")
     if clean.startswith("```"):
         clean = "\n".join(clean.splitlines()[1:])
     if clean.endswith("```"):
@@ -334,7 +334,7 @@ class RenameChara(BaseTask):
         folder = Path(self.input_path_str) if self.input_path_str else None
         if not folder or not folder.exists():
             logger.error("RENAME", "Input directory not set or does not exist.")
-            return
+            raise Exception("InputPath is not set or does not exist")
         self.log_start("RENAME", str(folder))
         process(folder, self.response,
                 skip_already_renamed=self.skip_already_renamed,

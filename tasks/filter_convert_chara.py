@@ -87,10 +87,10 @@ class FilterConvertChara:
 
         if not str(path).strip() or str(path) == ".":
             logger.error("FILTER", "InputPath is not set.")
-            return
+            raise Exception("InputPath is not set")
         if not path.exists():
             logger.error("FILTER", f"InputPath does not exist: {path}")
-            return
+            raise Exception(f"InputPath does not exist: {path}")
 
         if self.extract_archive:
             self._extract_archives(path)

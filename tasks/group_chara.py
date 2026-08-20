@@ -104,10 +104,10 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
     folder_path = Path(folder_path)
     if not str(folder_path).strip() or str(folder_path) == ".":
         logger.error("GROUP", "InputPath is not set.")
-        return ""
+        raise Exception("InputPath is not set")
     if not folder_path.exists():
         logger.error("GROUP", f"InputPath does not exist: {folder_path}")
-        return ""
+        raise Exception(f"InputPath does not exist: {folder_path}")
     characters: dict[str, str] = {}
 
     if include_subfolders:
@@ -172,11 +172,11 @@ def process(folder_path: Path, json_str: str) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response."""
     folder_path = Path(folder_path)
     if not str(folder_path).strip() or str(folder_path) == ".":
-        logger.error("GROUP", "InputPath is not set.")
-        return
+        logger.error("GROUP", "InputPath is not set. Configure it in MXU.")
+        raise Exception("InputPath is not set")
     if not folder_path.exists():
         logger.error("GROUP", f"InputPath does not exist: {folder_path}")
-        return
+        raise Exception(f"InputPath does not exist: {folder_path}")
 
     # Parse the LLM response — strip markdown fences if the user forgot
     clean = json_str.strip()
