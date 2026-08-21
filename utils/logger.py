@@ -28,7 +28,9 @@ class Logger:
         # which causes QProcess in the GUI to only receive output after the
         # process exits. Reconfigure to line-buffered so each line is flushed
         # immediately. Only needed when there is no signalBus (i.e. script.exe).
-        sys.stdout.reconfigure(line_buffering=True)
+        if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
         self.logger = logging.getLogger("KAFFIO_Logger")
         formatter = logging.Formatter("%(levelname)s |%(category)s | %(message)s ")
         handler1 = logging.StreamHandler(stream=sys.stdout)
