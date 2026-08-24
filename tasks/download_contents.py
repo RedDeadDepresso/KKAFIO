@@ -412,7 +412,6 @@ class DownloadContents(BaseTask):
         self.links           : str  = cfg.get("Links", "")
         self.output_dir_str  : str  = cfg.get("OutputDir", "")
         self.skip_downloaded : bool = cfg.get("SkipDownloaded", True)
-        self.kkd_session    : str  = cfg.get("KkdSession", "")
 
     def run(self) -> None:
         # Parse input lines
@@ -439,35 +438,31 @@ class DownloadContents(BaseTask):
         )
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Warn if koikatsucards.com URLs are present but no session cookie set
-        has_kk_urls = any(KOIKATSU_URL in u for u in urls)
-        if has_kk_urls and not self.kkd_session:
-            logger.warning("DLOAD",
-                "koikatsucards.com URLs detected but no kkd_session cookie set. "
-                "Downloads may fail. Log in to koikatsucards.com, copy the "
-                "'kkd_session' cookie value from DevTools and paste it in settings.")
-
         self.log_start("DLOAD")
         logger.info("DLOAD", f"Output directory : {output_dir}")
         logger.info("DLOAD", f"Skip downloaded  : {self.skip_downloaded}")
         logger.info("DLOAD", f"URLs to process  : {len(urls)}")
-        if self.kkd_session:
-            logger.info("DLOAD", "kkd_session cookie : set")
-        else:
-            logger.info("DLOAD", "kkd_session cookie : not set")
+
+        # Resolve kkd_session cookie — prompts if missing or expired
+        has_kk_urls = any(KOIKATSU_URL in url_str for url_str, *_ in urls)
+        kkd_session = None
+        if has_kk_urls:
+            import utils.kkd_session as _kkd
+            kkd_session = _kkd.get_or_prompt()
+            if not kkd_session:
+                logger.warning("DLOAD",
+                    "No kkd_session — koikatsucards.com downloads will be skipped.")
 
         history = _load_history()
         total_ok = 0
         total_fail = 0
 
-        # koikatsucards.com needs the kkd_session cookie; bepis uses no auth
-        kkd_cookies = {"kkd_session": self.kkd_session} if self.kkd_session else None
+        kkd_cookies = {"kkd_session": kkd_session} if kkd_session else None
 
         async def _run_all() -> None:
             nonlocal total_ok, total_fail
             async with _make_client() as bepis_client, \
                        _make_client(cookies=kkd_cookies) as kk_client:
-                # Unpack the tuple here
                 for url_str, page_start, page_end in urls:
                     if BEPIS_URL in url_str:
                         ok, fail = await _download_bepis(
@@ -475,6 +470,11 @@ class DownloadContents(BaseTask):
                             page_start=page_start, page_end=page_end
                         )
                     elif KOIKATSU_URL in url_str:
+                        if not kkd_session:
+                            logger.skipped("DLOAD",
+                                f"Skipping koikatsucards.com URL (no session): {url_str}")
+                            total_fail += 1
+                            continue
                         ok, fail = await _download_koikatsu(
                             kk_client, url_str, output_dir, history, self.skip_downloaded,
                             page_start=page_start, page_end=page_end

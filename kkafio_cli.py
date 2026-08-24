@@ -98,7 +98,7 @@ def run_filter_convert_kks(config, file_manager, input_path: str | None = None,
 def run_download_contents(config, file_manager, links: str | None = None,
                        output_dir: str | None = None,
                        skip_downloaded: bool | None = None,
-                       kkd_session: str | None = None):
+):
     from tasks.download_contents import DownloadContents
     module = DownloadContents(config, file_manager)
     if links is not None:
@@ -107,8 +107,6 @@ def run_download_contents(config, file_manager, links: str | None = None,
         module.output_dir_str = output_dir
     if skip_downloaded is not None:
         module.skip_downloaded = skip_downloaded
-    if kkd_session is not None:
-        module.kkd_session = kkd_session
     module.run()
 
 
@@ -443,7 +441,7 @@ def cmd_download_contents(args):
         run_download_contents(config, file_manager, links=links,
                            output_dir=args.output_dir,
                            skip_downloaded=skip,
-                           kkd_session=args.kkd_session or None)
+)
     except SystemExit:
         raise
     except Exception:
@@ -733,9 +731,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Skip already-downloaded URLs (overrides config)")
     g.add_argument("--no-skip-downloaded", dest="skip_downloaded", action="store_false",
                    help="Re-download even if previously downloaded (overrides config)")
-    p.add_argument("--kkd-session", default=None, metavar="COOKIE",
-                   help="Value of the kkd_session cookie from koikatsucards.com "
-                        "(required for koikatsucards.com downloads; expires every 7 days)")
     p.set_defaults(func=cmd_download_contents)
 
     # download-missing-mods

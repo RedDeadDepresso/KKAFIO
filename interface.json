@@ -204,22 +204,6 @@
         }
       ]
     },
-    "KkdSession": {
-      "type": "input",
-      "label": "koikatsucards.com Session Cookie",
-      "description": "Required to download cards from koikatsucards.com.\n\nHow to get it:\n1. Log in to koikatsucards.com in your browser\n2. Open DevTools (F12) → Application → Cookies → https://koikatsucards.com\n3. Find the cookie named 'kkd_session' and copy its Value\n\n⚠ This cookie expires every 7 days - re-copy it after it expires.",
-      "inputs": [
-        {
-          "name": "kkd_session",
-          "label": "kkd_session value",
-          "default": "",
-          "pipeline_type": "string"
-        }
-      ],
-      "pipeline_override": {
-        "KkdSession": "{kkd_session}"
-      }
-    },
     "InputPath": {
       "type": "folder",
       "name": "input_path",
@@ -807,12 +791,7 @@
       "default_check": false,
       "description": "Download chara, coordinates and scenes from db.bepis.moe or koikatsucards.com",
       "group": ["card-management"],
-      "option": [
-        "DownloadOutputDir",
-        "DownloadLinks",
-        "SkipDownloaded",
-        "KkdSession"
-      ]
+      "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
     },
     {
       "name": "FilterConvertKKS",
