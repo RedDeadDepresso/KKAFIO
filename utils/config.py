@@ -125,6 +125,7 @@ _TASK_KEY = {
     "FilterDuplicateContents": "FilterDuplicateContents",
     "CreateBackup":     "CreateBackup",
     "DownloadContents":    "DownloadContents",
+    "DownloadMissingMods": "DownloadMissingMods",
 }
 
 _TASK_DEFAULTS = {
@@ -139,6 +140,7 @@ _TASK_DEFAULTS = {
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True, "KkdSession": ""},
+    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "UseCache": True, "SideloaderModpack": "OnlyUsed", "DownloadFromTelegram": False}
 }
 
 
@@ -230,6 +232,13 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SkipDownloaded",  "SkipDownloaded")
         v = _extract_opt(opt_values, "KkdSession")
         if v is not None: cfg["KkdSession"] = v
+
+    elif task_name == "DownloadMissingMods":
+        _set("ModsDir",             "ModsDir")
+        _set("CharaDir",            "CharaDir")
+        _set("UseCache",            "UseCache")
+        _set("SideloaderModpack",   "SideloaderModpack")
+        _set("DownloadFromTelegram","DownloadFromTelegram")
 
     return cfg
 
@@ -416,6 +425,7 @@ class Config:
                         raise Exception(f"Path invalid: {path_obj}")
 
         self.archive_chara    = self.config_data["ArchiveChara"]
+        self.download_missing_mods  = self.config_data["DownloadMissingMods"]
         self.download_contents   = self.config_data["DownloadContents"]
         self.delete_chara     = self.config_data["DeleteChara"]
         self.create_backup    = self.config_data["CreateBackup"]
@@ -426,17 +436,3 @@ class Config:
         self.install_contents    = self.config_data["InstallContents"]
         self.ungroup_chara    = self.config_data["UngroupChara"]
         self.uninstall_contents     = self.config_data["UninstallContents"]
-
-
-# ---------------------------------------------------------------------------
-# Utility: list all instances
-# ---------------------------------------------------------------------------
-
-def list_instances(config_file: str) -> list[tuple[int, str]]:
-    try:
-        with open(config_file, "r", encoding="utf-8") as f:
-            mxu = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-    return [(i, inst.get("name", f"Instance {i}"))
-            for i, inst in enumerate(mxu.get("instances", []))]

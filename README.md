@@ -229,8 +229,7 @@ kkafio_cli --config PATH --instance N <command>
 
 ## Requirements
 
-- 7-Zip installed.
-- Enable [UTF-8](https://exploratory.io/note/exploratory/Enabling-UTF-8-on-Windows-hYc3yWL0).
+- 7-Zip installed and on PATH.
 - If running from source: [uv](https://docs.astral.sh/uv/getting-started/installation/) installed.
 
 ## Installation and Usage

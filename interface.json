@@ -630,6 +630,67 @@
         }
       ]
     },
+    "CharaDir": {
+      "type": "folder",
+      "name": "chara_dir",
+      "label": "Custom Chara Directory",
+      "description": "Override the character card folder to scan for missing mods. Leave empty to use the game's default chara folders (female + male).",
+      "default": "",
+      "pipeline_override": {
+        "CharaDir": "{chara_dir}"
+      }
+    },
+    "SideloaderModpack": {
+      "type": "select",
+      "label": "Sideloader Modpack",
+      "description": "How to handle Sideloader Modpack mods:\n• Skip — ignore modpack GUIDs entirely; only download non-modpack mods\n• Only Used — download missing modpack mods that are actually used by installed cards (default)\n• All — download every GUID in the modpack index that is not installed locally",
+      "default_case": "Skip",
+      "cases": [
+        {
+          "name": "Skip",
+          "label": "Skip",
+          "pipeline_override": {
+            "SideloaderModpack": "Skip"
+          }
+        },
+        {
+          "name": "OnlyUsed",
+          "label": "Only Used",
+          "pipeline_override": {
+            "SideloaderModpack": "OnlyUsed"
+          }
+        },
+        {
+          "name": "All",
+          "label": "All",
+          "pipeline_override": {
+            "SideloaderModpack": "All"
+          }
+        }
+      ]
+    },
+    "DownloadFromTelegram": {
+      "type": "switch",
+      "label": "Download from Telegram",
+      "description": "Enable downloading mods not found in BetterRepack via koikatsucards.com + Telegram.\n\nRequires a Telegram account. On first use KKAFIO will open https://my.telegram.org in your browser and ask for your API ID and API Hash, then ask for your phone number and verification code to sign in. Credentials are saved in %APPDATA%/KKAFIO/config/telegram.json.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Enabled",
+          "pipeline_override": {
+            "DownloadFromTelegram": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Disabled",
+          "pipeline_override": {
+            "DownloadFromTelegram": false
+          }
+        }
+      ]
+    },
     "AutoResolve": {
       "type": "switch",
       "label": "Auto-Resolve Paths",
@@ -763,6 +824,20 @@
       "option": ["InputPath", "ConvertKKS", "ExtractArchive", "ArchivePassword"]
     },
     {
+      "name": "DownloadMissingMods",
+      "label": "⬇️ Download Missing Mods",
+      "entry": "DownloadMissingMods",
+      "default_check": false,
+      "description": "Find mods referenced by character cards but not installed locally, then download them from BetterRepack or via Telegram.",
+      "option": [
+        "SideloaderModpack",
+        "DownloadFromTelegram",
+        "UseCache",
+        "CharaDir",
+        "ModsDir"
+      ]
+    },
+    {
       "name": "FilterDuplicateContents",
       "label": "🧹 Filter Duplicate Contents",
       "entry": "FilterDuplicateContents",
@@ -888,6 +963,9 @@
           "name": "FilterConvertKKS"
         },
         {
+          "name": "DownloadMissingMods"
+        },
+        {
           "name": "InstallContents"
         },
         {
@@ -962,6 +1040,9 @@
       "task": [
         {
           "name": "DownloadContents"
+        },
+        {
+          "name": "DownloadMissingMods"
         },
         {
           "name": "InstallContents"

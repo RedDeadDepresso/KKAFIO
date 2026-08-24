@@ -21,5 +21,6 @@ CONFIG_DIR = _get_config_dir()
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # MXU saves config as  <CONFIG_DIR>/config/mxu-KKAFIO.json
-CONFIG_PATH    = CONFIG_DIR / "config" / "mxu-KKAFIO.json"
-SEVEN_ZIP_PATH = CONFIG_DIR / "7zip.json"
+CONFIG_PATH      = CONFIG_DIR / "config" / "mxu-KKAFIO.json"
+SEVEN_ZIP_PATH   = CONFIG_DIR / "7zip.json"
+TELEGRAM_CONFIG  = CONFIG_DIR / "config" / "telegram.json"

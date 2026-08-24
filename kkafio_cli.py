@@ -112,6 +112,27 @@ def run_download_contents(config, file_manager, links: str | None = None,
     module.run()
 
 
+def run_download_missing_mods(config, file_manager,
+                              mods_dir: str | None = None,
+                              chara_dir: str | None = None,
+                              use_cache: bool | None = None,
+                              modpack_mode: str | None = None,
+                              download_from_telegram: bool | None = None):
+    from tasks.download_missing_mods import DownloadMissingMods
+    module = DownloadMissingMods(config, file_manager)
+    if mods_dir is not None:
+        module.mods_dir_str = mods_dir
+    if chara_dir is not None:
+        module.chara_dir_str = chara_dir
+    if use_cache is not None:
+        module.use_cache = use_cache
+    if modpack_mode is not None:
+        module.modpack_mode = modpack_mode
+    if download_from_telegram is not None:
+        module.download_from_tg = download_from_telegram
+    module.run()
+
+
 
 def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
                      auto_resolve: bool | None = None,
@@ -297,6 +318,7 @@ def cmd_run(args):
         "ArchiveChara":     lambda: run_archive_chara(config, file_manager),
         "DeleteChara":      lambda: run_delete_chara(config, file_manager),
         "DownloadContents":    lambda: run_download_contents(config, file_manager),
+        "DownloadMissingMods": lambda: run_download_missing_mods(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS": lambda: run_filter_convert_kks(config, file_manager),
         "FilterDuplicateContents": lambda: run_filter_duplicate_contents(config, file_manager),
@@ -426,6 +448,28 @@ def cmd_download_contents(args):
         raise
     except Exception:
         _write_traceback("DownloadContents")
+        sys.exit(1)
+
+
+def cmd_download_missing_mods(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
+        config.config_data["DownloadMissingMods"]["Enable"] = True
+        use_cache = None if args.use_cache is None else bool(args.use_cache)
+        run_download_missing_mods(
+            config, file_manager,
+            mods_dir=args.mods_dir or None,
+            chara_dir=args.chara_dir or None,
+            use_cache=use_cache,
+            modpack_mode=args.modpack_mode or None,
+            download_from_telegram=args.download_from_telegram,
+            tg_chat_id=args.tg_chat_id or None,
+        )
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("DownloadMissingMods")
         sys.exit(1)
 
 
@@ -693,6 +737,33 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Value of the kkd_session cookie from koikatsucards.com "
                         "(required for koikatsucards.com downloads; expires every 7 days)")
     p.set_defaults(func=cmd_download_contents)
+
+    # download-missing-mods
+    p = sub.add_parser(
+        "download-missing-mods",
+        help="Find mods referenced by chara cards but missing locally, then download them",
+    )
+    p.add_argument("--mods-dir", default=None, metavar="DIR",
+                   help="Override the mods directory (default: game mods dir from config)")
+    p.add_argument("--chara-dir", default=None, metavar="DIR",
+                   help="Override the chara directory to scan (default: game chara dirs from config)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
+                   help="Use mods and chara cache to skip scanning (default: on)")
+    g.add_argument("--no-use-cache", dest="use_cache", action="store_false")
+    p.add_argument("--modpack-mode", default=None,
+                   choices=["Skip", "OnlyUsed", "All"],
+                   help="How to handle Sideloader Modpack mods: "
+                        "Skip=ignore modpack entirely, "
+                        "OnlyUsed=download missing mods used by chara (default), "
+                        "All=download all missing modpack mods")
+    g3 = p.add_mutually_exclusive_group()
+    g3.add_argument("--download-from-telegram",    dest="download_from_telegram",
+                    action="store_true",  default=None,
+                    help="Download mods not in BetterRepack via koikatsucards.com + Telegram")
+    g3.add_argument("--no-download-from-telegram", dest="download_from_telegram",
+                    action="store_false")
+    p.set_defaults(func=cmd_download_missing_mods)
 
     # delete-chara
     p = sub.add_parser(

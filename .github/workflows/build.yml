@@ -130,6 +130,7 @@ jobs:
           --hidden-import "tasks.create_backup"
           --hidden-import "tasks.delete_chara"
           --hidden-import "tasks.download_contents"
+          --hidden-import "tasks.download_missing_mods"
           --hidden-import "tasks.filter_convert_kks"
           --hidden-import "tasks.filter_duplicate_contents"
           --hidden-import "tasks.group_chara"
@@ -149,8 +150,14 @@ jobs:
           if (Test-Path "register_context_menu.bat")   { Copy-Item "register_context_menu.bat"   $dst }
           if (Test-Path "unregister_context_menu.bat") { Copy-Item "unregister_context_menu.bat" $dst }
 
-          # interface.json
-          if (Test-Path "interface.json") { Copy-Item "interface.json" "$dst\interface.json" }
+          # interface.json — patch version field with the release tag
+          if (Test-Path "interface.json") {
+            $iface = Get-Content "interface.json" -Raw | ConvertFrom-Json
+            $tag = "${{ github.ref_name }}"
+            $ver = $tag -replace '^v', ''
+            $iface.version = $ver
+            $iface | ConvertTo-Json -Depth 10 | Set-Content "$dst\interface.json" -Encoding UTF8
+          }
 
           # kkafio_modpack_index.json
           if (Test-Path "kkafio_modpack_index.json") { Copy-Item "kkafio_modpack_index.json" "$dst\kkafio_modpack_index.json" }

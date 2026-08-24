@@ -13,6 +13,7 @@ dependencies = [
     "kkloader>=0.1.20",
     "packaging>=26.0",
     "send2trash>=1.8.3",
+    "telethon>=1.44.0",
 ]
 
 [dependency-groups]
