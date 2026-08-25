@@ -37,6 +37,7 @@ from utils.chara_ops import (
     save_mods_cache,
 )
 from utils.classifier import CardType, get_card_type
+from utils.config import GameType
 from utils.logger import logger
 import utils.telegram_config as tg_cfg
 
@@ -456,12 +457,13 @@ class DownloadMissingMods(BaseTask):
         local_guids: set[str] = set(guid_str_map.keys())
 
         # ── Step 2: modpack index ─────────────────────────────────────────
-        modpack_index = load_modpack_index(mods_dir) or {}
+        game_type     = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
+        modpack_index = load_modpack_index(mods_dir, game_type=game_type) or {}
         if modpack_index:
             logger.info("DLMOD", f"Modpack index loaded: {len(modpack_index)} GUIDs")
         else:
             logger.warning("DLMOD",
-                "kkafio_modpack_index.json not found — "
+                f"kkafio_modpack_index_kk/kks.json not found — "
                 "BetterRepack downloads unavailable.")
 
         # ── Step 3: chara GUIDs ───────────────────────────────────────────

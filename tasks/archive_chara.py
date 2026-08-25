@@ -12,6 +12,7 @@ from utils.chara_ops import (
     find_matching_coords, in_modpack_folder, parse_chara_guids,
     parse_coord_guids, resolve_paths, scan_mods,
 )
+from utils.config import GameType
 from utils.logger import logger
 
 ArchiveFormat = Literal["7z", "zip"]
@@ -87,7 +88,8 @@ class ArchiveChara(BaseTask):
             # Modpack index are intentionally excluded — don't warn about them
             if not self.include_modpack and missing:
                 from utils.chara_ops import load_modpack_index
-                modpack_index = load_modpack_index(mods_dir)
+                game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
+                modpack_index = load_modpack_index(mods_dir, game_type=game_type)
                 if modpack_index:
                     in_modpack = missing & set(modpack_index.keys())
                     if in_modpack:

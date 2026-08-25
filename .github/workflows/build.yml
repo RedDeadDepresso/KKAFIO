@@ -159,8 +159,11 @@ jobs:
             $iface | ConvertTo-Json -Depth 10 | Set-Content "$dst\interface.json" -Encoding UTF8
           }
 
-          # kkafio_modpack_index.json
-          if (Test-Path "kkafio_modpack_index.json") { Copy-Item "kkafio_modpack_index.json" "$dst\kkafio_modpack_index.json" }
+          # kkafio_modpack_index_kk.json
+          if (Test-Path "kkafio_modpack_index_kk.json") { Copy-Item "kkafio_modpack_index_kk.json" "$dst\kkafio_modpack_index_kk.json" }
+
+          # kkafio_modpack_index_kks.json
+          if (Test-Path "kkafio_modpack_index_kks.json") { Copy-Item "kkafio_modpack_index_kks.json" "$dst\kkafio_modpack_index_kks.json" }
 
           # logo.png (ensure folder exists)
           if (!(Test-Path "$dst\assets")) { New-Item -ItemType Directory -Force -Path "$dst\assets" }

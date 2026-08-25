@@ -16,6 +16,7 @@ from pathlib import Path
 
 import msgpack
 
+from utils.config import GameType
 from utils.logger import logger
 
 # ---------------------------------------------------------------------------
@@ -369,29 +370,41 @@ import json as _json
 
 MODS_CACHE_FILE  = "kkafio_mods_cache.json"
 COORD_CACHE_FILE = "kkafio_coord_cache.json"
-MODPACK_INDEX_FILE = "kkafio_modpack_index.json"
+MODPACK_INDEX_FILE_KK  = "kkafio_modpack_index_kk.json"
+MODPACK_INDEX_FILE_KKS = "kkafio_modpack_index_kks.json"
 
 
-def load_modpack_index(mods_dir: Path | None = None) -> dict[str, str] | None:
-    """Load the pre-built Sideloader Modpack GUID index.
+def load_modpack_index(mods_dir: Path | None = None,
+                       game_type: str = GameType.KOIKATSU.value) -> dict[str, str] | None:
+    """Load the pre-built Sideloader Modpack GUID index for the given game type.
 
-    Searches for kkafio_modpack_index.json in:
+    Uses kkafio_modpack_index_kks.json for KoikatsuSunshine,
+    and kkafio_modpack_index_kk.json for all other variants.
+
+    Searches in:
       1. The directory of the running exe / script (shipped with the release)
-      2. mods_dir itself  (user-generated, placed next to mods folder)
-      3. mods_dir.parent  (game root)
+      2. mods_dir itself
+      3. mods_dir.parent (game root)
 
     Returns {guid: relative_path_str} or None if not found.
     """
     import sys
+
+    index_file = (
+        MODPACK_INDEX_FILE_KKS
+        if game_type == GameType.KOIKATSU_SUNSHINE.value
+        else MODPACK_INDEX_FILE_KK
+    )
+
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).parent
     else:
         exe_dir = Path(__file__).resolve().parent.parent  # repo root
 
-    candidates = [exe_dir / MODPACK_INDEX_FILE]
+    candidates = [exe_dir / index_file]
     if mods_dir is not None:
-        candidates.append(mods_dir / MODPACK_INDEX_FILE)
-        candidates.append(mods_dir.parent / MODPACK_INDEX_FILE)
+        candidates.append(mods_dir / index_file)
+        candidates.append(mods_dir.parent / index_file)
 
     for index_path in candidates:
         if index_path.exists():
@@ -399,7 +412,8 @@ def load_modpack_index(mods_dir: Path | None = None) -> dict[str, str] | None:
                 with index_path.open("r", encoding="utf-8") as f:
                     data = _json.load(f)
                 guids = data.get("guids", {})
-                logger.info("CACHE", f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
+                logger.info("CACHE",
+                    f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
                 return guids
             except Exception as e:
                 logger.warning("CACHE", f"Could not load modpack index: {e}")
@@ -595,7 +609,8 @@ def in_modpack_folder(zp: Path, mods_dir: Path) -> bool:
 
 def scan_mods(mods_dir: Path, required: set[str],
               include_modpack: bool = False,
-              use_cache: bool = False) -> dict[str, Path]:
+              use_cache: bool = False,
+              game_type: str = GameType.KOIKATSU.value) -> dict[str, Path]:
     """Scan mods_dir for zipmods providing the required GUIDs.
 
     Fast path: if kkafio_modpack_index.json exists, GUIDs found there are
@@ -611,7 +626,7 @@ def scan_mods(mods_dir: Path, required: set[str],
     remaining = set(required)
 
     # ── Step 1: check modpack index ────────────────────────────────────────
-    modpack_index = load_modpack_index(mods_dir)
+    modpack_index = load_modpack_index(mods_dir, game_type=game_type)
 
     if modpack_index is not None:
         for guid in list(remaining):

@@ -21,9 +21,9 @@ Output format:
   }
 
 Usage:
-  python build_modpack_index.py <mods_folder> [--output PATH]
-  python build_modpack_index.py "C:/KK Party/mods"
-  python build_modpack_index.py "C:/KK Party/mods" --output my_index.json
+  python build_modpack_index.py <mods_folder> [--game-type kk|kks] [--output PATH]
+  python build_modpack_index.py "C:/KK Party/mods" --game-type kk
+  python build_modpack_index.py "C:/KKS/mods" --game-type kks
 """
 
 import argparse
@@ -116,8 +116,10 @@ def main():
     )
     ap.add_argument("mods_dir", metavar="MODS_FOLDER",
                     help="Path to your game's mods folder")
+    ap.add_argument("--game-type", "-g", default="kk", choices=["kk", "kks"],
+                    help="Game type: kk (Koikatsu/KoikatsuParty) or kks (KoikatsuSunshine)")
     ap.add_argument("--output", "-o", default=None, metavar="PATH",
-                    help="Output JSON path (default: <mods_folder>/kkafio_modpack_index.json)")
+                    help="Output JSON path (default: <mods_folder>/kkafio_modpack_index_<type>.json)")
     args = ap.parse_args()
 
     mods_dir = Path(args.mods_dir).resolve()
@@ -125,7 +127,8 @@ def main():
         print(f"ERROR: mods folder not found: {mods_dir}", file=sys.stderr)
         sys.exit(1)
 
-    output = Path(args.output).resolve() if args.output else mods_dir / "kkafio_modpack_index.json"
+    default_name = f"kkafio_modpack_index_{args.game_type}.json"
+    output = Path(args.output).resolve() if args.output else mods_dir / default_name
 
     print(f"Scanning: {mods_dir}")
     print(f"Output  : {output}")
