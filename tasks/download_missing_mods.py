@@ -224,21 +224,29 @@ def _parse_tme_link(tg_link: str) -> tuple[str, int] | None:
 # Telethon session management
 # ---------------------------------------------------------------------------
 
-async def _get_or_create_session(api_id: int, api_hash: str, session_str: str) -> "TelegramClient" | None:
+async def _ensure_session(tg_data: dict) -> bool:
     """
-    Return an authenticated TelegramClient.
-    If session_str is empty or expired, walk the user through sign-in dialogs.
+    Ensure a valid Telethon .session file exists in the session directory.
+    If the session file is missing or the user is not authorised, walk them
+    through phone + code (+ optional 2FA) dialogs and save the result.
+    Returns True if authorised, False if the user cancelled.
     """
     from telethon import TelegramClient
-    from telethon.sessions import StringSession
     from telethon.errors import SessionPasswordNeededError
     from utils.password_dialog import password_dialog
+    from utils.constants import CONFIG_DIR
 
-    client = TelegramClient(StringSession(session_str or ""), api_id, api_hash)
+    session_dir  = CONFIG_DIR / "config" / "tg_session"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    # Name the session file "kkafio" so TGDownloader finds it as "kkafio.session"
+    session_file = session_dir / "kkafio"   # Telethon appends .session
+
+    client = TelegramClient(str(session_file), tg_data["api_id"], tg_data["api_hash"])
     await client.connect()
 
     if await client.is_user_authorized():
-        return client
+        await client.disconnect()
+        return True
 
     logger.info("DLMOD", "Telegram session not found or expired — starting sign-in...")
 
@@ -249,7 +257,7 @@ async def _get_or_create_session(api_id: int, api_hash: str, session_str: str) -
     if not phone:
         logger.error("DLMOD", "Phone number not provided.")
         await client.disconnect()
-        return None
+        return False
 
     await client.send_code_request(phone)
 
@@ -260,7 +268,7 @@ async def _get_or_create_session(api_id: int, api_hash: str, session_str: str) -
     if not code:
         logger.error("DLMOD", "Verification code not provided.")
         await client.disconnect()
-        return None
+        return False
 
     try:
         await client.sign_in(phone, code)
@@ -272,67 +280,140 @@ async def _get_or_create_session(api_id: int, api_hash: str, session_str: str) -
         if not pw:
             logger.error("DLMOD", "2FA password not provided.")
             await client.disconnect()
-            return None
+            return False
         await client.sign_in(password=pw)
 
-    new_session = client.session.save()
-    tg_cfg.save_session(new_session)
+    await client.disconnect()
     logger.success("DLMOD", "Telegram sign-in successful. Session saved.")
-    return client
+    return True
 
 
-async def _download_via_telethon(
+async def _download_via_teleget(
     guid: str,
     tg_link: str,
     mods_dir: Path,
     tg_data: dict,
     guid_str_map: dict[str, str],
 ) -> bool:
-    """Download the file attached to a Telegram message using Telethon."""
+    """
+    Download the file attached to a Telegram message using teleget9527
+    (TeleBackup SDK) for maximum parallel throughput.
+
+    Falls back to standard Telethon download_media if teleget9527 is not
+    installed.
+    """
+    from utils.constants import CONFIG_DIR
+
     parsed = _parse_tme_link(tg_link)
     if not parsed:
         logger.error("DLMOD", f"Cannot parse Telegram link: {tg_link}")
         return False
     chat, message_id = parsed
 
-    try:
-        client = await _get_or_create_session(
-            tg_data["api_id"], tg_data["api_hash"], tg_data.get("session", "")
-        )
-        if client is None:
-            return False
+    session_dir = CONFIG_DIR / "config" / "tg_session"
 
-        message = await client.get_messages(chat, ids=message_id)
-        if message is None or message.document is None:
-            logger.error("DLMOD", f"No file in message {message_id} of {chat} [{guid}]")
-            await client.disconnect()
-            return False
+    # Determine filename using standard Telethon (lightweight metadata fetch)
+    from telethon import TelegramClient
+    session_file = session_dir / "kkafio"
+    meta_client  = TelegramClient(str(session_file), tg_data["api_id"], tg_data["api_hash"])
+    await meta_client.connect()
+    message = await meta_client.get_messages(chat, ids=message_id)
+    await meta_client.disconnect()
 
-        file_name = f"{guid}.zipmod"
-        for attr in message.document.attributes:
-            fn = getattr(attr, "file_name", None)
-            if fn:
-                file_name = fn
-                break
+    if message is None or message.document is None:
+        logger.error("DLMOD", f"No file in message {message_id} of {chat} [{guid}]")
+        return False
 
-        dest = mods_dir / file_name
-        if dest.exists():
-            logger.skipped("DLMOD", f"{file_name} already exists, skipping")
-            await client.disconnect()
-            return True
+    file_name = f"{guid}.zipmod"
+    for attr in message.document.attributes:
+        fn = getattr(attr, "file_name", None)
+        if fn:
+            file_name = fn
+            break
 
-        logger.info("DLMOD", f"Telegram ↓ {file_name}")
-        await client.download_media(message, file=str(dest))
-        await client.disconnect()
+    dest = mods_dir / file_name
 
-        logger.success("DLMOD", f"Downloaded: {file_name}")
-        guid_str_map[guid] = str(dest)
-        save_mods_cache(mods_dir, guid_str_map)
+    if dest.exists() and dest.stat().st_size == message.document.size:
+        logger.skipped("DLMOD", f"{file_name} already complete, skipping")
         return True
 
+    logger.info("DLMOD", f"Telegram ↓ {file_name}")
+
+    # Resolve username to numeric chat_id using Telethon (teleget9527 needs int)
+    numeric_chat_id: int
+    if isinstance(chat, str):
+        resolve_client = TelegramClient(str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"])
+        await resolve_client.connect()
+        try:
+            entity = await resolve_client.get_entity(chat)
+            numeric_chat_id = entity.id
+            # Telegram channel IDs need the -100 prefix for Bot API,
+            # but teleget9527 uses raw positive IDs internally
+        finally:
+            await resolve_client.disconnect()
+    else:
+        numeric_chat_id = chat
+
+    # Try teleget9527 for parallel multi-connection download
+    try:
+        from tg_downloader import TGDownloader
+
+        account_id = "kkafio"
+
+        downloader = TGDownloader(
+            api_id=tg_data["api_id"],
+            api_hash=tg_data["api_hash"],
+            session_dir=str(session_dir.resolve()),
+        )
+
+        await downloader.start(account_id)
+
+        file_size = message.document.size
+
+        def _on_progress(downloaded: int, total: int, pct: float) -> None:
+            if total > 0:
+                mb_done  = downloaded // 1024 // 1024
+                mb_total = total      // 1024 // 1024
+                logger.info("DLMOD", f"  {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
+
+        await downloader.download(
+            chat_id=numeric_chat_id,
+            msg_id=message_id,
+            save_path=str(dest.resolve()),
+            progress_callback=_on_progress,
+        )
+
+        # Poll until the file reaches expected size
+        for _ in range(3600):   # up to 1 hour
+            await asyncio.sleep(1)
+            if dest.exists() and dest.stat().st_size >= file_size:
+                break
+
+        await downloader.shutdown()
+
+    except ImportError:
+        logger.info("DLMOD",
+            "teleget9527 not installed, using Telethon "
+            "(install with: pip install teleget9527[fast])")
+        dl_client = TelegramClient(str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"])
+        await dl_client.connect()
+        await dl_client.download_media(message, file=str(dest), workers=4)
+        await dl_client.disconnect()
+
     except Exception as e:
-        logger.error("DLMOD", f"Telethon download failed [{guid}]: {e}")
+        logger.error("DLMOD", f"Download failed [{guid}]: {e}")
         return False
+
+    if not dest.exists() or dest.stat().st_size != message.document.size:
+        logger.error("DLMOD", f"Download incomplete [{guid}]: {dest}")
+        return False
+
+    logger.success("DLMOD", f"Downloaded: {file_name}")
+    guid_str_map[guid] = str(dest)
+    save_mods_cache(mods_dir, guid_str_map)
+    return True
+
+    return False
 
 
 
@@ -488,25 +569,33 @@ class DownloadMissingMods(BaseTask):
                             f"skipping {len(from_telegram)} mod(s).")
                         fail += len(from_telegram)
                     else:
-                        logger.info("DLMOD",
-                            f"Looking up {len(from_telegram)} mod(s) on "
-                            "koikatsucards.com + Telegram...")
-                        for guid in from_telegram:
-                            logger.info("DLMOD", f"  Looking up: {guid}")
-                            tg_link = await _get_telegram_link(kk_client, guid)
-                            if not tg_link:
-                                logger.warning("DLMOD",
-                                    f"  {guid} — not found on koikatsucards.com")
-                                fail += 1
-                                continue
-                            logger.info("DLMOD", f"  Link: {tg_link}")
-                            success = await _download_via_telethon(
-                                guid, tg_link, mods_dir, tg_data, guid_str_map,
-                            )
-                            if success:
-                                ok += 1
-                            else:
-                                fail += 1
+                        # Ensure session file exists before starting downloads
+                        authorised = await _ensure_session(tg_data)
+                        if not authorised:
+                            logger.error("DLMOD",
+                                "Telegram sign-in failed — "
+                                f"skipping {len(from_telegram)} mod(s).")
+                            fail += len(from_telegram)
+                        else:
+                            logger.info("DLMOD",
+                                f"Looking up {len(from_telegram)} mod(s) on "
+                                "koikatsucards.com + Telegram...")
+                            for guid in from_telegram:
+                                logger.info("DLMOD", f"  Looking up: {guid}")
+                                tg_link = await _get_telegram_link(kk_client, guid)
+                                if not tg_link:
+                                    logger.warning("DLMOD",
+                                        f"  {guid} — not found on koikatsucards.com")
+                                    fail += 1
+                                    continue
+                                logger.info("DLMOD", f"  Link: {tg_link}")
+                                success = await _download_via_teleget(
+                                    guid, tg_link, mods_dir, tg_data, guid_str_map,
+                                )
+                                if success:
+                                    ok += 1
+                                else:
+                                    fail += 1
 
         asyncio.run(_run_all())
 

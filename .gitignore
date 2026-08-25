@@ -161,8 +161,7 @@ cython_debug/
 
 # KKAFIO stuff
 traceback.log
-gui/config/
-test/
 .vscode/
 KKAFIO.exe
 cache
+data

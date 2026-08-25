@@ -1,4 +1,3 @@
-
 """
 telegram_config.py — Load and save Telegram API credentials.
 
@@ -16,7 +15,6 @@ from __future__ import annotations
 
 import json
 import webbrowser
-from pathlib import Path
 
 from utils.constants import TELEGRAM_CONFIG
 from utils.logger import logger
@@ -47,12 +45,8 @@ def save(data: dict) -> None:
 
 
 def is_complete(data: dict) -> bool:
-    """Return True if api_id, api_hash and session are all set."""
-    return bool(
-        data.get("api_id") and
-        data.get("api_hash") and
-        data.get("session")
-    )
+    """Return True if api_id and api_hash are set."""
+    return bool(data.get("api_id") and data.get("api_hash"))
 
 
 def prompt_for_credentials() -> dict:
@@ -109,9 +103,4 @@ def get_or_prompt() -> dict | None:
     return data
 
 
-def save_session(session_str: str) -> None:
-    """Update just the session field in telegram.json."""
-    data = load()
-    data["session"] = session_str
-    save(data)
-    logger.info("TGCFG", "Telegram session saved to telegram.json")
+
