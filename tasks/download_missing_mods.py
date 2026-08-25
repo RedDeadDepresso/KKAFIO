@@ -288,40 +288,51 @@ async def _ensure_session(tg_data: dict) -> bool:
     return True
 
 
+# Hardcoded numeric ID for the KK_archive_modlibrary public channel.
+# This never changes for a given channel so no runtime resolution is needed.
+KK_ARCHIVE_CHAT_ID = 3881428951
+
+
 async def _download_via_teleget(
     guid: str,
     tg_link: str,
     mods_dir: Path,
     tg_data: dict,
     guid_str_map: dict[str, str],
+    downloader=None,
 ) -> bool:
     """
     Download the file attached to a Telegram message using teleget9527
     (TeleBackup SDK) for maximum parallel throughput.
 
+    Pass an already-started TGDownloader instance via `downloader` so it is
+    reused across multiple calls — avoids the per-download startup/shutdown
+    overhead and the ShutdownRequest bug in teleget9527.
+
     Falls back to standard Telethon download_media if teleget9527 is not
     installed.
     """
     from utils.constants import CONFIG_DIR
+    from telethon import TelegramClient
 
     parsed = _parse_tme_link(tg_link)
     if not parsed:
         logger.error("DLMOD", f"Cannot parse Telegram link: {tg_link}")
         return False
-    chat, message_id = parsed
+    _, message_id = parsed
 
     session_dir = CONFIG_DIR / "config" / "tg_session"
 
-    # Determine filename using standard Telethon (lightweight metadata fetch)
-    from telethon import TelegramClient
-    session_file = session_dir / "kkafio"
-    meta_client  = TelegramClient(str(session_file), tg_data["api_id"], tg_data["api_hash"])
+    # Fetch message metadata (filename, size) via a lightweight Telethon call
+    meta_client = TelegramClient(
+        str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"]
+    )
     await meta_client.connect()
-    message = await meta_client.get_messages(chat, ids=message_id)
+    message = await meta_client.get_messages(KK_ARCHIVE_CHAT_ID, ids=message_id)
     await meta_client.disconnect()
 
     if message is None or message.document is None:
-        logger.error("DLMOD", f"No file in message {message_id} of {chat} [{guid}]")
+        logger.error("DLMOD", f"No file in message {message_id} [{guid}]")
         return False
 
     file_name = f"{guid}.zipmod"
@@ -338,71 +349,47 @@ async def _download_via_teleget(
         return True
 
     logger.info("DLMOD", f"Telegram ↓ {file_name}")
+    file_size = message.document.size
 
-    # Resolve username to numeric chat_id using Telethon (teleget9527 needs int)
-    numeric_chat_id: int
-    if isinstance(chat, str):
-        resolve_client = TelegramClient(str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"])
-        await resolve_client.connect()
+    # Use teleget9527 if available (reuse the passed-in downloader instance)
+    if downloader is not None:
         try:
-            entity = await resolve_client.get_entity(chat)
-            numeric_chat_id = entity.id
-            # Telegram channel IDs need the -100 prefix for Bot API,
-            # but teleget9527 uses raw positive IDs internally
-        finally:
-            await resolve_client.disconnect()
+            def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                if total > 0:
+                    mb_done  = downloaded // 1024 // 1024
+                    mb_total = total      // 1024 // 1024
+                    logger.info("DLMOD",
+                        f"  {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
+
+            await downloader.download(
+                chat_id=KK_ARCHIVE_CHAT_ID,
+                msg_id=message_id,
+                save_path=str(dest.resolve()),
+                progress_callback=_on_progress,
+            )
+
+            # Poll until file reaches expected size (up to 1 hour)
+            for _ in range(3600):
+                await asyncio.sleep(1)
+                if dest.exists() and dest.stat().st_size >= file_size:
+                    break
+
+        except Exception as e:
+            logger.error("DLMOD", f"teleget9527 download failed [{guid}]: {e}")
+            return False
+
     else:
-        numeric_chat_id = chat
-
-    # Try teleget9527 for parallel multi-connection download
-    try:
-        from tg_downloader import TGDownloader
-
-        account_id = "kkafio"
-
-        downloader = TGDownloader(
-            api_id=tg_data["api_id"],
-            api_hash=tg_data["api_hash"],
-            session_dir=str(session_dir.resolve()),
-        )
-
-        await downloader.start(account_id)
-
-        file_size = message.document.size
-
-        def _on_progress(downloaded: int, total: int, pct: float) -> None:
-            if total > 0:
-                mb_done  = downloaded // 1024 // 1024
-                mb_total = total      // 1024 // 1024
-                logger.info("DLMOD", f"  {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
-
-        await downloader.download(
-            chat_id=numeric_chat_id,
-            msg_id=message_id,
-            save_path=str(dest.resolve()),
-            progress_callback=_on_progress,
-        )
-
-        # Poll until the file reaches expected size
-        for _ in range(3600):   # up to 1 hour
-            await asyncio.sleep(1)
-            if dest.exists() and dest.stat().st_size >= file_size:
-                break
-
-        await downloader.shutdown()
-
-    except ImportError:
-        logger.info("DLMOD",
-            "teleget9527 not installed, using Telethon "
-            "(install with: pip install teleget9527[fast])")
-        dl_client = TelegramClient(str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"])
-        await dl_client.connect()
-        await dl_client.download_media(message, file=str(dest), workers=4)
-        await dl_client.disconnect()
-
-    except Exception as e:
-        logger.error("DLMOD", f"Download failed [{guid}]: {e}")
-        return False
+        # Fallback: Telethon download_media with parallel workers
+        try:
+            dl_client = TelegramClient(
+                str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"]
+            )
+            await dl_client.connect()
+            await dl_client.download_media(message, file=str(dest), workers=4)
+            await dl_client.disconnect()
+        except Exception as e:
+            logger.error("DLMOD", f"Telethon download failed [{guid}]: {e}")
+            return False
 
     if not dest.exists() or dest.stat().st_size != message.document.size:
         logger.error("DLMOD", f"Download incomplete [{guid}]: {dest}")
@@ -412,9 +399,6 @@ async def _download_via_teleget(
     guid_str_map[guid] = str(dest)
     save_mods_cache(mods_dir, guid_str_map)
     return True
-
-    return False
-
 
 
 class DownloadMissingMods(BaseTask):
@@ -580,22 +564,49 @@ class DownloadMissingMods(BaseTask):
                             logger.info("DLMOD",
                                 f"Looking up {len(from_telegram)} mod(s) on "
                                 "koikatsucards.com + Telegram...")
-                            for guid in from_telegram:
-                                logger.info("DLMOD", f"  Looking up: {guid}")
-                                tg_link = await _get_telegram_link(kk_client, guid)
-                                if not tg_link:
-                                    logger.warning("DLMOD",
-                                        f"  {guid} — not found on koikatsucards.com")
-                                    fail += 1
-                                    continue
-                                logger.info("DLMOD", f"  Link: {tg_link}")
-                                success = await _download_via_teleget(
-                                    guid, tg_link, mods_dir, tg_data, guid_str_map,
+
+                            # Create TGDownloader once and reuse across all downloads
+                            from utils.constants import CONFIG_DIR as _CFG_DIR
+                            _session_dir = _CFG_DIR / "config" / "tg_session"
+                            teleget_downloader = None
+                            try:
+                                from tg_downloader import TGDownloader
+                                teleget_downloader = TGDownloader(
+                                    api_id=tg_data["api_id"],
+                                    api_hash=tg_data["api_hash"],
+                                    session_dir=str(_session_dir.resolve()),
                                 )
-                                if success:
-                                    ok += 1
-                                else:
-                                    fail += 1
+                                await teleget_downloader.start("kkafio")
+                                logger.info("DLMOD", "teleget9527 downloader started")
+                            except ImportError:
+                                logger.info("DLMOD",
+                                    "teleget9527 not installed, using Telethon fallback "
+                                    "(install with: pip install teleget9527[fast])")
+
+                            try:
+                                for guid in from_telegram:
+                                    logger.info("DLMOD", f"  Looking up: {guid}")
+                                    tg_link = await _get_telegram_link(kk_client, guid)
+                                    if not tg_link:
+                                        logger.warning("DLMOD",
+                                            f"  {guid} — not found on koikatsucards.com")
+                                        fail += 1
+                                        continue
+                                    logger.info("DLMOD", f"  Link: {tg_link}")
+                                    success = await _download_via_teleget(
+                                        guid, tg_link, mods_dir, tg_data,
+                                        guid_str_map, teleget_downloader,
+                                    )
+                                    if success:
+                                        ok += 1
+                                    else:
+                                        fail += 1
+                            finally:
+                                if teleget_downloader is not None:
+                                    try:
+                                        await teleget_downloader.shutdown()
+                                    except Exception:
+                                        pass  # suppress ShutdownRequest bug in teleget9527
 
         asyncio.run(_run_all())
 
