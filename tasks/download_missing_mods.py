@@ -301,17 +301,14 @@ async def _download_via_teleget(
     tg_data: dict,
     guid_str_map: dict[str, str],
     downloader=None,
+    rel_path: str | None = None,
 ) -> bool:
     """
-    Download the file attached to a Telegram message using teleget9527
-    (TeleBackup SDK) for maximum parallel throughput.
+    Download the file attached to a Telegram message using teleget9527.
 
-    Pass an already-started TGDownloader instance via `downloader` so it is
-    reused across multiple calls — avoids the per-download startup/shutdown
-    overhead and the ShutdownRequest bug in teleget9527.
-
-    Falls back to standard Telethon download_media if teleget9527 is not
-    installed.
+    If rel_path is provided (from the modpack index), the file is saved to
+    mods_dir / rel_path preserving the Sideloader Modpack subfolder structure.
+    Otherwise the file is saved directly into mods_dir.
     """
     from utils.constants import CONFIG_DIR
     from telethon import TelegramClient
@@ -343,7 +340,13 @@ async def _download_via_teleget(
             file_name = fn
             break
 
-    dest = mods_dir / file_name
+    # If rel_path is given (from modpack index), preserve the subfolder structure.
+    # Replace only the filename portion so the directory matches BetterRepack's layout.
+    if rel_path:
+        dest = mods_dir / Path(rel_path).parent / file_name
+    else:
+        dest = mods_dir / file_name
+    dest.parent.mkdir(parents=True, exist_ok=True)
 
     if dest.exists() and dest.stat().st_size == message.document.size:
         logger.skipped("DLMOD", f"{file_name} already complete, skipping")
@@ -530,6 +533,7 @@ class DownloadMissingMods(BaseTask):
                        _make_http_client() as kk_client:
 
                 # BetterRepack — concurrent
+                br_failed: dict[str, str] = {}  # guid -> rel_path for failed BR downloads
                 if from_betterrepack:
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
@@ -544,15 +548,28 @@ class DownloadMissingMods(BaseTask):
                             fail += 1
                             if isinstance(result, Exception):
                                 logger.error("DLMOD", f"Exception [{guid}]: {result}")
+                            # Queue for Telegram fallback if enabled
+                            if use_telethon:
+                                br_failed[guid] = from_betterrepack[guid]
+                                logger.info("DLMOD",
+                                    f"  [{guid}] will be retried via Telegram")
+
+                # Merge BetterRepack failures into Telegram queue
+                telegram_queue: list[tuple[str, str | None]] = [
+                    (guid, None) for guid in from_telegram
+                ] + [
+                    (guid, rel) for guid, rel in br_failed.items()
+                ]
 
                 # Telegram via Telethon — sequential
-                if from_telegram:
+                if telegram_queue:
                     # Load/prompt for credentials once before the loop
                     tg_data = tg_cfg.get_or_prompt()
                     if tg_data is None:
                         logger.error("DLMOD",
                             "Telegram credentials not provided — "
-                            f"skipping {len(from_telegram)} mod(s).")
+                            f"skipping {len(telegram_queue)} mod(s).")
+                        fail += len(br_failed)  # br_failed already counted above
                         fail += len(from_telegram)
                     else:
                         # Ensure session file exists before starting downloads
@@ -560,11 +577,12 @@ class DownloadMissingMods(BaseTask):
                         if not authorised:
                             logger.error("DLMOD",
                                 "Telegram sign-in failed — "
-                                f"skipping {len(from_telegram)} mod(s).")
+                                f"skipping {len(telegram_queue)} mod(s).")
+                            fail += len(br_failed)
                             fail += len(from_telegram)
                         else:
                             logger.info("DLMOD",
-                                f"Looking up {len(from_telegram)} mod(s) on "
+                                f"Processing {len(telegram_queue)} mod(s) via "
                                 "koikatsucards.com + Telegram...")
 
                             # Create TGDownloader once and reuse across all downloads
@@ -586,23 +604,30 @@ class DownloadMissingMods(BaseTask):
                                     "(install with: pip install teleget9527[fast])")
 
                             try:
-                                for guid in from_telegram:
+                                for guid, rel_path in telegram_queue:
                                     logger.info("DLMOD", f"  Looking up: {guid}")
                                     tg_link = await _get_telegram_link(kk_client, guid)
                                     if not tg_link:
                                         logger.warning("DLMOD",
                                             f"  {guid} — not found on koikatsucards.com")
-                                        fail += 1
+                                        if guid not in br_failed:
+                                            fail += 1
                                         continue
                                     logger.info("DLMOD", f"  Link: {tg_link}")
+                                    # Pass rel_path so the file is saved to the same
+                                    # subfolder as defined in the modpack index
                                     success = await _download_via_teleget(
                                         guid, tg_link, mods_dir, tg_data,
                                         guid_str_map, teleget_downloader,
+                                        rel_path=rel_path,
                                     )
                                     if success:
+                                        if guid in br_failed:
+                                            fail -= 1  # un-count the BetterRepack failure
                                         ok += 1
                                     else:
-                                        fail += 1
+                                        if guid not in br_failed:
+                                            fail += 1
                             finally:
                                 if teleget_downloader is not None:
                                     try:
