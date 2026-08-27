@@ -678,7 +678,7 @@
     "AutoResolve": {
       "type": "switch",
       "label": "Auto-Resolve Paths",
-      "description": "Automatically find mods and coordinate directories",
+      "description": "If the selected card is inside the game folder, uses the game's mods and coordinate directories automatically. Otherwise falls back to the card's parent folder. Disable to use the Custom Mods Directory and Custom Coordinate Directory fields instead.",
       "default_case": "Yes",
       "cases": [
         {
