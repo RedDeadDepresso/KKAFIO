@@ -13,7 +13,7 @@ dependencies = [
     "kkloader>=0.1.20",
     "packaging>=26.0",
     "send2trash>=1.8.3",
-    "teleget9527[fast]>=0.2.0",
+    "teleget9527[fast]",
 ]
 
 [dependency-groups]
@@ -39,3 +39,6 @@ build-backend = "hatchling.build"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-v --tb=short"
+
+[tool.uv.sources]
+teleget9527 = { git = "https://github.com/RedDeadDepresso/telebackup.git", rev = "main" }

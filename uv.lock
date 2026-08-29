@@ -287,7 +287,7 @@ requires-dist = [
     { name = "kkloader", specifier = ">=0.1.20" },
     { name = "packaging", specifier = ">=26.0" },
     { name = "send2trash", specifier = ">=1.8.3" },
-    { name = "teleget9527", extras = ["fast"], specifier = ">=0.2.0" },
+    { name = "teleget9527", extras = ["fast"], git = "https://github.com/RedDeadDepresso/telebackup.git?rev=main" },
 ]
 
 [package.metadata.requires-dev]
@@ -741,15 +741,11 @@ wheels = [
 
 [[package]]
 name = "teleget9527"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
+version = "2.0.0"
+source = { git = "https://github.com/RedDeadDepresso/telebackup.git?rev=main#c7cd6f69bc3bf70aeb766c6f6291549aa35a0fab" }
 dependencies = [
     { name = "psutil" },
     { name = "telethon" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/3d/51dc1bd9d0d0b53b641a137f942b130b09b654dc7b5ebfa0545a021fd4c8/teleget9527-0.2.0.tar.gz", hash = "sha256:1e8e6040bbe4bf5b2c33d4e95cf575444ab56029039ac9b2484289bb7d9d99db", size = 132913, upload-time = "2026-02-18T18:11:01.748Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/2b/760936db91eb64ad850058b1cb01df75b296bcb1b9d6e53bfc8807775f4e/teleget9527-0.2.0-py3-none-any.whl", hash = "sha256:21396cfcb69a9bd071be2b3a011b4ec9b7c06f8a0bf9502a7233e4cc86458add", size = 138266, upload-time = "2026-02-18T18:11:00.517Z" },
 ]
 
 [package.optional-dependencies]
