@@ -363,6 +363,116 @@
         }
       ]
     },
+    "Chara": {
+      "type": "switch",
+      "label": "Chara",
+      "description": "Include character cards.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Yes",
+          "pipeline_override": {
+            "Chara": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "No",
+          "pipeline_override": {
+            "Chara": false
+          }
+        }
+      ]
+    },
+    "Mods": {
+      "type": "switch",
+      "label": "Mods",
+      "description": "Include zipmod files.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Yes",
+          "pipeline_override": {
+            "Mods": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "No",
+          "pipeline_override": {
+            "Mods": false
+          }
+        }
+      ]
+    },
+    "Coords": {
+      "type": "switch",
+      "label": "Coords",
+      "description": "Include coordinate cards.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Yes",
+          "pipeline_override": {
+            "Coords": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "No",
+          "pipeline_override": {
+            "Coords": false
+          }
+        }
+      ]
+    },
+    "Scenes": {
+      "type": "switch",
+      "label": "Scenes",
+      "description": "Include Studio scene cards.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Yes",
+          "pipeline_override": {
+            "Scenes": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "No",
+          "pipeline_override": {
+            "Scenes": false
+          }
+        }
+      ]
+    },
+    "Overlays": {
+      "type": "switch",
+      "label": "Overlays",
+      "description": "Include unclassified PNG overlays.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Yes",
+          "pipeline_override": {
+            "Overlays": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "No",
+          "pipeline_override": {
+            "Overlays": false
+          }
+        }
+      ]
+    },
     "FileConflicts": {
       "type": "select",
       "label": "File Conflict Handling",
@@ -839,6 +949,11 @@
       "group": ["card-management"],
       "option": [
         "InputPath",
+        "Chara",
+        "Mods",
+        "Coords",
+        "Scenes",
+        "Overlays",
         "FileConflicts",
         "ExtractArchive",
         "ArchivePassword"
@@ -851,7 +966,7 @@
       "default_check": false,
       "description": "Uninstall character cards and their mods from the game",
       "group": ["card-management"],
-      "option": ["InputPath"]
+      "option": ["InputPath", "Chara", "Mods", "Coords", "Scenes", "Overlays"]
     },
     {
       "name": "GroupChara",

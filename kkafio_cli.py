@@ -62,22 +62,39 @@ def _clear_traceback() -> None:
 # ---------------------------------------------------------------------------
 
 def run_install_contents(config, file_manager, input_path: str | None = None,
-                      extract_archive: bool | None = None, skip_extract: bool = False):
+                      extract_archive: bool | None = None, skip_extract: bool = False,
+                      chara: bool | None = None, mods: bool | None = None,
+                      coords: bool | None = None, scenes: bool | None = None,
+                      overlays: bool | None = None):
     from tasks.install_contents import InstallContents
     from pathlib import Path
     module = InstallContents(config, file_manager)
     if extract_archive is not None:
         module.extract_archive = extract_archive
+    if chara    is not None: module.install_chara    = chara
+    if mods     is not None: module.install_mods     = mods
+    if coords   is not None: module.install_coords   = coords
+    if scenes   is not None: module.install_scenes   = scenes
+    if overlays is not None: module.install_overlays = overlays
     module.run(folder_path=Path(input_path) if input_path else None,
                skip_extract=skip_extract)
 
 
-def run_uninstall_contents(config, file_manager, input_path: str | None = None):
+def run_uninstall_contents(config, file_manager, input_path: str | None = None,
+                           chara: bool | None = None, mods: bool | None = None,
+                           coords: bool | None = None, scenes: bool | None = None,
+                           overlays: bool | None = None):
     from tasks.uninstall_contents import UninstallContents
     from pathlib import Path
     if input_path is not None:
         config.uninstall_contents["InputPath"] = Path(input_path)
-    UninstallContents(config, file_manager).run()
+    module = UninstallContents(config, file_manager)
+    if chara    is not None: module.uninstall_chara    = chara
+    if mods     is not None: module.uninstall_mods     = mods
+    if coords   is not None: module.uninstall_coords   = coords
+    if scenes   is not None: module.uninstall_scenes   = scenes
+    if overlays is not None: module.uninstall_overlays = overlays
+    module.run()
 
 
 def run_filter_convert_kks(config, file_manager, input_path: str | None = None,
@@ -372,12 +389,13 @@ def cmd_install_contents(args):
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["InstallContents"]["Enable"] = True
         extract = None
-        if args.extract_archive is True:
-            extract = True
-        elif args.extract_archive is False:
-            extract = False
+        if args.extract_archive is True:  extract = True
+        elif args.extract_archive is False: extract = False
         run_install_contents(config, file_manager, input_path=args.input,
-                          extract_archive=extract)
+                          extract_archive=extract,
+                          chara=args.chara, mods=args.mods,
+                          coords=args.coords, scenes=args.scenes,
+                          overlays=args.overlays)
     except SystemExit:
         raise
     except Exception:
@@ -390,7 +408,10 @@ def cmd_uninstall_contents(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["UninstallContents"]["Enable"] = True
-        run_uninstall_contents(config, file_manager, input_path=args.input)
+        run_uninstall_contents(config, file_manager, input_path=args.input,
+                               chara=args.chara, mods=args.mods,
+                               coords=args.coords, scenes=args.scenes,
+                               overlays=args.overlays)
     except SystemExit:
         raise
     except Exception:
@@ -692,16 +713,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--input", "-i", metavar="DIR", default=None,
                    help="Folder to scan (default: InstallContents.InputPath from config)")
     g = p.add_mutually_exclusive_group()
-    g.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None,
-                   help="Extract ZIP/RAR/7z archives before installing (overrides config)")
-    g.add_argument("--no-extract-archive", dest="extract_archive", action="store_false",
-                   help="Skip archive extraction (overrides config)")
+    g.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None)
+    g.add_argument("--no-extract-archive", dest="extract_archive", action="store_false")
+    for flag in ("chara", "mods", "coords", "scenes", "overlays"):
+        g2 = p.add_mutually_exclusive_group()
+        g2.add_argument(f"--{flag}",    dest=flag, action="store_true",  default=None)
+        g2.add_argument(f"--no-{flag}", dest=flag, action="store_false")
     p.set_defaults(func=cmd_install_contents)
 
     # uninstall-contents
     p = sub.add_parser("uninstall-contents", help="Remove cards / mods from the game")
     p.add_argument("--input", "-i", metavar="DIR", default=None,
                    help="Folder to scan (default: UninstallContents.InputPath from config)")
+    for flag in ("chara", "mods", "coords", "scenes", "overlays"):
+        g2 = p.add_mutually_exclusive_group()
+        g2.add_argument(f"--{flag}",    dest=flag, action="store_true",  default=None)
+        g2.add_argument(f"--no-{flag}", dest=flag, action="store_false")
     p.set_defaults(func=cmd_uninstall_contents)
 
     # filter-convert-kks
