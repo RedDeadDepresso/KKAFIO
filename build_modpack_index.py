@@ -1,29 +1,25 @@
-#!/usr/bin/env python3
 """
-build_modpack_index.py — Scan a mods folder and build a JSON index of all
-GUIDs found inside Sideloader Modpack folders.
+build_modpack_index.py — Build (or incrementally update) a GUID index of all
+zipmods inside Sideloader Modpack folders.
 
-The resulting JSON is consumed by KKAFIO's archive_chara and delete_chara
-tasks. When a required GUID is found in the index, KKAFIO knows the mod is
-part of the Sideloader Modpack and skips bundling/deleting it (unless
-IncludeModpack is enabled). If the GUID is NOT in the index, KKAFIO falls
-back to scanning local folders for the mod file.
+Incremental updates: on rebuild, files whose path, mtime, and size are
+unchanged are reused from the previous index without being opened. Only new
+or changed zipmods are scanned. Adding a handful of mods to a large Sideloader
+Modpack takes seconds instead of minutes.
 
-Output format:
+Output (kkafio_modpack_index_kk.json or kkafio_modpack_index_kks.json):
   {
     "generated": "2025-01-01T12:00:00",
-    "mods_dir": "C:/KK/mods",
-    "count": 1234,
-    "guids": {
-      "com.example.mymod": "Sideloader Modpack/Author/mymod.zipmod",
-      ...
-    }
+    "mods_dir":  "C:/KK/mods",
+    "count":     1234,
+    "guids":     {"com.example.mod": "Sideloader Modpack/Author/mod.zipmod", ...},
+    "files":     {"C:/KK/mods/...": [mtime_int, size, "guid_or_null"], ...}
   }
 
 Usage:
   python build_modpack_index.py <mods_folder> [--game-type kk|kks] [--output PATH]
   python build_modpack_index.py "C:/KK Party/mods" --game-type kk
-  python build_modpack_index.py "C:/KKS/mods" --game-type kks
+  python build_modpack_index.py "C:/KKS/mods"      --game-type kks
 """
 
 import argparse
@@ -65,9 +61,13 @@ def guid_from_zipmod(path: Path) -> str | None:
         return None
 
 
-def build_index(mods_dir: Path) -> dict[str, str]:
-    """Scan all zipmods in Sideloader Modpack folders and return
-    {guid: relative_path_str}."""
+def build_index(mods_dir: Path, previous: dict) -> tuple[dict[str, str], dict]:
+    """Scan Sideloader Modpack folders, return (guid_map, file_fingerprints).
+
+    previous: the "files" dict from a prior run — {abs_path: [mtime, size, guid|null]}.
+    Unchanged files (same mtime + size) are reused without opening the zipmod.
+    Only new or changed files are read via ThreadPoolExecutor.
+    """
     modpack_zips = [
         zp for zp in mods_dir.rglob("*.zipmod")
         if is_modpack_folder(zp, mods_dir)
@@ -75,26 +75,63 @@ def build_index(mods_dir: Path) -> dict[str, str]:
 
     print(f"Found {len(modpack_zips)} zipmods in Sideloader Modpack folders")
 
+    old_files: dict = previous  # {str_path: [mtime, size, guid|None]}
+
+    guid_map:   dict[str, str] = {}
+    new_files:  dict           = {}
+    to_read:    list[Path]     = []
+    reused = 0
+
+    # Pass 1 — reuse unchanged files
+    for zp in modpack_zips:
+        sp = str(zp)
+        try:
+            st = zp.stat()
+        except OSError:
+            continue
+        fp = (int(st.st_mtime), st.st_size)
+        old = old_files.get(sp)
+        if old is not None and (old[0], old[1]) == fp:
+            guid = old[2]
+            new_files[sp] = old
+            if guid:
+                rel = str(zp.relative_to(mods_dir))
+                guid_map[guid] = rel
+            reused += 1
+        else:
+            to_read.append(zp)
+
+    if reused:
+        print(f"  Reused (unchanged): {reused}")
+    if to_read:
+        print(f"  New/changed (will scan): {len(to_read)}")
+
+    # Pass 2 — parallel read for new/changed files
     import os
     workers = min(32, (os.cpu_count() or 4) * 2)
-    guid_map: dict[str, str] = {}
-    errors = 0
+    errors  = 0
 
     def _proc(zp: Path):
-        guid = guid_from_zipmod(zp)
-        rel  = str(zp.relative_to(mods_dir))
-        return guid, rel
+        return zp, guid_from_zipmod(zp)
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = {ex.submit(_proc, zp): zp for zp in modpack_zips}
+        futures = {ex.submit(_proc, zp): zp for zp in to_read}
         done = 0
         for future in as_completed(futures):
             done += 1
-            if done % 500 == 0 or done == len(modpack_zips):
-                print(f"  {done}/{len(modpack_zips)}...", end="\r")
+            if done % 500 == 0 or done == len(to_read):
+                print(f"  Scanned {done}/{len(to_read)}...", end="\r")
             try:
-                guid, rel = future.result()
+                zp, guid = future.result()
+                sp = str(zp)
+                try:
+                    st  = zp.stat()
+                    fp  = (int(st.st_mtime), st.st_size)
+                except OSError:
+                    fp = (0, 0)
+                new_files[sp] = [fp[0], fp[1], guid]
                 if guid:
+                    rel = str(zp.relative_to(mods_dir))
                     guid_map[guid] = rel
                 else:
                     errors += 1
@@ -102,11 +139,12 @@ def build_index(mods_dir: Path) -> dict[str, str]:
                 errors += 1
                 print(f"\nWARN: {futures[future].name}: {e}")
 
-    print()
+    if to_read:
+        print()
     if errors:
         print(f"  {errors} zipmod(s) could not be read (no manifest or invalid)")
 
-    return guid_map
+    return guid_map, new_files
 
 
 def main():
@@ -120,32 +158,52 @@ def main():
                     help="Game type: kk (Koikatsu/KoikatsuParty) or kks (KoikatsuSunshine)")
     ap.add_argument("--output", "-o", default=None, metavar="PATH",
                     help="Output JSON path (default: <mods_folder>/kkafio_modpack_index_<type>.json)")
+    ap.add_argument("--full", action="store_true",
+                    help="Force a full rescan, ignoring the previous index")
     args = ap.parse_args()
 
-    mods_dir = Path(args.mods_dir).resolve()
+    mods_dir     = Path(args.mods_dir).resolve()
+    default_name = f"kkafio_modpack_index_{args.game_type}.json"
+    output       = Path(args.output).resolve() if args.output else mods_dir / default_name
+
     if not mods_dir.exists():
         print(f"ERROR: mods folder not found: {mods_dir}", file=sys.stderr)
         sys.exit(1)
 
-    default_name = f"kkafio_modpack_index_{args.game_type}.json"
-    output = Path(args.output).resolve() if args.output else mods_dir / default_name
-
-    print(f"Scanning: {mods_dir}")
-    print(f"Output  : {output}")
+    print(f"Scanning : {mods_dir}")
+    print(f"Game type: {args.game_type}")
+    print(f"Output   : {output}")
     print()
 
-    guid_map = build_index(mods_dir)
+    # Load previous index for incremental update
+    previous_files: dict = {}
+    if output.exists() and not args.full:
+        try:
+            prev = json.loads(output.read_text(encoding="utf-8"))
+            previous_files = {sp: fp for sp, fp in prev.get("files", {}).items()
+                              if isinstance(fp, list) and len(fp) == 3}
+            print(f"Previous index loaded: {len(prev.get('guids', {}))} GUIDs, "
+                  f"{len(previous_files)} file fingerprints")
+        except Exception as e:
+            print(f"Could not load previous index ({e}) — doing full scan")
+    elif args.full:
+        print("Full rescan requested (--full)")
+
+    guid_map, new_files = build_index(mods_dir, previous_files)
 
     index = {
         "generated": datetime.now().isoformat(timespec="seconds"),
         "mods_dir":  str(mods_dir),
         "count":     len(guid_map),
         "guids":     dict(sorted(guid_map.items())),
+        "files":     new_files,
     }
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    with open(output, "w", encoding="utf-8") as f:
-        json.dump(index, f, indent=2, ensure_ascii=False)
+    output.write_text(
+        json.dumps(index, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     print(f"\nDone — {len(guid_map)} GUIDs indexed → {output}")
 

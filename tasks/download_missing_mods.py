@@ -51,71 +51,98 @@ MAX_CONNECTIONS       = 4
 # Chara GUID cache
 # ---------------------------------------------------------------------------
 
-def _dir_mtime(d: Path) -> float:
+def _file_fp(p: Path) -> tuple[int, int]:
     try:
-        return d.stat().st_mtime
-    except Exception:
-        return 0.0
-
-
-def _load_chara_cache(chara_dirs: list[Path]) -> set[str] | None:
-    key = "|".join(str(d) for d in chara_dirs)
-    cache_path = chara_dirs[0].parent / CHARA_CACHE_FILE
-    try:
-        with cache_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        if data.get("chara_dirs") != key:
-            return None
-        stored_mtimes = data.get("mtimes", {})
-        for d in chara_dirs:
-            if abs(stored_mtimes.get(str(d), 0) - _dir_mtime(d)) > 1:
-                return None
-        return set(data["guids"])
-    except Exception:
-        return None
-
-
-def _save_chara_cache(chara_dirs: list[Path], guids: set[str]) -> None:
-    key = "|".join(str(d) for d in chara_dirs)
-    cache_path = chara_dirs[0].parent / CHARA_CACHE_FILE
-    try:
-        with cache_path.open("w", encoding="utf-8") as f:
-            json.dump({
-                "chara_dirs": key,
-                "mtimes":     {str(d): _dir_mtime(d) for d in chara_dirs},
-                "guids":      sorted(guids),
-            }, f, indent=2, ensure_ascii=False)
-    except Exception:
-        pass
+        st = p.stat()
+        return (int(st.st_mtime), st.st_size)
+    except OSError:
+        return (0, 0)
 
 
 def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
-    if use_cache:
-        cached = _load_chara_cache(chara_dirs)
-        if cached is not None:
-            logger.info("DLMOD", f"Chara cache loaded: {len(cached)} GUIDs")
-            return cached
+    """Incrementally collect GUIDs from chara cards.
 
-    logger.info("DLMOD", "Scanning character cards for mod GUIDs...")
-    guids: set[str] = set()
-    for chara_dir in chara_dirs:
-        if not chara_dir.exists():
-            continue
-        for png in chara_dir.rglob("*.png"):
-            try:
-                raw = png.read_bytes()
-                if get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS):
-                    for guid in parse_chara_guids(png):
-                        if guid:
-                            guids.add(guid)
-            except Exception:
-                pass
+    Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
+    Only new or changed PNGs are fully read.
+    """
+    key        = "|".join(str(d) for d in chara_dirs)
+    cache_path = chara_dirs[0] / CHARA_CACHE_FILE
+
+    old_files:  dict = {}
+    old_guids_by_file: dict[str, list[str]] = {}
 
     if use_cache:
-        _save_chara_cache(chara_dirs, guids)
-        logger.info("DLMOD", f"Chara cache saved: {len(guids)} GUIDs")
+        try:
+            prev = json.loads(cache_path.read_text(encoding="utf-8"))
+            if prev.get("chara_dirs") == key:
+                old_files          = {sp: fp for sp, fp in prev.get("files", {}).items()
+                                      if isinstance(fp, list) and len(fp) == 2}
+                old_guids_by_file  = prev.get("guids_by_file", {})
+                if old_files:
+                    logger.info("DLMOD", f"Chara cache loaded: {len(old_files)} file fingerprints")
+        except Exception:
+            pass
+
+    all_pngs: list[Path] = []
+    for d in chara_dirs:
+        if d.exists():
+            all_pngs.extend(d.rglob("*.png"))
+
+    guids:     set[str]        = set()
+    new_files: dict            = {}
+    new_guids_by_file: dict[str, list[str]] = {}
+    to_read:   list[Path]      = []
+
+    for png in all_pngs:
+        sp = str(png)
+        fp = _file_fp(png)
+        old = old_files.get(sp)
+        if old is not None and (old[0], old[1]) == fp and sp in old_guids_by_file:
+            file_guids = old_guids_by_file[sp]
+            guids.update(file_guids)
+            new_files[sp] = old
+            new_guids_by_file[sp] = file_guids
+        else:
+            to_read.append(png)
+
+    reused = len(all_pngs) - len(to_read)
+    if reused:
+        logger.info("DLMOD", f"Chara cache: {reused} unchanged, {len(to_read)} new/changed")
+    else:
+        logger.info("DLMOD", f"Scanning {len(to_read)} character card(s) for mod GUIDs...")
+
+    for png in to_read:
+        sp = str(png)
+        fp = _file_fp(png)
+        try:
+            raw = png.read_bytes()
+            if get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS):
+                file_guids = [g for g in parse_chara_guids(png) if g]
+                guids.update(file_guids)
+                new_files[sp] = [fp[0], fp[1]]
+                new_guids_by_file[sp] = file_guids
+        except Exception:
+            pass
+
+    if use_cache:
+        # Store guids_by_file for per-file incremental reuse next run
+        key2 = "|".join(str(d) for d in chara_dirs)
+        data = {
+            "chara_dirs":     key2,
+            "guids":          sorted(guids),
+            "files":          new_files,
+            "guids_by_file":  new_guids_by_file,
+        }
+        try:
+            cache_path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            logger.info("DLMOD", f"Chara cache saved: {len(guids)} GUIDs from {len(new_files)} files")
+        except Exception:
+            pass
     else:
         logger.info("DLMOD", f"Chara scan complete: {len(guids)} GUIDs")
+
     return guids
 
 

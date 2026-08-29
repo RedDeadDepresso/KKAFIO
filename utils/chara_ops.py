@@ -420,84 +420,133 @@ def load_modpack_index(mods_dir: Path | None = None,
     return None
 
 
-def _dir_mtime(directory: Path) -> float:
-    """Return the directory's own mtime (not recursive — fast, O(1))."""
-    try:
-        return directory.stat().st_mtime
-    except Exception:
-        return 0.0
+# ---------------------------------------------------------------------------
+# File fingerprint helpers
+# ---------------------------------------------------------------------------
 
+def _file_fp(p: Path) -> tuple[int, int]:
+    """Return (mtime_int, size) for a file — used as a change fingerprint."""
+    try:
+        st = p.stat()
+        return (int(st.st_mtime), st.st_size)
+    except OSError:
+        return (0, 0)
+
+
+# ---------------------------------------------------------------------------
+# Mods cache  (incremental)
+# ---------------------------------------------------------------------------
 
 def load_mods_cache(mods_dir: Path) -> dict[str, str] | None:
-    """Return {guid: absolute_path} from cache if still valid, else None."""
-    cache_path = mods_dir.parent / MODS_CACHE_FILE
+    """Return {guid: absolute_path} from cache, or None if missing/stale."""
+    cache_path = mods_dir / MODS_CACHE_FILE
     try:
-        with cache_path.open("r", encoding="utf-8") as f:
-            data = _json.load(f)
+        data = _json.loads(cache_path.read_text(encoding="utf-8"))
         if data.get("mods_dir") != str(mods_dir):
             return None
-        if abs(data.get("mtime", 0) - _dir_mtime(mods_dir)) > 1:
-            return None
-        return data["guids"]           # {guid: str(path)}
+        return data["guids"]
     except Exception:
         return None
 
 
-def save_mods_cache(mods_dir: Path, guid_map: dict[str, str]) -> None:
-    """Write {guid: str(path)} to the cache file next to mods_dir."""
-    cache_path = mods_dir.parent / MODS_CACHE_FILE
-    data = {
-        "mods_dir": str(mods_dir),
-        "mtime":    _dir_mtime(mods_dir),
-        "guids":    guid_map,
-    }
+def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
+                    files: dict | None = None) -> None:
+    """Persist {guid: str(path)} (and optional file fingerprints) to cache."""
+    cache_path = mods_dir / MODS_CACHE_FILE
+    data: dict = {"mods_dir": str(mods_dir), "guids": guid_map}
+    if files is not None:
+        data["files"] = files
     try:
-        with cache_path.open("w", encoding="utf-8") as f:
-            _json.dump(data, f, indent=2, ensure_ascii=False)
+        cache_path.write_text(
+            _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
     except Exception:
-        pass   # cache write failure is non-fatal
+        pass
 
 
-def build_mods_cache(mods_dir: Path,
-                     include_modpack: bool = False) -> dict[str, str]:
-    """Scan every zipmod and return {guid: str(abs_path)}, saving to cache."""
-    guid_map: dict[str, str] = {}
-    for zp in mods_dir.rglob("*.zipmod"):
-        if not include_modpack and in_modpack_folder(zp, mods_dir):
-            continue
-        guid = guid_from_zipmod(zp)
-        if guid:
-            guid_map[guid] = str(zp)
-    save_mods_cache(mods_dir, guid_map)
+def build_mods_cache(mods_dir: Path, include_modpack: bool = False) -> dict[str, str]:
+    """Incrementally scan zipmods and return {guid: str(abs_path)}, saving to cache.
+
+    Unchanged files (same mtime + size) are reused from the previous cache.
+    Only new or changed zipmods are opened.
+    """
+    cache_path = mods_dir / MODS_CACHE_FILE
+    old_files: dict = {}
+    try:
+        prev = _json.loads(cache_path.read_text(encoding="utf-8"))
+        if prev.get("mods_dir") == str(mods_dir):
+            old_files = {sp: fp for sp, fp in prev.get("files", {}).items()
+                         if isinstance(fp, list) and len(fp) == 3}
+    except Exception:
+        pass
+
+    all_zips = [
+        zp for zp in mods_dir.rglob("*.zipmod")
+        if include_modpack or not in_modpack_folder(zp, mods_dir)
+    ]
+
+    guid_map:  dict[str, str] = {}
+    new_files: dict           = {}
+    to_read:   list[Path]     = []
+
+    for zp in all_zips:
+        sp = str(zp)
+        fp = _file_fp(zp)
+        old = old_files.get(sp)
+        if old is not None and (old[0], old[1]) == fp:
+            guid = old[2]
+            new_files[sp] = old
+            if guid:
+                guid_map[guid] = sp
+        else:
+            to_read.append(zp)
+
+    import os
+    workers = min(32, (os.cpu_count() or 4) * 2)
+
+    def _proc(zp: Path):
+        return zp, guid_from_zipmod(zp)
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        for future in as_completed({ex.submit(_proc, zp): zp for zp in to_read}):
+            zp, guid = future.result()
+            sp = str(zp)
+            fp = _file_fp(zp)
+            new_files[sp] = [fp[0], fp[1], guid]
+            if guid:
+                guid_map[guid] = sp
+
+    save_mods_cache(mods_dir, guid_map, new_files)
     return guid_map
 
 
+# ---------------------------------------------------------------------------
+# Coord cache  (incremental)
+# ---------------------------------------------------------------------------
+
 def load_coord_cache(coord_dir: Path) -> dict[str, dict] | None:
-    """Return {str(path): fingerprint_dict} from cache if still valid, else None."""
-    cache_path = coord_dir.parent / COORD_CACHE_FILE
+    """Return {str(path): fingerprint_dict} from cache, or None if missing/stale."""
+    cache_path = coord_dir / COORD_CACHE_FILE
     try:
-        with cache_path.open("r", encoding="utf-8") as f:
-            data = _json.load(f)
+        data = _json.loads(cache_path.read_text(encoding="utf-8"))
         if data.get("coord_dir") != str(coord_dir):
             return None
-        if abs(data.get("mtime", 0) - _dir_mtime(coord_dir)) > 1:
-            return None
-        return data["coords"]          # {str(path): {clothes_fp, acc_occupied, acc_colors}}
+        return data["coords"]
     except Exception:
         return None
 
 
-def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict]) -> None:
-    """Write the coordinate fingerprint map to the cache file next to coord_dir."""
-    cache_path = coord_dir.parent / COORD_CACHE_FILE
-    data = {
-        "coord_dir": str(coord_dir),
-        "mtime":     _dir_mtime(coord_dir),
-        "coords":    coord_map,
-    }
+def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict],
+                     files: dict | None = None) -> None:
+    """Persist coordinate fingerprints (and optional file fingerprints) to cache."""
+    cache_path = coord_dir / COORD_CACHE_FILE
+    data: dict = {"coord_dir": str(coord_dir), "coords": coord_map}
+    if files is not None:
+        data["files"] = files
     try:
-        with cache_path.open("w", encoding="utf-8") as f:
-            _json.dump(data, f, indent=2, ensure_ascii=False)
+        cache_path.write_text(
+            _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
     except Exception:
         pass
 
@@ -559,22 +608,54 @@ def _coord_matches_slot_cached(slot: dict, cached: dict,
 
 
 def build_coord_cache(coord_dir: Path) -> dict[str, dict]:
-    """Parse every coord PNG and return {str(path): fingerprint}, saving to cache."""
-    import os
-    workers  = min(32, (os.cpu_count() or 4) * 2)
-    coord_map: dict[str, dict] = {}
+    """Incrementally parse coord PNGs and return {str(path): fingerprint}, saving to cache.
 
-    coord_files = sorted(coord_dir.rglob("*.png"))
+    Unchanged files (same mtime + size) are reused from the previous cache.
+    Only new or changed PNGs are fully parsed.
+    """
+    import os
+
+    cache_path = coord_dir / COORD_CACHE_FILE
+    old_files:  dict = {}
+    old_coords: dict = {}
+    try:
+        prev = _json.loads(cache_path.read_text(encoding="utf-8"))
+        if prev.get("coord_dir") == str(coord_dir):
+            old_files  = {sp: fp for sp, fp in prev.get("files",  {}).items()
+                          if isinstance(fp, list) and len(fp) == 2}
+            old_coords = prev.get("coords", {})
+    except Exception:
+        pass
+
+    all_pngs  = sorted(coord_dir.rglob("*.png"))
+    coord_map: dict[str, dict] = {}
+    new_files: dict            = {}
+    to_parse:  list[Path]      = []
+
+    for png in all_pngs:
+        sp = str(png)
+        fp = _file_fp(png)
+        old = old_files.get(sp)
+        if old is not None and (old[0], old[1]) == fp and sp in old_coords:
+            coord_map[sp] = old_coords[sp]
+            new_files[sp] = old
+        else:
+            to_parse.append(png)
+
+    workers = min(32, (os.cpu_count() or 4) * 2)
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = {ex.submit(_parse_coord_outfit, png): png
-                   for png in coord_files}
+        futures = {ex.submit(_parse_coord_outfit, png): png for png in to_parse}
         for future in as_completed(futures):
             outfit = future.result()
             if outfit is None:
                 continue
-            coord_map[str(outfit["path"])] = _outfit_to_cache(outfit)
+            png = outfit["path"]
+            sp  = str(png)
+            fp  = _file_fp(png)
+            new_files[sp] = [fp[0], fp[1]]
+            coord_map[sp] = _outfit_to_cache(outfit)
 
-    save_coord_cache(coord_dir, coord_map)
+    save_coord_cache(coord_dir, coord_map, new_files)
     return coord_map
 
 
