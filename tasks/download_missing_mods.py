@@ -26,6 +26,7 @@ import asyncio
 import json
 import os
 import re
+from datetime import datetime
 from pathlib import Path
 
 from tasks.base_task import BaseTask
@@ -182,8 +183,7 @@ async def _download_betterrepack(
     dest = mods_dir / rel_path.replace("/", os.sep)
 
     if dest.exists():
-        logger.skipped("DLMOD", f"{dest.name} already exists, skipping")
-        return True
+        return "skipped"
 
     logger.info("DLMOD", f"BetterRepack ↓ {dest.name}")
     try:
@@ -376,8 +376,7 @@ async def _download_via_teleget(
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     if dest.exists() and dest.stat().st_size == message.document.size:
-        logger.skipped("DLMOD", f"{file_name} already complete, skipping")
-        return True
+        return "skipped"
 
     logger.info("DLMOD", f"Telegram ↓ {file_name}")
     file_size = message.document.size
@@ -441,6 +440,119 @@ class DownloadMissingMods(BaseTask):
         self.use_cache           : bool = cfg.get("UseCache",             True)
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
         self.download_from_tg    : bool = cfg.get("DownloadFromTelegram", False)
+
+    @staticmethod
+    def _write_readme(
+        mods_dir: Path,
+        chara_guids: set[str],
+        local_guids: set[str],
+        modpack_index: dict[str, str],
+        to_download: set[str],
+        from_betterrepack: dict[str, str],
+        downloaded_br: set[str],
+        from_telegram: list[str],
+        downloaded_tg: set[str],
+        unresolved: list[str],
+        failed_guids: set[str],
+        ok: int,
+        fail: int,
+        modpack_mode: str,
+        use_telethon: bool,
+        generated: str,
+    ) -> None:
+        """Write a README.txt to mods_dir summarising the download run."""
+        missing_all = chara_guids - local_guids
+
+        modpack_covered = chara_guids & set(modpack_index.keys())
+        if modpack_mode == "Skip":
+            covered_count = len(local_guids & chara_guids)
+        else:
+            covered_count = len((local_guids | modpack_covered) & chara_guids)
+
+        lines: list[str] = [
+            "KKAFIO — Download Missing Mods Report",
+            f"Generated        : {generated}",
+            f"Mods directory   : {mods_dir}",
+            f"Sideloader mode  : {modpack_mode}",
+            f"Telegram enabled : {'Yes' if use_telethon else 'No'}",
+            "",
+            "=" * 60,
+            "",
+            f"Character card mod references : {len(chara_guids)}",
+            f"Already installed / covered   : {covered_count}",
+            f"Missing total                 : {len(missing_all)}",
+            f"Queued for download           : {len(to_download)}",
+            f"  — from BetterRepack         : {len(from_betterrepack)}",
+            f"  — from Telegram             : {len(from_telegram)}",
+            f"  — unresolvable              : {len(unresolved)}",
+            "",
+            f"Downloaded successfully : {ok}",
+            f"Failed                  : {fail}",
+            "",
+        ]
+
+        if unresolved:
+            lines += [
+                "=" * 60,
+                "Unresolvable mods (not in modpack index, no Telegram source found):",
+                "These mods could not be downloaded automatically.",
+                "Search for them manually on koikatsucards.com or game modding communities.",
+                "",
+            ]
+            for guid in sorted(unresolved):
+                lines.append(f"  ! {guid}")
+            lines.append("")
+
+        if failed_guids:
+            lines += [
+                "=" * 60,
+                f"Failed downloads ({len(failed_guids)}):",
+                "These mods were found but could not be downloaded.",
+                "Check your internet connection and try again.",
+                "",
+            ]
+            for guid in sorted(failed_guids):
+                lines.append(f"  ✗ {guid}")
+            lines.append("")
+
+        # Only list mods that were actually downloaded (not skipped/already present)
+        actually_downloaded_br = {guid: rel for guid, rel in from_betterrepack.items()
+                                   if guid in downloaded_br}
+        actually_downloaded_tg = [guid for guid in from_telegram if guid in downloaded_tg]
+
+        if actually_downloaded_br:
+            lines.append("Downloaded from BetterRepack:")
+            for guid, rel in sorted(actually_downloaded_br.items()):
+                lines.append(f"  + {guid}")
+                lines.append(f"    {rel}")
+            lines.append("")
+
+        if actually_downloaded_tg:
+            lines.append("Downloaded from Telegram (koikatsucards.com):")
+            for guid in sorted(actually_downloaded_tg):
+                lines.append(f"  + {guid}")
+            lines.append("")
+
+        if modpack_mode == "Skip":
+            modpack_missing = chara_guids & set(modpack_index.keys()) - local_guids
+            if modpack_missing:
+                lines += [
+                    "=" * 60,
+                    f"Sideloader Modpack mods skipped ({len(modpack_missing)}) — mode is 'Skip':",
+                    "These mods are part of the Sideloader Modpack and were not downloaded.",
+                    "Install the Sideloader Modpack from: https://dl.betterrepack.com/",
+                    "",
+                ]
+                for guid in sorted(modpack_missing):
+                    lines.append(f"  ~ {guid} ({modpack_index[guid]})")
+                lines.append("")
+
+        readme_path = mods_dir / "kkafio_missing_mods_report.txt"
+        try:
+            readme_path.write_text("\n".join(lines), encoding="utf-8")
+            logger.info("DLMOD", f"Report saved: {readme_path}")
+        except Exception as e:
+            logger.warning("DLMOD", f"Could not write report: {e}")
 
     def run(self) -> None:
         game_path = self.config.game_path
@@ -553,14 +665,19 @@ class DownloadMissingMods(BaseTask):
 
         # ── Step 6: download ──────────────────────────────────────────────
         ok = fail = 0
+        failed_guids:  set[str]  = set()
+        downloaded_br:  set[str] = set()
+        downloaded_tg:  set[str] = set()
 
         async def _run_all() -> None:
-            nonlocal ok, fail
+            nonlocal ok, fail, failed_guids, downloaded_br, downloaded_tg
             async with _make_http_client() as br_client, \
                        _make_http_client() as kk_client:
 
                 # BetterRepack — concurrent
-                br_failed: dict[str, str] = {}  # guid -> rel_path for failed BR downloads
+                br_failed     = {}   # guid -> rel_path for failed BR downloads
+                downloaded_br = set()  # actually downloaded (not skipped)
+
                 if from_betterrepack:
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
@@ -571,6 +688,9 @@ class DownloadMissingMods(BaseTask):
                     for guid, result in zip(from_betterrepack, results):
                         if result is True:
                             ok += 1
+                            downloaded_br.add(guid)
+                        elif result == "skipped":
+                            pass  # already existed — don't count or report
                         else:
                             fail += 1
                             if isinstance(result, Exception):
@@ -580,6 +700,8 @@ class DownloadMissingMods(BaseTask):
                                 br_failed[guid] = from_betterrepack[guid]
                                 logger.info("DLMOD",
                                     f"  [{guid}] will be retried via Telegram")
+                            else:
+                                failed_guids.add(guid)
 
                 # Merge BetterRepack failures into Telegram queue
                 telegram_queue: list[tuple[str, str | None]] = [
@@ -637,8 +759,7 @@ class DownloadMissingMods(BaseTask):
                                     if not tg_link:
                                         logger.warning("DLMOD",
                                             f"  {guid} — not found on koikatsucards.com")
-                                        if guid not in br_failed:
-                                            fail += 1
+                                        unresolved.append(guid)
                                         continue
                                     logger.info("DLMOD", f"  Link: {tg_link}")
                                     # Pass rel_path so the file is saved to the same
@@ -648,11 +769,16 @@ class DownloadMissingMods(BaseTask):
                                         guid_str_map, teleget_downloader,
                                         rel_path=rel_path,
                                     )
-                                    if success:
+                                    if success == "skipped":
+                                        pass  # already existed — don't count or report
+                                    elif success:
+                                        failed_guids.discard(guid)
+                                        downloaded_tg.add(guid)
                                         if guid in br_failed:
-                                            fail -= 1  # un-count the BetterRepack failure
+                                            fail -= 1
                                         ok += 1
                                     else:
+                                        failed_guids.add(guid)
                                         if guid not in br_failed:
                                             fail += 1
                             finally:
@@ -665,6 +791,27 @@ class DownloadMissingMods(BaseTask):
         asyncio.run(_run_all())
 
         logger.line()
+
+        # Write README.txt to mods_dir summarising what was downloaded
+        self._write_readme(
+            mods_dir          = mods_dir,
+            chara_guids       = chara_guids,
+            local_guids       = local_guids,
+            modpack_index     = modpack_index,
+            to_download       = to_download,
+            from_betterrepack = from_betterrepack,
+            downloaded_br     = downloaded_br,
+            from_telegram     = from_telegram,
+            downloaded_tg     = downloaded_tg,
+            unresolved        = unresolved,
+            failed_guids      = failed_guids,
+            ok                = ok,
+            fail              = fail,
+            modpack_mode      = self.modpack_mode,
+            use_telethon      = use_telethon,
+            generated         = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        )
+
         logger.success("DLMOD",
             f"Done — downloaded: {ok}, failed: {fail}, "
             f"unresolved: {len(unresolved)}")
