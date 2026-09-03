@@ -438,13 +438,52 @@ def _file_fp(p: Path) -> tuple[int, int]:
 # ---------------------------------------------------------------------------
 
 def load_mods_cache(mods_dir: Path) -> dict[str, str] | None:
-    """Return {guid: absolute_path} from cache, or None if missing/stale."""
+    """Return {guid: absolute_path} from cache, or None if stale.
+
+    Stale conditions:
+    - Any cached path no longer exists on disk (deleted files)
+    - The number of zipmods on disk differs from what the cache recorded
+      (new files added or more files deleted than paths in guids)
+    """
     cache_path = mods_dir / MODS_CACHE_FILE
     try:
         data = _json.loads(cache_path.read_text(encoding="utf-8"))
         if data.get("mods_dir") != str(mods_dir):
             return None
-        return data["guids"]
+        guid_map: dict[str, str] = data["guids"]
+
+        # Quick count check — if the number of zipmods on disk differs from
+        # the number of file fingerprints stored, something changed.
+        # Use stored file_count if available, otherwise count files dict.
+        cached_file_count = (
+            data.get("file_count")
+            or len(data.get("files", {}))
+            or len(guid_map)
+        )
+        disk_file_count = sum(1 for _ in mods_dir.rglob("*.zipmod"))
+        if disk_file_count != cached_file_count:
+            logger.info("CACHE",
+                f"Mods cache stale ({disk_file_count} on disk vs "
+                f"{cached_file_count} cached) — rebuilding")
+            return None
+
+        # Spot-check: verify cached paths still exist and fingerprints match
+        files = data.get("files", {})
+        for sp in guid_map.values():
+            p = Path(sp)
+            if not p.exists():
+                logger.info("CACHE", "Mods cache stale (deleted files detected) — rebuilding")
+                return None
+            if sp in files:
+                fp = files[sp]
+                if isinstance(fp, list) and len(fp) >= 2:
+                    mtime, size = fp[0], fp[1]
+                    current = _file_fp(p)
+                    if current != (mtime, size):
+                        logger.info("CACHE", "Mods cache stale (modified files detected) — rebuilding")
+                        return None
+
+        return guid_map
     except Exception:
         return None
 
@@ -453,7 +492,11 @@ def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
                     files: dict | None = None) -> None:
     """Persist {guid: str(path)} (and optional file fingerprints) to cache."""
     cache_path = mods_dir / MODS_CACHE_FILE
-    data: dict = {"mods_dir": str(mods_dir), "guids": guid_map}
+    data: dict = {
+        "mods_dir":   str(mods_dir),
+        "file_count": len(files) if files is not None else len(guid_map),
+        "guids":      guid_map,
+    }
     if files is not None:
         data["files"] = files
     try:
@@ -468,7 +511,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False) -> dict[str,
     """Incrementally scan zipmods and return {guid: str(abs_path)}, saving to cache.
 
     Unchanged files (same mtime + size) are reused from the previous cache.
-    Only new or changed zipmods are opened.
+    Only new or changed zipmods are opened. Deleted files are pruned.
     """
     cache_path = mods_dir / MODS_CACHE_FILE
     old_files: dict = {}
@@ -480,6 +523,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False) -> dict[str,
     except Exception:
         pass
 
+    # Only iterate files actually present on disk — deleted files are implicitly pruned
     all_zips = [
         zp for zp in mods_dir.rglob("*.zipmod")
         if include_modpack or not in_modpack_folder(zp, mods_dir)
