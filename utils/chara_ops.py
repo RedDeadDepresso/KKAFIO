@@ -569,22 +569,58 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False) -> dict[str,
 # ---------------------------------------------------------------------------
 
 def load_coord_cache(coord_dir: Path) -> dict[str, dict] | None:
-    """Return {str(path): fingerprint_dict} from cache, or None if missing/stale."""
+    """Return {str(path): fingerprint_dict} from cache, or None if stale.
+
+    Stale if: file count changed, any cached path missing, or any mtime/size differs.
+    """
     cache_path = coord_dir / COORD_CACHE_FILE
     try:
         data = _json.loads(cache_path.read_text(encoding="utf-8"))
         if data.get("coord_dir") != str(coord_dir):
             return None
-        return data["coords"]
+        coord_map: dict[str, dict] = data["coords"]
+
+        # Count check
+        cached_file_count = (
+            data.get("file_count")
+            or len(data.get("files", {}))
+            or len(coord_map)
+        )
+        disk_file_count = sum(1 for _ in coord_dir.rglob("*.png"))
+        if disk_file_count != cached_file_count:
+            logger.info("CACHE",
+                f"Coord cache stale ({disk_file_count} on disk vs "
+                f"{cached_file_count} cached) — rebuilding")
+            return None
+
+        # Existence + fingerprint check
+        files = data.get("files", {})
+        for sp in coord_map:
+            p = Path(sp)
+            if not p.exists():
+                logger.info("CACHE", "Coord cache stale (deleted files detected) — rebuilding")
+                return None
+            if sp in files:
+                fp = files[sp]
+                if isinstance(fp, list) and len(fp) >= 2:
+                    if _file_fp(p) != (fp[0], fp[1]):
+                        logger.info("CACHE", "Coord cache stale (modified files detected) — rebuilding")
+                        return None
+
+        return coord_map
     except Exception:
         return None
 
 
 def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict],
                      files: dict | None = None) -> None:
-    """Persist coordinate fingerprints (and optional file fingerprints) to cache."""
+    """Persist coordinate fingerprints (and file fingerprints) to cache."""
     cache_path = coord_dir / COORD_CACHE_FILE
-    data: dict = {"coord_dir": str(coord_dir), "coords": coord_map}
+    data: dict = {
+        "coord_dir":  str(coord_dir),
+        "file_count": len(files) if files is not None else len(coord_map),
+        "coords":     coord_map,
+    }
     if files is not None:
         data["files"] = files
     try:

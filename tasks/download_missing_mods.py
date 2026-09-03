@@ -76,11 +76,34 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
         try:
             prev = json.loads(cache_path.read_text(encoding="utf-8"))
             if prev.get("chara_dirs") == key:
-                old_files          = {sp: fp for sp, fp in prev.get("files", {}).items()
+                prev_files         = {sp: fp for sp, fp in prev.get("files", {}).items()
                                       if isinstance(fp, list) and len(fp) == 2}
-                old_guids_by_file  = prev.get("guids_by_file", {})
-                if old_files:
-                    logger.info("DLMOD", f"Chara cache loaded: {len(old_files)} file fingerprints")
+                prev_guids_by_file = prev.get("guids_by_file", {})
+
+                # Count check
+                disk_count   = sum(1 for d in chara_dirs if d.exists() for _ in d.rglob("*.png"))
+                cached_count = prev.get("file_count") or len(prev_files) or len(prev_guids_by_file)
+                if disk_count == cached_count and prev_files:
+                    # Existence + fingerprint spot-check
+                    cache_ok = True
+                    for sp, fp in prev_files.items():
+                        p = Path(sp)
+                        if not p.exists():
+                            logger.info("DLMOD", "Chara cache stale (deleted files) — rebuilding")
+                            cache_ok = False
+                            break
+                        if _file_fp(p) != (fp[0], fp[1]):
+                            logger.info("DLMOD", "Chara cache stale (modified files) — rebuilding")
+                            cache_ok = False
+                            break
+                    if cache_ok:
+                        old_files         = prev_files
+                        old_guids_by_file = prev_guids_by_file
+                        logger.info("DLMOD", f"Chara cache loaded: {len(old_files)} file fingerprints")
+                else:
+                    logger.info("DLMOD",
+                        f"Chara cache stale ({disk_count} on disk vs "
+                        f"{cached_count} cached) — rebuilding")
         except Exception:
             pass
 
@@ -130,6 +153,7 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
         key2 = "|".join(str(d) for d in chara_dirs)
         data = {
             "chara_dirs":     key2,
+            "file_count":     len(new_files),
             "guids":          sorted(guids),
             "files":          new_files,
             "guids_by_file":  new_guids_by_file,
