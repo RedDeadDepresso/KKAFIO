@@ -1,5 +1,11 @@
+import json
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
+
+import numpy as np
+from scipy.spatial import cKDTree
+from skimage.color import rgb2lab
 
 
 class CardType(Enum):
@@ -51,45 +57,80 @@ PERSONALITIES = [
 # ---------------------------------------------------------------------------
 # Hair colour description
 # ---------------------------------------------------------------------------
+#
+# Nearest-neighbour colour naming against a ~930-name XKCD colour survey
+# (https://xkcd.com/color/rgb/), matched in perceptually-uniform CIELAB space
+# via a k-d tree. This gives far more accurate results than a small hand
+# picked RGB palette matched with raw Euclidean RGB distance, and stays fast
+# even when called thousands of times (tree built once, queries are O(log n),
+# and can be batched).
 
-_COLOR_PALETTE = {
-    "black":      (0,   0,   0),
-    "white":      (255, 255, 255),
-    "gray":       (128, 128, 128),
-    "light gray": (211, 211, 211),
-    "dark gray":  (169, 169, 169),
-    "red":        (255, 0,   0),
-    "dark red":   (139, 0,   0),
-    "maroon":     (128, 0,   0),
-    "pink":       (255, 192, 203),
-    "light pink": (255, 182, 193),
-    "magenta":    (255, 0,   255),
-    "orange":     (255, 165, 0),
-    "yellow":     (255, 255, 0),
-    "gold":       (255, 215, 0),
-    "beige":      (245, 245, 220),
-    "brown":      (165, 42,  42),
-    "dark brown": (101, 67,  33),
-    "green":      (0,   128, 0),
-    "light green":(144, 238, 144),
-    "dark green": (0,   100, 0),
-    "teal":       (0,   128, 128),
-    "cyan":       (0,   255, 255),
-    "blue":       (0,   0,   255),
-    "light blue": (173, 216, 230),
-    "dark blue":  (0,   0,   139),
-    "purple":     (128, 0,   128),
-}
+
+_COLOR_DATA_FILE = "xkcd_colors.json"
+
+
+@lru_cache(maxsize=1)
+def _get_color_matcher() -> tuple[list[str], cKDTree]:
+    """Build (once, lazily) the k-d tree used for nearest-colour lookups.
+
+    Returns a tuple of (names, tree) where `tree` is built over the Lab
+    representation of each named colour, in the same order as `names`.
+    """
+    import sys
+    
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).parent
+    else:
+        exe_dir = Path(__file__).resolve().parent.parent  # repo root
+
+    color_data_path = exe_dir / _COLOR_DATA_FILE
+
+    with open(color_data_path, "r", encoding="utf-8") as f:
+        palette: dict[str, str] = json.load(f)
+
+    names = list(palette.keys())
+    hex_values = list(palette.values())
+
+    rgb_arr = np.array(
+        [[int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16)] for h in hex_values],
+        dtype=np.float64,
+    ) / 255.0
+    lab_arr = rgb2lab(rgb_arr.reshape(-1, 1, 3)).reshape(-1, 3)
+
+    tree = cKDTree(lab_arr)
+    return names, tree
+
+
+def _rgb_to_lab(rgb_values: np.ndarray) -> np.ndarray:
+    """Convert an (N, 3) array of 0-255 RGB values to (N, 3) Lab values."""
+    normalized = rgb_values.astype(np.float64) / 255.0
+    return rgb2lab(normalized.reshape(-1, 1, 3)).reshape(-1, 3)
 
 
 def get_simple_color_description(rgb: tuple[int, int, int]) -> str:
-    """Return the closest named colour for an RGB tuple."""
-    r, g, b = rgb
-    best_name = "unknown"
-    best_dist = float("inf")
-    for name, (pr, pg, pb) in _COLOR_PALETTE.items():
-        d = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2
-        if d < best_dist:
-            best_dist = d
-            best_name = name
-    return best_name
+    """Return the closest named colour for a single RGB tuple.
+
+    For classifying many colours at once (e.g. an entire character card
+    folder), prefer `get_simple_color_descriptions` instead, since it batches
+    the k-d tree query and avoids repeated per-call overhead.
+    """
+    names, tree = _get_color_matcher()
+    lab = _rgb_to_lab(np.array([rgb]))
+    _, idx = tree.query(lab[0])
+    return names[idx]
+
+
+def get_simple_color_descriptions(rgb_values: list[tuple[int, int, int]]) -> list[str]:
+    """Batched version of `get_simple_color_description`.
+
+    Converts and queries all colours in one vectorized call, which is
+    significantly faster than calling `get_simple_color_description` in a
+    loop when classifying hundreds or thousands of hair colours.
+    """
+    if not rgb_values:
+        return []
+
+    names, tree = _get_color_matcher()
+    lab = _rgb_to_lab(np.array(rgb_values))
+    _, idxs = tree.query(lab)
+    return [names[i] for i in idxs]

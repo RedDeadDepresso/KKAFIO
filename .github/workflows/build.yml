@@ -165,6 +165,9 @@ jobs:
           # kkafio_modpack_index_kks.json
           if (Test-Path "kkafio_modpack_index_kks.json") { Copy-Item "kkafio_modpack_index_kks.json" "$dst\kkafio_modpack_index_kks.json" }
 
+          # xkcd_colors.json
+          if (Test-Path "xkcd_colors.json") { Copy-Item "xkcd_colors.json" "$dst\xkcd_colors.json" }
+
           # logo.png (ensure folder exists)
           if (!(Test-Path "$dst\assets")) { New-Item -ItemType Directory -Force -Path "$dst\assets" }
           if (Test-Path "assets\logo.png") { Copy-Item "assets\logo.png" "$dst\assets\logo.png" }
