@@ -23,14 +23,14 @@ from pathlib import Path
 from kkloader import KoikatuCharaData
 
 from tasks.base_task import BaseTask
-from utils.classifier import CardType, get_card_type, PERSONALITIES
+from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
 from utils.logger import logger
 
 CACHE_FILENAME = "kkafio_rename_cache.json"
 
 PROMPT_TEMPLATE = """\
 You will receive a JSON object whose keys identify Koikatsu character card files.
-Each key has the format:  name | personality | hair_rgb
+Each key has the format:  name | personality | hair_color
 
 Your task: for every key fill in "lastname", "firstname", and "nickname" with the
 character's well-known English name.
@@ -40,6 +40,7 @@ Rules:
 - Use the English name the character is commonly known by, not a literal
   transliteration (e.g. lastname "Tohsaka" firstname "Rin", not "Tosaka Rin").
 - "nickname" can be a common short form or the same as firstname.
+- Use the personality and hair colour as additional hints to identify the character.
 - All values must be valid Windows filenames
   (no  \\ / : * ? " < > |  characters, no leading/trailing spaces or dots).
 - If you do not recognise the character or are not confident, leave all three
@@ -95,10 +96,11 @@ def _hair_color(kc):
 
 
 def _make_key(kc) -> str:
-    name = kc._repr_name()
-    idx  = kc["Parameter"]["personality"]
-    pers = PERSONALITIES[idx] if idx < len(PERSONALITIES) else str(idx)
-    return f"{name} | {pers} | hair_rgb{_hair_color(kc)}"
+    name  = kc._repr_name()
+    idx   = kc["Parameter"]["personality"]
+    pers  = PERSONALITIES[idx] if idx < len(PERSONALITIES) else str(idx)
+    color = get_simple_color_description(_hair_color(kc))
+    return f"{name} | {pers} | {color} hair"
 
 
 # ---------------------------------------------------------------------------

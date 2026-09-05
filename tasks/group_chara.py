@@ -22,7 +22,7 @@ from pathlib import Path
 
 from kkloader import KoikatuCharaData
 
-from utils.classifier import CardType, get_card_type, PERSONALITIES
+from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
 
 from utils.logger import logger
 
@@ -32,7 +32,7 @@ from utils.logger import logger
 
 PROMPT_TEMPLATE = """\
 You will receive a JSON object whose keys identify Koikatsu character card files.
-Each key has the format:  name | personality | hair_rgb
+Each key has the format:  name | personality | hair_color
 
 Your task: for every key, write the name of the anime/game series the character \
 is from as the value.
@@ -41,6 +41,7 @@ Rules:
 - Values must be valid Windows folder names (no  \\ / : * ? " < > |  characters).
 - Use the official English title of the series.
 - If a character appears in multiple series, use the one they are most associated with.
+- Use the personality and hair colour as additional hints to identify the character.
 - If you are not sure or the character is an original creation, leave the value as an empty string "".
 - Return ONLY the completed JSON object — no explanation, no markdown code fences, \
 no extra text before or after.
@@ -82,11 +83,11 @@ def _hair_color(kc: KoikatuCharaData) -> tuple[int, int, int]:
 # ---------------------------------------------------------------------------
 
 def _make_key(kc: KoikatuCharaData) -> str:
-    name = kc._repr_name()
+    name            = kc._repr_name()
     personality_idx = kc["Parameter"]["personality"]
-    personality = PERSONALITIES[personality_idx] if personality_idx < len(PERSONALITIES) else str(personality_idx)
-    hair = _hair_color(kc)
-    return f"{name} | {personality} | hair_rgb{hair}"
+    personality     = PERSONALITIES[personality_idx] if personality_idx < len(PERSONALITIES) else str(personality_idx)
+    color           = get_simple_color_description(_hair_color(kc))
+    return f"{name} | {personality} | {color} hair"
 
 
 # ---------------------------------------------------------------------------
