@@ -35,6 +35,7 @@ from utils.chara_ops import (
     load_mods_cache,
     load_modpack_index,
     parse_chara_guids,
+    parse_scene_guids,
     save_mods_cache,
 )
 from utils.classifier import CardType, get_card_type
@@ -45,6 +46,7 @@ import utils.telegram_config as tg_cfg
 BETTERREPACK_BASE     = "https://sideload.betterrepack.com/download/KKEC"
 KOIKATSUCARDS_MOD_LIB = "https://koikatsucards.com/mod_library"
 CHARA_CACHE_FILE      = "kkafio_chara_guid_cache.json"
+SCENE_CACHE_FILE      = "kkafio_scene_guid_cache.json"
 MAX_CONNECTIONS       = 4
 
 
@@ -60,14 +62,23 @@ def _file_fp(p: Path) -> tuple[int, int]:
         return (0, 0)
 
 
-def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
-    """Incrementally collect GUIDs from chara cards.
+def _collect_png_guids(
+    dirs: list[Path],
+    use_cache: bool,
+    cache_file: str,
+    label: str,
+    valid_card_types: tuple[CardType, ...],
+    parse_guids,
+) -> set[str]:
+    """Incrementally collect GUIDs from a set of PNG-based card files.
 
     Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
-    Only new or changed PNGs are fully read.
+    Only new or changed PNGs are fully read. Shared implementation used for
+    both chara cards and Studio scenes — `valid_card_types` filters which
+    files are actually parsed, and `parse_guids` extracts the GUIDs.
     """
-    key        = "|".join(str(d) for d in chara_dirs)
-    cache_path = chara_dirs[0] / CHARA_CACHE_FILE
+    key        = "|".join(str(d) for d in dirs)
+    cache_path = dirs[0] / cache_file
 
     old_files:  dict = {}
     old_guids_by_file: dict[str, list[str]] = {}
@@ -75,13 +86,13 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
     if use_cache:
         try:
             prev = json.loads(cache_path.read_text(encoding="utf-8"))
-            if prev.get("chara_dirs") == key:
+            if prev.get("dirs") == key:
                 prev_files         = {sp: fp for sp, fp in prev.get("files", {}).items()
                                       if isinstance(fp, list) and len(fp) == 2}
                 prev_guids_by_file = prev.get("guids_by_file", {})
 
                 # Count check
-                disk_count   = sum(1 for d in chara_dirs if d.exists() for _ in d.rglob("*.png"))
+                disk_count   = sum(1 for d in dirs if d.exists() for _ in d.rglob("*.png"))
                 cached_count = prev.get("file_count") or len(prev_files) or len(prev_guids_by_file)
                 if disk_count == cached_count and prev_files:
                     # Existence + fingerprint spot-check
@@ -89,26 +100,26 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
                     for sp, fp in prev_files.items():
                         p = Path(sp)
                         if not p.exists():
-                            logger.info("DLMOD", "Chara cache stale (deleted files) — rebuilding")
+                            logger.info("DLMOD", f"{label} cache stale (deleted files) — rebuilding")
                             cache_ok = False
                             break
                         if _file_fp(p) != (fp[0], fp[1]):
-                            logger.info("DLMOD", "Chara cache stale (modified files) — rebuilding")
+                            logger.info("DLMOD", f"{label} cache stale (modified files) — rebuilding")
                             cache_ok = False
                             break
                     if cache_ok:
                         old_files         = prev_files
                         old_guids_by_file = prev_guids_by_file
-                        logger.info("DLMOD", f"Chara cache loaded: {len(old_files)} file fingerprints")
+                        logger.info("DLMOD", f"{label} cache loaded: {len(old_files)} file fingerprints")
                 else:
                     logger.info("DLMOD",
-                        f"Chara cache stale ({disk_count} on disk vs "
+                        f"{label} cache stale ({disk_count} on disk vs "
                         f"{cached_count} cached) — rebuilding")
         except Exception:
             pass
 
     all_pngs: list[Path] = []
-    for d in chara_dirs:
+    for d in dirs:
         if d.exists():
             all_pngs.extend(d.rglob("*.png"))
 
@@ -131,17 +142,17 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
 
     reused = len(all_pngs) - len(to_read)
     if reused:
-        logger.info("DLMOD", f"Chara cache: {reused} unchanged, {len(to_read)} new/changed")
+        logger.info("DLMOD", f"{label} cache: {reused} unchanged, {len(to_read)} new/changed")
     else:
-        logger.info("DLMOD", f"Scanning {len(to_read)} character card(s) for mod GUIDs...")
+        logger.info("DLMOD", f"Scanning {len(to_read)} {label.lower()}(s) for mod GUIDs...")
 
     for png in to_read:
         sp = str(png)
         fp = _file_fp(png)
         try:
             raw = png.read_bytes()
-            if get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS):
-                file_guids = [g for g in parse_chara_guids(png) if g]
+            if get_card_type(raw) in valid_card_types:
+                file_guids = [g for g in parse_guids(png) if g]
                 guids.update(file_guids)
                 new_files[sp] = [fp[0], fp[1]]
                 new_guids_by_file[sp] = file_guids
@@ -150,9 +161,8 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
 
     if use_cache:
         # Store guids_by_file for per-file incremental reuse next run
-        key2 = "|".join(str(d) for d in chara_dirs)
         data = {
-            "chara_dirs":     key2,
+            "dirs":           key,
             "file_count":     len(new_files),
             "guids":          sorted(guids),
             "files":          new_files,
@@ -162,13 +172,31 @@ def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
             cache_path.write_text(
                 json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
             )
-            logger.info("DLMOD", f"Chara cache saved: {len(guids)} GUIDs from {len(new_files)} files")
+            logger.info("DLMOD", f"{label} cache saved: {len(guids)} GUIDs from {len(new_files)} files")
         except Exception:
             pass
     else:
-        logger.info("DLMOD", f"Chara scan complete: {len(guids)} GUIDs")
+        logger.info("DLMOD", f"{label} scan complete: {len(guids)} GUIDs")
 
     return guids
+
+
+def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
+    """Incrementally collect GUIDs referenced by chara cards."""
+    return _collect_png_guids(
+        chara_dirs, use_cache, CHARA_CACHE_FILE, "Chara",
+        (CardType.KK, CardType.KKSP, CardType.KKS),
+        parse_chara_guids,
+    )
+
+
+def _collect_scene_guids(scene_dirs: list[Path], use_cache: bool) -> set[str]:
+    """Incrementally collect GUIDs referenced by Studio scenes."""
+    return _collect_png_guids(
+        scene_dirs, use_cache, SCENE_CACHE_FILE, "Scene",
+        (CardType.SCENE,),
+        parse_scene_guids,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -461,6 +489,7 @@ class DownloadMissingMods(BaseTask):
         cfg = self.config.download_missing_mods
         self.mods_dir_str        : str  = cfg.get("ModsDir",             "")
         self.chara_dir_str       : str  = cfg.get("CharaDir",             "")
+        self.scene_dir_str       : str  = cfg.get("SceneDir",             "")
         self.use_cache           : bool = cfg.get("UseCache",             True)
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
         self.download_from_tg    : bool = cfg.get("DownloadFromTelegram", False)
@@ -469,6 +498,7 @@ class DownloadMissingMods(BaseTask):
     def _write_readme(
         mods_dir: Path,
         chara_guids: set[str],
+        scene_guids: set[str],
         local_guids: set[str],
         modpack_index: dict[str, str],
         to_download: set[str],
@@ -485,13 +515,14 @@ class DownloadMissingMods(BaseTask):
         generated: str,
     ) -> None:
         """Write a README.txt to mods_dir summarising the download run."""
-        missing_all = chara_guids - local_guids
+        referenced_guids = chara_guids | scene_guids
+        missing_all = referenced_guids - local_guids
 
-        modpack_covered = chara_guids & set(modpack_index.keys())
+        modpack_covered = referenced_guids & set(modpack_index.keys())
         if modpack_mode == "Skip":
-            covered_count = len(local_guids & chara_guids)
+            covered_count = len(local_guids & referenced_guids)
         else:
-            covered_count = len((local_guids | modpack_covered) & chara_guids)
+            covered_count = len((local_guids | modpack_covered) & referenced_guids)
 
         lines: list[str] = [
             "KKAFIO — Download Missing Mods Report",
@@ -503,6 +534,7 @@ class DownloadMissingMods(BaseTask):
             "=" * 60,
             "",
             f"Character card mod references : {len(chara_guids)}",
+            f"Scene mod references          : {len(scene_guids)}",
             f"Already installed / covered   : {covered_count}",
             f"Missing total                 : {len(missing_all)}",
             f"Queued for download           : {len(to_download)}",
@@ -558,7 +590,7 @@ class DownloadMissingMods(BaseTask):
             lines.append("")
 
         if modpack_mode == "Skip":
-            modpack_missing = chara_guids & set(modpack_index.keys()) - local_guids
+            modpack_missing = referenced_guids & set(modpack_index.keys()) - local_guids
             if modpack_missing:
                 lines += [
                     "=" * 60,
@@ -605,10 +637,23 @@ class DownloadMissingMods(BaseTask):
             logger.error("DLMOD", "Chara directory not set and not resolvable from game path.")
             return
 
+        if self.scene_dir_str:
+            scene_dirs = [Path(self.scene_dir_str)]
+        else:
+            scene_dirs = [
+                d for d in [game_path.get("scene")]
+                if d is not None and d.exists()
+            ]
+
         self.log_start("DLMOD")
         logger.info("DLMOD", f"Mods dir  : {mods_dir}")
         for d in chara_dirs:
             logger.info("DLMOD", f"Chara dir : {d}")
+        if scene_dirs:
+            for d in scene_dirs:
+                logger.info("DLMOD", f"Scene dir : {d}")
+        else:
+            logger.info("DLMOD", "Scene dir : not set / Studio not installed — skipping scenes")
         logger.info("DLMOD", f"Modpack   : {self.modpack_mode}")
 
         # ── Step 1: mods cache ────────────────────────────────────────────
@@ -632,12 +677,19 @@ class DownloadMissingMods(BaseTask):
                 f"kkafio_modpack_index_kk/kks.json not found — "
                 "BetterRepack downloads unavailable.")
 
-        # ── Step 3: chara GUIDs ───────────────────────────────────────────
+        # ── Step 3: chara + scene GUIDs ────────────────────────────────────
         chara_guids = _collect_chara_guids(chara_dirs, self.use_cache)
         logger.info("DLMOD", f"Chara references: {len(chara_guids)} unique GUIDs")
 
+        scene_guids: set[str] = set()
+        if scene_dirs:
+            scene_guids = _collect_scene_guids(scene_dirs, self.use_cache)
+            logger.info("DLMOD", f"Scene references: {len(scene_guids)} unique GUIDs")
+
+        referenced_guids = chara_guids | scene_guids
+
         # ── Step 4: decide what to download ──────────────────────────────
-        missing_local: set[str] = chara_guids - local_guids
+        missing_local: set[str] = referenced_guids - local_guids
 
         match self.modpack_mode:
             case "Skip":
@@ -820,6 +872,7 @@ class DownloadMissingMods(BaseTask):
         self._write_readme(
             mods_dir          = mods_dir,
             chara_guids       = chara_guids,
+            scene_guids       = scene_guids,
             local_guids       = local_guids,
             modpack_index     = modpack_index,
             to_download       = to_download,

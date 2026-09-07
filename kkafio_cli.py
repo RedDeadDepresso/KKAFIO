@@ -130,6 +130,7 @@ def run_download_contents(config, file_manager, links: str | None = None,
 def run_download_missing_mods(config, file_manager,
                               mods_dir: str | None = None,
                               chara_dir: str | None = None,
+                              scene_dir: str | None = None,
                               use_cache: bool | None = None,
                               modpack_mode: str | None = None,
                               download_from_telegram: bool | None = None):
@@ -139,6 +140,8 @@ def run_download_missing_mods(config, file_manager,
         module.mods_dir_str = mods_dir
     if chara_dir is not None:
         module.chara_dir_str = chara_dir
+    if scene_dir is not None:
+        module.scene_dir_str = scene_dir
     if use_cache is not None:
         module.use_cache = use_cache
     if modpack_mode is not None:
@@ -480,10 +483,10 @@ def cmd_download_missing_mods(args):
             config, file_manager,
             mods_dir=args.mods_dir or None,
             chara_dir=args.chara_dir or None,
+            scene_dir=args.scene_dir or None,
             use_cache=use_cache,
             modpack_mode=args.modpack_mode or None,
             download_from_telegram=args.download_from_telegram,
-            tg_chat_id=args.tg_chat_id or None,
         )
     except SystemExit:
         raise
@@ -769,6 +772,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Override the mods directory (default: game mods dir from config)")
     p.add_argument("--chara-dir", default=None, metavar="DIR",
                    help="Override the chara directory to scan (default: game chara dirs from config)")
+    p.add_argument("--scene-dir", default=None, metavar="DIR",
+                   help="Override the Studio scene directory to scan (default: game scene dir from config, if Studio is installed)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
                    help="Use mods and chara cache to skip scanning (default: on)")

@@ -181,6 +181,76 @@ def parse_chara_guids(path: Path) -> list[str]:
     return sorted(set(_extract_guids_from_kkex(s.read(size))))
 
 
+def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
+    """Scan a Studio scene payload for Sideloader UAR GUID references.
+
+    Unlike chara/coordinate cards, a Studio scene does not store a single
+    well-defined KKEx block — extended-save plugin data is embedded once per
+    actor/object scattered throughout the file, and the exact scene binary
+    layout is not something we parse elsewhere in this codebase. Instead we
+    scan the raw bytes for the UAR extension-id strings (which appear as
+    literal UTF-8 msgpack map keys) and msgpack-decode the value that
+    immediately follows each occurrence. Since msgpack values are
+    self-delimiting, this works regardless of where the enclosing dictionary
+    actually starts or ends.
+    """
+    guids: list[str] = []
+    for ext_id in UAR_EXT_IDS:
+        needle = ext_id.encode("utf-8")
+        search_from = 0
+        while True:
+            idx = data.find(needle, search_from)
+            if idx < 0:
+                break
+            search_from = idx + 1
+            value_start = idx + len(needle)
+            try:
+                unpacker = msgpack.Unpacker(raw=False, strict_map_key=False)
+                unpacker.feed(data[value_start:value_start + 20_000_000])
+                plugin_data_raw = unpacker.unpack()
+            except Exception:
+                continue
+
+            data_dict = None
+            if isinstance(plugin_data_raw, dict):
+                data_dict = plugin_data_raw.get(1)
+            elif isinstance(plugin_data_raw, (list, tuple)) and len(plugin_data_raw) >= 2:
+                data_dict = plugin_data_raw[1]
+
+            if not isinstance(data_dict, dict):
+                continue
+
+            info_val = data_dict.get("info")
+            if not isinstance(info_val, (list, tuple)):
+                continue
+
+            for item in info_val:
+                if not isinstance(item, (bytes, bytearray, memoryview)):
+                    continue
+                try:
+                    resolve_info = msgpack.unpackb(bytes(item), raw=False)
+                    if isinstance(resolve_info, dict):
+                        guid = resolve_info.get("ModID")
+                        if guid:
+                            guids.append(str(guid))
+                except Exception:
+                    pass
+
+    return guids
+
+
+def parse_scene_guids(path: Path) -> list[str]:
+    """Return sorted unique zipmod GUIDs referenced by a Studio scene file."""
+    try:
+        data = path.read_bytes()
+        png_end = _find_iend_end(data)
+        if png_end < 0 or png_end >= len(data):
+            return []
+        return sorted(set(_extract_guids_from_scene_blob(data[png_end:])))
+    except Exception:
+        return []
+
+
 def parse_coord_guids(path: Path) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a coordinate card."""
     try:

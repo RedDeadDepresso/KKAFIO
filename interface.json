@@ -734,6 +734,16 @@
         "CharaDir": "{chara_dir}"
       }
     },
+    "SceneDir": {
+      "type": "folder",
+      "name": "scene_dir",
+      "label": "Custom Scene Directory",
+      "description": "Override the Studio scene folder to scan for missing mods. Leave empty to use the game's default Studio scene folder (if installed).",
+      "default": "",
+      "pipeline_override": {
+        "SceneDir": "{scene_dir}"
+      }
+    },
     "SideloaderModpack": {
       "type": "select",
       "label": "Sideloader Modpack",
@@ -923,6 +933,7 @@
         "DownloadFromTelegram",
         "UseCache",
         "CharaDir",
+        "SceneDir",
         "ModsDir"
       ]
     },
