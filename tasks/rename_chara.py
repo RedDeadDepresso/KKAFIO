@@ -325,20 +325,29 @@ class RenameChara(BaseTask):
         self.skip_already_renamed : bool = cfg.get("SkipAlreadyRenamed", True)
         self.update_metadata      : bool = cfg.get("UpdateMetadata", False)
         self.rename_files         : bool = cfg.get("RenameFiles", True)
-        self.prompt               : str  = cfg.get("Prompt", PROMPT_TEMPLATE)
-        self.response             : str  = cfg.get("Response", "")
+        self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
 
     def run(self) -> None:
-        if not self.response:
-            logger.error("RENAME",
-                "No LLM response saved. Use Copy → Paste in Settings first.")
-            return
         folder = Path(self.input_path_str) if self.input_path_str else None
         if not folder or not folder.exists():
             logger.error("RENAME", "Input directory not set or does not exist.")
             raise Exception("InputPath is not set or does not exist")
+
         self.log_start("RENAME", str(folder))
-        process(folder, self.response,
+
+        json_str = export(folder, skip_already_renamed=self.skip_already_renamed)
+        if not json_str:
+            return
+
+        prompt_text = self.prompt.rstrip("\n") + "\n" + json_str
+
+        from utils.llm_dialog import llm_dialog
+        response = llm_dialog("KKAFIO — Rename Characters", prompt_text)
+        if not response or not response.strip():
+            logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
+            return
+
+        process(folder, response,
                 skip_already_renamed=self.skip_already_renamed,
                 update_metadata=self.update_metadata,
                 rename_files=self.rename_files)

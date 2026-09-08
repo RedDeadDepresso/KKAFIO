@@ -3,7 +3,7 @@
   "name": "KKAFIO",
   "label": "KKAFIO",
   "title": "KKAFIO - Koikatsu Auto File I/O",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "github": "https://github.com/RedDeadDepresso/KKAFIO",
   "mirrorchyan_rid": "",
   "description": "Automated character card and mod management for Koikatsu / Koikatsu Sunshine",
@@ -506,25 +506,11 @@
       "type": "textarea",
       "name": "prompt",
       "label": "Rename Prompt",
-      "description": "Prompt sent to the LLM along with the character JSON. Edit to customise the instructions.",
+      "description": "Instructions sent to the LLM, followed by the character JSON. When this task runs, a dialog will show the combined prompt+JSON to copy, and a Paste button to submit the LLM's reply.",
       "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's well-known English name.\n\nRules:\n- Use Western name order: firstname = given name, lastname = family name.\n- Use the English name the character is commonly known by, not a literal\n  transliteration (e.g. lastname \"Tohsaka\" firstname \"Rin\", not \"Tosaka Rin\").\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n",
       "pipeline_override": {
         "Prompt": "{prompt}"
       }
-    },
-    "RenameCharaCopyStep1": {
-      "type": "action_button",
-      "action": "rename_chara_copy",
-      "label": "Step 1 - Copy",
-      "description": "Scan the input folder, build the character key JSON and copy prompt + JSON to clipboard. Paste into your LLM.",
-      "button_label": "Copy"
-    },
-    "RenameCharaCopyStep2": {
-      "type": "action_button",
-      "action": "rename_chara_paste",
-      "label": "Step 2 - Paste",
-      "description": "After the LLM replies with the filled-in JSON, copy that response and click Paste to save it.",
-      "button_label": "Paste"
     },
     "SkipAlreadyRenamed": {
       "type": "switch",
@@ -596,26 +582,12 @@
       "type": "textarea",
       "name": "prompt",
       "label": "LLM Prompt",
-      "description": "Prompt template for the LLM (use {json} placeholder for the card JSON)",
+      "description": "Instructions sent to the LLM, followed by the character JSON. When this task runs, a dialog will show the combined prompt+JSON to copy, and a Paste button to submit the LLM's reply.",
       "placeholder": "You will receive a JSON object whose keys identify Koikatsu character card files…",
       "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official English title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n",
       "pipeline_override": {
         "Prompt": "{prompt}"
       }
-    },
-    "GroupCharaCopyStep1": {
-      "type": "action_button",
-      "action": "group_chara_copy",
-      "label": "Step 1 - Copy",
-      "description": "Scan the input folder, build character JSON and copy prompt + JSON to clipboard. Paste it into your LLM.",
-      "button_label": "Copy"
-    },
-    "GroupCharaCopyStep2": {
-      "type": "action_button",
-      "action": "group_chara_paste",
-      "label": "Step 2 - Paste",
-      "description": "After the LLM replies with the filled-in JSON, copy that response and click Paste to save it.",
-      "button_label": "Paste"
     },
     "GroupCharaIncludeSubfolders": {
       "type": "switch",
@@ -984,15 +956,9 @@
       "label": "🗂️ Group Characters",
       "entry": "GroupChara",
       "default_check": false,
-      "description": "Move character cards into series subfolders using LLM",
+      "description": "Move character cards into series subfolders using an LLM (shows a Copy/Paste dialog when run)",
       "group": ["card-management"],
-      "option": [
-        "InputPath",
-        "GroupCharaIncludeSubfolders",
-        "GroupCharaPrompt",
-        "GroupCharaCopyStep1",
-        "GroupCharaCopyStep2"
-      ]
+      "option": ["InputPath", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
     },
     {
       "name": "UngroupChara",
@@ -1008,16 +974,14 @@
       "label": "✏️ Rename Characters",
       "entry": "RenameChara",
       "default_check": false,
-      "description": "Translate character card names to English using an LLM",
+      "description": "Translate character card names to English using an LLM (shows a Copy/Paste dialog when run)",
       "group": ["card-management"],
       "option": [
         "InputPath",
         "SkipAlreadyRenamed",
         "UpdateMetadata",
         "RenameFiles",
-        "RenameCharaPrompt",
-        "RenameCharaCopyStep1",
-        "RenameCharaCopyStep2"
+        "RenameCharaPrompt"
       ]
     },
     {
@@ -1046,7 +1010,13 @@
       "default_check": false,
       "description": "Send character cards / Studio scenes and associated mods/coords to Recycle Bin",
       "group": ["card-management"],
-      "option": ["ContentPaths", "UseCache", "AutoResolve", "ModsDir", "CoordDir"]
+      "option": [
+        "ContentPaths",
+        "UseCache",
+        "AutoResolve",
+        "ModsDir",
+        "CoordDir"
+      ]
     }
   ],
   "preset": [

@@ -1,18 +1,15 @@
 """
 group_chara.py — Group character cards into folders by series using an LLM.
 
-Workflow
---------
-1. export(folder_path) — scans the folder for KK chara PNGs, builds a JSON dict
-   {key: ""} where key encodes name + personality + hair colour, then returns a
-   prompt string ready to be pasted into your LLM.
-
-2. process(folder_path, json_str) — takes the LLM response JSON (key → series
+Workflow (all handled inside run()):
+1. export() scans the folder for KK chara PNGs and builds a JSON dict
+   {key: ""} where key encodes name + personality + hair colour.
+2. run() shows a native Copy/Paste dialog (utils/llm_dialog.py) with the
+   prompt + JSON. The user copies it into their LLM, pastes the reply back
+   into the dialog, and clicks Paste.
+3. process(folder_path, json_str) takes that JSON response (key → series
    folder name), finds all matching chara PNGs, and moves each one into
    <input_folder>/<series>/<filename>.
-
-The two steps are intentionally decoupled so the user can inspect and edit
-the LLM response before committing any file moves.
 """
 
 
@@ -22,6 +19,7 @@ from pathlib import Path
 
 from kkloader import KoikatuCharaData
 
+from tasks.base_task import BaseTask
 from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
 
 from utils.logger import logger
@@ -95,12 +93,15 @@ def _make_key(kc: KoikatuCharaData) -> str:
 # ---------------------------------------------------------------------------
 
 def export(folder_path: Path, include_subfolders: bool = False) -> str:
-    """Scan folder_path for chara PNGs and return a LLM-ready prompt string.
+    """Scan folder_path for chara PNGs and return the character-key JSON.
 
     Args:
         include_subfolders: When False (default) only scans the top-level folder,
                             skipping already-sorted cards in subfolders.
                             When True scans recursively.
+
+    Returns only the JSON block (no prompt) — the caller splices its own
+    prompt text in front, same pattern as rename_chara.export().
     """
     folder_path = Path(folder_path)
     if not str(folder_path).strip() or str(folder_path) == ".":
@@ -150,11 +151,10 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
         return ""
 
     json_str = json.dumps(characters, indent=4, ensure_ascii=False)
-    result   = PROMPT_TEMPLATE + json_str
 
     logger.success("GROUP",
         f"Found {len(characters)} unique character(s). Copy the text and paste it into your LLM.")
-    return result
+    return json_str
 
 
 # ---------------------------------------------------------------------------
@@ -260,3 +260,38 @@ def process(folder_path: Path, json_str: str) -> None:
 
     logger.line()
     logger.success("GROUP", f"Done — moved: {moved}, skipped/unassigned: {skipped}")
+
+
+# ---------------------------------------------------------------------------
+# Task class
+# ---------------------------------------------------------------------------
+
+class GroupChara(BaseTask):
+    def __init__(self, config, file_manager):
+        super().__init__(config, file_manager)
+        cfg = self.config.group_chara
+        self.input_path_str     : str  = cfg.get("InputPath", "")
+        self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
+        self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
+
+    def run(self) -> None:
+        folder = Path(self.input_path_str) if self.input_path_str else None
+        if not folder or not folder.exists():
+            logger.error("GROUP", "Input directory not set or does not exist.")
+            raise Exception("InputPath is not set or does not exist")
+
+        self.log_start("GROUP", str(folder))
+
+        json_str = export(folder, include_subfolders=self.include_subfolders)
+        if not json_str:
+            return
+
+        prompt_text = self.prompt.rstrip("\n") + "\n" + json_str
+
+        from utils.llm_dialog import llm_dialog
+        response = llm_dialog("KKAFIO — Group Characters", prompt_text)
+        if not response or not response.strip():
+            logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
+            return
+
+        process(folder, response)

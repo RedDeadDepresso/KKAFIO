@@ -134,8 +134,8 @@ _TASK_DEFAULTS = {
     "FilterConvertKKS": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteCharaScenes":      {"Enable": False, "ContentPaths": [], "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
     "ArchiveCharaScenes":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
-    "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
-    "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": "", "Response": ""},
+    "GroupChara":       {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": ""},
+    "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
@@ -202,10 +202,9 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "GroupChara":
         _set("InputPath", "InputPath")
+        _set("IncludeSubfolders", "GroupCharaIncludeSubfolders")
         v = _extract_opt(opt_values, "GroupCharaPrompt")
         if v is not None: cfg["Prompt"] = v
-        v = _extract_opt(opt_values, "GroupCharaResponse")
-        if v is not None: cfg["Response"] = v
 
     elif task_name == "RenameChara":
         _set("InputPath",          "InputPath")
@@ -214,8 +213,6 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("RenameFiles",        "RenameFiles")
         v = _extract_opt(opt_values, "RenameCharaPrompt")
         if v is not None: cfg["Prompt"] = v
-        v = _extract_opt(opt_values, "RenameCharaResponse")
-        if v is not None: cfg["Response"] = v
 
     elif task_name == "UngroupChara":
         _set("InputPath",          "InputPath")

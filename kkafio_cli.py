@@ -214,51 +214,31 @@ def run_ungroup_chara(config, file_manager, input_path: str | None = None,
 
 
 def run_rename_chara(config, file_manager, input_path: str | None = None,
-                     response: str | None = None,
                      skip_already_renamed: bool | None = None,
                      update_metadata: bool | None = None,
                      rename_files: bool | None = None):
-    from tasks.rename_chara import process, export
-    from pathlib import Path
-    cfg = config.rename_chara
-    folder = Path(input_path) if input_path else Path(cfg.get("InputPath", ""))
-    if not folder.exists():
-        from utils.logger import logger
-        logger.error("CLI", f"RenameChara input path does not exist: {folder}")
-        import sys; sys.exit(1)
-    r = response if response is not None else cfg.get("Response", "")
-    skip = skip_already_renamed if skip_already_renamed is not None else cfg.get("SkipAlreadyRenamed", True)
-    meta = update_metadata if update_metadata is not None else cfg.get("UpdateMetadata", False)
-    ren  = rename_files if rename_files is not None else cfg.get("RenameFiles", True)
-    if not r:
-        from utils.logger import logger
-        logger.error("CLI", "No LLM response. Run with --export first, then paste the response with --response.")
-        import sys; sys.exit(1)
-    process(folder, r, skip_already_renamed=skip, update_metadata=meta, rename_files=ren)
-
-
-def run_rename_chara_export(config, file_manager, input_path: str | None = None,
-                            skip_already_renamed: bool | None = None):
-    from tasks.rename_chara import export
-    from pathlib import Path
-    cfg = config.rename_chara
-    folder = Path(input_path) if input_path else Path(cfg.get("InputPath", ""))
-    skip = skip_already_renamed if skip_already_renamed is not None else cfg.get("SkipAlreadyRenamed", True)
-    result = export(folder, skip_already_renamed=skip)
-    if result:
-        print(result)
+    from tasks.rename_chara import RenameChara
+    module = RenameChara(config, file_manager)
+    if input_path is not None:
+        module.input_path_str = input_path
+    if skip_already_renamed is not None:
+        module.skip_already_renamed = skip_already_renamed
+    if update_metadata is not None:
+        module.update_metadata = update_metadata
+    if rename_files is not None:
+        module.rename_files = rename_files
+    module.run()
 
 
 def run_group_chara(config, file_manager, input_path: str | None = None,
-                    response: str | None = None, include_subfolders: bool | None = None):
-    from tasks.group_chara import process
-    from pathlib import Path
-    folder = Path(input_path) if input_path else Path(config.group_chara["InputPath"])
-    json_str = response if response is not None else config.group_chara.get("Response", "")
-    if not json_str:
-        print("[ERROR] No LLM response found. Use --response or paste a response in Settings first.")
-        import sys; sys.exit(1)
-    process(folder, json_str)
+                    include_subfolders: bool | None = None):
+    from tasks.group_chara import GroupChara
+    module = GroupChara(config, file_manager)
+    if input_path is not None:
+        module.input_path_str = input_path
+    if include_subfolders is not None:
+        module.include_subfolders = include_subfolders
+    module.run()
 
 
 def run_filter_duplicate_contents(config, file_manager, input_path: str | None = None,
@@ -561,34 +541,13 @@ def cmd_ungroup_chara(args):
 def cmd_rename_chara(args):
     _clear_traceback()
     try:
-        if args.export:
-            # Export needs only the folder — skip config loading entirely
-            # so no log lines are printed to stdout before the JSON.
-            from tasks.rename_chara import export, PROMPT_TEMPLATE
-            from pathlib import Path
-            folder = Path(args.input) if args.input else Path(".")
-            skip = args.skip_already_renamed if args.skip_already_renamed is not None else True
-            json_only = export(folder, skip_already_renamed=skip)
-            if json_only:
-                # Use prompt from CLI arg if provided, else fall back to default template
-                prompt = getattr(args, 'prompt', None) or PROMPT_TEMPLATE
-                print(prompt.rstrip() + "\n" + json_only, end="")
-            return
- 
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["RenameChara"]["Enable"] = True
-        response = args.response
-        if response:
-            from pathlib import Path as _Path
-            p = _Path(response)
-            if p.is_file():
-                response = p.read_text(encoding="utf-8")
         skip = None if args.skip_already_renamed is None else bool(args.skip_already_renamed)
         meta = None if args.update_metadata is None else bool(args.update_metadata)
         ren  = None if args.rename_files is None else bool(args.rename_files)
         run_rename_chara(config, file_manager,
                          input_path=args.input,
-                         response=response,
                          skip_already_renamed=skip,
                          update_metadata=meta,
                          rename_files=ren)
@@ -602,34 +561,11 @@ def cmd_rename_chara(args):
 def cmd_group_chara(args):
     _clear_traceback()
     try:
-        if args.export:
-            # Export needs only the folder — skip config loading so no log
-            # lines pollute stdout before the JSON.
-            from tasks.group_chara import export
-            from pathlib import Path
-            folder = Path(args.input) if args.input else Path(".")
-            include_sub = getattr(args, 'include_subfolders', False)
-            result = export(folder, include_subfolders=include_sub)
-            if result:
-                prompt = getattr(args, 'prompt', None) or ""
-                json_start = result.find('{')
-                json_only = result[json_start:] if json_start != -1 else result
-                full = (prompt.rstrip() + "\n" + json_only) if prompt else result
-                print(full, end="")
-            return
-
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["GroupChara"]["Enable"] = True
-        response = args.response
-        if response and response.endswith(".json"):
-            from pathlib import Path as _Path
-            try:
-                response = _Path(response).read_text(encoding="utf-8")
-            except Exception as e:
-                print(f"[ERROR] Could not read response file: {e}")
-                sys.exit(1)
+        include_sub = getattr(args, 'include_subfolders', None)
         run_group_chara(config, file_manager,
-                        input_path=args.input, response=response)
+                        input_path=args.input, include_subfolders=include_sub)
     except SystemExit:
         raise
     except Exception:
@@ -868,12 +804,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # rename-chara
     p = sub.add_parser("rename-chara",
-                        help="Translate character card names to English using an LLM")
+                        help="Translate character card names to English using an LLM "
+                             "(shows a native Copy/Paste dialog when it runs)")
     p.add_argument("--input", "-i", metavar="DIR", default=None)
-    p.add_argument("--response", metavar="JSON_FILE_OR_STRING", default=None,
-                   help="LLM response JSON string or path to a .json file")
-    p.add_argument("--export", action="store_true", default=False,
-                   help="Scan folder and print prompt+JSON to stdout (pipe to LLM)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--skip-already-renamed",    dest="skip_already_renamed",
                    action="store_true", default=None)
@@ -896,21 +829,13 @@ def build_parser() -> argparse.ArgumentParser:
     # group-chara
     p = sub.add_parser(
         "group-chara",
-        help="Move character cards into series subfolders using the LLM JSON response",
-        description=(
-            "Step 1: run with --export to scan the input folder and print the prompt+JSON to stdout. "
-            "Paste that into your LLM, copy the response, save it, then run without --export to move files."
-        ),
+        help="Move character cards into series subfolders using an LLM "
+             "(shows a native Copy/Paste dialog when it runs)",
     )
     p.add_argument("--input", "-i", metavar="DIR", default=None,
                    help="Folder containing character PNGs (default: GroupChara.InputPath from config)")
-    p.add_argument("--response", metavar="JSON_FILE_OR_STRING", default=None,
-                   help="the LLM JSON response as a string or path to a .json file "
-                        "(default: GroupChara.Response from config)")
-    p.add_argument("--export", action="store_true", default=False,
-                   help="Scan folder and print prompt+JSON to stdout instead of moving files")
-    p.add_argument("--include-subfolders", action="store_true", default=False,
-                   help="Include character cards from subfolders when exporting (overrides config)")
+    p.add_argument("--include-subfolders", action="store_true", default=None,
+                   help="Include character cards from subfolders when scanning (overrides config)")
     p.set_defaults(func=cmd_group_chara)
 
     # filter-duplicate-contents
