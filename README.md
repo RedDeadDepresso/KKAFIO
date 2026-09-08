@@ -4,7 +4,7 @@
 
 ## Features
 
-**1. Download Chara**
+**1. Download Contents**
 
 - Downloads character cards from [db.bepis.moe](https://db.bepis.moe) and [koikatsucards.com](https://koikatsucards.com).
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
@@ -19,9 +19,39 @@
 
 - Lines starting with `#` are treated as comments and ignored.
 - **Skip already downloaded** (on by default) uses a history file at `%APPDATA%/KKAFIO/download_history.json` to avoid re-downloading files.
-- **koikatsucards.com session cookie** — downloading from koikatsucards.com requires logging in and copying the `kkd_session` cookie value from your browser's DevTools (Application → Cookies). The cookie expires every 7 days and must be updated when it does.
+- **koikatsucards.com session cookie** — downloading from koikatsucards.com requires a valid session. KKAFIO manages this automatically:
+  - On first use (or when the session expires), KKAFIO opens [koikatsucards.com/login](https://koikatsucards.com/login) in your browser and shows a dialog asking you to paste the `kkd_session` cookie value from DevTools (F12 → Application → Cookies → koikatsucards.com).
+  - The session is validated against `koikatsucards.com/api/session` before use. If it is expired, you are prompted for a new one automatically.
+  - The session is stored in `%APPDATA%/KKAFIO/config/kkd_session.json`. It does not need to be entered in MXU settings.
 
-**2. Create Backup**
+**2. Download Missing Mods**
+
+Finds all mods referenced by installed character cards that are not present in the local mods directory, then downloads them automatically.
+
+See [Download Missing Mods Workflows](#download-missing-mods-workflows) below for recommended usage.
+
+- **Step 1 — Mods cache:** Scans the mods directory and builds a cache of all installed mod GUIDs.
+- **Step 2 — Chara scan:** Recursively scans the chara folders and collects every mod GUID referenced by installed cards. The result is cached for subsequent runs.
+- **Step 3 — Missing = referenced − installed.**
+- **Step 4 — Download:**
+  - **BetterRepack** — Mods found in `kkafio_modpack_index_kk.json` / `kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
+  - **koikatsucards.com + Telegram** — Mods not in the modpack index are looked up on [koikatsucards.com/mod_library](https://koikatsucards.com/mod_library) and downloaded from the linked Telegram channel using your Telegram account via [Telethon](https://github.com/LonamiWebs/Telethon) and [teleget9527](https://pypi.org/project/teleget9527/) for maximum parallel speed.
+  - If BetterRepack fails for a mod and Telegram is enabled, KKAFIO automatically retries via Telegram.
+- **Sideloader Modpack mode:**
+  - `Skip` — ignores all modpack GUIDs; only downloads non-modpack mods.
+  - `Only Used` *(default)* — downloads missing modpack mods that are actually referenced by installed cards.
+  - `All` — downloads every GUID in the modpack index not installed locally, even if no card uses it.
+- **Custom Chara Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below).
+- **Use Cache** (on by default) — caches both the mods list and the chara GUID scan. The chara cache is invalidated automatically when the chara folder changes.
+
+**Telegram setup:**
+1. Go to [my.telegram.org/apps](https://my.telegram.org/apps), log in, and create an app to get an **API ID** and **API Hash**. Enter these in MXU settings.
+2. Enable **Download from Telegram** in MXU settings.
+3. On first use, KKAFIO opens [my.telegram.org](https://my.telegram.org) in your browser and shows dialogs for your phone number and verification code (and 2FA password if enabled). The session is saved to `%APPDATA%/KKAFIO/config/tg_session/kkafio.session` and reused automatically.
+
+> ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
+
+**3. Create Backup**
 
 - Automatically creates a `.7z` archive containing:
   - `UserData`
@@ -67,7 +97,23 @@
 - **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
 - **Warning:** Uninstall Contents does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
-**7. Group Chara**
+**8. Rename Chara**
+
+- Translates character card names to English using an LLM.
+- Workflow:
+  1. Select an input folder and click **Copy**.  
+     KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, merges it with the prompt, and copies the result to the clipboard.
+  2. Paste into your LLM of choice. The LLM fills in the English name for each key.
+  3. Copy the LLM response and click **Paste** in KKAFIO to save it.
+  4. Enable **Rename Chara**, click **Start** — KKAFIO writes the translated names into each card's internal metadata (`Parameter.lastname / firstname / nickname`).
+- **Update card metadata** (on by default): writes the translated names into the card file.
+- **Rename PNG files** (off by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
+- **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
+- Results are cached in `kkafio_rename_cache.json` inside the input folder and reused across runs.
+- The prompt is fully editable in the settings panel.
+- **Recommended LLMs:** same as Group Chara (see below).
+
+**9. Group Chara**
 
 - Groups character cards into subfolders named after their series, using an LLM.
 - Workflow:
@@ -120,44 +166,118 @@
 - Never touches Sideloader Modpack mods.
 - **Warning:** Delete Chara does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
+---
+
+## Download Missing Mods Workflows
+
+### Method 1 — Check installed cards (simple)
+
+Use this to verify that all mods required by your currently installed cards are present. No staging folder needed.
+
+1. Set **Sideloader Modpack** to `Only Used`.
+2. Leave **Custom Chara Directory** and **Custom Mods Directory** blank (uses game defaults).
+3. Enable **Download Missing Mods** and click **Start**.
+
+KKAFIO scans your installed chara cards, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if Telegram is enabled) downloads any remaining mods from koikatsucards.com.
+
+---
+
+### Method 2 — Staging folder workflow ⭐ Recommended
+
+This is the fastest end-to-end workflow for adding a large batch of new cards. All work happens in a temporary staging folder; the game directories are only touched at the final Install step.
+
+```
+📁 staging/            ← your staging folder (anywhere on disk)
+```
+
+**Step 1 — Download cards** *(optional)*
+
+Use **Download Contents** to download cards from db.bepis.moe or koikatsucards.com directly into the staging folder. Or copy cards you already have into it manually.
+
+**Step 2 — Filter & Convert** *(optional)*
+
+Enable **Filter & Convert KKS** with the staging folder as input.
+- Set **Extract Archives** on — this unpacks any ZIP/RAR/7z files in the staging folder before filtering.
+- Enable **Convert KKS → KK** or **Convert KK → KKS** if you want cross-game copies.
+
+**Step 3 — Deduplicate**
+
+Enable **Filter Duplicate Contents** with the staging folder as input.
+- Enable **Delete Duplicates** to send duplicates to the recycle bin instead of moving them to `_duplicates_/`.
+
+**Step 4 — Download missing mods**
+
+Enable **Download Missing Mods** with:
+- **Sideloader Modpack** → `Skip` *(mods in the staging folder are local, not modpack mods)*
+- **Custom Chara Directory** → your staging folder
+- **Custom Mods Directory** → your staging folder
+- **Download from Telegram** → enabled
+
+KKAFIO scans the cards in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside the cards.
+
+**Step 5 — Install**
+
+Enable **Install Contents** with the staging folder as input. KKAFIO copies everything — cards, coordinates, overlays, and zipmods — into the correct game directories.
+
+---
+
 ## Game Type
 
 Configure the game type in the instance settings at the top of the task list:
 
-| Game Type          | Card type installed | Cards skipped |
-| ------------------ | ------------------- | ------------- |
-| Koikatsu (default) | KK, KKSP            | KKS           |
-| Koikatsu Party     | KK, KKSP            | KKS           |
-| Koikatsu Sunshine  | KKS, KK, KKSP       |               |
+| Game Type | Card type installed | Cards skipped |
+|---|---|---|
+| Koikatsu (default) | KK, KKSP | KKS |
+| Koikatsu Party | KK, KKSP | KKS |
+| Koikatsu Sunshine | KKS | KK, KKSP |
 
-The game type also determines which executable is launched by the **Run Game** button and affects scene card installation (Studio must be installed separately).
+The game type also determines which executable is launched by the **Run Game** button, which modpack index file is used, and affects scene card installation (Studio must be installed separately).
 
 ## Modpack Index
 
-KKAFIO ships with `kkafio_modpack_index.json` — a pre-built index of all GUIDs in the Sideloader Modpack. Archive Chara and Delete Chara use this index to instantly identify which required mods are already covered by the modpack (and therefore don't need to be bundled or deleted).
+KKAFIO ships with two pre-built modpack index files:
 
-If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
+| File | Game |
+|---|---|
+| `kkafio_modpack_index_kk.json` | Koikatsu / Koikatsu Party |
+| `kkafio_modpack_index_kks.json` | Koikatsu Sunshine |
+
+Archive Chara, Delete Chara, and Download Missing Mods use the index for the configured game type to instantly identify which required mods are covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
 
 To regenerate the index after updating the Sideloader Modpack, run:
 
 ```
-python build_modpack_index.py "C:/KK Party/mods"
+# Koikatsu / Koikatsu Party
+python build_modpack_index.py "C:/KK Party/mods" --game-type kk
+
+# Koikatsu Sunshine
+python build_modpack_index.py "C:/KKS/mods" --game-type kks
 ```
 
-The updated `kkafio_modpack_index.json` is written to the mods folder. Copy it next to `kkafio_cli.exe` or commit it to the repository to ship it with the next release.
+**Incremental updates** — if the index file already exists, `build_modpack_index.py` reuses entries for zipmods whose path, size, and modification time are unchanged. Only new or changed zipmods are opened and scanned. Adding a handful of mods to a large Sideloader Modpack takes seconds rather than minutes.
+
+Use `--full` to force a complete rescan and ignore the previous index:
+
+```
+python build_modpack_index.py "C:/KK Party/mods" --game-type kk --full
+```
+
+Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to the repository to ship them with the next release.
 
 ## Context Menu Integration
 
-Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance. It is recommended to set `⚡ All Tasks` preset as the first configuration instance.
+Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
 
 **On folders and folder backgrounds:**
 
-| Entry                     | Action                                       |
-| ------------------------- | -------------------------------------------- |
-| Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
-| Filter / Convert KKS Cards| `filter-convert-kks --input <folder>`        |
-| Install Contents          | `install-contents --input <folder>`          |
-| Uninstall Contents        | `uninstall-contents --input <folder>`        |
+| Entry | Action |
+|---|---|
+| Install Contents | `install-contents --input <folder>` |
+| Uninstall Contents | `uninstall-contents --input <folder>` |
+| Filter / Convert Chara | `filter-convert-chara --input <folder>` |
+| Filter Duplicates | `filter-duplicates --input <folder>` |
+| Download Missing Mods | `download-missing-mods --chara-dir <folder> --mods-dir <folder>` |
+| Run GUI | Opens MXU |
 
 **On PNG files (single or multi-select):**
 
@@ -175,9 +295,13 @@ Run `unregister_context_menu.bat` to remove all entries.
 ```
 kkafio_cli run                                    # run all enabled tasks from config
 
-kkafio_cli download-chara [--links URLS_OR_FILE] [--output-dir DIR]
-                          [--skip-downloaded | --no-skip-downloaded]
-                          [--kkd-session COOKIE]
+kkafio_cli download-contents [--links URLS_OR_FILE] [--output-dir DIR]
+                             [--skip-downloaded | --no-skip-downloaded]
+
+kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR]
+                                 [--use-cache | --no-use-cache]
+                                 [--modpack-mode Skip|OnlyUsed|All]
+                                 [--download-from-telegram | --no-download-from-telegram]
 
 kkafio_cli create-backup  [--output DIR] [--filename NAME]
                           [--mods | --no-mods]
