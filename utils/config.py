@@ -59,6 +59,8 @@ def _extract_opt(opt_values: dict, key: str):
         return v.get("text", "")
     if t == "switch":
         return v.get("value", False)
+    if t == "checkbox":
+        return v.get("caseNames", [])
     if t == "select":
         return v.get("caseName", "")
     if t == "input":
@@ -229,9 +231,11 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("OutputPath", "OutputPath")
         v = _extract_opt(opt_values, "BackupFilename")
         if v: cfg["Filename"] = v
-        _set("mods",     "BackupMods")
-        _set("UserData", "BackupUserData")
-        _set("BepInEx",  "BackupBepInEx")
+        selected = _extract_opt(opt_values, "BackupFolders")
+        if selected is not None:
+            cfg["mods"]     = "Mods"     in selected
+            cfg["UserData"] = "UserData" in selected
+            cfg["BepInEx"]  = "BepInEx"  in selected
 
     elif task_name == "DownloadContents":
         _set("Links",           "DownloadLinks")

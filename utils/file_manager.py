@@ -1,3 +1,4 @@
+import locale
 import shutil
 import subprocess
 import time
@@ -149,13 +150,14 @@ class FileManager:
             raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
         flag = "-t7z" if fmt == "7z" else "-tzip"
         cmd = [path_to_7zip, "a", flag, str(output_path)] + [str(f) for f in files]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True,
+                                text=True, encoding=locale.getpreferredencoding(False), errors="replace")
         if result.returncode not in (0, 1):
             raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
     
     def create_game_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""
-        path_to_7zip = self._find_7zip()
+        path_to_7zip = self.find_7zip()
         if not path_to_7zip:
             logger.error("SCRIPT", "7zip not found. Unable to create backup")
             raise Exception()
@@ -182,7 +184,11 @@ class FileManager:
         cmd += [str(f) for f in folders]
         cmd += [f"-xr!{folder}" for folder in exclude_folders]
 
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=self.config.game_path['base'])
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding=locale.getpreferredencoding(False), errors="replace",
+            cwd=self.config.game_path['base'],
+        )
 
         self.write_backup_info(archive_path, process.pid)
         while True:
@@ -227,7 +233,8 @@ class FileManager:
         else:
             cmd.append("-p")          # prompt-less no-password attempt
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True,
+                                text=True, encoding=locale.getpreferredencoding(False), errors="replace")
         return result.returncode == 0
 
     def extract_archive(self, archive_path: Union[Path, str], task_config: dict = None):

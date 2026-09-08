@@ -43,7 +43,7 @@ def _load_core(config_path: str | None = None, instance_index: int = 0):
 
 
 def _write_traceback(task: str) -> None:
-    with open("traceback.log", "a") as f:
+    with open("traceback.log", "a", encoding="utf-8") as f:
         f.write(f"[{task}]\n")
         traceback.print_exc(None, f, True)
         f.write("\n")
@@ -897,7 +897,7 @@ except SystemExit:
 
 except Exception:
     print("[ERROR] CLI initialisation error. See traceback.log for details.")
-    with open("traceback.log", "w") as f:
+    with open("traceback.log", "w", encoding="utf-8") as f:
         f.write("CLI Initialisation Error\n")
         traceback.print_exc(None, f, True)
         f.write("\n")

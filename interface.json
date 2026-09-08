@@ -98,69 +98,6 @@
         "Filename": "{filename}"
       }
     },
-    "BackupMods": {
-      "type": "switch",
-      "label": "Backup mods folder",
-      "default_case": "No",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Include",
-          "pipeline_override": {
-            "mods": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "Exclude",
-          "pipeline_override": {
-            "mods": false
-          }
-        }
-      ]
-    },
-    "BackupUserData": {
-      "type": "switch",
-      "label": "Backup UserData folder",
-      "default_case": "No",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Include",
-          "pipeline_override": {
-            "UserData": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "Exclude",
-          "pipeline_override": {
-            "UserData": false
-          }
-        }
-      ]
-    },
-    "BackupBepInEx": {
-      "type": "switch",
-      "label": "Backup BepInEx folder",
-      "default_case": "No",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Include",
-          "pipeline_override": {
-            "BepInEx": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "Exclude",
-          "pipeline_override": {
-            "BepInEx": false
-          }
-        }
-      ]
-    },
     "DownloadOutputDir": {
       "type": "folder",
       "name": "output_dir",
@@ -841,6 +778,35 @@
       "pipeline_override": {
         "ContentPaths": "{content_paths}"
       }
+    },
+    "BackupFolders": {
+      "type": "checkbox",
+      "label": "Folders to Back Up",
+      "description": "Select which game folders to include in the backup. Mods: zipmods from your mods folder. Sideloader Modpack folders are always excluded, since those are re-downloadable and would bloat the archive.",
+      "default_case": [],
+      "cases": [
+        {
+          "name": "Mods",
+          "label": "Mods",
+          "pipeline_override": {
+            "mods": true
+          }
+        },
+        {
+          "name": "UserData",
+          "label": "UserData",
+          "pipeline_override": {
+            "UserData": true
+          }
+        },
+        {
+          "name": "BepInEx",
+          "label": "BepInEx",
+          "pipeline_override": {
+            "BepInEx": true
+          }
+        }
+      ]
     }
   },
   "group": [
@@ -868,13 +834,7 @@
       "default_check": false,
       "description": "Create a 7-Zip backup of game folders",
       "group": ["backup"],
-      "option": [
-        "OutputPath",
-        "BackupFilename",
-        "BackupMods",
-        "BackupUserData",
-        "BackupBepInEx"
-      ]
+      "option": ["OutputPath", "BackupFilename", "BackupFolders"]
     },
     {
       "name": "DownloadContents",
