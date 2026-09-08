@@ -992,10 +992,10 @@
           "name": "DownloadContents"
         },
         {
-          "name": "FilterDuplicateContents"
+          "name": "FilterConvertKKS"
         },
         {
-          "name": "FilterConvertKKS"
+          "name": "FilterDuplicateContents"
         },
         {
           "name": "DownloadMissingMods"

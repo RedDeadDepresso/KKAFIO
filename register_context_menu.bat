@@ -50,7 +50,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03Download
 echo @="Download Missing Mods"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03DownloadMissingMods\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%1\" --mods-dir \"%%1\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%1\" --scene-dir \"%%1\" --mods-dir \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04InstallContents]
 echo @="Install Contents"
@@ -64,10 +64,28 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\05UninstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%1\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07RunGUI]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\06GroupChara]
+echo @="Group Characters"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\06GroupChara\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" group-chara --input \"%%1\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07UngroupChara]
+echo @="Ungroup Characters"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07UngroupChara\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" ungroup-chara --input \"%%1\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\08RenameChara]
+echo @="Rename Characters"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\08RenameChara\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" rename-chara --input \"%%1\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\09RunGUI]
 echo @="Run GUI"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07RunGUI\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\09RunGUI\command]
 echo @="\"%GUI_REG%\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO]
@@ -93,7 +111,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell
 echo @="Download Missing Mods"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03DownloadMissingMods\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%V\" --mods-dir \"%%V\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%V\" --scene-dir \"%%V\" --mods-dir \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04InstallContents]
 echo @="Install Contents"
@@ -107,10 +125,28 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\05UninstallContents\command]
 echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%V\"\""
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07RunGUI]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\06GroupChara]
+echo @="Group Characters"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\06GroupChara\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" group-chara --input \"%%V\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07UngroupChara]
+echo @="Ungroup Characters"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07UngroupChara\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" ungroup-chara --input \"%%V\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\08RenameChara]
+echo @="Rename Characters"
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\08RenameChara\command]
+echo @="cmd.exe /k \"\"%EXE_REG%\" rename-chara --input \"%%V\"\""
+echo.
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\09RunGUI]
 echo @="Run GUI"
 echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07RunGUI\command]
+echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\09RunGUI\command]
 echo @="\"%GUI_REG%\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO]
@@ -121,16 +157,16 @@ echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell]
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\01ArchiveChara]
-echo @="Archive Chara"
+echo @="Archive Chara/Scene"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\01ArchiveChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" archive-chara \"%%1\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" archive-chara-scenes \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\02DeleteChara]
-echo @="Delete Chara"
+echo @="Delete Chara/Scene"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\02DeleteChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" delete-chara \"%%1\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" delete-chara-scenes \"%%1\"\""
 ) > "%REG_FILE%"
 regedit /s "%REG_FILE%"
 if %errorLevel% neq 0 (
