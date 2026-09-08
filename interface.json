@@ -859,15 +859,15 @@
         }
       ]
     },
-    "CharaPaths": {
+    "ContentPaths": {
       "type": "file_list",
-      "name": "chara_paths",
-      "label": "Character Cards",
-      "description": "Select character PNG card files to operate on",
+      "name": "content_paths",
+      "label": "Character / Scene Cards",
+      "description": "Select character or Studio scene PNG files to operate on",
       "file_filter": "PNG files (*.png)",
       "default": [],
       "pipeline_override": {
-        "CharaPaths": "{chara_paths}"
+        "ContentPaths": "{content_paths}"
       }
     }
   },
@@ -1021,15 +1021,15 @@
       ]
     },
     {
-      "name": "ArchiveChara",
-      "label": "🎁 Archive Characters",
-      "entry": "ArchiveChara",
+      "name": "ArchiveCharaScenes",
+      "label": "🎁 Archive Characters/Scenes",
+      "entry": "ArchiveCharaScenes",
       "default_check": false,
-      "description": "Bundle character cards with zipmods and coordinates",
+      "description": "Bundle character cards or Studio scenes with zipmods and coordinates",
       "group": ["card-management"],
       "option": [
         "OutputPath",
-        "CharaPaths",
+        "ContentPaths",
         "ArchiveFormat",
         "CombinedArchive",
         "IncludeModpack",
@@ -1040,13 +1040,13 @@
       ]
     },
     {
-      "name": "DeleteChara",
-      "label": "🗑️ Delete Characters",
-      "entry": "DeleteChara",
+      "name": "DeleteCharaScenes",
+      "label": "🗑️ Delete Characters/Scenes",
+      "entry": "DeleteCharaScenes",
       "default_check": false,
-      "description": "Send character cards and associated mods/coords to Recycle Bin",
+      "description": "Send character cards / Studio scenes and associated mods/coords to Recycle Bin",
       "group": ["card-management"],
-      "option": ["CharaPaths", "UseCache", "AutoResolve", "ModsDir", "CoordDir"]
+      "option": ["ContentPaths", "UseCache", "AutoResolve", "ModsDir", "CoordDir"]
     }
   ],
   "preset": [
@@ -1086,10 +1086,10 @@
           "name": "RenameChara"
         },
         {
-          "name": "ArchiveChara"
+          "name": "ArchiveCharaScenes"
         },
         {
-          "name": "DeleteChara"
+          "name": "DeleteCharaScenes"
         }
       ]
     },
@@ -1118,10 +1118,10 @@
           "name": "CreateBackup"
         },
         {
-          "name": "ArchiveChara"
+          "name": "ArchiveCharaScenes"
         },
         {
-          "name": "DeleteChara"
+          "name": "DeleteCharaScenes"
         }
       ]
     },

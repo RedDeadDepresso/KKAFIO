@@ -1,6 +1,7 @@
 """
-archive_chara.py — Bundle KK character cards with their used zipmods and
-                   matching coordinate cards into a 7z or zip archive.
+archive_chara_scenes.py — Bundle KK character cards (or Studio scenes) with
+                           their used zipmods and matching coordinate cards
+                           into a 7z or zip archive.
 """
 
 from datetime import datetime
@@ -10,8 +11,9 @@ from typing import Literal
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
     find_matching_coords, in_modpack_folder, parse_chara_guids,
-    parse_coord_guids, resolve_paths, scan_mods,
+    parse_coord_guids, parse_scene_guids, resolve_paths, scan_mods,
 )
+from utils.classifier import CardType, get_card_type
 from utils.config import GameType
 from utils.logger import logger
 
@@ -22,11 +24,11 @@ ArchiveFormat = Literal["7z", "zip"]
 # Main module class
 # ---------------------------------------------------------------------------
 
-class ArchiveChara(BaseTask):
+class ArchiveCharaScenes(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.archive_chara
-        self.chara_paths      : list[str] = cfg.get("CharaPaths", [])
+        cfg = self.config.archive_chara_scenes
+        self.content_paths    : list[str] = cfg.get("ContentPaths", [])
         self.format           : str       = cfg.get("Format", "7z")
         self.auto_resolve     : bool      = cfg.get("AutoResolve", True)
         self.use_cache        : bool      = cfg.get("UseCache", True)
@@ -36,37 +38,46 @@ class ArchiveChara(BaseTask):
         self.coord_dir_str    : str       = cfg.get("CoordDir", "")
         self.output_dir_str   : str       = cfg.get("OutputPath", "")
 
-    def _process_one(self, chara_path: Path, game_base: Path,
+    def _process_one(self, content_path: Path, game_base: Path,
                      mods_ov: Path | None,
                      coord_ov: Path | None) -> tuple[list[Path], list[Path], set[str], set[str]]:
-        """Return (coord_paths, zipmod_paths) for a single chara card."""
-        logger.info("ARCHV", f"Processing: {chara_path.name}")
+        """Return (coord_paths, zipmod_paths, missing, all_guids) for a single
+        chara card or Studio scene."""
+        logger.info("ARCHV", f"Processing: {content_path.name}")
+
+        card_type = get_card_type(content_path)
+        is_scene  = card_type == CardType.SCENE
 
         mods_dir, coord_dir = resolve_paths(
-            chara_path, game_base, self.auto_resolve, mods_ov, coord_ov)
-
-        chara_guids = parse_chara_guids(chara_path)
-        logger.info("ARCHV", f"  Zipmod GUIDs in chara : {len(chara_guids)}")
+            content_path, game_base, self.auto_resolve, mods_ov, coord_ov)
 
         coord_paths: list[Path] = []
         coord_guids_all: set[str] = set()
 
-        if coord_dir and coord_dir.exists():
-            from kkloader import KoikatuCharaData
-            try:
-                kc = KoikatuCharaData.load(str(chara_path))
-                coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
-                                                    use_cache=self.use_cache)
-                logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")
-                for cp in coord_paths:
-                    logger.info("ARCHV", f"    {cp.name}")
-                    coord_guids_all.update(parse_coord_guids(cp))
-            except Exception as e:
-                logger.error("ARCHV", f"  Could not match coords: {e}")
+        if is_scene:
+            own_guids = parse_scene_guids(content_path)
+            logger.info("ARCHV", f"  Zipmod GUIDs in scene : {len(own_guids)}")
+            logger.info("ARCHV", "  Scene — skipping coordinate matching")
         else:
-            logger.info("ARCHV", "  Coordinate directory not available — skipping")
+            own_guids = parse_chara_guids(content_path)
+            logger.info("ARCHV", f"  Zipmod GUIDs in chara : {len(own_guids)}")
 
-        all_guids = set(chara_guids) | coord_guids_all
+            if coord_dir and coord_dir.exists():
+                from kkloader import KoikatuCharaData
+                try:
+                    kc = KoikatuCharaData.load(str(content_path))
+                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
+                                                        use_cache=self.use_cache)
+                    logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")
+                    for cp in coord_paths:
+                        logger.info("ARCHV", f"    {cp.name}")
+                        coord_guids_all.update(parse_coord_guids(cp))
+                except Exception as e:
+                    logger.error("ARCHV", f"  Could not match coords: {e}")
+            else:
+                logger.info("ARCHV", "  Coordinate directory not available — skipping")
+
+        all_guids = set(own_guids) | coord_guids_all
         zipmod_paths: list[Path] = []
 
         if mods_dir and mods_dir.exists() and all_guids:
@@ -107,16 +118,19 @@ class ArchiveChara(BaseTask):
         return coord_paths, zipmod_paths, missing if mods_dir and mods_dir.exists() and all_guids else set(), all_guids
 
     @staticmethod
-    def _chara_display_name(chara_path: Path) -> str:
-        """Return the character's in-game name, falling back to filename stem."""
+    def _display_name(content_path: Path) -> str:
+        """Return the character's in-game name (or the filename stem for
+        scenes / on failure)."""
+        if get_card_type(content_path) == CardType.SCENE:
+            return content_path.stem
         try:
             from kkloader import KoikatuCharaData
-            kc = KoikatuCharaData.load(str(chara_path))
+            kc = KoikatuCharaData.load(str(content_path))
             p  = kc["Parameter"]
             name = f"{p.data.get('lastname', '')} {p.data.get('firstname', '')}".strip()
-            return name or p.data.get("nickname", "") or chara_path.stem
+            return name or p.data.get("nickname", "") or content_path.stem
         except Exception:
-            return chara_path.stem
+            return content_path.stem
 
     @staticmethod
     def _build_readme(
@@ -151,7 +165,7 @@ class ArchiveChara(BaseTask):
             total_mods.update(p.name for p in card["mods"])
             total_missing.update(card["missing"])
 
-            lines.append(f"Character : {card['display_name']}")
+            lines.append(f"Card      : {card['display_name']}")
             lines.append(f"File      : {card['path'].name}")
             lines.append(f"Mods      : {len(card['all_guids'])} required, "
                          f"{len(card['mods'])} included, "
@@ -196,9 +210,9 @@ class ArchiveChara(BaseTask):
         return "\n".join(lines)
 
     def run(self) -> None:
-        chara_paths = [Path(p) for p in self.chara_paths if p]
-        if not chara_paths:
-            logger.error("ARCHV", "No character cards specified")
+        content_paths = [Path(p) for p in self.content_paths if p]
+        if not content_paths:
+            logger.error("ARCHV", "No character cards or scenes specified")
             return
 
         game_base  = Path(self.config.config_data["Core"]["GamePath"])
@@ -215,19 +229,19 @@ class ArchiveChara(BaseTask):
             seen:       set[Path]  = set()
             card_infos: list[dict] = []
 
-            for chara_path in chara_paths:
-                if not chara_path.is_file():
-                    logger.error("ARCHV", f"Not found: {chara_path}")
+            for content_path in content_paths:
+                if not content_path.is_file():
+                    logger.error("ARCHV", f"Not found: {content_path}")
                     continue
                 coord_paths, zipmod_paths, missing, all_guids = self._process_one(
-                    chara_path, game_base, mods_ov, coord_ov)
-                for f in [chara_path] + coord_paths + zipmod_paths:
+                    content_path, game_base, mods_ov, coord_ov)
+                for f in [content_path] + coord_paths + zipmod_paths:
                     if f not in seen:
                         seen.add(f)
                         all_files.append(f)
                 card_infos.append({
-                    "path":         chara_path,
-                    "display_name": self._chara_display_name(chara_path),
+                    "path":         content_path,
+                    "display_name": self._display_name(content_path),
                     "coords":       coord_paths,
                     "mods":         zipmod_paths,
                     "missing":      missing,
@@ -238,10 +252,10 @@ class ArchiveChara(BaseTask):
                 logger.error("ARCHV", "No files to archive")
                 return
 
-            out_dir = output_dir or chara_paths[0].parent
+            out_dir = output_dir or content_paths[0].parent
             out_dir.mkdir(parents=True, exist_ok=True)
-            archive_name = (f"{chara_paths[0].stem}_bundle{ext}"
-                            if len(chara_paths) == 1
+            archive_name = (f"{content_paths[0].stem}_bundle{ext}"
+                            if len(content_paths) == 1
                             else f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}")
             archive_path = out_dir / archive_name
 
@@ -266,22 +280,22 @@ class ArchiveChara(BaseTask):
                 readme_tmp.unlink(missing_ok=True)
 
         else:
-            for chara_path in chara_paths:
-                if not chara_path.is_file():
-                    logger.error("ARCHV", f"Not found: {chara_path}")
+            for content_path in content_paths:
+                if not content_path.is_file():
+                    logger.error("ARCHV", f"Not found: {content_path}")
                     continue
                 logger.line()
                 coord_paths, zipmod_paths, missing, all_guids = self._process_one(
-                    chara_path, game_base, mods_ov, coord_ov)
-                all_files    = [chara_path] + coord_paths + zipmod_paths
-                out_dir      = output_dir or chara_path.parent
+                    content_path, game_base, mods_ov, coord_ov)
+                all_files    = [content_path] + coord_paths + zipmod_paths
+                out_dir      = output_dir or content_path.parent
                 out_dir.mkdir(parents=True, exist_ok=True)
-                archive_name = f"{chara_path.stem}_bundle{ext}"
+                archive_name = f"{content_path.stem}_bundle{ext}"
                 archive_path = out_dir / archive_name
 
                 card_info = {
-                    "path":         chara_path,
-                    "display_name": self._chara_display_name(chara_path),
+                    "path":         content_path,
+                    "display_name": self._display_name(content_path),
                     "coords":       coord_paths,
                     "mods":         zipmod_paths,
                     "missing":      missing,

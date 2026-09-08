@@ -1,5 +1,6 @@
 """
-delete_chara.py — Send character cards and their associated files to the bin.
+delete_chara_scenes.py — Send character cards (or Studio scenes) and their
+                          associated files to the bin.
 """
 
 
@@ -11,50 +12,59 @@ from send2trash import send2trash
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
     find_matching_coords, parse_chara_guids,
-    parse_coord_guids, resolve_paths, scan_mods,
+    parse_coord_guids, parse_scene_guids, resolve_paths, scan_mods,
 )
+from utils.classifier import CardType, get_card_type
 from utils.logger import logger
 
 
-class DeleteChara(BaseTask):
+class DeleteCharaScenes(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.delete_chara
-        self.chara_paths   : list[str] = cfg.get("CharaPaths", [])
+        cfg = self.config.delete_chara_scenes
+        self.content_paths : list[str] = cfg.get("ContentPaths", [])
         self.auto_resolve  : bool      = cfg.get("AutoResolve", True)
         self.use_cache     : bool      = cfg.get("UseCache", True)
         self.mods_dir_str  : str       = cfg.get("ModsDir", "")
         self.coord_dir_str : str       = cfg.get("CoordDir", "")
 
-    def _collect_files(self, chara_path: Path, game_base: Path,
+    def _collect_files(self, content_path: Path, game_base: Path,
                        mods_ov: Path | None, coord_ov: Path | None) -> list[Path]:
-        logger.info("DELETE", f"Processing: {chara_path.name}")
+        logger.info("DELETE", f"Processing: {content_path.name}")
+
+        is_scene = get_card_type(content_path) == CardType.SCENE
 
         mods_dir, coord_dir = resolve_paths(
-            chara_path, game_base, self.auto_resolve, mods_ov, coord_ov)
+            content_path, game_base, self.auto_resolve, mods_ov, coord_ov)
 
-        files: list[Path] = [chara_path]
-
-        if coord_dir and coord_dir.exists():
-            from kkloader import KoikatuCharaData
-            try:
-                kc = KoikatuCharaData.load(str(chara_path))
-                coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
-                                                    use_cache=self.use_cache)
-                logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")
-                for cp in coord_paths:
-                    logger.info("DELETE", f"    {cp.name}")
-                files.extend(coord_paths)
-            except Exception as e:
-                logger.error("DELETE", f"  Could not match coords: {e}")
-        else:
-            logger.info("DELETE", "  Coordinate directory not available — skipping")
-
+        files: list[Path] = [content_path]
         coord_guids: set[str] = set()
-        for f in files[1:]:
-            coord_guids.update(parse_coord_guids(f))
 
-        all_guids = set(parse_chara_guids(chara_path)) | coord_guids
+        if is_scene:
+            own_guids = parse_scene_guids(content_path)
+            logger.info("DELETE", "  Scene — skipping coordinate matching")
+        else:
+            own_guids = parse_chara_guids(content_path)
+
+            if coord_dir and coord_dir.exists():
+                from kkloader import KoikatuCharaData
+                try:
+                    kc = KoikatuCharaData.load(str(content_path))
+                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
+                                                        use_cache=self.use_cache)
+                    logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")
+                    for cp in coord_paths:
+                        logger.info("DELETE", f"    {cp.name}")
+                    files.extend(coord_paths)
+                except Exception as e:
+                    logger.error("DELETE", f"  Could not match coords: {e}")
+            else:
+                logger.info("DELETE", "  Coordinate directory not available — skipping")
+
+            for f in files[1:]:
+                coord_guids.update(parse_coord_guids(f))
+
+        all_guids = set(own_guids) | coord_guids
 
         if mods_dir and mods_dir.exists() and all_guids:
             logger.info("DELETE",
@@ -72,22 +82,22 @@ class DeleteChara(BaseTask):
         return files
 
     def run(self) -> None:
-        chara_paths = [Path(p) for p in self.chara_paths if p]
-        if not chara_paths:
-            logger.error("DELETE", "No character cards specified")
+        content_paths = [Path(p) for p in self.content_paths if p]
+        if not content_paths:
+            logger.error("DELETE", "No character cards or scenes specified")
             return
 
         game_base = Path(self.config.config_data["Core"]["GamePath"])
         mods_ov   = Path(self.mods_dir_str)  if self.mods_dir_str  else None
         coord_ov  = Path(self.coord_dir_str) if self.coord_dir_str else None
 
-        for chara_path in chara_paths:
-            if not chara_path.is_file():
-                logger.error("DELETE", f"Not found: {chara_path}")
+        for content_path in content_paths:
+            if not content_path.is_file():
+                logger.error("DELETE", f"Not found: {content_path}")
                 continue
 
             self.log_start("DELETE")
-            files   = self._collect_files(chara_path, game_base, mods_ov, coord_ov)
+            files   = self._collect_files(content_path, game_base, mods_ov, coord_ov)
             deleted = 0
 
             logger.info("DELETE", f"  Sending {len(files)} file(s) to bin:")

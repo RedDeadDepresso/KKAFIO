@@ -152,14 +152,14 @@ def run_download_missing_mods(config, file_manager,
 
 
 
-def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
+def run_delete_chara_scenes(config, file_manager, content_paths: list[str] | None = None,
                      auto_resolve: bool | None = None,
                      use_cache: bool | None = None,
                      mods_dir: str | None = None, coord_dir: str | None = None):
-    from tasks.delete_chara import DeleteChara
-    module = DeleteChara(config, file_manager)
-    if chara_paths is not None:
-        module.chara_paths = chara_paths
+    from tasks.delete_chara_scenes import DeleteCharaScenes
+    module = DeleteCharaScenes(config, file_manager)
+    if content_paths is not None:
+        module.content_paths = content_paths
     if auto_resolve is not None:
         module.auto_resolve = auto_resolve
     if use_cache is not None:
@@ -171,17 +171,17 @@ def run_delete_chara(config, file_manager, chara_paths: list[str] | None = None,
     module.run()
 
 
-def run_archive_chara(config, file_manager, chara_paths: list[str] | None = None,
+def run_archive_chara_scenes(config, file_manager, content_paths: list[str] | None = None,
                       fmt: str | None = None, auto_resolve: bool | None = None,
                       use_cache: bool | None = None,
                       include_modpack: bool | None = None,
                       combined: bool | None = None,
                       mods_dir: str | None = None, coord_dir: str | None = None,
                       output_dir: str | None = None):
-    from tasks.archive_chara import ArchiveChara
-    module = ArchiveChara(config, file_manager)
-    if chara_paths is not None:
-        module.chara_paths = chara_paths
+    from tasks.archive_chara_scenes import ArchiveCharaScenes
+    module = ArchiveCharaScenes(config, file_manager)
+    if content_paths is not None:
+        module.content_paths = content_paths
     if fmt is not None:
         module.format = fmt
     if auto_resolve is not None:
@@ -333,8 +333,8 @@ def cmd_run(args):
     )
 
     kkafio_task_map = {
-        "ArchiveChara":     lambda: run_archive_chara(config, file_manager),
-        "DeleteChara":      lambda: run_delete_chara(config, file_manager),
+        "ArchiveCharaScenes":     lambda: run_archive_chara_scenes(config, file_manager),
+        "DeleteCharaScenes":      lambda: run_delete_chara_scenes(config, file_manager),
         "DownloadContents":    lambda: run_download_contents(config, file_manager),
         "DownloadMissingMods": lambda: run_download_missing_mods(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
@@ -495,37 +495,37 @@ def cmd_download_missing_mods(args):
         sys.exit(1)
 
 
-def cmd_delete_chara(args):
+def cmd_delete_chara_scenes(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["DeleteChara"]["Enable"] = True
-        chara_paths  = args.chara if args.chara else None
+        config.config_data["DeleteCharaScenes"]["Enable"] = True
+        content_paths = args.content if args.content else None
         auto_resolve = None if args.auto_resolve is None else bool(args.auto_resolve)
         use_cache    = None if args.use_cache is None else bool(args.use_cache)
-        run_delete_chara(config, file_manager,
-                         chara_paths=chara_paths, auto_resolve=auto_resolve,
+        run_delete_chara_scenes(config, file_manager,
+                         content_paths=content_paths, auto_resolve=auto_resolve,
                          use_cache=use_cache,
                          mods_dir=args.mods_dir, coord_dir=args.coord_dir)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("DeleteChara")
+        _write_traceback("DeleteCharaScenes")
         sys.exit(1)
 
 
-def cmd_archive_chara(args):
+def cmd_archive_chara_scenes(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["ArchiveChara"]["Enable"] = True
-        chara_paths     = args.chara if args.chara else None
+        config.config_data["ArchiveCharaScenes"]["Enable"] = True
+        content_paths   = args.content if args.content else None
         auto_resolve    = None if args.auto_resolve is None else bool(args.auto_resolve)
         use_cache       = None if args.use_cache is None else bool(args.use_cache)
         include_modpack = None if args.include_modpack is None else bool(args.include_modpack)
         combined        = None if args.combined is None else bool(args.combined)
-        run_archive_chara(config, file_manager,
-                          chara_paths=chara_paths, fmt=args.format,
+        run_archive_chara_scenes(config, file_manager,
+                          content_paths=content_paths, fmt=args.format,
                           auto_resolve=auto_resolve,
                           use_cache=use_cache,
                           include_modpack=include_modpack,
@@ -535,7 +535,7 @@ def cmd_archive_chara(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("ArchiveChara")
+        _write_traceback("ArchiveCharaScenes")
         sys.exit(1)
 
 
@@ -792,13 +792,13 @@ def build_parser() -> argparse.ArgumentParser:
                     action="store_false")
     p.set_defaults(func=cmd_download_missing_mods)
 
-    # delete-chara
+    # delete-chara-scenes
     p = sub.add_parser(
-        "delete-chara",
-        help="Send character cards and their associated mods/coords to the recycle bin",
+        "delete-chara-scenes",
+        help="Send character cards / Studio scenes and their associated mods/coords to the recycle bin",
     )
-    p.add_argument("chara", nargs="*", metavar="CHARA",
-                   help="Character PNG paths (default: DeleteChara.CharaPaths from config)")
+    p.add_argument("content", nargs="*", metavar="CONTENT",
+                   help="Character/scene PNG paths (default: DeleteCharaScenes.ContentPaths from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
                    help="Auto-resolve mods and coord dirs (overrides config)")
@@ -813,17 +813,17 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Mods directory (only used when --no-auto-resolve)")
     p.add_argument("--coord-dir", default=None, metavar="DIR",
                    help="Coordinate directory (only used when --no-auto-resolve)")
-    p.set_defaults(func=cmd_delete_chara)
+    p.set_defaults(func=cmd_delete_chara_scenes)
 
-    # archive-chara
+    # archive-chara-scenes
     p = sub.add_parser(
-        "archive-chara",
-        help="Bundle character cards with their zipmods and matching coordinates",
+        "archive-chara-scenes",
+        help="Bundle character cards / Studio scenes with their zipmods and matching coordinates",
     )
-    p.add_argument("chara", nargs="*", metavar="CHARA",
-                   help="Character PNG paths (default: ArchiveChara.CharaPaths from config)")
+    p.add_argument("content", nargs="*", metavar="CONTENT",
+                   help="Character/scene PNG paths (default: ArchiveCharaScenes.ContentPaths from config)")
     p.add_argument("--format", choices=["7z", "zip"], default=None,
-                   help="Archive format (default: ArchiveChara.Format from config)")
+                   help="Archive format (default: ArchiveCharaScenes.Format from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
                    help="Auto-resolve mods and coord dirs (overrides config)")
@@ -849,8 +849,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--coord-dir",  default=None, metavar="DIR",
                    help="Coordinate directory override")
     p.add_argument("--output-dir", default=None, metavar="DIR",
-                   help="Output directory (default: same folder as chara card)")
-    p.set_defaults(func=cmd_archive_chara)
+                   help="Output directory (default: same folder as chara card/scene)")
+    p.set_defaults(func=cmd_archive_chara_scenes)
 
     # ungroup-chara
     p = sub.add_parser(

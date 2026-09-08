@@ -117,8 +117,8 @@ _TASK_KEY = {
     "InstallContents":     "InstallContents",
     "UninstallContents":      "UninstallContents",
     "FilterConvertKKS": "FilterConvertKKS",
-    "DeleteChara":      "DeleteChara",
-    "ArchiveChara":     "ArchiveChara",
+    "DeleteCharaScenes":      "DeleteCharaScenes",
+    "ArchiveCharaScenes":     "ArchiveCharaScenes",
     "GroupChara":       "GroupChara",
     "RenameChara":      "RenameChara",
     "UngroupChara":     "UngroupChara",
@@ -132,8 +132,8 @@ _TASK_DEFAULTS = {
     "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallContents":      {"Enable": False, "InputPath": ""},
     "FilterConvertKKS": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ExtractArchive": True, "Password": "Skip"},
-    "DeleteChara":      {"Enable": False, "CharaPaths": [], "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
-    "ArchiveChara":     {"Enable": False, "CharaPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
+    "DeleteCharaScenes":      {"Enable": False, "ContentPaths": [], "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
+    "ArchiveCharaScenes":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "Prompt": "", "Response": ""},
     "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": "", "Response": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
@@ -181,15 +181,15 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
 
-    elif task_name == "DeleteChara":
-        _set("CharaPaths",  "CharaPaths")
+    elif task_name == "DeleteCharaScenes":
+        _set("ContentPaths",  "ContentPaths")
         _set("AutoResolve", "AutoResolve")
         _set("ModsDir",         "ModsDir")
         _set("CoordDir",        "CoordDir")
         _set("UseCache",    "UseCache")
 
-    elif task_name == "ArchiveChara":
-        _set("CharaPaths",      "CharaPaths")
+    elif task_name == "ArchiveCharaScenes":
+        _set("ContentPaths",    "ContentPaths")
         _set("AutoResolve",     "AutoResolve")
         _set("ModsDir",         "ModsDir")
         _set("CoordDir",        "CoordDir")
@@ -433,10 +433,10 @@ class Config:
                         logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
                         raise Exception(f"Path invalid: {path_obj}")
 
-        self.archive_chara    = self.config_data["ArchiveChara"]
+        self.archive_chara_scenes    = self.config_data["ArchiveCharaScenes"]
         self.download_missing_mods  = self.config_data["DownloadMissingMods"]
         self.download_contents   = self.config_data["DownloadContents"]
-        self.delete_chara     = self.config_data["DeleteChara"]
+        self.delete_chara_scenes     = self.config_data["DeleteCharaScenes"]
         self.create_backup    = self.config_data["CreateBackup"]
         self.filter_convert_kks           = self.config_data["FilterConvertKKS"]
         self.filter_duplicate_contents= self.config_data["FilterDuplicateContents"]
