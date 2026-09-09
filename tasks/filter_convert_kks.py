@@ -9,6 +9,7 @@ ConvertKKS — move KKS cards to _KKS_card_/ and produce a KK-compatible
 
 import shutil
 from pathlib import Path
+from tasks.base_task import validate_input_path
 from utils.config import Config
 from utils.classifier import CardType, get_card_type
 from utils.file_manager import FileManager
@@ -67,12 +68,7 @@ class FilterConvertKKS:
     def run(self) -> None:
         path = Path(self.config.filter_convert_kks["InputPath"])
 
-        if not str(path).strip() or str(path) == ".":
-            logger.error("FILTER", "InputPath is not set.")
-            raise Exception("InputPath is not set")
-        if not path.exists():
-            logger.error("FILTER", f"InputPath does not exist: {path}")
-            raise Exception(f"InputPath does not exist: {path}")
+        validate_input_path("FILTER", path)
 
         if self.extract_archive:
             self._extract_archives(path)
@@ -135,5 +131,4 @@ class FilterConvertKKS:
             logger.success("SCRIPT",
                 f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}]")
         else:
-            if self.convert_kk:
-                logger.success("SCRIPT", "No KK/KKSP cards found to convert")
+            logger.success("SCRIPT", "No KK/KKSP cards found")

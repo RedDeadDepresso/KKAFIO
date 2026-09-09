@@ -6,6 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal
 
+from tasks.base_task import validate_input_path
 from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import Config
 from utils.file_manager import FileManager
@@ -257,12 +258,7 @@ class FilterDuplicateContents:
         folder_path = Path(folder_path)
         duplicates_root = folder_path / self.DUPLICATES_DIR
 
-        if not str(folder_path).strip() or str(folder_path) == ".":
-            logger.error("DUPLIC", "InputPath is not set.")
-            raise Exception("InputPath is not set")
-        if not folder_path.exists():
-            logger.error("DUPLIC", f"InputPath does not exist: {folder_path}")
-            raise Exception(f"InputPath does not exist: {folder_path}")
+        validate_input_path("DUPLIC", folder_path)
 
         logger.line()
         logger.info("DUPLIC", f"Scanning      : {folder_path}")
@@ -417,7 +413,7 @@ class FilterDuplicateContents:
         # 6. Apply keep strategy and handle files
         # ------------------------------------------------------------------
         counts: dict[str, int] = {
-            "chara": 0, "coordinate": 0, "mods": 0, "overlays": 0, "skipped": 0
+            "chara": 0, "coordinate": 0, "mods": 0, "overlays": 0, "scene": 0, "skipped": 0
         }
 
         for group_paths, category in duplicate_groups:
@@ -451,6 +447,7 @@ class FilterDuplicateContents:
             "DUPLIC",
             f"{action} - chara: {counts['chara']}, "
             f"coordinate: {counts['coordinate']}, "
+            f"scene: {counts['scene']}, "
             f"overlays: {counts['overlays']}, "
             f"mods: {counts['mods']}, "
             f"skipped: {counts['skipped']}",

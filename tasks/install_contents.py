@@ -1,12 +1,14 @@
 from pathlib import Path
-from utils.config import Config, GameType
-from utils.classifier import CardType, get_card_type, is_male, is_coordinate
-from utils.file_manager import FileManager
-from utils.logger import logger
 from typing import Optional
 
+from tasks.base_task import validate_input_path
+from utils.content_resolver import ContentTypeResolver
+from utils.config import Config, GameType
+from utils.file_manager import FileManager
+from utils.logger import logger
 
-class InstallContents:
+
+class InstallContents(ContentTypeResolver):
     def __init__(self, config: Config, file_manager: FileManager):
         self.config          = config
         self.file_manager    = file_manager
@@ -17,99 +19,24 @@ class InstallContents:
         self.is_sunshine     = self.game_type == GameType.KOIKATSU_SUNSHINE.value
 
         cfg = self.config.install_contents
-        self.install_chara     : bool = cfg.get("Chara",    True)
-        self.install_mods      : bool = cfg.get("Mods",     True)
-        self.install_coords    : bool = cfg.get("Coords",   True)
-        self.install_scenes    : bool = cfg.get("Scenes",   True)
-        self.install_overlays  : bool = cfg.get("Overlays", True)
+        self.do_chara    : bool = cfg.get("Chara",    True)
+        self.do_mods     : bool = cfg.get("Mods",     True)
+        self.do_coords   : bool = cfg.get("Coords",   True)
+        self.do_scenes   : bool = cfg.get("Scenes",   True)
+        self.do_overlays : bool = cfg.get("Overlays", True)
 
-    def _filter_convert_chara_shares_input(self) -> bool:
-        fc = self.config.config_data.get("FilterConvertChara", {})
-        if not fc.get("Enable", False):
-            return False
-        fc_path = fc.get("InputPath")
-        if fc_path is None:
-            return False
-        return Path(fc_path) == self.input_path
+    def _file_action(self, label: str, image_path: Path, dest_folder) -> None:
+        self.file_manager.copy_and_paste(label, image_path, dest_folder)
 
-    def resolve_png(self, image_path: Path):
-        image_bytes = image_path.read_bytes()
-        card_type   = get_card_type(image_bytes)
-
-        if self.is_sunshine:
-            match card_type:
-                case CardType.KKS:
-                    if not self.install_chara:
-                        return
-                    if is_male(image_bytes):
-                        self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
-                    else:
-                        self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
-
-                case CardType.KK | CardType.KKSP:
-                    logger.skipped("CHARA", f"{image_path.name} is a {card_type.value} card "
-                                            f"(KK/KKSP not supported by {GameType.KOIKATSU_SUNSHINE.value})")
-
-                case CardType.SCENE:
-                    if not self.install_scenes:
-                        return
-                    if "scene" in self.game_path:
-                        self.file_manager.copy_and_paste("SCENE", image_path, self.game_path["scene"])
-                    else:
-                        logger.skipped("SCENE", f"{image_path.name} — Studio not installed, skipping")
-
-                case CardType.UNKNOWN:
-                    if is_coordinate(image_bytes):
-                        if not self.install_coords    :
-                            return
-                        self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
-                    else:
-                        if not self.install_overlays:
-                            return
-                        self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
-        else:
-            match card_type:
-                case CardType.KK | CardType.KKSP:
-                    if not self.install_chara:
-                        return
-                    if is_male(image_bytes):
-                        self.file_manager.copy_and_paste("CHARA M", image_path, self.game_path["charaMale"])
-                    else:
-                        self.file_manager.copy_and_paste("CHARA F", image_path, self.game_path["charaFemale"])
-
-                case CardType.KKS:
-                    logger.skipped("CHARA", f"{image_path.name} is a KKS card "
-                                            f"(not supported by {self.game_type})")
-
-                case CardType.SCENE:
-                    if not self.install_scenes:
-                        return
-                    if "scene" in self.game_path:
-                        self.file_manager.copy_and_paste("SCENE", image_path, self.game_path["scene"])
-                    else:
-                        logger.skipped("SCENE", f"{image_path.name} — Studio not installed, skipping")
-
-                case CardType.UNKNOWN:
-                    if is_coordinate(image_bytes):
-                        if not self.install_coords    :
-                            return
-                        self.file_manager.copy_and_paste("COORD", image_path, self.game_path["coordinate"])
-                    else:
-                        if not self.install_overlays:
-                            return
-                        self.file_manager.copy_and_paste("OVERLAYS", image_path, self.game_path["Overlays"])
+    def _unsupported_chara_reason(self, unsupported_game: str) -> str:
+        return f"not supported by {unsupported_game}"
 
     def run(self, folder_path: Optional[Path] = None, skip_extract: bool = False):
         if folder_path is None:
             folder_path = self.input_path
         folder_path = Path(folder_path)
 
-        if not str(folder_path).strip() or str(folder_path) == ".":
-            logger.error("INSTALL", "InputPath is not set. Configure it in MXU.")
-            raise Exception("InputPath is not set")
-        if not folder_path.exists():
-            logger.error("INSTALL", f"InputPath does not exist: {folder_path}")
-            raise Exception(f"InputPath does not exist: {folder_path}")
+        validate_input_path("INSTALL", folder_path)
 
         foldername = folder_path.name
         logger.line()
@@ -121,7 +48,7 @@ class InstallContents:
             path, size, extension = file
             match extension:
                 case ".zipmod":
-                    if self.install_mods:
+                    if self.do_mods:
                         self.file_manager.copy_and_paste("MODS", path, self.game_path["mods"])
                 case ".png":
                     self.resolve_png(path)

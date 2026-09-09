@@ -22,7 +22,7 @@ from pathlib import Path
 
 from kkloader import KoikatuCharaData
 
-from tasks.base_task import BaseTask
+from tasks.base_task import BaseTask, validate_input_path
 from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
 from utils.logger import logger
 
@@ -146,12 +146,7 @@ def _merge_cache(cache: dict, response: dict) -> dict:
 def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
     folder_path = Path(folder_path)
     cache       = _load_cache(folder_path)
-    if not str(folder_path).strip() or str(folder_path) == ".":
-        logger.error("RENAM", "InputPath is not set.")
-        raise Exception("InputPath is not set")
-    if not folder_path.exists():
-        logger.error("RENAM", f"InputPath does not exist: {folder_path}")
-        raise Exception(f"InputPath does not exist: {folder_path}")
+    validate_input_path("RENAME", folder_path)
     known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
     png_files   = list(folder_path.rglob("*.png"))
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in {folder_path}")
@@ -210,12 +205,7 @@ def process(folder_path: Path, json_str: str,
     folder_path = Path(folder_path)
 
     clean = json_str.strip()
-    if not str(folder_path).strip() or str(folder_path) == ".":
-        logger.error("RENAM", "InputPath is not set.")
-        raise Exception("InputPath is not set")
-    if not folder_path.exists():
-        logger.error("RENAM", f"InputPath does not exist: {folder_path}")
-        raise Exception(f"InputPath does not exist: {folder_path}")
+    validate_input_path("RENAME", folder_path)
     if clean.startswith("```"):
         clean = "\n".join(clean.splitlines()[1:])
     if clean.endswith("```"):
@@ -328,10 +318,8 @@ class RenameChara(BaseTask):
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
 
     def run(self) -> None:
-        folder = Path(self.input_path_str) if self.input_path_str else None
-        if not folder or not folder.exists():
-            logger.error("RENAME", "Input directory not set or does not exist.")
-            raise Exception("InputPath is not set or does not exist")
+        folder = Path(self.input_path_str or ".")
+        validate_input_path("RENAME", folder)
 
         self.log_start("RENAME", str(folder))
 

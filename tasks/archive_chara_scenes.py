@@ -262,7 +262,7 @@ class ArchiveCharaScenes(BaseTask):
             # Write README to a temp file and include it in the archive
             readme_text = self._build_readme(
                 card_infos, archive_name, self.include_modpack, generated)
-            import tempfile as _tf, os as _os
+            import tempfile as _tf
             readme_tmp = Path(_tf.gettempdir()) / "kkafio_README.txt"
             readme_tmp.write_text(readme_text, encoding="utf-8")
 

@@ -19,7 +19,7 @@ from pathlib import Path
 
 from kkloader import KoikatuCharaData
 
-from tasks.base_task import BaseTask
+from tasks.base_task import BaseTask, validate_input_path
 from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
 
 from utils.logger import logger
@@ -104,12 +104,7 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
     prompt text in front, same pattern as rename_chara.export().
     """
     folder_path = Path(folder_path)
-    if not str(folder_path).strip() or str(folder_path) == ".":
-        logger.error("GROUP", "InputPath is not set.")
-        raise Exception("InputPath is not set")
-    if not folder_path.exists():
-        logger.error("GROUP", f"InputPath does not exist: {folder_path}")
-        raise Exception(f"InputPath does not exist: {folder_path}")
+    validate_input_path("GROUP", folder_path)
     characters: dict[str, str] = {}
 
     if include_subfolders:
@@ -172,12 +167,7 @@ def _safe_folder_name(name: str) -> str:
 def process(folder_path: Path, json_str: str) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response."""
     folder_path = Path(folder_path)
-    if not str(folder_path).strip() or str(folder_path) == ".":
-        logger.error("GROUP", "InputPath is not set. Configure it in MXU.")
-        raise Exception("InputPath is not set")
-    if not folder_path.exists():
-        logger.error("GROUP", f"InputPath does not exist: {folder_path}")
-        raise Exception(f"InputPath does not exist: {folder_path}")
+    validate_input_path("GROUP", folder_path)
 
     # Parse the LLM response — strip markdown fences if the user forgot
     clean = json_str.strip()
@@ -275,10 +265,8 @@ class GroupChara(BaseTask):
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
 
     def run(self) -> None:
-        folder = Path(self.input_path_str) if self.input_path_str else None
-        if not folder or not folder.exists():
-            logger.error("GROUP", "Input directory not set or does not exist.")
-            raise Exception("InputPath is not set or does not exist")
+        folder = Path(self.input_path_str or ".")
+        validate_input_path("GROUP", folder)
 
         self.log_start("GROUP", str(folder))
 

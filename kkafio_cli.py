@@ -71,11 +71,11 @@ def run_install_contents(config, file_manager, input_path: str | None = None,
     module = InstallContents(config, file_manager)
     if extract_archive is not None:
         module.extract_archive = extract_archive
-    if chara    is not None: module.install_chara    = chara
-    if mods     is not None: module.install_mods     = mods
-    if coords   is not None: module.install_coords   = coords
-    if scenes   is not None: module.install_scenes   = scenes
-    if overlays is not None: module.install_overlays = overlays
+    if chara    is not None: module.do_chara    = chara
+    if mods     is not None: module.do_mods     = mods
+    if coords   is not None: module.do_coords   = coords
+    if scenes   is not None: module.do_scenes   = scenes
+    if overlays is not None: module.do_overlays = overlays
     module.run(folder_path=Path(input_path) if input_path else None,
                skip_extract=skip_extract)
 
@@ -89,11 +89,11 @@ def run_uninstall_contents(config, file_manager, input_path: str | None = None,
     if input_path is not None:
         config.uninstall_contents["InputPath"] = Path(input_path)
     module = UninstallContents(config, file_manager)
-    if chara    is not None: module.uninstall_chara    = chara
-    if mods     is not None: module.uninstall_mods     = mods
-    if coords   is not None: module.uninstall_coords   = coords
-    if scenes   is not None: module.uninstall_scenes   = scenes
-    if overlays is not None: module.uninstall_overlays = overlays
+    if chara    is not None: module.do_chara    = chara
+    if mods     is not None: module.do_mods     = mods
+    if coords   is not None: module.do_coords   = coords
+    if scenes   is not None: module.do_scenes   = scenes
+    if overlays is not None: module.do_overlays = overlays
     module.run()
 
 

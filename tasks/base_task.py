@@ -7,7 +7,25 @@ Provides only what is genuinely shared across every task:
   - two logging helpers so task modules don't repeat logger.line() boilerplate
 """
 
+from pathlib import Path
+
 from utils.logger import logger
+
+
+def validate_input_path(tag: str, folder_path: Path) -> None:
+    """Raise if folder_path is unset or doesn't exist, logging via `tag` first.
+
+    Every task validates its InputPath the same way before doing anything
+    else; this used to be duplicated almost verbatim across ~10 call sites
+    (both BaseTask subclasses and the module-level task functions in
+    group_chara.py / rename_chara.py).
+    """
+    if not str(folder_path).strip() or str(folder_path) == ".":
+        logger.error(tag, "InputPath is not set. Configure it in MXU.")
+        raise Exception("InputPath is not set")
+    if not folder_path.exists():
+        logger.error(tag, f"InputPath does not exist: {folder_path}")
+        raise Exception(f"InputPath does not exist: {folder_path}")
 
 
 class BaseTask:

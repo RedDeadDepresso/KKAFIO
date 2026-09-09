@@ -20,7 +20,7 @@ def _powershell_dialog(title: str, content: str) -> str:
     Show a Windows Forms InputBox via PowerShell.
     Returns the entered password or '' if cancelled.
     """
-    import subprocess
+    from utils.subprocess_utils import run_text
 
     # Escape single quotes in the strings
     t = title.replace("'", "''")
@@ -32,10 +32,9 @@ def _powershell_dialog(title: str, content: str) -> str:
     )
 
     try:
-        result = subprocess.run(
+        result = run_text(
             ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
             capture_output=True,
-            text=True,
             timeout=120,
             creationflags=0x0800_0000,  # CREATE_NO_WINDOW
         )

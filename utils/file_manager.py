@@ -1,4 +1,3 @@
-import locale
 import shutil
 import subprocess
 import time
@@ -10,6 +9,7 @@ from utils.logger import logger
 from typing import Union, Literal
 
 from utils.constants import SEVEN_ZIP_PATH
+from utils.subprocess_utils import popen_text, run_text
 
 
 FileEntry = tuple[Path, int, str]
@@ -109,7 +109,7 @@ class FileManager:
                 destination_path.unlink()
                 logger.removed(file_type, base_name)
             except OSError as e:
-                logger.error(file_type, base_name)
+                logger.error(file_type, f"Could not remove {base_name}: {e}")
 
     @staticmethod
     def _get_nt_7z_dir() -> str:
@@ -150,8 +150,7 @@ class FileManager:
             raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
         flag = "-t7z" if fmt == "7z" else "-tzip"
         cmd = [path_to_7zip, "a", flag, str(output_path)] + [str(f) for f in files]
-        result = subprocess.run(cmd, capture_output=True,
-                                text=True, encoding=locale.getpreferredencoding(False), errors="replace")
+        result = run_text(cmd, capture_output=True)
         if result.returncode not in (0, 1):
             raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
     
@@ -184,9 +183,8 @@ class FileManager:
         cmd += [str(f) for f in folders]
         cmd += [f"-xr!{folder}" for folder in exclude_folders]
 
-        process = subprocess.Popen(
+        process = popen_text(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, encoding=locale.getpreferredencoding(False), errors="replace",
             cwd=self.config.game_path['base'],
         )
 
@@ -233,8 +231,7 @@ class FileManager:
         else:
             cmd.append("-p")          # prompt-less no-password attempt
 
-        result = subprocess.run(cmd, capture_output=True,
-                                text=True, encoding=locale.getpreferredencoding(False), errors="replace")
+        result = run_text(cmd, capture_output=True)
         return result.returncode == 0
 
     def extract_archive(self, archive_path: Union[Path, str], task_config: dict = None):
