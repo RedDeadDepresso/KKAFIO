@@ -4,7 +4,16 @@
 
 ## Features
 
-**1. Download Contents**
+**1. Create Backup**
+
+- Automatically creates a `.7z` archive containing any combination of:
+  - `UserData`
+  - `Mods` (Sideloader Modpack folders are always excluded — they're re-downloadable and would bloat the archive)
+  - `BepInEx`
+- Pick which folders to include from the tabs in the task settings.
+- If an archive with the same name already exists it will be overwritten.
+
+**2. Download Contents**
 
 - Downloads character cards from [db.bepis.moe](https://db.bepis.moe) and [koikatsucards.com](https://koikatsucards.com).
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
@@ -24,41 +33,6 @@
   - The session is validated against `koikatsucards.com/api/session` before use. If it is expired, you are prompted for a new one automatically.
   - The session is stored in `%APPDATA%/KKAFIO/config/kkd_session.json`. It does not need to be entered in MXU settings.
 
-**2. Download Missing Mods**
-
-Finds all mods referenced by installed character cards that are not present in the local mods directory, then downloads them automatically.
-
-See [Download Missing Mods Workflows](#download-missing-mods-workflows) below for recommended usage.
-
-- **Step 1 — Mods cache:** Scans the mods directory and builds a cache of all installed mod GUIDs.
-- **Step 2 — Chara scan:** Recursively scans the chara folders and collects every mod GUID referenced by installed cards. The result is cached for subsequent runs.
-- **Step 3 — Missing = referenced − installed.**
-- **Step 4 — Download:**
-  - **BetterRepack** — Mods found in `kkafio_modpack_index_kk.json` / `kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
-  - **koikatsucards.com + Telegram** — Mods not in the modpack index are looked up on [koikatsucards.com/mod_library](https://koikatsucards.com/mod_library) and downloaded from the linked Telegram channel using your Telegram account via [Telethon](https://github.com/LonamiWebs/Telethon) and [teleget9527](https://pypi.org/project/teleget9527/) for maximum parallel speed.
-  - If BetterRepack fails for a mod and Telegram is enabled, KKAFIO automatically retries via Telegram.
-- **Sideloader Modpack mode:**
-  - `Skip` — ignores all modpack GUIDs; only downloads non-modpack mods.
-  - `Only Used` *(default)* — downloads missing modpack mods that are actually referenced by installed cards.
-  - `All` — downloads every GUID in the modpack index not installed locally, even if no card uses it.
-- **Custom Chara Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below).
-- **Use Cache** (on by default) — caches both the mods list and the chara GUID scan. The chara cache is invalidated automatically when the chara folder changes.
-
-**Telegram setup:**
-1. Go to [my.telegram.org/apps](https://my.telegram.org/apps), log in, and create an app to get an **API ID** and **API Hash**. Enter these in MXU settings.
-2. Enable **Download from Telegram** in MXU settings.
-3. On first use, KKAFIO opens [my.telegram.org](https://my.telegram.org) in your browser and shows dialogs for your phone number and verification code (and 2FA password if enabled). The session is saved to `%APPDATA%/KKAFIO/config/tg_session/kkafio.session` and reused automatically.
-
-> ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
-
-**3. Create Backup**
-
-- Automatically creates a `.7z` archive containing:
-  - `UserData`
-  - `Mods` (excluding Sideloader Modpack)
-  - `BepInEx`
-- If an archive with the same name already exists it will be overwritten.
-
 **3. Filter & Convert KKS Cards**
 
 - Functions similarly to [FlYiNGPoTAToChiP's KK_SunshineCardFilter](https://github.com/FlYiNGPoTAToChiP/KK_SunshineCardFilter).
@@ -76,71 +50,81 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
   - PNG cards are fingerprinted using the character data payload embedded after the PNG IEND chunk, so two cards with different preview images are still caught as duplicates.
   - **Optional fuzzy matching** uses perceptual image hashing to detect updated cards with the same preview pose. Requires `pillow` and `imagehash`.
 - Duplicates are moved into `_duplicates_/<category>/` subfolders:
-  - `chara/` — KK / KKSP character cards
+  - `chara/` — KK / KKSP / KKS character cards
   - `coordinate/` — coordinate cards
+  - `scene/` — Studio scene files
   - `overlays/` — unclassified PNGs
   - `mods/` — zipmod files
 - **Keep strategy** controls which copy of a duplicate set is kept in place: Newest, Oldest, Biggest file size (default), Smallest file size, Last alphabetically, First alphabetically, or None (move all copies).
 - **Optional:** Send duplicates directly to the recycle bin instead of moving them.
 
-**5. Install Contents**
+**5. Download Missing Mods**
 
-- Given a folder containing chara cards, coordinate cards, overlays, and zipmod files, copies them into their respective game directories.
-- Respects the configured **Game Type**: Koikatsu Sunshine installs all card types; Koikatsu / Koikatsu Party installs KK and KKSP cards. Cards of the wrong type are skipped with a log message.
+Finds all mods referenced by installed character cards that are not present in the local mods directory, then downloads them automatically.
+
+See [Download Missing Mods Workflows](#download-missing-mods-workflows) below for recommended usage.
+
+- **Step 1 — Mods cache:** Scans the mods directory and builds a cache of all installed mod GUIDs.
+- **Step 2 — Chara + scene scan:** Recursively scans the chara folders and, if a Studio `scene` folder is present, the scene folder too, collecting every mod GUID referenced by installed cards and scenes. The result is cached for subsequent runs.
+- **Step 3 — Missing = referenced − installed.**
+- **Step 4 — Download:**
+  - **BetterRepack** — Mods found in `kkafio_modpack_index_kk.json` / `kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
+  - **koikatsucards.com + Telegram** — Mods not in the modpack index are looked up on [koikatsucards.com/mod_library](https://koikatsucards.com/mod_library) and downloaded from the linked Telegram channel using your Telegram account via [Telethon](https://github.com/LonamiWebs/Telethon) and [teleget9527](https://pypi.org/project/teleget9527/) for maximum parallel speed.
+  - If BetterRepack fails for a mod and Telegram is enabled, KKAFIO automatically retries via Telegram.
+- **Sideloader Modpack mode:**
+  - `Skip` — ignores all modpack GUIDs; only downloads non-modpack mods.
+  - `Only Used` *(default)* — downloads missing modpack mods that are actually referenced by installed cards.
+  - `All` — downloads every GUID in the modpack index not installed locally, even if no card uses it.
+- **Custom Chara Directory / Custom Scene Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped.
+- **Use Cache** (on by default) — caches the mods list and both the chara and scene GUID scans. Each cache is invalidated automatically when its folder changes.
+
+**Telegram setup:**
+1. Go to [my.telegram.org/apps](https://my.telegram.org/apps), log in, and create an app to get an **API ID** and **API Hash**. Enter these in MXU settings.
+2. Enable **Download from Telegram** in MXU settings.
+3. On first use, KKAFIO opens [my.telegram.org](https://my.telegram.org) in your browser and shows dialogs for your phone number and verification code (and 2FA password if enabled). The session is saved to `%APPDATA%/KKAFIO/config/tg_session/kkafio.session` and reused automatically.
+
+> ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
+
+**6. Install Contents**
+
+- Given a folder containing chara cards, coordinate cards, scenes, overlays, and zipmod files, copies them into their respective game directories.
+- Respects the configured **Game Type**: Koikatsu Sunshine installs KK, KKSP, and KKS cards. Koikatsu / Koikatsu Party installs KK and KKSP cards only — KKS cards are skipped with a log message.
 - Scene cards (Studio) are installed only if the Studio `scene` folder is present.
 - Extracts ZIP / RAR / 7z archives automatically (configurable).
 - If both Filter & Convert KKS Cards and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
-**6. Uninstall Contents**
+**7. Uninstall Contents**
 
 - Reverse of Install Contents: given the same folder, deletes the matching files from the game directories.
 - **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
 - **Warning:** Uninstall Contents does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
-**8. Rename Chara**
-
-- Translates character card names to English using an LLM.
-- Workflow:
-  1. Select an input folder and click **Copy**.  
-     KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, merges it with the prompt, and copies the result to the clipboard.
-  2. Paste into your LLM of choice. The LLM fills in the English name for each key.
-  3. Copy the LLM response and click **Paste** in KKAFIO to save it.
-  4. Enable **Rename Chara**, click **Start** — KKAFIO writes the translated names into each card's internal metadata (`Parameter.lastname / firstname / nickname`).
-- **Update card metadata** (on by default): writes the translated names into the card file.
-- **Rename PNG files** (off by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
-- **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
-- Results are cached in `kkafio_rename_cache.json` inside the input folder and reused across runs.
-- The prompt is fully editable in the settings panel.
-- **Recommended LLMs:** same as Group Chara (see below).
-
-**9. Group Chara**
+**8. Group Chara**
 
 - Groups character cards into subfolders named after their series, using an LLM.
 - Workflow:
-  1. Select an input folder, customise the prompt if desired, and click **Copy**.  
-     KKAFIO scans the folder, builds a JSON mapping `{character_key: ""}`, merges it with the prompt, and copies the result to the clipboard.
-  2. Paste into your LLM of choice. The LLM fills in the series name for each key.
-  3. Copy the LLM response and click **Paste** in KKAFIO to save it.
-  4. Enable **Group Chara**, click **Start** — KKAFIO moves each card into `<input>/<series>/`.
+  1. Select an input folder, customise the prompt if desired, and enable **Group Chara**.
+  2. Click **Start** — KKAFIO scans the folder, builds a JSON mapping `{character_key: ""}`, and opens a dialog showing the combined prompt + JSON.
+  3. Click **Copy** in the dialog, paste into your LLM of choice. The LLM fills in the series name for each key.
+  4. Copy the LLM's reply, click **Paste** in the same dialog — KKAFIO immediately moves each card into `<input>/<series>/`.
 - **Include subfolders** option lets you export already-sorted cards too (off by default to skip them).
 - **Recommended LLMs:**
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
 
-**8. Ungroup Chara**
+**9. Ungroup Chara**
 
 - Reverse of Group Chara: moves all cards from subfolders back to the top-level input folder.
 - **Optional:** Deletes empty subfolders after moving (on by default).
 
-**9. Rename Chara**
+**10. Rename Chara**
 
 - Translates character card names to English using an LLM.
 - Workflow:
-  1. Select an input folder and click **Copy**.  
-     KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, merges it with the prompt, and copies the result to the clipboard.
-  2. Paste into your LLM of choice. The LLM fills in the English name for each key.
-  3. Copy the LLM response and click **Paste** in KKAFIO to save it.
-  4. Enable **Rename Chara**, click **Start** — KKAFIO writes the translated names into each card's internal metadata (`Parameter.lastname / firstname / nickname`).
+  1. Select an input folder and enable **Rename Chara**.
+  2. Click **Start** — KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, and opens a dialog showing the combined prompt + JSON.
+  3. Click **Copy** in the dialog, paste into your LLM of choice. The LLM fills in the English name for each key.
+  4. Copy the LLM's reply, click **Paste** in the same dialog — KKAFIO immediately writes the translated names into each card's internal metadata and/or renames the file, depending on the options below.
 - **Update card metadata** (off by default): writes the translated names into the card file.
 - **Rename PNG files** (on by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
 - **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
@@ -150,21 +134,21 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Warning:** Group Chara uses card metadata to extract character names. It is recommended to use **Rename Chara after Group Chara if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
 - **Warning:** It is possible to modify the prompt to allow for transliteration, rather than limiting it to just the character's English name. However, the transliteration of Chinese characters can differ significantly from that of English characters. Transliterating Japanese characters tends to yield better results, although there may be exceptions.
 
-**10. Archive Chara**
+**11. Archive Chara/Scenes**
 
-- Given a list of character cards, bundles each card with its matching coordinate files and required zipmods into a single archive.
-- Coordinates are matched by colour fingerprint (not filename), so cards from different mod setups are handled correctly.
+- Given a list of character cards and/or Studio scene files, bundles each one with its required zipmods (and, for chara cards, matching coordinate files) into a single archive.
+- Coordinates are matched by colour fingerprint (not filename), so cards from different mod setups are handled correctly. Scenes don't have coordinates, so this step is skipped for them.
 - Zipmods are found by GUID. Sideloader Modpack mods are excluded by default (see [Modpack Index](#modpack-index) below).
-- **Auto-resolve**: if the card lives inside the game folder, mods and coordinate directories are inferred automatically. Override with **Custom Mods Directory** and **Custom Coordinate Directory** if needed.
+- **Auto-resolve**: if the card/scene lives inside the game folder, mods and coordinate directories are inferred automatically. Override with **Custom Mods Directory** and **Custom Coordinate Directory** if needed.
 - Output format: **7z** (default) or **zip**.
-- **Combined archive** option puts all cards into one archive (default), or creates one archive per card.
+- **Combined archive** option puts all selected files into one archive (default), or creates one archive per file.
 
-**11. Delete Chara**
+**12. Delete Chara/Scenes**
 
-- Given a list of character cards, sends each card together with its matching coordinates and required zipmods to the recycle bin.
-- Uses the same path resolution and coordinate matching as Archive Chara.
+- Given a list of character cards and/or Studio scene files, sends each one together with its required zipmods (and matching coordinates, for chara cards) to the recycle bin.
+- Uses the same path resolution and coordinate matching as Archive Chara/Scenes.
 - Never touches Sideloader Modpack mods.
-- **Warning:** Delete Chara does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
+- **Warning:** Delete Chara/Scenes does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
 ---
 
@@ -175,10 +159,10 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 Use this to verify that all mods required by your currently installed cards are present. No staging folder needed.
 
 1. Set **Sideloader Modpack** to `Only Used`.
-2. Leave **Custom Chara Directory** and **Custom Mods Directory** blank (uses game defaults).
+2. Leave **Custom Chara Directory**, **Custom Scene Directory**, and **Custom Mods Directory** blank (uses game defaults).
 3. Enable **Download Missing Mods** and click **Start**.
 
-KKAFIO scans your installed chara cards, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if Telegram is enabled) downloads any remaining mods from koikatsucards.com.
+KKAFIO scans your installed chara cards and scenes, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if Telegram is enabled) downloads any remaining mods from koikatsucards.com.
 
 ---
 
@@ -210,14 +194,15 @@ Enable **Filter Duplicate Contents** with the staging folder as input.
 Enable **Download Missing Mods** with:
 - **Sideloader Modpack** → `Skip` *(mods in the staging folder are local, not modpack mods)*
 - **Custom Chara Directory** → your staging folder
+- **Custom Scene Directory** → your staging folder too, if you're staging Studio scenes
 - **Custom Mods Directory** → your staging folder
 - **Download from Telegram** → enabled
 
-KKAFIO scans the cards in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside the cards.
+KKAFIO scans the cards (and scenes, if any) in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside them.
 
 **Step 5 — Install**
 
-Enable **Install Contents** with the staging folder as input. KKAFIO copies everything — cards, coordinates, overlays, and zipmods — into the correct game directories.
+Enable **Install Contents** with the staging folder as input. KKAFIO copies everything — cards, coordinates, scenes, overlays, and zipmods — into the correct game directories.
 
 ---
 
@@ -229,7 +214,7 @@ Configure the game type in the instance settings at the top of the task list:
 |---|---|---|
 | Koikatsu (default) | KK, KKSP | KKS |
 | Koikatsu Party | KK, KKSP | KKS |
-| Koikatsu Sunshine | KKS | KK, KKSP |
+| Koikatsu Sunshine | KK, KKSP, KKS | *(none)* |
 
 The game type also determines which executable is launched by the **Run Game** button, which modpack index file is used, and affects scene card installation (Studio must be installed separately).
 
@@ -242,7 +227,7 @@ KKAFIO ships with two pre-built modpack index files:
 | `kkafio_modpack_index_kk.json` | Koikatsu / Koikatsu Party |
 | `kkafio_modpack_index_kks.json` | Koikatsu Sunshine |
 
-Archive Chara, Delete Chara, and Download Missing Mods use the index for the configured game type to instantly identify which required mods are covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
+Archive Chara/Scenes, Delete Chara/Scenes, and Download Missing Mods use the index for the configured game type to instantly identify which required mods are covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
 
 To regenerate the index after updating the Sideloader Modpack, run:
 
@@ -272,19 +257,22 @@ Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explo
 
 | Entry | Action |
 |---|---|
+| Filter & Convert KKS Cards | `filter-convert-kks --input <folder>` |
+| Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
+| Download Missing Mods | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --mods-dir <folder>` |
 | Install Contents | `install-contents --input <folder>` |
 | Uninstall Contents | `uninstall-contents --input <folder>` |
-| Filter / Convert Chara | `filter-convert-chara --input <folder>` |
-| Filter Duplicates | `filter-duplicates --input <folder>` |
-| Download Missing Mods | `download-missing-mods --chara-dir <folder> --mods-dir <folder>` |
+| Group Characters | `group-chara --input <folder>` |
+| Ungroup Characters | `ungroup-chara --input <folder>` |
+| Rename Characters | `rename-chara --input <folder>` |
 | Run GUI | Opens MXU |
 
 **On PNG files (single or multi-select):**
 
-| Entry         | Action                           |
-| ------------- | -------------------------------- |
-| Archive Chara | `archive-chara <selected files>` |
-| Delete Chara  | `delete-chara <selected files>`  |
+| Entry               | Action                                   |
+| -------------------- | ------------------------------------------ |
+| Archive Chara/Scene | `archive-chara-scenes <selected files>` |
+| Delete Chara/Scene  | `delete-chara-scenes <selected files>`  |
 
 Run `unregister_context_menu.bat` to remove all entries.
 
@@ -298,7 +286,7 @@ kkafio_cli run                                    # run all enabled tasks from c
 kkafio_cli download-contents [--links URLS_OR_FILE] [--output-dir DIR]
                              [--skip-downloaded | --no-skip-downloaded]
 
-kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR]
+kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR]
                                  [--use-cache | --no-use-cache]
                                  [--modpack-mode Skip|OnlyUsed|All]
                                  [--download-from-telegram | --no-download-from-telegram]
@@ -322,19 +310,17 @@ kkafio_cli install-contents   [--input DIR]
 
 kkafio_cli uninstall-contents [--input DIR]
 
-kkafio_cli rename-chara    [--input DIR] [--export]
-                           [--response JSON_OR_FILE]
+kkafio_cli rename-chara    [--input DIR]
                            [--skip-already-renamed | --no-skip-already-renamed]
                            [--update-metadata | --no-update-metadata]
                            [--rename-files | --no-rename-files]
 
-kkafio_cli group-chara     [--input DIR] [--export] [--include-subfolders]
-                           [--response JSON_OR_FILE]
+kkafio_cli group-chara     [--input DIR] [--include-subfolders]
 
 kkafio_cli ungroup-chara   [--input DIR]
                            [--delete-empty | --no-delete-empty]
 
-kkafio_cli archive-chara   [CHARA ...] [--output-dir DIR]
+kkafio_cli archive-chara-scenes [CONTENT ...] [--output-dir DIR]
                            [--format 7z|zip]
                            [--combined | --no-combined]
                            [--include-modpack | --no-include-modpack]
@@ -342,7 +328,7 @@ kkafio_cli archive-chara   [CHARA ...] [--output-dir DIR]
                            [--use-cache | --no-use-cache]
                            [--mods-dir DIR] [--coord-dir DIR]
 
-kkafio_cli delete-chara    [CHARA ...]
+kkafio_cli delete-chara-scenes  [CONTENT ...]
                            [--auto-resolve | --no-auto-resolve]
                            [--use-cache | --no-use-cache]
                            [--mods-dir DIR] [--coord-dir DIR]
@@ -365,9 +351,9 @@ To run from source:
 1. Clone or download this repository.
 2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/).
 3. Run `uv sync` in the repository folder.
-3. Run `uv run download_gui.py` to download the GUI.
-4. Open KKAFIO.exe and configure settings to your preference.
-5. Press **Start**.
+4. Run `uv run download_gui.py` to download the GUI.
+5. Open KKAFIO.exe and configure settings to your preference.
+6. Press **Start**.
 
 ## Known Issues
 
@@ -377,6 +363,8 @@ To run from source:
 ## Acknowledgements
 
 - [MistEO](https://github.com/MistEO) for the [GUI](https://github.com/MistEO/MXU).
+- [great-majority](https://github.com/MistEO) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
+- [xwc9527](https://github.com/xwc9527/telebackup) for [TeleBackup](https://github.com/xwc9527/telebackup), High-Speed Telegram Download Engine.
 - [Kiramei](https://github.com/Kiramei) for the logger. Original [here](https://github.com/Kiramei/blue_archive_auto_script/blob/master/core/utils.py).
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).
