@@ -91,11 +91,25 @@ def _collect_png_guids(
                                       if isinstance(fp, list) and len(fp) == 2}
                 prev_guids_by_file = prev.get("guids_by_file", {})
 
-                # Count check
-                disk_count   = sum(1 for d in dirs if d.exists() for _ in d.rglob("*.png"))
-                cached_count = prev.get("file_count") or len(prev_files) or len(prev_guids_by_file)
-                if disk_count == cached_count and prev_files:
-                    # Existence + fingerprint spot-check
+                if prev_files:
+                    # Existence + fingerprint spot-check (cheap: os.stat() per
+                    # cached file, no file content is read). This alone is
+                    # sufficient to detect deleted/modified files — new files
+                    # don't need special handling here since the main loop
+                    # below naturally treats anything missing from old_files
+                    # as new and reads it.
+                    #
+                    # NOTE: a previous version of this check also compared a
+                    # total on-disk PNG count against the cached file count
+                    # as a fast-path gate. That was wrong: the cache only
+                    # ever stores files matching `valid_card_types` (chara
+                    # cards for the chara cache, scenes for the scene
+                    # cache), while the disk count included every PNG in the
+                    # folder — coordinates, overlays, anything. Those two
+                    # numbers could never match whenever the folder held any
+                    # mixed content (e.g. a staging folder), so the cache was
+                    # silently rebuilt from scratch on every single run even
+                    # when nothing had changed.
                     cache_ok = True
                     for sp, fp in prev_files.items():
                         p = Path(sp)
@@ -112,9 +126,7 @@ def _collect_png_guids(
                         old_guids_by_file = prev_guids_by_file
                         logger.info("DLMOD", f"{label} cache loaded: {len(old_files)} file fingerprints")
                 else:
-                    logger.info("DLMOD",
-                        f"{label} cache stale ({disk_count} on disk vs "
-                        f"{cached_count} cached) — rebuilding")
+                    logger.info("DLMOD", f"{label} cache empty — building for the first time")
         except Exception:
             pass
 
