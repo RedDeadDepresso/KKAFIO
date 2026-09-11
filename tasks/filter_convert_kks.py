@@ -3,8 +3,16 @@ FilterConvertKKS
 ================
 Scans a folder for PNG character cards and separates them by type.
 
-ConvertKKS — move KKS cards to _KKS_card_/ and produce a KK-compatible
-            copy in _KKS_to_KK_/  (binary header patch)
+Filter     — move KK/KKSP cards into _KK_card_/ and KKS cards into
+            _KKS_card_/. Off by default: cards are left where they are,
+            which is what you want when staging cards for Install/Uninstall
+            Contents (moving them here would make Uninstall Contents unable
+            to reliably match them back up later).
+
+Convert    — produce a KK-compatible copy of each KKS card (binary header
+            patch). When Filter is on, copies go to _KKS_to_KK_/. When
+            Filter is off, each copy is saved in the same directory as its
+            source KKS card instead.
 """
 
 import shutil
@@ -20,8 +28,9 @@ class FilterConvertKKS:
     def __init__(self, config: Config, file_manager: FileManager):
         self.config          = config
         self.file_manager    = file_manager
-        self.convert_kks     = self.config.filter_convert_kks.get("ConvertKKS", False)
-        self.extract_archive = self.config.filter_convert_kks.get("ExtractArchive", True)
+        self.filter           = self.config.filter_convert_kks.get("Filter", False)
+        self.convert          = self.config.filter_convert_kks.get("Convert", False)
+        self.extract_archive  = self.config.filter_convert_kks.get("ExtractArchive", True)
 
     # ------------------------------------------------------------------
     # Card-type helpers
@@ -98,37 +107,56 @@ class FilterConvertKKS:
 
         # ── Handle KKS cards ─────────────────────────────────────────
         if kks_cards:
-            kks_folder = path / "_KKS_card_"
-            kks_folder.mkdir(exist_ok=True)
+            if self.filter:
+                kks_folder = path / "_KKS_card_"
+                kks_folder.mkdir(exist_ok=True)
 
-            if self.convert_kks:
+            if self.convert and self.filter:
                 kks_to_kk_folder = path / "_KKS_to_KK_"
                 kks_to_kk_folder.mkdir(exist_ok=True)
 
             for card in kks_cards:
-                if self.convert_kks:
-                    self._patch_kks_to_kk(card, kks_to_kk_folder)
-                shutil.move(str(card), str(kks_folder / card.name))
+                if self.convert:
+                    # Filter on -> shared _KKS_to_KK_ folder.
+                    # Filter off -> saved next to the original card, since
+                    # there's no _KKS_card_ folder for it to live alongside.
+                    dest = kks_to_kk_folder if self.filter else card.parent
+                    self._patch_kks_to_kk(card, dest)
+                if self.filter:
+                    shutil.move(str(card), str(kks_folder / card.name))
 
-            if self.convert_kks:
-                logger.success("SCRIPT",
-                    f"[{len(kks_cards)}] KKS cards -> [{kks_folder.name}], "
-                    f"converted copies -> [{kks_to_kk_folder.name}]")
+            if self.filter:
+                if self.convert:
+                    logger.success("SCRIPT",
+                        f"[{len(kks_cards)}] KKS cards -> [{kks_folder.name}], "
+                        f"converted copies -> [{kks_to_kk_folder.name}]")
+                else:
+                    logger.success("SCRIPT",
+                        f"[{len(kks_cards)}] KKS cards -> [{kks_folder.name}]")
             else:
-                logger.success("SCRIPT",
-                    f"[{len(kks_cards)}] KKS cards -> [{kks_folder.name}]")
+                if self.convert:
+                    logger.success("SCRIPT",
+                        f"[{len(kks_cards)}] KKS card(s) found, converted copies saved alongside originals "
+                        "(Filter disabled — not moved)")
+                else:
+                    logger.success("SCRIPT",
+                        f"[{len(kks_cards)}] KKS card(s) found (Filter disabled — not moved)")
         else:
             logger.success("SCRIPT", "No KKS cards found")
 
         # ── Handle KK/KKSP cards ──────────────────────────────────────
         if kk_cards:
-            kk_folder = path / "_KK_card_"
-            kk_folder.mkdir(exist_ok=True)
+            if self.filter:
+                kk_folder = path / "_KK_card_"
+                kk_folder.mkdir(exist_ok=True)
 
-            for card in kk_cards:
-                shutil.move(str(card), str(kk_folder / card.name))
+                for card in kk_cards:
+                    shutil.move(str(card), str(kk_folder / card.name))
 
-            logger.success("SCRIPT",
-                f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}]")
+                logger.success("SCRIPT",
+                    f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}]")
+            else:
+                logger.success("SCRIPT",
+                    f"[{len(kk_cards)}] KK/KKSP card(s) found (Filter disabled — not moved)")
         else:
             logger.success("SCRIPT", "No KK/KKSP cards found")

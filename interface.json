@@ -151,24 +151,46 @@
         "InputPath": "{input_path}"
       }
     },
-    "ConvertKKS": {
+    "Filter": {
+      "type": "switch",
+      "label": "Move Cards Into Folders",
+      "description": "Move KK/KKSP cards into _KK_card_/ and KKS cards into _KKS_card_/. Off by default. Leave off when staging cards for Install/Uninstall Contents — moving cards into subfolders here means Uninstall Contents won't be able to reliably find and remove them later.",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Move Into Folders",
+          "pipeline_override": {
+            "Filter": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Leave In Place",
+          "pipeline_override": {
+            "Filter": false
+          }
+        }
+      ]
+    },
+    "Convert": {
       "type": "switch",
       "label": "Convert KKS → KK",
-      "description": "Move KKS cards to _KKS_card_/ and produce KK-compatible copies in _KKS_to_KK_/",
+      "description": "Produce a KK-compatible copy of each KKS card. If Filter is on, copies go to _KKS_to_KK_/ alongside the moved cards; if Filter is off, each copy is saved next to its original KKS card instead.",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
           "label": "Convert",
           "pipeline_override": {
-            "ConvertKKS": true
+            "Convert": true
           }
         },
         {
           "name": "No",
           "label": "Skip",
           "pipeline_override": {
-            "ConvertKKS": false
+            "Convert": false
           }
         }
       ]
@@ -852,7 +874,13 @@
       "default_check": false,
       "description": "Filter and optionally convert KKS cards to KK format",
       "group": ["card-management"],
-      "option": ["InputPath", "ConvertKKS", "ExtractArchive", "ArchivePassword"]
+      "option": [
+        "InputPath",
+        "Filter",
+        "Convert",
+        "ExtractArchive",
+        "ArchivePassword"
+      ]
     },
     {
       "name": "DownloadMissingMods",

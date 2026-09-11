@@ -133,7 +133,7 @@ _TASK_KEY = {
 _TASK_DEFAULTS = {
     "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallContents":      {"Enable": False, "InputPath": ""},
-    "FilterConvertKKS": {"Enable": False, "InputPath": "", "ConvertKKS": False, "ExtractArchive": True, "Password": "Skip"},
+    "FilterConvertKKS": {"Enable": False, "InputPath": "", "Filter": False, "Convert": False, "ExtractArchive": True, "Password": "Skip"},
     "DeleteCharaScenes":      {"Enable": False, "ContentPaths": [], "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
     "ArchiveCharaScenes":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
     "GroupChara":       {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": ""},
@@ -178,7 +178,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "FilterConvertKKS":
         _set("InputPath",      "InputPath")
-        _set("ConvertKKS",     "ConvertKKS")
+        _set("Filter",         "Filter")
+        _set("Convert",        "Convert")
         _set("ExtractArchive", "ExtractArchive")
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
