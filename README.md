@@ -147,7 +147,8 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - Given a list of character cards and/or Studio scene files, sends each one together with its required zipmods (and matching coordinates, for chara cards) to the recycle bin.
 - Uses the same path resolution and coordinate matching as Archive Chara/Scenes.
 - Never touches Sideloader Modpack mods.
-- **Warning:** Delete Chara/Scenes does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
+- **Check for Shared Mods** *(on by default)*: before deleting a zipmod, scans every character card in the game's chara folders and every scene in the Studio scene folder (if installed) to confirm no other character or scene still references it. Any zipmod still in use elsewhere is kept instead of deleted, and logged as such. Turning this off skips the scan (faster, especially with a large card collection) but reintroduces the risk described below.
+- **Warning:** The shared-mod check only covers **zipmods** — it does not check whether a **coordinate file** is shared between characters. Removing a coordinate used by multiple cards will still break all of them. Only use this task when you're certain any coordinate files being removed are exclusive to the card(s) you're deleting. Files can still be recovered from the Recycle Bin.
 
 ---
 
@@ -331,6 +332,7 @@ kkafio_cli archive-chara-scenes [CONTENT ...] [--output-dir DIR]
                            [--mods-dir DIR] [--coord-dir DIR]
 
 kkafio_cli delete-chara-scenes  [CONTENT ...]
+                           [--check-shared-mods | --no-check-shared-mods]
                            [--auto-resolve | --no-auto-resolve]
                            [--use-cache | --no-use-cache]
                            [--mods-dir DIR] [--coord-dir DIR]

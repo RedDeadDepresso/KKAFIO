@@ -157,6 +157,7 @@ def run_download_missing_mods(config, file_manager,
 
 
 def run_delete_chara_scenes(config, file_manager, content_paths: list[str] | None = None,
+                     check_shared_mods: bool | None = None,
                      auto_resolve: bool | None = None,
                      use_cache: bool | None = None,
                      mods_dir: str | None = None, coord_dir: str | None = None):
@@ -164,6 +165,8 @@ def run_delete_chara_scenes(config, file_manager, content_paths: list[str] | Non
     module = DeleteCharaScenes(config, file_manager)
     if content_paths is not None:
         module.content_paths = content_paths
+    if check_shared_mods is not None:
+        module.check_shared_mods = check_shared_mods
     if auto_resolve is not None:
         module.auto_resolve = auto_resolve
     if use_cache is not None:
@@ -491,10 +494,13 @@ def cmd_delete_chara_scenes(args):
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["DeleteCharaScenes"]["Enable"] = True
         content_paths = args.content if args.content else None
+        check_shared_mods = None if args.check_shared_mods is None else bool(args.check_shared_mods)
         auto_resolve = None if args.auto_resolve is None else bool(args.auto_resolve)
         use_cache    = None if args.use_cache is None else bool(args.use_cache)
         run_delete_chara_scenes(config, file_manager,
-                         content_paths=content_paths, auto_resolve=auto_resolve,
+                         content_paths=content_paths,
+                         check_shared_mods=check_shared_mods,
+                         auto_resolve=auto_resolve,
                          use_cache=use_cache,
                          mods_dir=args.mods_dir, coord_dir=args.coord_dir)
     except SystemExit:
@@ -750,6 +756,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("content", nargs="*", metavar="CONTENT",
                    help="Character/scene PNG paths (default: DeleteCharaScenes.ContentPaths from config)")
+    g_shared = p.add_mutually_exclusive_group()
+    g_shared.add_argument("--check-shared-mods",    dest="check_shared_mods", action="store_true",  default=None,
+                   help="Before deleting a zipmod, verify no other installed character/scene "
+                        "still uses it (default: on)")
+    g_shared.add_argument("--no-check-shared-mods", dest="check_shared_mods", action="store_false",
+                   help="Skip the shared-mod check — faster, but may delete mods other characters still need")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
                    help="Auto-resolve mods and coord dirs (overrides config)")
