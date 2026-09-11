@@ -675,6 +675,45 @@
         "SceneDir": "{scene_dir}"
       }
     },
+    "CoordDir": {
+      "type": "folder",
+      "name": "coord_dir",
+      "label": "Custom Coordinate Directory",
+      "description": "Override the coordinate folder path. Leave empty to use the game's default coordinate folder.",
+      "default": "",
+      "pipeline_override": {
+        "CoordDir": "{coord_dir}"
+      }
+    },
+    "ContentTypes": {
+      "type": "checkbox",
+      "label": "Content Types to Scan",
+      "description": "Which content types to scan for referenced mod GUIDs. All three are scanned by default; deselect a type to skip scanning it (and skip requiring its directory to be resolvable).",
+      "default_case": ["Chara", "Scene", "Coord"],
+      "cases": [
+        {
+          "name": "Chara",
+          "label": "Characters",
+          "pipeline_override": {
+            "ScanChara": true
+          }
+        },
+        {
+          "name": "Scene",
+          "label": "Scenes",
+          "pipeline_override": {
+            "ScanScene": true
+          }
+        },
+        {
+          "name": "Coord",
+          "label": "Coordinates",
+          "pipeline_override": {
+            "ScanCoord": true
+          }
+        }
+      ]
+    },
     "SideloaderModpack": {
       "type": "select",
       "label": "Sideloader Modpack",
@@ -756,16 +795,6 @@
       "default": "",
       "pipeline_override": {
         "ModsDir": "{mods_dir}"
-      }
-    },
-    "CoordDir": {
-      "type": "folder",
-      "name": "coord_dir",
-      "label": "Custom Coordinate Directory",
-      "description": "Override the coordinate folder path. Leave empty to use the game's default coordinate folder.",
-      "default": "",
-      "pipeline_override": {
-        "CoordDir": "{coord_dir}"
       }
     },
     "UseCache": {
@@ -911,11 +940,13 @@
       "default_check": false,
       "description": "Find mods referenced by character cards but not installed locally, then download them from BetterRepack or via Telegram.",
       "option": [
+        "ContentTypes",
         "SideloaderModpack",
         "DownloadFromTelegram",
         "UseCache",
         "CharaDir",
         "SceneDir",
+        "CoordDir",
         "ModsDir"
       ]
     },

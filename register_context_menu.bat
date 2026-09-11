@@ -50,7 +50,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03Download
 echo @="Download Missing Mods"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03DownloadMissingMods\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%1\" --scene-dir \"%%1\" --mods-dir \"%%1\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%1\" --scene-dir \"%%1\" --coord-dir \"%%1\" --mods-dir \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04InstallContents]
 echo @="Install Contents"
@@ -111,7 +111,7 @@ echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell
 echo @="Download Missing Mods"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03DownloadMissingMods\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%V\" --scene-dir \"%%V\" --mods-dir \"%%V\"\""
+echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%V\" --scene-dir \"%%V\" --coord-dir \"%%V\" --mods-dir \"%%V\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04InstallContents]
 echo @="Install Contents"

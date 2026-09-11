@@ -135,6 +135,8 @@ def run_download_missing_mods(config, file_manager,
                               mods_dir: str | None = None,
                               chara_dir: str | None = None,
                               scene_dir: str | None = None,
+                              coord_dir: str | None = None,
+                              content_types: list[str] | None = None,
                               use_cache: bool | None = None,
                               modpack_mode: str | None = None,
                               download_from_telegram: bool | None = None):
@@ -146,6 +148,10 @@ def run_download_missing_mods(config, file_manager,
         module.chara_dir_str = chara_dir
     if scene_dir is not None:
         module.scene_dir_str = scene_dir
+    if coord_dir is not None:
+        module.coord_dir_str = coord_dir
+    if content_types is not None:
+        module.content_types = content_types
     if use_cache is not None:
         module.use_cache = use_cache
     if modpack_mode is not None:
@@ -472,11 +478,18 @@ def cmd_download_missing_mods(args):
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["DownloadMissingMods"]["Enable"] = True
         use_cache = None if args.use_cache is None else bool(args.use_cache)
+        content_types = None
+        if args.no_chara or args.no_scene or args.no_coord:
+            content_types = [t for t, skip in
+                             (("Chara", args.no_chara), ("Scene", args.no_scene), ("Coord", args.no_coord))
+                             if not skip]
         run_download_missing_mods(
             config, file_manager,
             mods_dir=args.mods_dir or None,
             chara_dir=args.chara_dir or None,
             scene_dir=args.scene_dir or None,
+            coord_dir=args.coord_dir or None,
+            content_types=content_types,
             use_cache=use_cache,
             modpack_mode=args.modpack_mode or None,
             download_from_telegram=args.download_from_telegram,
@@ -731,6 +744,14 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Override the chara directory to scan (default: game chara dirs from config)")
     p.add_argument("--scene-dir", default=None, metavar="DIR",
                    help="Override the Studio scene directory to scan (default: game scene dir from config, if Studio is installed)")
+    p.add_argument("--coord-dir", default=None, metavar="DIR",
+                   help="Override the coordinate directory to scan (default: game coordinate dir from config)")
+    p.add_argument("--no-chara", action="store_true", default=False,
+                   help="Skip scanning character cards for referenced mod GUIDs")
+    p.add_argument("--no-scene", action="store_true", default=False,
+                   help="Skip scanning Studio scenes for referenced mod GUIDs")
+    p.add_argument("--no-coord", action="store_true", default=False,
+                   help="Skip scanning coordinate cards for referenced mod GUIDs")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
                    help="Use mods and chara cache to skip scanning (default: on)")

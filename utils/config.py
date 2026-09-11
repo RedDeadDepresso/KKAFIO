@@ -142,7 +142,7 @@ _TASK_DEFAULTS = {
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "Delete": False},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
-    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "UseCache": True, "SideloaderModpack": "OnlyUsed", "DownloadFromTelegram": False}
+    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "DownloadFromTelegram": False}
 }
 
 
@@ -248,6 +248,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("ModsDir",             "ModsDir")
         _set("CharaDir",            "CharaDir")
         _set("SceneDir",            "SceneDir")
+        _set("CoordDir",            "CoordDir")
+        _set("ContentTypes",        "ContentTypes")
         _set("UseCache",            "UseCache")
         _set("SideloaderModpack",   "SideloaderModpack")
         _set("DownloadFromTelegram","DownloadFromTelegram")

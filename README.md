@@ -59,12 +59,12 @@
 
 **5. Download Missing Mods**
 
-Finds all mods referenced by installed character cards that are not present in the local mods directory, then downloads them automatically.
+Finds all mods referenced by installed character cards, Studio scenes, and/or coordinate cards that are not present in the local mods directory, then downloads them automatically.
 
 See [Download Missing Mods Workflows](#download-missing-mods-workflows) below for recommended usage.
 
 - **Step 1 — Mods cache:** Scans the mods directory and builds a cache of all installed mod GUIDs.
-- **Step 2 — Chara + scene scan:** Recursively scans the chara folders and, if a Studio `scene` folder is present, the scene folder too, collecting every mod GUID referenced by installed cards and scenes. The result is cached for subsequent runs.
+- **Step 2 — Content scan:** Recursively scans whichever content types are selected in **Content Types to Scan** (Characters / Scenes / Coordinates — all three by default), collecting every mod GUID they reference. Each type's results are cached separately for subsequent runs. Deselecting a type also skips requiring its directory to be resolvable — e.g. if Characters is unchecked, the task no longer needs a valid chara directory to run.
 - **Step 3 — Missing = referenced − installed.**
 - **Step 4 — Download:**
   - **BetterRepack** — Mods found in `kkafio_modpack_index_kk.json` / `kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
@@ -74,8 +74,9 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
   - `Skip` — ignores all modpack GUIDs; only downloads non-modpack mods.
   - `Only Used` *(default)* — downloads missing modpack mods that are actually referenced by installed cards.
   - `All` — downloads every GUID in the modpack index not installed locally, even if no card uses it.
-- **Custom Chara Directory / Custom Scene Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped.
-- **Use Cache** (on by default) — caches the mods list and both the chara and scene GUID scans. Each cache is invalidated automatically when its folder changes.
+- **Content Types to Scan** — multi-select: Characters / Scenes / Coordinates. All three selected by default.
+- **Custom Chara Directory / Custom Scene Directory / Custom Coordinate Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped (same for coordinates if no default coordinate folder exists).
+- **Use Cache** (on by default) — caches the mods list and the GUID scan for each selected content type. Each cache is invalidated automatically when its folder changes.
 
 **Telegram setup:**
 1. Go to [my.telegram.org/apps](https://my.telegram.org/apps), log in, and create an app to get an **API ID** and **API Hash**. Enter these in MXU settings.
@@ -159,10 +160,10 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 Use this to verify that all mods required by your currently installed cards are present. No staging folder needed.
 
 1. Set **Sideloader Modpack** to `Only Used`.
-2. Leave **Custom Chara Directory**, **Custom Scene Directory**, and **Custom Mods Directory** blank (uses game defaults).
+2. Leave **Custom Chara Directory**, **Custom Scene Directory**, **Custom Coordinate Directory**, and **Custom Mods Directory** blank (uses game defaults).
 3. Enable **Download Missing Mods** and click **Start**.
 
-KKAFIO scans your installed chara cards and scenes, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if Telegram is enabled) downloads any remaining mods from koikatsucards.com.
+KKAFIO scans your installed chara cards, scenes, and coordinates, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if Telegram is enabled) downloads any remaining mods from koikatsucards.com.
 
 ---
 
@@ -197,10 +198,12 @@ Enable **Download Missing Mods** with:
 - **Sideloader Modpack** → `Skip` *(mods in the staging folder are local, not modpack mods)*
 - **Custom Chara Directory** → your staging folder
 - **Custom Scene Directory** → your staging folder too, if you're staging Studio scenes
+- **Custom Coordinate Directory** → your staging folder too, if you're staging coordinate cards
 - **Custom Mods Directory** → your staging folder
+- **Content Types to Scan** → deselect any type you aren't staging (e.g. uncheck Scenes/Coordinates if the staging folder only has chara cards) — this also means KKAFIO won't require that type's directory to be resolvable
 - **Download from Telegram** → enabled
 
-KKAFIO scans the cards (and scenes, if any) in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside them.
+KKAFIO scans the selected content types in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside them.
 
 **Step 5 — Install**
 
@@ -261,7 +264,7 @@ Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explo
 |---|---|
 | Filter & Convert KKS Cards | `filter-convert-kks --input <folder>` |
 | Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
-| Download Missing Mods | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --mods-dir <folder>` |
+| Download Missing Mods | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder>` |
 | Install Contents | `install-contents --input <folder>` |
 | Uninstall Contents | `uninstall-contents --input <folder>` |
 | Group Characters | `group-chara --input <folder>` |
@@ -288,7 +291,8 @@ kkafio_cli run                                    # run all enabled tasks from c
 kkafio_cli download-contents [--links URLS_OR_FILE] [--output-dir DIR]
                              [--skip-downloaded | --no-skip-downloaded]
 
-kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR]
+kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
+                                 [--no-chara] [--no-scene] [--no-coord]
                                  [--use-cache | --no-use-cache]
                                  [--modpack-mode Skip|OnlyUsed|All]
                                  [--download-from-telegram | --no-download-from-telegram]
@@ -367,8 +371,6 @@ To run from source:
 ## Acknowledgements
 
 - [MistEO](https://github.com/MistEO) for the [GUI](https://github.com/MistEO/MXU).
-- [great-majority](https://github.com/MistEO) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
-- [xwc9527](https://github.com/xwc9527/telebackup) for [TeleBackup](https://github.com/xwc9527/telebackup), High-Speed Telegram Download Engine.
 - [Kiramei](https://github.com/Kiramei) for the logger. Original [here](https://github.com/Kiramei/blue_archive_auto_script/blob/master/core/utils.py).
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).
