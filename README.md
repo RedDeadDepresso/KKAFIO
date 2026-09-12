@@ -72,7 +72,7 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Step 2 — Content scan:** Recursively scans whichever content types are selected in **Content Types to Scan** (Characters / Scenes / Coordinates — all three by default), collecting every mod GUID they reference. Each type's results are cached separately for subsequent runs. Deselecting a type also skips requiring its directory to be resolvable — e.g. if Characters is unchecked, the task no longer needs a valid chara directory to run.
 - **Step 3 — Missing = referenced − installed.**
 - **Step 4 — Download:**
-  - **BetterRepack** — Mods found in `kkafio_modpack_index_kk.json` / `kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
+  - **BetterRepack** — Mods found in `assets/kkafio_modpack_index_kk.json` / `assets/kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
   - **koikatsucards.com + Telegram** — Mods not in the modpack index are looked up on [koikatsucards.com/mod_library](https://koikatsucards.com/mod_library) and downloaded from the linked Telegram channel using your Telegram account via [Telethon](https://github.com/LonamiWebs/Telethon) and [teleget9527](https://pypi.org/project/teleget9527/) for maximum parallel speed.
   - If BetterRepack fails for a mod and Telegram is enabled, KKAFIO automatically retries via Telegram.
 - **Sideloader Modpack mode:**
@@ -231,12 +231,12 @@ The game type also determines which executable is launched by the **Run Game** b
 
 ## Modpack Index
 
-KKAFIO ships with two pre-built modpack index files:
+KKAFIO ships with two pre-built modpack index files (in `assets/`):
 
 | File | Game |
 |---|---|
-| `kkafio_modpack_index_kk.json` | Koikatsu / Koikatsu Party |
-| `kkafio_modpack_index_kks.json` | Koikatsu Sunshine |
+| `assets/kkafio_modpack_index_kk.json` | Koikatsu / Koikatsu Party |
+| `assets/kkafio_modpack_index_kks.json` | Koikatsu Sunshine |
 
 Archive Cards, Delete Cards, and Download Missing Mods use the index for the configured game type to instantly identify which required mods are covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
 
@@ -244,18 +244,18 @@ To regenerate the index after updating the Sideloader Modpack, run:
 
 ```
 # Koikatsu / Koikatsu Party
-python build_modpack_index.py "C:/KK Party/mods" --game-type kk
+python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/kkafio_modpack_index_kk.json
 
 # Koikatsu Sunshine
-python build_modpack_index.py "C:/KKS/mods" --game-type kks
+python tools/build_modpack_index.py "C:/KKS/mods" --game-type kks --output assets/kkafio_modpack_index_kks.json
 ```
 
-**Incremental updates** — if the index file already exists, `build_modpack_index.py` reuses entries for zipmods whose path, size, and modification time are unchanged. Only new or changed zipmods are opened and scanned. Adding a handful of mods to a large Sideloader Modpack takes seconds rather than minutes.
+**Incremental updates** — if the index file already exists, `tools/build_modpack_index.py` reuses entries for zipmods whose path, size, and modification time are unchanged. Only new or changed zipmods are opened and scanned. Adding a handful of mods to a large Sideloader Modpack takes seconds rather than minutes.
 
 Use `--full` to force a complete rescan and ignore the previous index:
 
 ```
-python build_modpack_index.py "C:/KK Party/mods" --game-type kk --full
+python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/kkafio_modpack_index_kk.json --full
 ```
 
 Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to the repository to ship them with the next release.
@@ -367,7 +367,7 @@ To run from source:
 1. Clone or download this repository.
 2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/).
 3. Run `uv sync` in the repository folder.
-4. Run `uv run download_gui.py` to download the GUI.
+4. Run `uv run tools/download_gui.py` to download the GUI.
 5. Open KKAFIO.exe and configure settings to your preference.
 6. Press **Start**.
 

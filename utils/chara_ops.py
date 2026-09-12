@@ -452,7 +452,7 @@ def load_modpack_index(mods_dir: Path | None = None,
     and kkafio_modpack_index_kk.json for all other variants.
 
     Searches in:
-      1. The directory of the running exe / script (shipped with the release)
+      1. The assets/ folder next to the running exe / script (shipped with the release)
       2. mods_dir itself
       3. mods_dir.parent (game root)
 
@@ -471,7 +471,7 @@ def load_modpack_index(mods_dir: Path | None = None,
     else:
         exe_dir = Path(__file__).resolve().parent.parent  # repo root
 
-    candidates = [exe_dir / index_file]
+    candidates = [exe_dir / "assets" / index_file]
     if mods_dir is not None:
         candidates.append(mods_dir / index_file)
         candidates.append(mods_dir.parent / index_file)

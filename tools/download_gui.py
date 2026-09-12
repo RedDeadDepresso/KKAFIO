@@ -3,10 +3,10 @@
 download_gui.py — Download the latest MXU release and extract mxu.exe as KKAFIO.exe.
 
 Usage:
-    python download_gui.py              # latest stable, win-x86_64
-    python download_gui.py --arch aarch64
-    python download_gui.py --tag v1.2.3
-    python download_gui.py --prerelease # include pre-releases
+    python tools/download_gui.py              # latest stable, win-x86_64
+    python tools/download_gui.py --arch aarch64
+    python tools/download_gui.py --tag v1.2.3
+    python tools/download_gui.py --prerelease # include pre-releases
 
 After running, KKAFIO.exe will be placed in the same directory as kkafio_cli.py
 so MXU can load interface.json and spawn kkafio_cli.exe.
@@ -29,7 +29,7 @@ from pathlib import Path
 
 REPO       = "RedDeadDepresso/MXU-KKAFIO"
 API_BASE   = "https://api.github.com"
-HERE       = Path(__file__).resolve().parent   # KKAFIO project root
+HERE       = Path(__file__).resolve().parent.parent   # KKAFIO project root (this script lives in tools/)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

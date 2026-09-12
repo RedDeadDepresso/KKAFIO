@@ -176,8 +176,8 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `kkafio_modpack_index_kk.json` / `kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `build_modpack_index.py`; see [Modpack Index](../wiki/Modpack-Index.md). Read by `utils/chara_ops.py`'s `load_modpack_index()`. |
-| `xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `utils/chara_ops.py`. Never modified at runtime. |
+| `assets/kkafio_modpack_index_kk.json` / `assets/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](../wiki/Modpack-Index.md). Read by `utils/chara_ops.py`'s `load_modpack_index()`. |
+| `assets/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `utils/chara_ops.py`. Never modified at runtime. |
 
 ---
 

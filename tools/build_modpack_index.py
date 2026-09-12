@@ -17,9 +17,9 @@ Output (kkafio_modpack_index_kk.json or kkafio_modpack_index_kks.json):
   }
 
 Usage:
-  python build_modpack_index.py <mods_folder> [--game-type kk|kks] [--output PATH]
-  python build_modpack_index.py "C:/KK Party/mods" --game-type kk
-  python build_modpack_index.py "C:/KKS/mods"      --game-type kks
+  python tools/build_modpack_index.py <mods_folder> [--game-type kk|kks] [--output PATH]
+  python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk
+  python tools/build_modpack_index.py "C:/KKS/mods"      --game-type kks
 """
 
 import argparse

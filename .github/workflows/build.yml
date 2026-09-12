@@ -164,18 +164,12 @@ jobs:
             $iface | ConvertTo-Json -Depth 10 | Set-Content "$dst\interface.json" -Encoding UTF8
           }
 
-          # kkafio_modpack_index_kk.json
-          if (Test-Path "kkafio_modpack_index_kk.json") { Copy-Item "kkafio_modpack_index_kk.json" "$dst\kkafio_modpack_index_kk.json" }
-
-          # kkafio_modpack_index_kks.json
-          if (Test-Path "kkafio_modpack_index_kks.json") { Copy-Item "kkafio_modpack_index_kks.json" "$dst\kkafio_modpack_index_kks.json" }
-
-          # xkcd_colors.json
-          if (Test-Path "xkcd_colors.json") { Copy-Item "xkcd_colors.json" "$dst\xkcd_colors.json" }
-
-          # logo.png (ensure folder exists)
+          # assets/ (logo, modpack indexes, colour data)
           if (!(Test-Path "$dst\assets")) { New-Item -ItemType Directory -Force -Path "$dst\assets" }
           if (Test-Path "assets\logo.png") { Copy-Item "assets\logo.png" "$dst\assets\logo.png" }
+          if (Test-Path "assets\kkafio_modpack_index_kk.json")  { Copy-Item "assets\kkafio_modpack_index_kk.json"  "$dst\assets\kkafio_modpack_index_kk.json" }
+          if (Test-Path "assets\kkafio_modpack_index_kks.json") { Copy-Item "assets\kkafio_modpack_index_kks.json" "$dst\assets\kkafio_modpack_index_kks.json" }
+          if (Test-Path "assets\xkcd_colors.json")              { Copy-Item "assets\xkcd_colors.json"              "$dst\assets\xkcd_colors.json" }
 
           # Install MXU → rename to KKAFIO.exe
           $mxuDir = "downloads\MXU"

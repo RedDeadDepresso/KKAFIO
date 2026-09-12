@@ -8,11 +8,16 @@ KKAFIO-dev/
 ├── interface.json                   # Schema describing every task/option for the GUI (see doc 03)
 ├── register_context_menu.bat        # Adds right-click Explorer entries that call kkafio_cli
 ├── unregister_context_menu.bat      # Removes them
-├── build_modpack_index.py           # Standalone maintainer tool — regenerates the modpack index JSONs
-├── download_gui.py                  # Standalone script that downloads the MXU-KKAFIO GUI release
-├── kkafio_modpack_index_kk.json     # Pre-built Sideloader Modpack index for Koikatsu/Party
-├── kkafio_modpack_index_kks.json    # Pre-built Sideloader Modpack index for Koikatsu Sunshine
-├── xkcd_colors.json                 # Named colour list used by the coordinate colour-fingerprint matcher
+│
+├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
+│   ├── build_modpack_index.py       # Regenerates assets/kkafio_modpack_index_*.json
+│   └── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
+│
+├── assets/                          # Static data shipped with every release
+│   ├── logo.png                     # App icon source (converted to kkafio.ico during CI build)
+│   ├── kkafio_modpack_index_kk.json  # Pre-built Sideloader Modpack index for Koikatsu/Party
+│   ├── kkafio_modpack_index_kks.json # Pre-built Sideloader Modpack index for Koikatsu Sunshine
+│   └── xkcd_colors.json             # Named colour list used by the coordinate colour-fingerprint matcher
 │
 ├── tasks/                           # One module per task (see below)
 │   ├── base_task.py                 # BaseTask class + validate_input_path() helper
