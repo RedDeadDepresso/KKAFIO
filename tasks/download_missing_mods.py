@@ -23,7 +23,6 @@ Strategy
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import re
 from datetime import datetime
@@ -32,195 +31,20 @@ from pathlib import Path
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
     build_mods_cache,
+    collect_chara_guids,
+    collect_coord_guids,
+    collect_scene_guids,
     load_mods_cache,
     load_modpack_index,
-    parse_chara_guids,
-    parse_coord_guids,
-    parse_scene_guids,
     save_mods_cache,
 )
-from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import GameType
 from utils.logger import logger
 import utils.telegram_config as tg_cfg
 
 BETTERREPACK_BASE     = "https://sideload.betterrepack.com/download/KKEC"
 KOIKATSUCARDS_MOD_LIB = "https://koikatsucards.com/mod_library"
-CHARA_CACHE_FILE      = "kkafio_chara_guid_cache.json"
-SCENE_CACHE_FILE      = "kkafio_scene_guid_cache.json"
-COORD_CACHE_FILE      = "kkafio_coord_guid_cache.json"
 MAX_CONNECTIONS       = 4
-
-
-# ---------------------------------------------------------------------------
-# Chara GUID cache
-# ---------------------------------------------------------------------------
-
-def _file_fp(p: Path) -> tuple[int, int]:
-    try:
-        st = p.stat()
-        return (int(st.st_mtime), st.st_size)
-    except OSError:
-        return (0, 0)
-
-
-def _collect_png_guids(
-    dirs: list[Path],
-    use_cache: bool,
-    cache_file: str,
-    label: str,
-    is_valid,
-    parse_guids,
-) -> set[str]:
-    """Incrementally collect GUIDs from a set of PNG-based card files.
-
-    Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
-    Only new or changed PNGs are fully read. Shared implementation used for
-    chara cards, Studio scenes, and coordinate cards — `is_valid(raw_bytes)`
-    decides whether a given PNG belongs to this collector's content type,
-    and `parse_guids` extracts the GUIDs from files that pass.
-    """
-    key        = "|".join(str(d) for d in dirs)
-    cache_path = dirs[0] / cache_file
-
-    old_files:  dict = {}
-    old_guids_by_file: dict[str, list[str]] = {}
-
-    if use_cache:
-        try:
-            prev = json.loads(cache_path.read_text(encoding="utf-8"))
-            if prev.get("dirs") == key:
-                prev_files         = {sp: fp for sp, fp in prev.get("files", {}).items()
-                                      if isinstance(fp, list) and len(fp) == 2}
-                prev_guids_by_file = prev.get("guids_by_file", {})
-
-                if prev_files:
-                    # Existence + fingerprint spot-check (cheap: os.stat() per
-                    # cached file, no file content is read). This alone is
-                    # sufficient to detect deleted/modified files — new files
-                    # don't need special handling here since the main loop
-                    # below naturally treats anything missing from old_files
-                    # as new and reads it.
-                    #
-                    # NOTE: a previous version of this check also compared a
-                    # total on-disk PNG count against the cached file count
-                    # as a fast-path gate. That was wrong: the cache only
-                    # ever stores files matching this collector's content
-                    # type (chara cards / scenes / coordinates), while the
-                    # disk count included every PNG in the folder — other
-                    # content types, overlays, anything. Those two numbers
-                    # could never match whenever the folder held any mixed
-                    # content (e.g. a staging folder), so the cache was
-                    # silently rebuilt from scratch on every single run even
-                    # when nothing had changed.
-                    cache_ok = True
-                    for sp, fp in prev_files.items():
-                        p = Path(sp)
-                        if not p.exists():
-                            logger.info("DLMOD", f"{label} cache stale (deleted files) — rebuilding")
-                            cache_ok = False
-                            break
-                        if _file_fp(p) != (fp[0], fp[1]):
-                            logger.info("DLMOD", f"{label} cache stale (modified files) — rebuilding")
-                            cache_ok = False
-                            break
-                    if cache_ok:
-                        old_files         = prev_files
-                        old_guids_by_file = prev_guids_by_file
-                        logger.info("DLMOD", f"{label} cache loaded: {len(old_files)} file fingerprints")
-                else:
-                    logger.info("DLMOD", f"{label} cache empty — building for the first time")
-        except Exception:
-            pass
-
-    all_pngs: list[Path] = []
-    for d in dirs:
-        if d.exists():
-            all_pngs.extend(d.rglob("*.png"))
-
-    guids:     set[str]        = set()
-    new_files: dict            = {}
-    new_guids_by_file: dict[str, list[str]] = {}
-    to_read:   list[Path]      = []
-
-    for png in all_pngs:
-        sp = str(png)
-        fp = _file_fp(png)
-        old = old_files.get(sp)
-        if old is not None and (old[0], old[1]) == fp and sp in old_guids_by_file:
-            file_guids = old_guids_by_file[sp]
-            guids.update(file_guids)
-            new_files[sp] = old
-            new_guids_by_file[sp] = file_guids
-        else:
-            to_read.append(png)
-
-    reused = len(all_pngs) - len(to_read)
-    if reused:
-        logger.info("DLMOD", f"{label} cache: {reused} unchanged, {len(to_read)} new/changed")
-    else:
-        logger.info("DLMOD", f"Scanning {len(to_read)} {label.lower()}(s) for mod GUIDs...")
-
-    for png in to_read:
-        sp = str(png)
-        fp = _file_fp(png)
-        try:
-            raw = png.read_bytes()
-            if is_valid(raw):
-                file_guids = [g for g in parse_guids(png) if g]
-                guids.update(file_guids)
-                new_files[sp] = [fp[0], fp[1]]
-                new_guids_by_file[sp] = file_guids
-        except Exception:
-            pass
-
-    if use_cache:
-        # Store guids_by_file for per-file incremental reuse next run
-        data = {
-            "dirs":           key,
-            "file_count":     len(new_files),
-            "guids":          sorted(guids),
-            "files":          new_files,
-            "guids_by_file":  new_guids_by_file,
-        }
-        try:
-            cache_path.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
-            logger.info("DLMOD", f"{label} cache saved: {len(guids)} GUIDs from {len(new_files)} files")
-        except Exception:
-            pass
-    else:
-        logger.info("DLMOD", f"{label} scan complete: {len(guids)} GUIDs")
-
-    return guids
-
-
-def _collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
-    """Incrementally collect GUIDs referenced by chara cards."""
-    return _collect_png_guids(
-        chara_dirs, use_cache, CHARA_CACHE_FILE, "Chara",
-        lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS),
-        parse_chara_guids,
-    )
-
-
-def _collect_scene_guids(scene_dirs: list[Path], use_cache: bool) -> set[str]:
-    """Incrementally collect GUIDs referenced by Studio scenes."""
-    return _collect_png_guids(
-        scene_dirs, use_cache, SCENE_CACHE_FILE, "Scene",
-        lambda raw: get_card_type(raw) == CardType.SCENE,
-        parse_scene_guids,
-    )
-
-
-def _collect_coord_guids(coord_dirs: list[Path], use_cache: bool) -> set[str]:
-    """Incrementally collect GUIDs referenced by coordinate cards."""
-    return _collect_png_guids(
-        coord_dirs, use_cache, COORD_CACHE_FILE, "Coord",
-        lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw),
-        parse_coord_guids,
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -745,17 +569,17 @@ class DownloadMissingMods(BaseTask):
         # ── Step 3: chara + scene + coord GUIDs ─────────────────────────────
         chara_guids: set[str] = set()
         if scan_chara:
-            chara_guids = _collect_chara_guids(chara_dirs, self.use_cache)
+            chara_guids = collect_chara_guids(chara_dirs, self.use_cache)
             logger.info("DLMOD", f"Chara references: {len(chara_guids)} unique GUIDs")
 
         scene_guids: set[str] = set()
         if scan_scene and scene_dirs:
-            scene_guids = _collect_scene_guids(scene_dirs, self.use_cache)
+            scene_guids = collect_scene_guids(scene_dirs, self.use_cache)
             logger.info("DLMOD", f"Scene references: {len(scene_guids)} unique GUIDs")
 
         coord_guids: set[str] = set()
         if scan_coord and coord_dirs:
-            coord_guids = _collect_coord_guids(coord_dirs, self.use_cache)
+            coord_guids = collect_coord_guids(coord_dirs, self.use_cache)
             logger.info("DLMOD", f"Coord references: {len(coord_guids)} unique GUIDs")
 
         referenced_guids = chara_guids | scene_guids | coord_guids
