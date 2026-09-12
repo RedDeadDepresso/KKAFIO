@@ -303,7 +303,7 @@
     "DuplicateAction": {
       "type": "select",
       "label": "Duplicate Action",
-      "description": "What to do with duplicate files once a duplicate set is found. 'Move & Rename' (default) moves duplicates into the _duplicates_ folder and renames them so it's clear which card they're a copy of — if Keep Which Copy is 'None — move all copies', the first duplicate found keeps its own name and the rest are renamed after it with a number (e.g. bar.png, bar_1.png, bar_2.png...); otherwise every moved duplicate is renamed to the name of the copy kept in the source, plus a number (e.g. foo_1.png, foo_2.png...). 'Move' moves duplicates into the _duplicates_ folder keeping their original filenames. 'Delete' sends duplicates straight to the Recycle Bin instead of moving them.",
+      "description": "What to do with duplicate files once a duplicate set is found:\n• Move & Rename — move duplicates into _duplicates_ and rename them after the kept copy (or the first duplicate found, if Keep Which Copy is 'None'), plus a number, e.g. foo_1.png, foo_2.png (default)\n• Move — move duplicates into _duplicates_ keeping their original filenames\n• Delete — send duplicates straight to the Recycle Bin",
       "default_case": "Move & Rename",
       "cases": [
         {
@@ -323,112 +323,45 @@
         "DuplicateAction": "{case.name}"
       }
     },
-    "Chara": {
-      "type": "switch",
-      "label": "Chara",
-      "description": "Include character cards.",
-      "default_case": "Yes",
+    "InstallContentTypes": {
+      "type": "checkbox",
+      "label": "Content Types",
+      "description": "Which content types to include. All five are included by default.",
+      "default_case": ["Chara", "Mods", "Coords", "Scenes", "Overlays"],
       "cases": [
         {
-          "name": "Yes",
-          "label": "Yes",
+          "name": "Chara",
+          "label": "Chara",
           "pipeline_override": {
             "Chara": true
           }
         },
         {
-          "name": "No",
-          "label": "No",
-          "pipeline_override": {
-            "Chara": false
-          }
-        }
-      ]
-    },
-    "Mods": {
-      "type": "switch",
-      "label": "Mods",
-      "description": "Include zipmod files.",
-      "default_case": "Yes",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Yes",
+          "name": "Mods",
+          "label": "Mods",
           "pipeline_override": {
             "Mods": true
           }
         },
         {
-          "name": "No",
-          "label": "No",
-          "pipeline_override": {
-            "Mods": false
-          }
-        }
-      ]
-    },
-    "Coords": {
-      "type": "switch",
-      "label": "Coords",
-      "description": "Include coordinate cards.",
-      "default_case": "Yes",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Yes",
+          "name": "Coords",
+          "label": "Coords",
           "pipeline_override": {
             "Coords": true
           }
         },
         {
-          "name": "No",
-          "label": "No",
-          "pipeline_override": {
-            "Coords": false
-          }
-        }
-      ]
-    },
-    "Scenes": {
-      "type": "switch",
-      "label": "Scenes",
-      "description": "Include Studio scene cards.",
-      "default_case": "Yes",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Yes",
+          "name": "Scenes",
+          "label": "Scenes",
           "pipeline_override": {
             "Scenes": true
           }
         },
         {
-          "name": "No",
-          "label": "No",
-          "pipeline_override": {
-            "Scenes": false
-          }
-        }
-      ]
-    },
-    "Overlays": {
-      "type": "switch",
-      "label": "Overlays",
-      "description": "Include unclassified PNG overlays.",
-      "default_case": "Yes",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "Yes",
+          "name": "Overlays",
+          "label": "Overlays",
           "pipeline_override": {
             "Overlays": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "No",
-          "pipeline_override": {
-            "Overlays": false
           }
         }
       ]
@@ -856,7 +789,7 @@
     "CheckSharedMods": {
       "type": "switch",
       "label": "Check for Shared Mods",
-      "description": "Before deleting a zipmod, scan every character card in the game's chara folders, every scene in the Studio scene folder (if installed), and every coordinate card in the game's coordinate folder to make sure no other character, scene, or coordinate still needs it. Mods still in use elsewhere are kept instead of deleted. This scan reuses the same GUID caches as Download Missing Mods when Use Cache is on. On by default; turning this off speeds up the task but risks breaking other characters/coordinates that share a mod with the one(s) you're deleting.",
+      "description": "Before deleting a zipmod, check that no other installed character, scene, or coordinate still uses it, and keep it if so. On by default; disabling speeds things up but risks breaking content that shares a mod with what you're deleting.",
       "default_case": "Yes",
       "cases": [
         {
@@ -996,11 +929,7 @@
       "group": ["card-management"],
       "option": [
         "InputPath",
-        "Chara",
-        "Mods",
-        "Coords",
-        "Scenes",
-        "Overlays",
+        "InstallContentTypes",
         "FileConflicts",
         "ExtractArchive",
         "ArchivePassword"
@@ -1013,7 +942,7 @@
       "default_check": false,
       "description": "Uninstall character cards and their mods from the game",
       "group": ["card-management"],
-      "option": ["InputPath", "Chara", "Mods", "Coords", "Scenes", "Overlays"]
+      "option": ["InputPath", "InstallContentTypes"]
     },
     {
       "name": "GroupChara",

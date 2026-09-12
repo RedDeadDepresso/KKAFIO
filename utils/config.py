@@ -158,11 +158,13 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
     if task_name == "InstallContents":
         _set("InputPath",      "InputPath")
         _set("ExtractArchive", "ExtractArchive")
-        _set("Chara",          "Chara")
-        _set("Mods",           "Mods")
-        _set("Coords",         "Coords")
-        _set("Scenes",         "Scenes")
-        _set("Overlays",       "Overlays")
+        selected = _extract_opt(opt_values, "InstallContentTypes")
+        if selected is not None:
+            cfg["Chara"]    = "Chara"    in selected
+            cfg["Mods"]     = "Mods"     in selected
+            cfg["Coords"]   = "Coords"   in selected
+            cfg["Scenes"]   = "Scenes"   in selected
+            cfg["Overlays"] = "Overlays" in selected
         v = _extract_opt(opt_values, "FileConflicts")
         if v: cfg["FileConflicts"] = v
         v = _extract_opt(opt_values, "ArchivePassword")
@@ -170,11 +172,13 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "UninstallContents":
         _set("InputPath", "InputPath")
-        _set("Chara",     "Chara")
-        _set("Mods",      "Mods")
-        _set("Coords",    "Coords")
-        _set("Scenes",    "Scenes")
-        _set("Overlays",  "Overlays")
+        selected = _extract_opt(opt_values, "InstallContentTypes")
+        if selected is not None:
+            cfg["Chara"]    = "Chara"    in selected
+            cfg["Mods"]     = "Mods"     in selected
+            cfg["Coords"]   = "Coords"   in selected
+            cfg["Scenes"]   = "Scenes"   in selected
+            cfg["Overlays"] = "Overlays" in selected
 
     elif task_name == "FilterConvertKKS":
         _set("InputPath",      "InputPath")
