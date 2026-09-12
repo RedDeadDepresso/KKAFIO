@@ -1,6 +1,6 @@
 [project]
 name = "kkafio"
-version = "2.0.0"
+version = "2.1.0"
 description = "Koikatsu Auto File I/O. Create backup, filter and convert kks cards, install/remove chara given a folder."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -30,7 +30,6 @@ build = [
 [tool.hatch.build.targets.wheel]
 include = [
   "kkafio_cli.py",
-  "utils/data/*.json",
 ]
 
 [build-system]
