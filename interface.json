@@ -300,27 +300,28 @@
         "Keep": "{case.name}"
       }
     },
-    "DeleteDuplicates": {
-      "type": "switch",
-      "label": "Delete Duplicates",
-      "description": "Send duplicates to Recycle Bin (otherwise move to _duplicates_ folder)",
-      "default_case": "No",
+    "DuplicateAction": {
+      "type": "select",
+      "label": "Duplicate Action",
+      "description": "What to do with duplicate files once a duplicate set is found. 'Move & Rename' (default) moves duplicates into the _duplicates_ folder and renames them so it's clear which card they're a copy of — if Keep Which Copy is 'None — move all copies', the first duplicate found keeps its own name and the rest are renamed after it with a number (e.g. bar.png, bar_1.png, bar_2.png...); otherwise every moved duplicate is renamed to the name of the copy kept in the source, plus a number (e.g. foo_1.png, foo_2.png...). 'Move' moves duplicates into the _duplicates_ folder keeping their original filenames. 'Delete' sends duplicates straight to the Recycle Bin instead of moving them.",
+      "default_case": "Move & Rename",
       "cases": [
         {
-          "name": "Yes",
-          "label": "Delete",
-          "pipeline_override": {
-            "Delete": true
-          }
+          "name": "Move & Rename",
+          "label": "Move & Rename"
         },
         {
-          "name": "No",
-          "label": "Move to folder",
-          "pipeline_override": {
-            "Delete": false
-          }
+          "name": "Move",
+          "label": "Move"
+        },
+        {
+          "name": "Delete",
+          "label": "Delete"
         }
-      ]
+      ],
+      "pipeline_override": {
+        "DuplicateAction": "{case.name}"
+      }
     },
     "Chara": {
       "type": "switch",
@@ -983,7 +984,7 @@
         "InputPath",
         "FuzzyMatching",
         "KeepStrategy",
-        "DeleteDuplicates"
+        "DuplicateAction"
       ]
     },
     {

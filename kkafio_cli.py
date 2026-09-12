@@ -261,19 +261,19 @@ def run_group_chara(config, file_manager, input_path: str | None = None,
 
 
 def run_filter_duplicate_contents(config, file_manager, input_path: str | None = None,
-                          delete: bool | None = None, fuzzy: bool | None = None,
-                          keep: str | None = None):
+                          fuzzy: bool | None = None,
+                          keep: str | None = None, duplicate_action: str | None = None):
     from tasks.filter_duplicate_contents import FilterDuplicateContents
     from pathlib import Path
     if input_path is not None:
         config.filter_duplicate_contents["InputPath"] = Path(input_path)
     module = FilterDuplicateContents(config, file_manager)
-    if delete is not None:
-        module.delete = delete
     if fuzzy is not None:
         module.fuzzy_chara = fuzzy
     if keep is not None:
         module.keep = keep
+    if duplicate_action is not None:
+        module.duplicate_action = duplicate_action
     module.run()
 
 
@@ -617,18 +617,19 @@ def cmd_filter_duplicate_contents(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["FilterDuplicateContents"]["Enable"] = True
-        delete = None
-        if args.delete is True:
-            delete = True
-        elif args.delete is False:
-            delete = False
         fuzzy = None
         if args.fuzzy is True:
             fuzzy = True
         elif args.fuzzy is False:
             fuzzy = False
+        duplicate_action = {
+            "move-rename": "Move & Rename",
+            "move":        "Move",
+            "delete":      "Delete",
+        }.get(args.action)
         run_filter_duplicate_contents(config, file_manager, input_path=args.input,
-                              delete=delete, fuzzy=fuzzy, keep=args.keep)
+                              fuzzy=fuzzy, keep=args.keep,
+                              duplicate_action=duplicate_action)
     except SystemExit:
         raise
     except Exception:
@@ -915,8 +916,8 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Scans the input folder recursively for duplicate PNG cards and zipmod files. "
             "Duplicates are identified by content (not filename). "
-            "By default they are moved to a _duplicates_/ subfolder. "
-            "With --delete they are sent to the recycle bin."
+            "By default they are moved to a _duplicates_/ subfolder and renamed. "
+            "With --action delete they are sent to the recycle bin instead."
         ),
     )
     p.add_argument("--input", "-i", metavar="DIR", default=None,
@@ -929,11 +930,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--keep", metavar="STRATEGY", default=None,
                    choices=['None — move all copies', 'Newest', 'Oldest', 'Biggest file size', 'Smallest file size', 'Last alphabetically', 'First alphabetically'],
                    help="Which copy to keep as the original (overrides config)")
-    g2 = p.add_mutually_exclusive_group()
-    g2.add_argument("--delete",    dest="delete", action="store_true",  default=None,
-                    help="Send duplicates to recycle bin (overrides config)")
-    g2.add_argument("--no-delete", dest="delete", action="store_false",
-                    help="Move duplicates to _duplicates_/ folder (overrides config)")
+    p.add_argument("--action", choices=["move-rename", "move", "delete"], default=None,
+                   help="What to do with duplicates (overrides config). 'move-rename' (default) "
+                        "moves duplicates to _duplicates_/ and renames them after the kept copy "
+                        "(or the first duplicate found, if --keep is 'None — move all copies'), "
+                        "with a number suffix. 'move' moves them to _duplicates_/ keeping their "
+                        "original filenames. 'delete' sends them straight to the recycle bin.")
     p.set_defaults(func=cmd_filter_duplicate_contents)
 
     # create-backup

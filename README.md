@@ -55,7 +55,12 @@
   - `overlays/` — unclassified PNGs
   - `mods/` — zipmod files
 - **Keep strategy** controls which copy of a duplicate set is kept in place: Newest, Oldest, Biggest file size (default), Smallest file size, Last alphabetically, First alphabetically, or None (move all copies).
-- **Optional:** Send duplicates directly to the recycle bin instead of moving them.
+- **Duplicate Action** controls what happens to the copies that aren't kept:
+  - **Move & Rename** *(default)*: moves duplicates into `_duplicates_/<category>/` and renames them so it's obvious which card they're a copy of.
+    - If **Keep strategy** is **None** (all copies moved, none kept in place), the first duplicate found in each set keeps its own name, and every other duplicate in that set is renamed after it with a number — e.g. `bar.png`, `bar_1.png`, `bar_2.png`.
+    - If **Keep strategy** is anything else, every moved duplicate is renamed to the name of the copy that stayed in the source, plus a number — e.g. the kept `foo.png` leaves duplicates named `foo_1.png`, `foo_2.png`.
+  - **Move**: moves duplicates into `_duplicates_/<category>/` keeping their original filenames.
+  - **Delete**: sends duplicates straight to the recycle bin instead of moving them.
 
 **5. Download Missing Mods**
 
@@ -311,7 +316,7 @@ kkafio_cli filter-convert-kks [--input DIR]
 kkafio_cli filter-duplicate-contents [--input DIR]
                              [--fuzzy | --no-fuzzy]
                              [--keep STRATEGY]
-                             [--delete | --no-delete]
+                             [--action move-rename|move|delete]
 
 kkafio_cli install-contents   [--input DIR]
                            [--extract-archive | --no-extract-archive]

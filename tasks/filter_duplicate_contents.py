@@ -24,6 +24,14 @@ KEEP_SMALLEST  = "Smallest file size"
 KEEP_LAST_LEX  = "Last alphabetically"
 KEEP_FIRST_LEX = "First alphabetically"
 
+# ---------------------------------------------------------------------------
+# Duplicate action constants — must match OptionsConfigItem case names exactly
+# ---------------------------------------------------------------------------
+
+ACTION_MOVE_RENAME = "Move & Rename"
+ACTION_MOVE        = "Move"
+ACTION_DELETE      = "Delete"
+
 Category = Literal["chara", "coordinate", "mods", "overlays", "scene"]
 
 # ---------------------------------------------------------------------------
@@ -166,11 +174,12 @@ def _send_to_bin(path: Path) -> bool:
         return False
 
 
-def _move_to_folder(path: Path, dest_folder: Path) -> bool:
+def _move_to_folder(path: Path, dest_folder: Path, dest_name: str | None = None) -> bool:
     dest_folder.mkdir(parents=True, exist_ok=True)
-    dest = dest_folder / path.name
+    name = dest_name if dest_name else path.name
+    dest = dest_folder / name
     if dest.exists():
-        stem, suffix = path.stem, path.suffix
+        stem, suffix = Path(name).stem, Path(name).suffix
         counter = 1
         while dest.exists():
             dest = dest_folder / f"{stem}_{counter}{suffix}"
@@ -181,6 +190,34 @@ def _move_to_folder(path: Path, dest_folder: Path) -> bool:
     except Exception as e:
         logger.error("DUPLIC", f"Could not move {path.name} - {e}")
         return False
+
+
+def _build_rename_map(to_handle: list[Path], keep_path: Path | None) -> dict[Path, str]:
+    """Work out the target filename for each duplicate about to be moved.
+
+    - keep_path is not None (a copy is being kept in the source): every
+      moved duplicate is renamed to the kept file's name + a number,
+      e.g. keep "foo.png" -> duplicates "foo_1.png", "foo_2.png", ...
+    - keep_path is None (all copies are being moved, none kept): the first
+      duplicate found keeps its own name unchanged, and the rest are
+      renamed after it with a number, e.g. "bar.png", "bar_1.png",
+      "bar_2.png", ...
+    """
+    rename_map: dict[Path, str] = {}
+    if not to_handle:
+        return rename_map
+
+    if keep_path is not None:
+        base_stem = keep_path.stem
+        for i, p in enumerate(to_handle, start=1):
+            rename_map[p] = f"{base_stem}_{i}{p.suffix}"
+    else:
+        base_stem = to_handle[0].stem
+        rename_map[to_handle[0]] = f"{base_stem}{to_handle[0].suffix}"
+        for i, p in enumerate(to_handle[1:], start=1):
+            rename_map[p] = f"{base_stem}_{i}{p.suffix}"
+
+    return rename_map
 
 
 # ---------------------------------------------------------------------------
@@ -248,9 +285,9 @@ class FilterDuplicateContents:
         self.config       = config
         self.file_manager = file_manager
         cfg = self.config.filter_duplicate_contents
-        self.delete      : bool = cfg.get("Delete",     False)
         self.fuzzy_chara : bool = cfg.get("FuzzyChara", False)
         self.keep        : str  = cfg.get("Keep",       KEEP_BIGGEST)
+        self.duplicate_action : str = cfg.get("DuplicateAction", ACTION_MOVE_RENAME)
 
     def run(self, folder_path: Path | None = None) -> None:
         if folder_path is None:
@@ -261,10 +298,10 @@ class FilterDuplicateContents:
         validate_input_path("DUPLIC", folder_path)
 
         logger.line()
-        logger.info("DUPLIC", f"Scanning      : {folder_path}")
-        logger.info("DUPLIC", f"Keep strategy : {self.keep}")
-        logger.info("DUPLIC", f"Fuzzy chara   : {self.fuzzy_chara}")
-        logger.info("DUPLIC", f"Delete mode   : {self.delete}")
+        logger.info("DUPLIC", f"Scanning        : {folder_path}")
+        logger.info("DUPLIC", f"Keep strategy   : {self.keep}")
+        logger.info("DUPLIC", f"Fuzzy chara     : {self.fuzzy_chara}")
+        logger.info("DUPLIC", f"Duplicate action: {self.duplicate_action}")
 
         # ------------------------------------------------------------------
         # 1. Collect all files
@@ -429,20 +466,29 @@ class FilterDuplicateContents:
             if keep_path:
                 logger.info("DUPLIC", f"Keeping : {keep_path.name}")
 
+            rename_map: dict[Path, str] = {}
+            if self.duplicate_action == ACTION_MOVE_RENAME:
+                rename_map = _build_rename_map(to_handle, keep_path)
+
             for path in to_handle:
-                if self.delete:
+                if self.duplicate_action == ACTION_DELETE:
                     if _send_to_bin(path):
                         logger.removed("DUPLIC", path.name)
                         counts[category] += 1
                 else:
                     dest = duplicates_root / category
-                    if _move_to_folder(path, dest):
-                        logger.success("DUPLIC",
-                            f"Moved to _duplicates_/{category}/: {path.name}")
+                    dest_name = rename_map.get(path)
+                    if _move_to_folder(path, dest, dest_name=dest_name):
+                        if dest_name and dest_name != path.name:
+                            logger.success("DUPLIC",
+                                f"Moved to _duplicates_/{category}/: {path.name} -> {dest_name}")
+                        else:
+                            logger.success("DUPLIC",
+                                f"Moved to _duplicates_/{category}/: {path.name}")
                         counts[category] += 1
 
         logger.line()
-        action = "Deleted" if self.delete else "Moved"
+        action = "Deleted" if self.duplicate_action == ACTION_DELETE else "Moved"
         logger.success(
             "DUPLIC",
             f"{action} - chara: {counts['chara']}, "
