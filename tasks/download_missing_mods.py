@@ -68,6 +68,7 @@ def _make_http_client(cookies: dict | None = None):
         cookies=cookies or {},
         follow_redirects=True,
         timeout=60,
+        http2=True,
     )
 
 

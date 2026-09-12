@@ -56,6 +56,7 @@ def _is_valid(session: str) -> bool:
             cookies={"kkd_session": session},
             timeout=10,
             follow_redirects=True,
+            http2=True,
         )
         r.raise_for_status()
         data = r.json()

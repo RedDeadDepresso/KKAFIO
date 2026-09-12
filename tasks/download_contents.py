@@ -138,7 +138,7 @@ def _make_client(cookies: dict | None = None):
     }
     return httpx.AsyncClient(
         limits=limits, headers=headers, cookies=cookies or {},
-        follow_redirects=True, timeout=30,
+        follow_redirects=True, timeout=30, http2=True,
     )
 
 
