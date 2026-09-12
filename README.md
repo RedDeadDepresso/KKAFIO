@@ -134,21 +134,22 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Warning:** Group Chara uses card metadata to extract character names. It is recommended to use **Rename Chara after Group Chara if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
 - **Warning:** It is possible to modify the prompt to allow for transliteration, rather than limiting it to just the character's English name. However, the transliteration of Chinese characters can differ significantly from that of English characters. Transliterating Japanese characters tends to yield better results, although there may be exceptions.
 
-**11. Archive Chara/Scenes**
+**11. Archive Cards**
 
-- Given a list of character cards and/or Studio scene files, bundles each one with its required zipmods (and, for chara cards, matching coordinate files) into a single archive.
-- Coordinates are matched by colour fingerprint (not filename), so cards from different mod setups are handled correctly. Scenes don't have coordinates, so this step is skipped for them.
+- Given a list of character cards, coordinate cards, and/or Studio scene files, bundles each one with its required zipmods into a single archive.
+- **Include Coordinates** *(on by default)*: when a selected file is a character card, also bundles the coordinate cards it uses (matched by colour fingerprint, not filename) along with their mods. Disable to archive the character card by itself. This option has no effect on coordinate cards or scenes selected directly — a coordinate card is always archived with just its own mods, and scenes never have coordinates.
 - Zipmods are found by GUID. Sideloader Modpack mods are excluded by default (see [Modpack Index](#modpack-index) below).
 - **Auto-resolve**: if the card/scene lives inside the game folder, mods and coordinate directories are inferred automatically. Override with **Custom Mods Directory** and **Custom Coordinate Directory** if needed.
 - Output format: **7z** (default) or **zip**.
 - **Combined archive** option puts all selected files into one archive (default), or creates one archive per file.
 
-**12. Delete Chara/Scenes**
+**12. Delete Cards**
 
-- Given a list of character cards and/or Studio scene files, sends each one together with its required zipmods (and matching coordinates, for chara cards) to the recycle bin.
-- Uses the same path resolution and coordinate matching as Archive Chara/Scenes.
+- Given a list of character cards, coordinate cards, and/or Studio scene files, sends each one together with its required zipmods to the recycle bin.
+- **Include Coordinates** *(on by default)*: when a selected file is a character card, also deletes the coordinate cards it uses (and their mods). Disable to delete only the character card. This option has no effect on coordinate cards or scenes selected directly.
+- Uses the same path resolution and coordinate matching as Archive Cards.
 - Never touches Sideloader Modpack mods.
-- **Check for Shared Mods** *(on by default)*: before deleting a zipmod, scans every character card in the game's chara folders and every scene in the Studio scene folder (if installed) to confirm no other character or scene still references it. Any zipmod still in use elsewhere is kept instead of deleted, and logged as such. Turning this off skips the scan (faster, especially with a large card collection) but reintroduces the risk described below.
+- **Check for Shared Mods** *(on by default)*: before deleting a zipmod, scans every character card in the game's chara folders, every scene in the Studio scene folder (if installed), and every coordinate card in the game's coordinate folder to confirm no other character, scene, or coordinate still references it. Any zipmod still in use elsewhere is kept instead of deleted, and logged as such. This scan reuses the same incremental GUID caches as Download Missing Mods (`kkafio_chara_guid_cache.json`, `kkafio_scene_guid_cache.json`, `kkafio_coord_guid_cache.json`) when **Use Cache** is on, so repeat runs skip re-parsing cards that haven't changed. Turning **Use Cache** off, or turning **Check for Shared Mods** off entirely, skips the scan (faster, especially with a large card collection) but reintroduces the risk described below.
 - **Warning:** The shared-mod check only covers **zipmods** — it does not check whether a **coordinate file** is shared between characters. Removing a coordinate used by multiple cards will still break all of them. Only use this task when you're certain any coordinate files being removed are exclusive to the card(s) you're deleting. Files can still be recovered from the Recycle Bin.
 
 ---
@@ -232,7 +233,7 @@ KKAFIO ships with two pre-built modpack index files:
 | `kkafio_modpack_index_kk.json` | Koikatsu / Koikatsu Party |
 | `kkafio_modpack_index_kks.json` | Koikatsu Sunshine |
 
-Archive Chara/Scenes, Delete Chara/Scenes, and Download Missing Mods use the index for the configured game type to instantly identify which required mods are covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
+Archive Cards, Delete Cards, and Download Missing Mods use the index for the configured game type to instantly identify which required mods are covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO falls back to scanning the local mods folder automatically.
 
 To regenerate the index after updating the Sideloader Modpack, run:
 
@@ -276,8 +277,8 @@ Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explo
 
 | Entry               | Action                                   |
 | -------------------- | ------------------------------------------ |
-| Archive Chara/Scene | `archive-chara-scenes <selected files>` |
-| Delete Chara/Scene  | `delete-chara-scenes <selected files>`  |
+| Archive Card/Scene | `archive-cards <selected files>` |
+| Delete Card/Scene  | `delete-cards <selected files>`  |
 
 Run `unregister_context_menu.bat` to remove all entries.
 
@@ -327,16 +328,18 @@ kkafio_cli group-chara     [--input DIR] [--include-subfolders]
 kkafio_cli ungroup-chara   [--input DIR]
                            [--delete-empty | --no-delete-empty]
 
-kkafio_cli archive-chara-scenes [CONTENT ...] [--output-dir DIR]
+kkafio_cli archive-cards  [CONTENT ...] [--output-dir DIR]
                            [--format 7z|zip]
                            [--combined | --no-combined]
                            [--include-modpack | --no-include-modpack]
+                           [--include-coordinates | --no-include-coordinates]
                            [--auto-resolve | --no-auto-resolve]
                            [--use-cache | --no-use-cache]
                            [--mods-dir DIR] [--coord-dir DIR]
 
-kkafio_cli delete-chara-scenes  [CONTENT ...]
+kkafio_cli delete-cards  [CONTENT ...]
                            [--check-shared-mods | --no-check-shared-mods]
+                           [--include-coordinates | --no-include-coordinates]
                            [--auto-resolve | --no-auto-resolve]
                            [--use-cache | --no-use-cache]
                            [--mods-dir DIR] [--coord-dir DIR]

@@ -162,13 +162,14 @@ def run_download_missing_mods(config, file_manager,
 
 
 
-def run_delete_chara_scenes(config, file_manager, content_paths: list[str] | None = None,
+def run_delete_cards(config, file_manager, content_paths: list[str] | None = None,
                      check_shared_mods: bool | None = None,
                      auto_resolve: bool | None = None,
                      use_cache: bool | None = None,
+                     include_coordinates: bool | None = None,
                      mods_dir: str | None = None, coord_dir: str | None = None):
-    from tasks.delete_chara_scenes import DeleteCharaScenes
-    module = DeleteCharaScenes(config, file_manager)
+    from tasks.delete_cards import DeleteCards
+    module = DeleteCards(config, file_manager)
     if content_paths is not None:
         module.content_paths = content_paths
     if check_shared_mods is not None:
@@ -177,6 +178,8 @@ def run_delete_chara_scenes(config, file_manager, content_paths: list[str] | Non
         module.auto_resolve = auto_resolve
     if use_cache is not None:
         module.use_cache = use_cache
+    if include_coordinates is not None:
+        module.include_coordinates = include_coordinates
     if mods_dir is not None:
         module.mods_dir_str = mods_dir
     if coord_dir is not None:
@@ -184,15 +187,16 @@ def run_delete_chara_scenes(config, file_manager, content_paths: list[str] | Non
     module.run()
 
 
-def run_archive_chara_scenes(config, file_manager, content_paths: list[str] | None = None,
+def run_archive_cards(config, file_manager, content_paths: list[str] | None = None,
                       fmt: str | None = None, auto_resolve: bool | None = None,
                       use_cache: bool | None = None,
                       include_modpack: bool | None = None,
                       combined: bool | None = None,
+                      include_coordinates: bool | None = None,
                       mods_dir: str | None = None, coord_dir: str | None = None,
                       output_dir: str | None = None):
-    from tasks.archive_chara_scenes import ArchiveCharaScenes
-    module = ArchiveCharaScenes(config, file_manager)
+    from tasks.archive_cards import ArchiveCards
+    module = ArchiveCards(config, file_manager)
     if content_paths is not None:
         module.content_paths = content_paths
     if fmt is not None:
@@ -205,6 +209,8 @@ def run_archive_chara_scenes(config, file_manager, content_paths: list[str] | No
         module.include_modpack = include_modpack
     if combined is not None:
         module.combined_archive = combined
+    if include_coordinates is not None:
+        module.include_coordinates = include_coordinates
     if mods_dir is not None:
         module.mods_dir_str = mods_dir
     if coord_dir is not None:
@@ -326,8 +332,8 @@ def cmd_run(args):
     )
 
     kkafio_task_map = {
-        "ArchiveCharaScenes":     lambda: run_archive_chara_scenes(config, file_manager),
-        "DeleteCharaScenes":      lambda: run_delete_chara_scenes(config, file_manager),
+        "ArchiveCards":     lambda: run_archive_cards(config, file_manager),
+        "DeleteCards":      lambda: run_delete_cards(config, file_manager),
         "DownloadContents":    lambda: run_download_contents(config, file_manager),
         "DownloadMissingMods": lambda: run_download_missing_mods(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
@@ -501,50 +507,54 @@ def cmd_download_missing_mods(args):
         sys.exit(1)
 
 
-def cmd_delete_chara_scenes(args):
+def cmd_delete_cards(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["DeleteCharaScenes"]["Enable"] = True
+        config.config_data["DeleteCards"]["Enable"] = True
         content_paths = args.content if args.content else None
-        check_shared_mods = None if args.check_shared_mods is None else bool(args.check_shared_mods)
-        auto_resolve = None if args.auto_resolve is None else bool(args.auto_resolve)
-        use_cache    = None if args.use_cache is None else bool(args.use_cache)
-        run_delete_chara_scenes(config, file_manager,
+        check_shared_mods   = None if args.check_shared_mods is None else bool(args.check_shared_mods)
+        auto_resolve        = None if args.auto_resolve is None else bool(args.auto_resolve)
+        use_cache           = None if args.use_cache is None else bool(args.use_cache)
+        include_coordinates = None if args.include_coordinates is None else bool(args.include_coordinates)
+        run_delete_cards(config, file_manager,
                          content_paths=content_paths,
                          check_shared_mods=check_shared_mods,
                          auto_resolve=auto_resolve,
                          use_cache=use_cache,
+                         include_coordinates=include_coordinates,
                          mods_dir=args.mods_dir, coord_dir=args.coord_dir)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("DeleteCharaScenes")
+        _write_traceback("DeleteCards")
         sys.exit(1)
 
 
-def cmd_archive_chara_scenes(args):
+def cmd_archive_cards(args):
     _clear_traceback()
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
-        config.config_data["ArchiveCharaScenes"]["Enable"] = True
-        content_paths   = args.content if args.content else None
-        auto_resolve    = None if args.auto_resolve is None else bool(args.auto_resolve)
-        use_cache       = None if args.use_cache is None else bool(args.use_cache)
-        include_modpack = None if args.include_modpack is None else bool(args.include_modpack)
-        combined        = None if args.combined is None else bool(args.combined)
-        run_archive_chara_scenes(config, file_manager,
+        config.config_data["ArchiveCards"]["Enable"] = True
+        content_paths       = args.content if args.content else None
+        auto_resolve        = None if args.auto_resolve is None else bool(args.auto_resolve)
+        use_cache           = None if args.use_cache is None else bool(args.use_cache)
+        include_modpack     = None if args.include_modpack is None else bool(args.include_modpack)
+        combined            = None if args.combined is None else bool(args.combined)
+        include_coordinates = None if args.include_coordinates is None else bool(args.include_coordinates)
+        run_archive_cards(config, file_manager,
                           content_paths=content_paths, fmt=args.format,
                           auto_resolve=auto_resolve,
                           use_cache=use_cache,
                           include_modpack=include_modpack,
                           combined=combined,
+                          include_coordinates=include_coordinates,
                           mods_dir=args.mods_dir, coord_dir=args.coord_dir,
                           output_dir=args.output_dir)
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("ArchiveCharaScenes")
+        _write_traceback("ArchiveCards")
         sys.exit(1)
 
 
@@ -770,16 +780,16 @@ def build_parser() -> argparse.ArgumentParser:
                     action="store_false")
     p.set_defaults(func=cmd_download_missing_mods)
 
-    # delete-chara-scenes
+    # delete-cards
     p = sub.add_parser(
-        "delete-chara-scenes",
-        help="Send character cards / Studio scenes and their associated mods/coords to the recycle bin",
+        "delete-cards",
+        help="Send character cards, coordinate cards, or Studio scenes and their associated mods/coords to the recycle bin",
     )
     p.add_argument("content", nargs="*", metavar="CONTENT",
-                   help="Character/scene PNG paths (default: DeleteCharaScenes.ContentPaths from config)")
+                   help="Character/coordinate/scene PNG paths (default: DeleteCards.ContentPaths from config)")
     g_shared = p.add_mutually_exclusive_group()
     g_shared.add_argument("--check-shared-mods",    dest="check_shared_mods", action="store_true",  default=None,
-                   help="Before deleting a zipmod, verify no other installed character/scene "
+                   help="Before deleting a zipmod, verify no other installed character/scene/coordinate "
                         "still uses it (default: on)")
     g_shared.add_argument("--no-check-shared-mods", dest="check_shared_mods", action="store_false",
                    help="Skip the shared-mod check — faster, but may delete mods other characters still need")
@@ -793,21 +803,27 @@ def build_parser() -> argparse.ArgumentParser:
                      help="Cache mod/coord directory scans (overrides config)")
     g_cache2.add_argument("--no-use-cache", dest="use_cache", action="store_false",
                      help="Disable cache and do a full scan (overrides config)")
+    g_coord = p.add_mutually_exclusive_group()
+    g_coord.add_argument("--include-coordinates",    dest="include_coordinates", action="store_true",  default=None,
+                   help="When deleting a character card, also delete its matching coordinate "
+                        "cards and their mods (default: on)")
+    g_coord.add_argument("--no-include-coordinates", dest="include_coordinates", action="store_false",
+                   help="Only delete the character card itself, leave its coordinates alone")
     p.add_argument("--mods-dir",  default=None, metavar="DIR",
                    help="Mods directory (only used when --no-auto-resolve)")
     p.add_argument("--coord-dir", default=None, metavar="DIR",
                    help="Coordinate directory (only used when --no-auto-resolve)")
-    p.set_defaults(func=cmd_delete_chara_scenes)
+    p.set_defaults(func=cmd_delete_cards)
 
-    # archive-chara-scenes
+    # archive-cards
     p = sub.add_parser(
-        "archive-chara-scenes",
-        help="Bundle character cards / Studio scenes with their zipmods and matching coordinates",
+        "archive-cards",
+        help="Bundle character cards, coordinate cards, or Studio scenes with their zipmods and matching coordinates",
     )
     p.add_argument("content", nargs="*", metavar="CONTENT",
-                   help="Character/scene PNG paths (default: ArchiveCharaScenes.ContentPaths from config)")
+                   help="Character/coordinate/scene PNG paths (default: ArchiveCards.ContentPaths from config)")
     p.add_argument("--format", choices=["7z", "zip"], default=None,
-                   help="Archive format (default: ArchiveCharaScenes.Format from config)")
+                   help="Archive format (default: ArchiveCards.Format from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
                    help="Auto-resolve mods and coord dirs (overrides config)")
@@ -828,13 +844,19 @@ def build_parser() -> argparse.ArgumentParser:
                     help="Put all cards in one archive (overrides config)")
     g3.add_argument("--no-combined", dest="combined", action="store_false",
                     help="One archive per card (overrides config)")
+    g4 = p.add_mutually_exclusive_group()
+    g4.add_argument("--include-coordinates",    dest="include_coordinates", action="store_true",  default=None,
+                    help="When archiving a character card, also bundle its matching coordinate "
+                         "cards and their mods (default: on)")
+    g4.add_argument("--no-include-coordinates", dest="include_coordinates", action="store_false",
+                    help="Only bundle the character card itself, leave its coordinates out")
     p.add_argument("--mods-dir",   default=None, metavar="DIR",
                    help="Mods directory override (only used when --no-auto-resolve)")
     p.add_argument("--coord-dir",  default=None, metavar="DIR",
                    help="Coordinate directory override")
     p.add_argument("--output-dir", default=None, metavar="DIR",
                    help="Output directory (default: same folder as chara card/scene)")
-    p.set_defaults(func=cmd_archive_chara_scenes)
+    p.set_defaults(func=cmd_archive_cards)
 
     # ungroup-chara
     p = sub.add_parser(

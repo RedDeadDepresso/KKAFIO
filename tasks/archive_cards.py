@@ -1,7 +1,7 @@
 """
-archive_chara_scenes.py — Bundle KK character cards (or Studio scenes) with
-                           their used zipmods and matching coordinate cards
-                           into a 7z or zip archive.
+archive_cards.py — Bundle KK character cards, coordinate cards (or Studio
+                    scenes) with their used zipmods and, for character cards,
+                    matching coordinate cards into a 7z or zip archive.
 """
 
 from datetime import datetime
@@ -13,7 +13,7 @@ from utils.chara_ops import (
     find_matching_coords, in_modpack_folder, parse_chara_guids,
     parse_coord_guids, parse_scene_guids, resolve_paths, scan_mods,
 )
-from utils.classifier import CardType, get_card_type
+from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import GameType
 from utils.logger import logger
 
@@ -24,29 +24,33 @@ ArchiveFormat = Literal["7z", "zip"]
 # Main module class
 # ---------------------------------------------------------------------------
 
-class ArchiveCharaScenes(BaseTask):
+class ArchiveCards(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.archive_chara_scenes
-        self.content_paths    : list[str] = cfg.get("ContentPaths", [])
-        self.format           : str       = cfg.get("Format", "7z")
-        self.auto_resolve     : bool      = cfg.get("AutoResolve", True)
-        self.use_cache        : bool      = cfg.get("UseCache", True)
-        self.include_modpack  : bool      = cfg.get("IncludeModpack", False)
-        self.combined_archive : bool      = cfg.get("CombinedArchive", True)
-        self.mods_dir_str     : str       = cfg.get("ModsDir", "")
-        self.coord_dir_str    : str       = cfg.get("CoordDir", "")
-        self.output_dir_str   : str       = cfg.get("OutputPath", "")
+        cfg = self.config.archive_cards
+        self.content_paths      : list[str] = cfg.get("ContentPaths", [])
+        self.format             : str       = cfg.get("Format", "7z")
+        self.auto_resolve       : bool      = cfg.get("AutoResolve", True)
+        self.use_cache          : bool      = cfg.get("UseCache", True)
+        self.include_modpack    : bool      = cfg.get("IncludeModpack", False)
+        self.combined_archive   : bool      = cfg.get("CombinedArchive", True)
+        self.include_coordinates: bool      = cfg.get("IncludeCoordinates", True)
+        self.mods_dir_str       : str       = cfg.get("ModsDir", "")
+        self.coord_dir_str      : str       = cfg.get("CoordDir", "")
+        self.output_dir_str     : str       = cfg.get("OutputPath", "")
 
     def _process_one(self, content_path: Path, game_base: Path,
                      mods_ov: Path | None,
                      coord_ov: Path | None) -> tuple[list[Path], list[Path], set[str], set[str]]:
         """Return (coord_paths, zipmod_paths, missing, all_guids) for a single
-        chara card or Studio scene."""
+        chara card, coordinate card, or Studio scene."""
         logger.info("ARCHV", f"Processing: {content_path.name}")
 
-        card_type = get_card_type(content_path)
+        raw       = content_path.read_bytes()
+        card_type = get_card_type(raw)
         is_scene  = card_type == CardType.SCENE
+        is_chara  = card_type in (CardType.KK, CardType.KKSP, CardType.KKS) and not is_scene
+        is_coord  = card_type == CardType.UNKNOWN and is_coordinate(raw)
 
         mods_dir, coord_dir = resolve_paths(
             content_path, game_base, self.auto_resolve, mods_ov, coord_ov)
@@ -58,11 +62,16 @@ class ArchiveCharaScenes(BaseTask):
             own_guids = parse_scene_guids(content_path)
             logger.info("ARCHV", f"  Zipmod GUIDs in scene : {len(own_guids)}")
             logger.info("ARCHV", "  Scene — skipping coordinate matching")
-        else:
+        elif is_coord:
+            own_guids = parse_coord_guids(content_path)
+            logger.info("ARCHV", f"  Zipmod GUIDs in coord : {len(own_guids)}")
+        elif is_chara:
             own_guids = parse_chara_guids(content_path)
             logger.info("ARCHV", f"  Zipmod GUIDs in chara : {len(own_guids)}")
 
-            if coord_dir and coord_dir.exists():
+            if not self.include_coordinates:
+                logger.info("ARCHV", "  IncludeCoordinates disabled — skipping coordinate matching")
+            elif coord_dir and coord_dir.exists():
                 from kkloader import KoikatuCharaData
                 try:
                     kc = KoikatuCharaData.load(str(content_path))
@@ -76,6 +85,9 @@ class ArchiveCharaScenes(BaseTask):
                     logger.error("ARCHV", f"  Could not match coords: {e}")
             else:
                 logger.info("ARCHV", "  Coordinate directory not available — skipping")
+        else:
+            own_guids = []
+            logger.warning("ARCHV", "  Unrecognized card type — archiving file as-is, no mods scanned")
 
         all_guids = set(own_guids) | coord_guids_all
         zipmod_paths: list[Path] = []
@@ -120,8 +132,9 @@ class ArchiveCharaScenes(BaseTask):
     @staticmethod
     def _display_name(content_path: Path) -> str:
         """Return the character's in-game name (or the filename stem for
-        scenes / on failure)."""
-        if get_card_type(content_path) == CardType.SCENE:
+        scenes, coordinates, / on failure)."""
+        card_type = get_card_type(content_path)
+        if card_type not in (CardType.KK, CardType.KKSP, CardType.KKS):
             return content_path.stem
         try:
             from kkloader import KoikatuCharaData
@@ -212,7 +225,7 @@ class ArchiveCharaScenes(BaseTask):
     def run(self) -> None:
         content_paths = [Path(p) for p in self.content_paths if p]
         if not content_paths:
-            logger.error("ARCHV", "No character cards or scenes specified")
+            logger.error("ARCHV", "No character cards, coordinates, or scenes specified")
             return
 
         game_base  = Path(self.config.config_data["Core"]["GamePath"])

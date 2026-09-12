@@ -160,10 +160,10 @@ regenerates itself if the folder's contents don't match what's cached.
 | File | Written inside | Used by | Caches |
 |---|---|---|---|
 | `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`utils/chara_ops.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
-| `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`utils/chara_ops.py`, used by Archive/Delete Chara/Scenes) | colour fingerprints per coordinate file |
-| `kkafio_chara_guid_cache.json` | the first configured chara directory | [Download Missing Mods](../wiki/Task-Download-Missing-Mods.md) | per-chara-card referenced mod GUIDs |
-| `kkafio_scene_guid_cache.json` | the first configured scene directory | Download Missing Mods (scene scan) | per-scene referenced mod GUIDs |
-| `kkafio_coord_guid_cache.json` | the first configured coordinate directory | Download Missing Mods (coordinate scan) | per-coordinate-card referenced mod GUIDs |
+| `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`utils/chara_ops.py`, used by Archive/Delete Cards) | colour fingerprints per coordinate file |
+| `kkafio_chara_guid_cache.json` | the first configured chara directory | [Download Missing Mods](../wiki/Task-Download-Missing-Mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
+| `kkafio_scene_guid_cache.json` | the first configured scene directory | Download Missing Mods (scene scan), Delete Cards' shared-mod check | per-scene referenced mod GUIDs |
+| `kkafio_coord_guid_cache.json` | the first configured coordinate directory | Download Missing Mods (coordinate scan), Delete Cards' shared-mod check | per-coordinate-card referenced mod GUIDs |
 | `kkafio_rename_cache.json` | the Rename Chara input folder | [Rename Chara](../wiki/Task-Rename-Chara.md) | which cards have already been renamed, and to what |
 
 None of these are meant to be edited by hand, and all are safe to delete —

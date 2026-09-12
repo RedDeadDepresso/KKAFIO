@@ -822,18 +822,40 @@
     "ContentPaths": {
       "type": "file_list",
       "name": "content_paths",
-      "label": "Character / Scene Cards",
-      "description": "Select character or Studio scene PNG files to operate on",
+      "label": "Character / Coordinate / Scene Cards",
+      "description": "Select character cards, coordinate cards, or Studio scene PNG files to operate on",
       "file_filter": "PNG files (*.png)",
       "default": [],
       "pipeline_override": {
         "ContentPaths": "{content_paths}"
       }
     },
+    "IncludeCoordinates": {
+      "type": "switch",
+      "label": "Include Coordinates",
+      "description": "When the selected file is a character card, also apply this action to the coordinate cards it uses (and their mods). Has no effect when the selected file is already a coordinate or a Studio scene. On by default.",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Include Coordinates",
+          "pipeline_override": {
+            "IncludeCoordinates": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Character Only",
+          "pipeline_override": {
+            "IncludeCoordinates": false
+          }
+        }
+      ]
+    },
     "CheckSharedMods": {
       "type": "switch",
       "label": "Check for Shared Mods",
-      "description": "Before deleting a zipmod, scan every character card in the game's chara folders and every scene in the Studio scene folder (if installed) to make sure no other character or scene still needs it. Mods still in use elsewhere are kept instead of deleted. On by default; turning this off speeds up the task but risks breaking other characters that share a mod with the one(s) you're deleting.",
+      "description": "Before deleting a zipmod, scan every character card in the game's chara folders, every scene in the Studio scene folder (if installed), and every coordinate card in the game's coordinate folder to make sure no other character, scene, or coordinate still needs it. Mods still in use elsewhere are kept instead of deleted. This scan reuses the same GUID caches as Download Missing Mods when Use Cache is on. On by default; turning this off speeds up the task but risks breaking other characters/coordinates that share a mod with the one(s) you're deleting.",
       "default_case": "Yes",
       "cases": [
         {
@@ -1026,18 +1048,19 @@
       ]
     },
     {
-      "name": "ArchiveCharaScenes",
-      "label": "🎁 Archive Characters/Scenes",
-      "entry": "ArchiveCharaScenes",
+      "name": "ArchiveCards",
+      "label": "🎁 Archive Cards",
+      "entry": "ArchiveCards",
       "default_check": false,
-      "description": "Bundle character cards or Studio scenes with zipmods and coordinates",
+      "description": "Bundle character cards, coordinate cards, or Studio scenes with their zipmods (and, for character cards, matching coordinates)",
       "group": ["card-management"],
       "option": [
         "OutputPath",
         "ContentPaths",
-        "ArchiveFormat",
         "CombinedArchive",
+        "ArchiveFormat",
         "IncludeModpack",
+        "IncludeCoordinates",
         "UseCache",
         "AutoResolve",
         "ModsDir",
@@ -1045,15 +1068,16 @@
       ]
     },
     {
-      "name": "DeleteCharaScenes",
-      "label": "🗑️ Delete Characters/Scenes",
-      "entry": "DeleteCharaScenes",
+      "name": "DeleteCards",
+      "label": "🗑️ Delete Cards",
+      "entry": "DeleteCards",
       "default_check": false,
-      "description": "Send character cards / Studio scenes and associated mods/coords to Recycle Bin",
+      "description": "Send character cards, coordinate cards, or Studio scenes and their associated mods/coords to Recycle Bin",
       "group": ["card-management"],
       "option": [
         "ContentPaths",
         "CheckSharedMods",
+        "IncludeCoordinates",
         "UseCache",
         "AutoResolve",
         "ModsDir",
@@ -1098,10 +1122,10 @@
           "name": "RenameChara"
         },
         {
-          "name": "ArchiveCharaScenes"
+          "name": "ArchiveCards"
         },
         {
-          "name": "DeleteCharaScenes"
+          "name": "DeleteCards"
         }
       ]
     },
@@ -1130,10 +1154,10 @@
           "name": "CreateBackup"
         },
         {
-          "name": "ArchiveCharaScenes"
+          "name": "ArchiveCards"
         },
         {
-          "name": "DeleteCharaScenes"
+          "name": "DeleteCards"
         }
       ]
     },

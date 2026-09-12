@@ -1,5 +1,5 @@
 """
-utils/chara_ops.py — Shared helpers for archive_chara_scenes and delete_chara_scenes.
+utils/chara_ops.py — Shared helpers for archive_cards and delete_cards.
 
 Extracted here to avoid cross-module imports and keep each task module focused
 on its own logic.  Nothing in this file depends on config or file_manager.
@@ -501,6 +501,177 @@ def _file_fp(p: Path) -> tuple[int, int]:
         return (int(st.st_mtime), st.st_size)
     except OSError:
         return (0, 0)
+
+
+# ---------------------------------------------------------------------------
+# Generic incremental PNG GUID collector (chara / scene / coordinate)
+# ---------------------------------------------------------------------------
+#
+# Shared by any task that needs "every mod GUID referenced by every card of a
+# given type in a folder" — e.g. DownloadMissingMods (to find what's missing)
+# and DeleteCards (to find what's still in use elsewhere before deleting a
+# zipmod). One cache file per content type, keyed by the folder set being
+# scanned, so the three tasks can all reuse the same on-disk cache.
+
+CHARA_GUID_CACHE_FILE = "kkafio_chara_guid_cache.json"
+SCENE_GUID_CACHE_FILE = "kkafio_scene_guid_cache.json"
+COORD_GUID_CACHE_FILE = "kkafio_coord_guid_cache.json"
+
+
+def collect_png_guids(
+    dirs: list[Path],
+    use_cache: bool,
+    cache_file: str,
+    label: str,
+    is_valid,
+    parse_guids,
+) -> set[str]:
+    """Incrementally collect GUIDs from a set of PNG-based card files.
+
+    Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
+    Only new or changed PNGs are fully read. Shared implementation used for
+    chara cards, Studio scenes, and coordinate cards — `is_valid(raw_bytes)`
+    decides whether a given PNG belongs to this collector's content type,
+    and `parse_guids` extracts the GUIDs from files that pass.
+
+    The cache file lives inside `dirs[0]`. When `use_cache` is False, this
+    does a full scan every time and does not read or write the cache.
+    """
+    if not dirs:
+        return set()
+
+    key        = "|".join(str(d) for d in dirs)
+    cache_path = dirs[0] / cache_file
+
+    old_files:  dict = {}
+    old_guids_by_file: dict[str, list[str]] = {}
+
+    if use_cache:
+        try:
+            prev = _json.loads(cache_path.read_text(encoding="utf-8"))
+            if prev.get("dirs") == key:
+                prev_files         = {sp: fp for sp, fp in prev.get("files", {}).items()
+                                      if isinstance(fp, list) and len(fp) == 2}
+                prev_guids_by_file = prev.get("guids_by_file", {})
+
+                if prev_files:
+                    # Existence + fingerprint spot-check (cheap: os.stat() per
+                    # cached file, no file content is read). This alone is
+                    # sufficient to detect deleted/modified files — new files
+                    # don't need special handling here since the main loop
+                    # below naturally treats anything missing from old_files
+                    # as new and reads it.
+                    cache_ok = True
+                    for sp, fp in prev_files.items():
+                        p = Path(sp)
+                        if not p.exists():
+                            logger.info("CACHE", f"{label} cache stale (deleted files) — rebuilding")
+                            cache_ok = False
+                            break
+                        if _file_fp(p) != (fp[0], fp[1]):
+                            logger.info("CACHE", f"{label} cache stale (modified files) — rebuilding")
+                            cache_ok = False
+                            break
+                    if cache_ok:
+                        old_files         = prev_files
+                        old_guids_by_file = prev_guids_by_file
+                        logger.info("CACHE", f"{label} cache loaded: {len(old_files)} file fingerprints")
+                else:
+                    logger.info("CACHE", f"{label} cache empty — building for the first time")
+        except Exception:
+            pass
+
+    all_pngs: list[Path] = []
+    for d in dirs:
+        if d.exists():
+            all_pngs.extend(d.rglob("*.png"))
+
+    guids:     set[str]        = set()
+    new_files: dict            = {}
+    new_guids_by_file: dict[str, list[str]] = {}
+    to_read:   list[Path]      = []
+
+    for png in all_pngs:
+        sp = str(png)
+        fp = _file_fp(png)
+        old = old_files.get(sp)
+        if old is not None and (old[0], old[1]) == fp and sp in old_guids_by_file:
+            file_guids = old_guids_by_file[sp]
+            guids.update(file_guids)
+            new_files[sp] = old
+            new_guids_by_file[sp] = file_guids
+        else:
+            to_read.append(png)
+
+    reused = len(all_pngs) - len(to_read)
+    if reused:
+        logger.info("CACHE", f"{label} cache: {reused} unchanged, {len(to_read)} new/changed")
+    else:
+        logger.info("CACHE", f"Scanning {len(to_read)} {label.lower()}(s) for mod GUIDs...")
+
+    for png in to_read:
+        sp = str(png)
+        fp = _file_fp(png)
+        try:
+            raw = png.read_bytes()
+            if is_valid(raw):
+                file_guids = [g for g in parse_guids(png) if g]
+                guids.update(file_guids)
+                new_files[sp] = [fp[0], fp[1]]
+                new_guids_by_file[sp] = file_guids
+        except Exception:
+            pass
+
+    if use_cache:
+        # Store guids_by_file for per-file incremental reuse next run
+        data = {
+            "dirs":           key,
+            "file_count":     len(new_files),
+            "guids":          sorted(guids),
+            "files":          new_files,
+            "guids_by_file":  new_guids_by_file,
+        }
+        try:
+            cache_path.write_text(
+                _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            logger.info("CACHE", f"{label} cache saved: {len(guids)} GUIDs from {len(new_files)} files")
+        except Exception:
+            pass
+    else:
+        logger.info("CACHE", f"{label} scan complete: {len(guids)} GUIDs")
+
+    return guids
+
+
+def collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
+    """Incrementally collect GUIDs referenced by chara cards in chara_dirs."""
+    from utils.classifier import CardType, get_card_type
+    return collect_png_guids(
+        chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara",
+        lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS),
+        parse_chara_guids,
+    )
+
+
+def collect_scene_guids(scene_dirs: list[Path], use_cache: bool) -> set[str]:
+    """Incrementally collect GUIDs referenced by Studio scenes in scene_dirs."""
+    from utils.classifier import CardType, get_card_type
+    return collect_png_guids(
+        scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene",
+        lambda raw: get_card_type(raw) == CardType.SCENE,
+        parse_scene_guids,
+    )
+
+
+def collect_coord_guids(coord_dirs: list[Path], use_cache: bool) -> set[str]:
+    """Incrementally collect GUIDs referenced by coordinate cards in coord_dirs."""
+    from utils.classifier import CardType, get_card_type, is_coordinate
+    return collect_png_guids(
+        coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord",
+        lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw),
+        parse_coord_guids,
+    )
 
 
 # ---------------------------------------------------------------------------

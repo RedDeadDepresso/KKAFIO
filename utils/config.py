@@ -119,8 +119,8 @@ _TASK_KEY = {
     "InstallContents":     "InstallContents",
     "UninstallContents":      "UninstallContents",
     "FilterConvertKKS": "FilterConvertKKS",
-    "DeleteCharaScenes":      "DeleteCharaScenes",
-    "ArchiveCharaScenes":     "ArchiveCharaScenes",
+    "DeleteCards":      "DeleteCards",
+    "ArchiveCards":     "ArchiveCards",
     "GroupChara":       "GroupChara",
     "RenameChara":      "RenameChara",
     "UngroupChara":     "UngroupChara",
@@ -134,8 +134,8 @@ _TASK_DEFAULTS = {
     "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallContents":      {"Enable": False, "InputPath": ""},
     "FilterConvertKKS": {"Enable": False, "InputPath": "", "Filter": False, "Convert": False, "ExtractArchive": True, "Password": "Skip"},
-    "DeleteCharaScenes":      {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
-    "ArchiveCharaScenes":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": ""},
+    "DeleteCards":      {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeCoordinates": True},
+    "ArchiveCards":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": "", "IncludeCoordinates": True},
     "GroupChara":       {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": ""},
     "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
@@ -184,23 +184,25 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         v = _extract_opt(opt_values, "ArchivePassword")
         if v: cfg["Password"] = v
 
-    elif task_name == "DeleteCharaScenes":
-        _set("ContentPaths",     "ContentPaths")
-        _set("CheckSharedMods",  "CheckSharedMods")
-        _set("AutoResolve", "AutoResolve")
-        _set("ModsDir",         "ModsDir")
-        _set("CoordDir",        "CoordDir")
-        _set("UseCache",    "UseCache")
+    elif task_name == "DeleteCards":
+        _set("ContentPaths",       "ContentPaths")
+        _set("CheckSharedMods",    "CheckSharedMods")
+        _set("AutoResolve",        "AutoResolve")
+        _set("ModsDir",            "ModsDir")
+        _set("CoordDir",           "CoordDir")
+        _set("UseCache",           "UseCache")
+        _set("IncludeCoordinates", "IncludeCoordinates")
 
-    elif task_name == "ArchiveCharaScenes":
-        _set("ContentPaths",    "ContentPaths")
-        _set("AutoResolve",     "AutoResolve")
-        _set("ModsDir",         "ModsDir")
-        _set("CoordDir",        "CoordDir")
-        _set("UseCache",        "UseCache")
-        _set("IncludeModpack",  "IncludeModpack")
-        _set("CombinedArchive", "CombinedArchive")
-        _set("OutputPath",      "OutputPath")
+    elif task_name == "ArchiveCards":
+        _set("ContentPaths",       "ContentPaths")
+        _set("AutoResolve",        "AutoResolve")
+        _set("ModsDir",            "ModsDir")
+        _set("CoordDir",           "CoordDir")
+        _set("UseCache",           "UseCache")
+        _set("IncludeModpack",     "IncludeModpack")
+        _set("CombinedArchive",    "CombinedArchive")
+        _set("OutputPath",         "OutputPath")
+        _set("IncludeCoordinates", "IncludeCoordinates")
         v = _extract_opt(opt_values, "ArchiveFormat")
         if v: cfg["Format"] = v
 
@@ -438,10 +440,10 @@ class Config:
                         logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
                         raise Exception(f"Path invalid: {path_obj}")
 
-        self.archive_chara_scenes    = self.config_data["ArchiveCharaScenes"]
+        self.archive_cards    = self.config_data["ArchiveCards"]
         self.download_missing_mods  = self.config_data["DownloadMissingMods"]
         self.download_contents   = self.config_data["DownloadContents"]
-        self.delete_chara_scenes     = self.config_data["DeleteCharaScenes"]
+        self.delete_cards     = self.config_data["DeleteCards"]
         self.create_backup    = self.config_data["CreateBackup"]
         self.filter_convert_kks           = self.config_data["FilterConvertKKS"]
         self.filter_duplicate_contents= self.config_data["FilterDuplicateContents"]

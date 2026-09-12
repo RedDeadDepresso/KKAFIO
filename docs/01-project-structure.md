@@ -26,8 +26,8 @@ KKAFIO-dev/
 │   ├── rename_chara.py
 │   ├── ungroup_chara.py
 │   ├── uninstall_contents.py
-│   ├── archive_chara_scenes.py
-│   └── delete_chara_scenes.py
+│   ├── archive_cards.py
+│   └── delete_cards.py
 │
 ├── utils/                           # Shared infrastructure, not task-specific
 │   ├── config.py                    # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
