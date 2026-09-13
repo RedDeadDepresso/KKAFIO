@@ -34,7 +34,7 @@ def get_card_type(card: str | Path | bytes):
 
 
 def is_male(image_bytes: bytes):
-    return b'sex\x00' in image_bytes
+    return b'sex\x01' not in image_bytes
 
 
 def is_coordinate(image_bytes: bytes):
