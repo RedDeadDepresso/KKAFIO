@@ -9,7 +9,10 @@ caller so the task can immediately process it (move/rename files) in the same
 run.
 
 On Windows uses a PowerShell WinForms dialog (same approach as
-password_dialog.py) so no extra runtime or Tcl/Tk dependency is needed.
+password_dialog.py) so no extra runtime or Tcl/Tk dependency is needed. The
+dialog process is tied to this process's lifetime via a Windows Job Object
+(see utils/job_object.py), so it's automatically closed if this process is
+killed while the dialog is still open.
 On macOS/Linux falls back to a terminal prompt.
 """
 
@@ -17,6 +20,8 @@ import os
 import subprocess
 import sys
 import tempfile
+
+from utils.job_object import die_with_parent
 
 
 def llm_dialog(title: str, prompt_text: str) -> str:
@@ -59,6 +64,16 @@ def _powershell_dialog(title: str, prompt_text: str) -> str:
         ps = f"""
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class KKAFIOWin32 {{
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+}}
+"@
 
 $promptText = [System.IO.File]::ReadAllText('{p}', [System.Text.Encoding]::UTF8)
 
@@ -124,6 +139,16 @@ $form.Controls.Add($pasteBtn)
 $form.AcceptButton = $pasteBtn
 $form.CancelButton = $cancelBtn
 
+# Force the window to the foreground even though it's launched from a
+# background/hidden process — Topmost alone isn't always enough, since
+# Windows can otherwise refuse to grant a newly created window focus
+# ("foreground lock"), which is why the dialog could appear behind
+# whatever app (e.g. a browser) currently has focus.
+$form.Add_Shown({{
+    $form.Activate()
+    [KKAFIOWin32]::SetForegroundWindow($form.Handle) | Out-Null
+}})
+
 $result = $form.ShowDialog()
 if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
     try {{
@@ -137,11 +162,14 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
 """
 
         try:
-            subprocess.run(
+            proc = subprocess.Popen(
                 ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
-                capture_output=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 creationflags=0x0800_0000,  # CREATE_NO_WINDOW (for the powershell.exe console)
             )
+            die_with_parent(proc)
+            proc.wait()  # no timeout — the user may take a while pasting into their LLM
             if os.path.isfile(response_path):
                 with open(response_path, "r", encoding="utf-8") as f:
                     return f.read().strip()
