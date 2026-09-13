@@ -61,7 +61,7 @@ $form.Width = 420
 $form.Height = 200
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
-$form.MinimizeBox = $false
+$form.MinimizeBox = $true
 $form.StartPosition = 'CenterScreen'
 $form.Topmost = $true
 
@@ -125,11 +125,7 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
                 creationflags=0x0800_0000,  # CREATE_NO_WINDOW (for the powershell.exe console)
             )
             die_with_parent(proc)
-            try:
-                proc.wait()
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                raise
+            proc.wait()
             if os.path.isfile(response_path) and os.path.getsize(response_path) > 0:
                 with open(response_path, "r", encoding="utf-8") as f:
                     return f.read()
