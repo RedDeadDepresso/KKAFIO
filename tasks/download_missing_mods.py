@@ -245,16 +245,31 @@ async def _download_via_teleget(
     if not parsed:
         logger.error("DLMOD", f"Cannot parse Telegram link: {tg_link}")
         return False
-    _, message_id = parsed
+    chat_identifier, message_id = parsed
 
     session_dir = CONFIG_DIR / "config" / "tg_session"
 
     # Fetch message metadata (filename, size) via a lightweight Telethon call
+    #
+    # [FIX-2026-09-13-ENTITY-RESOLUTION] Previously this called
+    # meta_client.get_messages(KK_ARCHIVE_CHAT_ID, ids=message_id) — using
+    # the hardcoded raw numeric chat ID and silently discarding
+    # chat_identifier (the "@username" / "-100..." value _parse_tme_link
+    # already extracted from the link). Telethon can only resolve a bare
+    # numeric peer ID into a usable InputPeer if it already has that
+    # entity's access_hash cached in the session file; on a cold cache
+    # (e.g. a freshly created session that has never interacted with this
+    # chat before) this raises:
+    #   ValueError: Could not find the input entity for PeerUser(user_id=...)
+    # chat_identifier, by contrast, is the "@KK_archive_modlibrary" username
+    # form for links like this one, which Telethon can resolve via a live
+    # API call even with no prior cache — so use it instead of the raw ID
+    # whenever we have it.
     meta_client = TelegramClient(
         str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"]
     )
     await meta_client.connect()
-    message = await meta_client.get_messages(KK_ARCHIVE_CHAT_ID, ids=message_id)
+    message = await meta_client.get_messages(chat_identifier, ids=message_id)
     await meta_client.disconnect()
 
     if message is None or message.document is None:
@@ -703,6 +718,61 @@ class DownloadMissingMods(BaseTask):
                             fail += len(br_failed)
                             fail += len(from_telegram)
                         else:
+                            # [FIX-2026-09-13-ENTITY-CACHE-WARMUP] Resolve the
+                            # KK_archive_modlibrary channel by username *once*,
+                            # using the primary session, before the daemon
+                            # subprocess is started below.
+                            #
+                            # Why this is needed: every download further down
+                            # this pipeline (both the per-GUID metadata lookup
+                            # in _download_via_teleget, and teleget9527's own
+                            # daemon-side get_messages(request.chat_id, ...)
+                            # call) references the channel via the raw numeric
+                            # KK_ARCHIVE_CHAT_ID constant, not its username.
+                            # Telethon can only turn a bare numeric peer ID
+                            # into a usable InputPeer if it already has that
+                            # entity's access_hash cached in the session file
+                            # (populated by an earlier get_entity/get_dialogs
+                            # call, or by the account having already interacted
+                            # with the chat via the Telegram app itself). On a
+                            # brand-new session that has never touched this
+                            # channel, resolving the raw ID directly raises:
+                            #   ValueError: Could not find the input entity
+                            #   for PeerUser(user_id=...)
+                            #
+                            # The daemon's own session is a one-time copy of
+                            # this primary session, taken when
+                            # teleget_downloader.start() launches it just
+                            # below — so if the cache isn't warmed *before*
+                            # that copy happens, the daemon inherits a cold
+                            # cache and hits the exact same error internally,
+                            # just deeper in the pipeline and harder to
+                            # diagnose. Resolving by username here (which
+                            # Telethon can do via a fresh API call even with
+                            # no prior cache) warms the primary session's
+                            # cache first, so the copy the daemon receives is
+                            # already warm, and every later raw-numeric-ID
+                            # lookup — in this file and inside teleget9527 —
+                            # succeeds on the very first attempt.
+                            try:
+                                from telethon import TelegramClient as _TelegramClient
+                                from utils.constants import CONFIG_DIR as _WARM_CFG_DIR
+                                _warm_session_dir = _WARM_CFG_DIR / "config" / "tg_session"
+                                _warm_client = _TelegramClient(
+                                    str(_warm_session_dir / "kkafio"),
+                                    tg_data["api_id"], tg_data["api_hash"],
+                                )
+                                await _warm_client.connect()
+                                await _warm_client.get_entity("KK_archive_modlibrary")
+                                await _warm_client.disconnect()
+                                logger.info("DLMOD",
+                                    "Warmed entity cache for KK_archive_modlibrary")
+                            except Exception as warm_err:
+                                logger.warning("DLMOD",
+                                    f"Could not pre-warm channel entity cache "
+                                    f"(non-fatal, downloads may still fail on a "
+                                    f"cold cache): {warm_err}")
+
                             logger.info("DLMOD",
                                 f"Processing {len(telegram_queue)} mod(s) via "
                                 "koikatsucards.com + Telegram...")
