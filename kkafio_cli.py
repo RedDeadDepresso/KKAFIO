@@ -140,7 +140,8 @@ def run_download_missing_mods(config, file_manager,
                               content_types: list[str] | None = None,
                               use_cache: bool | None = None,
                               modpack_mode: str | None = None,
-                              download_from_telegram: bool | None = None):
+                              telegram_source: str | None = None,
+                              telegram_chat_links: str | None = None):
     from tasks.download_missing_mods import DownloadMissingMods
     module = DownloadMissingMods(config, file_manager)
     if mods_dir is not None:
@@ -157,8 +158,10 @@ def run_download_missing_mods(config, file_manager,
         module.use_cache = use_cache
     if modpack_mode is not None:
         module.modpack_mode = modpack_mode
-    if download_from_telegram is not None:
-        module.download_from_tg = download_from_telegram
+    if telegram_source is not None:
+        module.telegram_source = telegram_source
+    if telegram_chat_links is not None:
+        module.telegram_chat_links_raw = telegram_chat_links
     module.run()
 
 
@@ -499,7 +502,8 @@ def cmd_download_missing_mods(args):
             content_types=content_types,
             use_cache=use_cache,
             modpack_mode=args.modpack_mode or None,
-            download_from_telegram=args.download_from_telegram,
+            telegram_source=args.telegram_source,
+            telegram_chat_links=args.telegram_chat_links,
         )
     except SystemExit:
         raise
@@ -774,12 +778,19 @@ def build_parser() -> argparse.ArgumentParser:
                         "Skip=ignore modpack entirely, "
                         "OnlyUsed=download missing mods used by chara (default), "
                         "All=download all missing modpack mods")
-    g3 = p.add_mutually_exclusive_group()
-    g3.add_argument("--download-from-telegram",    dest="download_from_telegram",
-                    action="store_true",  default=None,
-                    help="Download mods not in BetterRepack via koikatsucards.com + Telegram")
-    g3.add_argument("--no-download-from-telegram", dest="download_from_telegram",
-                    action="store_false")
+    p.add_argument("--telegram-source", default=None,
+                   choices=["No", "KoikatsuCards", "ChatLinks", "Both"],
+                   help="Where to look for mods not covered by BetterRepack: "
+                        "No=don't use Telegram (default), "
+                        "KoikatsuCards=look up each GUID on koikatsucards.com, "
+                        "ChatLinks=search the chats in --telegram-chat-links directly, "
+                        "Both=try koikatsucards.com first, then ChatLinks for anything it couldn't find")
+    p.add_argument("--telegram-chat-links", default=None, metavar="LINKS",
+                   help="Newline-separated Telegram chat/channel/group links to search "
+                        "(one per line; add a topic ID like .../299 to search only that "
+                        "forum topic; a trailing '# comment' is ignored). Only used when "
+                        "--telegram-source is ChatLinks or Both. Default: the two example "
+                        "chats shipped in the config.")
     p.set_defaults(func=cmd_download_missing_mods)
 
     # delete-cards

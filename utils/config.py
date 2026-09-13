@@ -142,7 +142,7 @@ _TASK_DEFAULTS = {
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename"},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
-    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "DownloadFromTelegram": False}
+    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"}
 }
 
 
@@ -258,7 +258,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("ContentTypes",        "ContentTypes")
         _set("UseCache",            "UseCache")
         _set("SideloaderModpack",   "SideloaderModpack")
-        _set("DownloadFromTelegram","DownloadFromTelegram")
+        _set("TelegramSource",      "TelegramSource")
+        _set("TelegramChatLinks",   "TelegramChatLinks")
 
     return cfg
 

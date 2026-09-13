@@ -73,8 +73,11 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Step 3 — Missing = referenced − installed.**
 - **Step 4 — Download:**
   - **BetterRepack** — Mods found in `assets/kkafio_modpack_index_kk.json` / `assets/kkafio_modpack_index_kks.json` are downloaded from [sideload.betterrepack.com](https://sideload.betterrepack.com), preserving the Sideloader Modpack folder structure.
-  - **koikatsucards.com + Telegram** — Mods not in the modpack index are looked up on [koikatsucards.com/mod_library](https://koikatsucards.com/mod_library) and downloaded from the linked Telegram channel using your Telegram account via [Telethon](https://github.com/LonamiWebs/Telethon) and [teleget9527](https://pypi.org/project/teleget9527/) for maximum parallel speed.
-  - If BetterRepack fails for a mod and Telegram is enabled, KKAFIO automatically retries via Telegram.
+  - **Telegram** (if **Telegram Source** is not `No`) — mods not covered by BetterRepack are downloaded from Telegram, via whichever source(s) are selected:
+    - `koikatsucards.com` — looks up each GUID on [koikatsucards.com/mod_library](https://koikatsucards.com/mod_library) and downloads the linked message using your Telegram account, via [Telethon](https://github.com/LonamiWebs/Telethon) and [teleget9527](https://pypi.org/project/teleget9527/) for maximum parallel speed.
+    - `Telegram Chat Links` — searches each chat/channel/group listed in **Telegram Chat Links** directly (Telegram's own server-side document search — no scraping or scanning message history), moving on to the next chat if one has no match, and downloads the first result whose filename ends in `.zipmod`.
+    - `koikatsucards.com + Telegram Chat Links` — tries koikatsucards.com first, then falls back to Telegram Chat Links for anything koikatsucards.com couldn't find (not found there, or the download itself failed).
+  - If BetterRepack fails for a mod and a Telegram source is enabled, KKAFIO automatically retries it via Telegram.
 - **Sideloader Modpack mode:**
   - `Skip` — ignores all modpack GUIDs; only downloads non-modpack mods.
   - `Only Used` *(default)* — downloads missing modpack mods that are actually referenced by installed cards.
@@ -83,9 +86,15 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Custom Chara Directory / Custom Scene Directory / Custom Coordinate Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped (same for coordinates if no default coordinate folder exists).
 - **Use Cache** (on by default) — caches the mods list and the GUID scan for each selected content type. Each cache is invalidated automatically when its folder changes.
 
+**Telegram Chat Links** — one link per line, used when **Telegram Source** is `Telegram Chat Links` or the combined option. You must already be a member of each chat. Add a topic ID (e.g. `.../299`) to search only that forum topic instead of the whole chat; a trailing `# comment` is ignored. Chats are tried in the order listed, moving to the next one if a chat has no match. Defaults to:
+```
+https://t.me/c/2549022984/299 # you need to be part of this chat
+https://t.me/kknowcc # you need to be part of this chat
+```
+
 **Telegram setup:**
 1. Go to [my.telegram.org/apps](https://my.telegram.org/apps), log in, and create an app to get an **API ID** and **API Hash**. Enter these in MXU settings.
-2. Enable **Download from Telegram** in MXU settings.
+2. Set **Telegram Source** to anything other than `No` in MXU settings.
 3. On first use, KKAFIO opens [my.telegram.org](https://my.telegram.org) in your browser and shows dialogs for your phone number and verification code (and 2FA password if enabled). The session is saved to `%APPDATA%/KKAFIO/config/tg_session/kkafio.session` and reused automatically.
 
 > ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
@@ -169,7 +178,7 @@ Use this to verify that all mods required by your currently installed cards are 
 2. Leave **Custom Chara Directory**, **Custom Scene Directory**, **Custom Coordinate Directory**, and **Custom Mods Directory** blank (uses game defaults).
 3. Enable **Download Missing Mods** and click **Start**.
 
-KKAFIO scans your installed chara cards, scenes, and coordinates, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if Telegram is enabled) downloads any remaining mods from koikatsucards.com.
+KKAFIO scans your installed chara cards, scenes, and coordinates, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if **Telegram Source** is not `No`) downloads any remaining mods via Telegram.
 
 ---
 
@@ -207,7 +216,7 @@ Enable **Download Missing Mods** with:
 - **Custom Coordinate Directory** → your staging folder too, if you're staging coordinate cards
 - **Custom Mods Directory** → your staging folder
 - **Content Types to Scan** → deselect any type you aren't staging (e.g. uncheck Scenes/Coordinates if the staging folder only has chara cards) — this also means KKAFIO won't require that type's directory to be resolvable
-- **Download from Telegram** → enabled
+- **Telegram Source** → set to whichever source(s) you want to use (e.g. `koikatsucards.com`)
 
 KKAFIO scans the selected content types in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside them.
 
@@ -301,7 +310,8 @@ kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR] [--scene-dir
                                  [--no-chara] [--no-scene] [--no-coord]
                                  [--use-cache | --no-use-cache]
                                  [--modpack-mode Skip|OnlyUsed|All]
-                                 [--download-from-telegram | --no-download-from-telegram]
+                                 [--telegram-source No|KoikatsuCards|ChatLinks|Both]
+                                 [--telegram-chat-links LINKS]
 
 kkafio_cli create-backup  [--output DIR] [--filename NAME]
                           [--mods | --no-mods]

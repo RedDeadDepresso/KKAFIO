@@ -10,13 +10,19 @@ Strategy
 4. Sideloader Modpack mode:
      Skip     — ignore modpack GUIDs entirely (only download local-only mods)
      OnlyUsed — download missing GUIDs that are in the modpack index or on
-                koikatsucards.com
+                koikatsucards.com / Telegram Chat Links
      All      — also download every GUID in the modpack index not installed
 5. For each GUID to download:
      a) In modpack index → BetterRepack (httpx, no auth)
-     b) Not in index, Telethon configured → look up on koikatsucards.com,
-        parse the t.me link, download the file directly from Telegram
-     c) Otherwise → log as unresolved
+     b) Not in index, Telegram Source is KoikatsuCards/Both → look up on
+        koikatsucards.com, parse the t.me link, download the file directly
+        from Telegram
+     c) Not in index (or koikatsucards.com had no link / the download
+        failed), Telegram Source is ChatLinks/Both → search each
+        configured Telegram Chat Links entry (channel, group, or forum
+        topic) via Telegram's server-side document search, and download
+        the first result whose filename ends in .zipmod
+     d) Otherwise → log as unresolved
 6. Each successful download immediately updates and saves the mods cache.
 """
 
@@ -147,6 +153,204 @@ def _parse_tme_link(tg_link: str) -> tuple[str, int] | None:
     chat = int(f"-100{numeric_id}") if numeric_id else f"@{username}"
     return chat, int(msg_id)
 
+
+# ---------------------------------------------------------------------------
+# Telegram Chat Links — direct server-side search fallback
+# ---------------------------------------------------------------------------
+
+DEFAULT_TELEGRAM_CHAT_LINKS = (
+    "https://t.me/c/2549022984/299 # you need to be part of this chat\n"
+    "https://t.me/kknowcc # you need to be part of this chat"
+)
+
+_TELEGRAM_SOURCE_LABELS = {
+    "No":            "No",
+    "KoikatsuCards": "koikatsucards.com",
+    "ChatLinks":     "Telegram Chat Links",
+    "Both":          "koikatsucards.com + Telegram Chat Links",
+}
+
+
+def _telegram_source_label(source: str) -> str:
+    return _TELEGRAM_SOURCE_LABELS.get(source, source)
+
+
+# A chat/channel/group link, optionally pointing at a specific forum topic:
+#   https://t.me/kknowcc                → username, no topic
+#   https://t.me/somepublicforum/123    → username, topic 123
+#   https://t.me/c/2549022984           → private/numeric id, no topic
+#   https://t.me/c/2549022984/299       → private/numeric id, topic 299
+_CHAT_LINK_RE = re.compile(
+    r"^https?://t\.me/(?:c/(?P<numeric_id>\d+)|(?P<username>[A-Za-z0-9_]+))"
+    r"(?:/(?P<topic_id>\d+))?/?$"
+)
+
+
+def _parse_chat_link_for_search(link: str) -> tuple[str | int, int | None] | None:
+    """Parse a single Telegram Chat Links entry into (chat, topic_id).
+
+    `chat` is either an "@username" string or a signed numeric channel ID
+    (both of which Telethon's get_input_entity() accepts directly).
+    `topic_id` is None for a plain channel/group/chat, or the forum topic's
+    message ID if the link points at a specific topic thread.
+    """
+    m = _CHAT_LINK_RE.match(link)
+    if not m:
+        return None
+    numeric_id, username, topic_str = m.group("numeric_id"), m.group("username"), m.group("topic_id")
+    chat = int(f"-100{numeric_id}") if numeric_id else f"@{username}"
+    topic_id = int(topic_str) if topic_str else None
+    return chat, topic_id
+
+
+def _parse_chat_links(raw: str) -> list[tuple[str | int, int | None]]:
+    """Parse the multi-line Telegram Chat Links textbox into an ordered list
+    of (chat, topic_id) tuples.
+
+    Blank lines and lines starting with '#' are ignored entirely; a
+    trailing '# comment' after a link on the same line is stripped before
+    parsing, so the shipped default value's "# you need to be part of this
+    chat" notes don't need to be removed by the user.
+    """
+    links: list[tuple[str | int, int | None]] = []
+    for raw_line in raw.splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parsed = _parse_chat_link_for_search(line)
+        if parsed:
+            links.append(parsed)
+        else:
+            logger.warning("DLMOD", f"Could not parse Telegram chat link: {raw_line.strip()}")
+    return links
+
+
+async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None, guid: str):
+    """Search a Telegram chat (channel, group, or forum topic) for a
+    document matching `guid`, using Telegram's server-side search — this is
+    the same raw API call Telegram Desktop itself sends, so it works
+    instantly without downloading/scanning message history client-side.
+
+    Returns the first matching Telethon Message whose attached document's
+    filename ends with '.zipmod', or None if nothing matched (including if
+    the chat can't be resolved / searched at all, e.g. not a member).
+    """
+    from telethon.tl.functions.messages import SearchRequest
+    from telethon.tl.types import InputMessagesFilterDocument
+
+    try:
+        peer = await client.get_input_entity(chat)
+    except Exception as e:
+        logger.warning("DLMOD", f"    Could not resolve chat {chat}: {e}")
+        return None
+
+    try:
+        result = await client(SearchRequest(
+            peer=peer,
+            q=guid,                                  # Text search term
+            filter=InputMessagesFilterDocument(),     # Server-side DOCUMENT filter
+            top_msg_id=topic_id or 0,                 # Server-side TOPIC filter, 0 if none
+            min_date=None,
+            max_date=None,
+            offset_id=0,
+            add_offset=0,
+            limit=100,
+            max_id=0,
+            min_id=0,
+            hash=0,
+        ))
+    except Exception as e:
+        logger.warning("DLMOD", f"    Search failed in {chat}: {e}")
+        return None
+
+    for message in getattr(result, "messages", []):
+        doc = getattr(message, "document", None)
+        if not doc:
+            continue
+        file_name = None
+        for attr in doc.attributes:
+            fn = getattr(attr, "file_name", None)
+            if fn:
+                file_name = fn
+                break
+        if file_name and file_name.lower().endswith(".zipmod"):
+            return message
+
+    return None
+
+
+async def _search_chat_links_and_download(
+    guid: str,
+    chat_links: list[tuple[str | int, int | None]],
+    mods_dir: Path,
+    tg_data: dict,
+    guid_str_map: dict[str, str],
+    rel_path: str | None = None,
+) -> tuple[bool, bool | str]:
+    """Search each configured Telegram Chat Links entry, in order, for a
+    .zipmod attachment matching `guid`. Moves on to the next chat if the
+    current one has no match (not a member, chat doesn't exist, or nothing
+    found); stops at the first chat that does have a match, downloading it.
+
+    Returns (found_source, result):
+      found_source — True if any chat had a matching .zipmod, regardless of
+                     whether the download itself then succeeded
+      result       — True (downloaded), "skipped" (already present), or
+                     False (no chat had a match, or the download failed)
+    """
+    if not chat_links:
+        return False, False
+
+    from utils.constants import CONFIG_DIR
+    from telethon import TelegramClient
+
+    session_dir = CONFIG_DIR / "config" / "tg_session"
+    client = TelegramClient(str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"])
+    await client.connect()
+
+    try:
+        for chat, topic_id in chat_links:
+            where = f"{chat}" + (f" (topic {topic_id})" if topic_id else "")
+            logger.info("DLMOD", f"    Searching {where} for {guid}...")
+
+            message = await _search_chat_for_zipmod(client, chat, topic_id, guid)
+            if message is None:
+                continue  # no match here — try the next chat link
+
+            file_name = None
+            for attr in message.document.attributes:
+                fn = getattr(attr, "file_name", None)
+                if fn:
+                    file_name = fn
+                    break
+            if not file_name:
+                file_name = f"{guid}.zipmod"
+
+            dest = (mods_dir / Path(rel_path).parent / file_name) if rel_path else (mods_dir / file_name)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+
+            if dest.exists() and dest.stat().st_size == message.document.size:
+                return True, "skipped"
+
+            logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
+            try:
+                await client.download_media(message, file=str(dest))
+            except Exception as e:
+                logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
+                return True, False
+
+            if not dest.exists() or dest.stat().st_size != message.document.size:
+                logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
+                return True, False
+
+            logger.success("DLMOD", f"Downloaded: {file_name}")
+            guid_str_map[guid] = str(dest)
+            save_mods_cache(mods_dir, guid_str_map)
+            return True, True
+
+        return False, False  # no configured chat had a matching .zipmod
+    finally:
+        await client.disconnect()
 
 
 # ---------------------------------------------------------------------------
@@ -358,7 +562,8 @@ class DownloadMissingMods(BaseTask):
         self.content_types       : list[str] = cfg.get("ContentTypes",    ["Chara", "Scene", "Coord"])
         self.use_cache           : bool = cfg.get("UseCache",             True)
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
-        self.download_from_tg    : bool = cfg.get("DownloadFromTelegram", False)
+        self.telegram_source     : str  = cfg.get("TelegramSource",       "No")  # No | KoikatsuCards | ChatLinks | Both
+        self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
 
     @staticmethod
     def _write_readme(
@@ -378,7 +583,7 @@ class DownloadMissingMods(BaseTask):
         ok: int,
         fail: int,
         modpack_mode: str,
-        use_telethon: bool,
+        telegram_source: str,
         generated: str,
     ) -> None:
         """Write a README.txt to mods_dir summarising the download run."""
@@ -396,7 +601,7 @@ class DownloadMissingMods(BaseTask):
             f"Generated        : {generated}",
             f"Mods directory   : {mods_dir}",
             f"Sideloader mode  : {modpack_mode}",
-            f"Telegram enabled : {'Yes' if use_telethon else 'No'}",
+            f"Telegram source  : {telegram_source}",
             "",
             "=" * 60,
             "",
@@ -452,7 +657,7 @@ class DownloadMissingMods(BaseTask):
             lines.append("")
 
         if actually_downloaded_tg:
-            lines.append("Downloaded from Telegram (koikatsucards.com):")
+            lines.append("Downloaded via Telegram:")
             for guid in sorted(actually_downloaded_tg):
                 lines.append(f"  + {guid}")
             lines.append("")
@@ -622,10 +827,12 @@ class DownloadMissingMods(BaseTask):
             return
 
         # ── Step 5: partition ─────────────────────────────────────────────
-        use_telethon = self.download_from_tg
-        if not use_telethon:
+        use_koikatsucards = self.telegram_source in ("KoikatsuCards", "Both")
+        use_chat_links    = self.telegram_source in ("ChatLinks", "Both")
+        use_telegram      = use_koikatsucards or use_chat_links
+        if not use_telegram:
             logger.info("DLMOD",
-                "Download from Telegram is disabled — "
+                "Telegram Source is 'No' — "
                 "only BetterRepack mods will be downloaded.")
 
         from_betterrepack: dict[str, str] = {}
@@ -635,7 +842,7 @@ class DownloadMissingMods(BaseTask):
         for guid in sorted(to_download):
             if guid in modpack_index:
                 from_betterrepack[guid] = modpack_index[guid]
-            elif use_telethon:
+            elif use_telegram:
                 from_telegram.append(guid)
             else:
                 unresolved.append(guid)
@@ -684,7 +891,7 @@ class DownloadMissingMods(BaseTask):
                             if isinstance(result, Exception):
                                 logger.error("DLMOD", f"Exception [{guid}]: {result}")
                             # Queue for Telegram fallback if enabled
-                            if use_telethon:
+                            if use_telegram:
                                 br_failed[guid] = from_betterrepack[guid]
                                 logger.info("DLMOD",
                                     f"  [{guid}] will be retried via Telegram")
@@ -698,7 +905,7 @@ class DownloadMissingMods(BaseTask):
                     (guid, rel) for guid, rel in br_failed.items()
                 ]
 
-                # Telegram via Telethon — sequential
+                # Telegram — sequential
                 if telegram_queue:
                     # Load/prompt for credentials once before the loop
                     tg_data = tg_cfg.get_or_prompt()
@@ -718,112 +925,142 @@ class DownloadMissingMods(BaseTask):
                             fail += len(br_failed)
                             fail += len(from_telegram)
                         else:
-                            # [FIX-2026-09-13-ENTITY-CACHE-WARMUP] Resolve the
-                            # KK_archive_modlibrary channel by username *once*,
-                            # using the primary session, before the daemon
-                            # subprocess is started below.
-                            #
-                            # Why this is needed: every download further down
-                            # this pipeline (both the per-GUID metadata lookup
-                            # in _download_via_teleget, and teleget9527's own
-                            # daemon-side get_messages(request.chat_id, ...)
-                            # call) references the channel via the raw numeric
-                            # KK_ARCHIVE_CHAT_ID constant, not its username.
-                            # Telethon can only turn a bare numeric peer ID
-                            # into a usable InputPeer if it already has that
-                            # entity's access_hash cached in the session file
-                            # (populated by an earlier get_entity/get_dialogs
-                            # call, or by the account having already interacted
-                            # with the chat via the Telegram app itself). On a
-                            # brand-new session that has never touched this
-                            # channel, resolving the raw ID directly raises:
-                            #   ValueError: Could not find the input entity
-                            #   for PeerUser(user_id=...)
-                            #
-                            # The daemon's own session is a one-time copy of
-                            # this primary session, taken when
-                            # teleget_downloader.start() launches it just
-                            # below — so if the cache isn't warmed *before*
-                            # that copy happens, the daemon inherits a cold
-                            # cache and hits the exact same error internally,
-                            # just deeper in the pipeline and harder to
-                            # diagnose. Resolving by username here (which
-                            # Telethon can do via a fresh API call even with
-                            # no prior cache) warms the primary session's
-                            # cache first, so the copy the daemon receives is
-                            # already warm, and every later raw-numeric-ID
-                            # lookup — in this file and inside teleget9527 —
-                            # succeeds on the very first attempt.
-                            try:
-                                from telethon import TelegramClient as _TelegramClient
-                                from utils.constants import CONFIG_DIR as _WARM_CFG_DIR
-                                _warm_session_dir = _WARM_CFG_DIR / "config" / "tg_session"
-                                _warm_client = _TelegramClient(
-                                    str(_warm_session_dir / "kkafio"),
-                                    tg_data["api_id"], tg_data["api_hash"],
-                                )
-                                await _warm_client.connect()
-                                await _warm_client.get_entity("KK_archive_modlibrary")
-                                await _warm_client.disconnect()
-                                logger.info("DLMOD",
-                                    "Warmed entity cache for KK_archive_modlibrary")
-                            except Exception as warm_err:
-                                logger.warning("DLMOD",
-                                    f"Could not pre-warm channel entity cache "
-                                    f"(non-fatal, downloads may still fail on a "
-                                    f"cold cache): {warm_err}")
-
-                            logger.info("DLMOD",
-                                f"Processing {len(telegram_queue)} mod(s) via "
-                                "koikatsucards.com + Telegram...")
-
-                            # Create TGDownloader once and reuse across all downloads
-                            from utils.constants import CONFIG_DIR as _CFG_DIR
-                            _session_dir = _CFG_DIR / "config" / "tg_session"
                             teleget_downloader = None
-                            try:
-                                from tg_downloader import TGDownloader
-                                teleget_downloader = TGDownloader(
-                                    api_id=tg_data["api_id"],
-                                    api_hash=tg_data["api_hash"],
-                                    session_dir=str(_session_dir.resolve()),
-                                )
-                                await teleget_downloader.start("kkafio")
-                                logger.info("DLMOD", "teleget9527 downloader started")
-                            except ImportError:
-                                logger.info("DLMOD",
-                                    "teleget9527 not installed, using Telethon fallback "
-                                    "(install with: pip install teleget9527[fast])")
+
+                            if use_koikatsucards:
+                                # [FIX-2026-09-13-ENTITY-CACHE-WARMUP] Resolve the
+                                # KK_archive_modlibrary channel by username *once*,
+                                # using the primary session, before the daemon
+                                # subprocess is started below.
+                                #
+                                # Why this is needed: every download further down
+                                # this pipeline (both the per-GUID metadata lookup
+                                # in _download_via_teleget, and teleget9527's own
+                                # daemon-side get_messages(request.chat_id, ...)
+                                # call) references the channel via the raw numeric
+                                # KK_ARCHIVE_CHAT_ID constant, not its username.
+                                # Telethon can only turn a bare numeric peer ID
+                                # into a usable InputPeer if it already has that
+                                # entity's access_hash cached in the session file
+                                # (populated by an earlier get_entity/get_dialogs
+                                # call, or by the account having already interacted
+                                # with the chat via the Telegram app itself). On a
+                                # brand-new session that has never touched this
+                                # channel, resolving the raw ID directly raises:
+                                #   ValueError: Could not find the input entity
+                                #   for PeerUser(user_id=...)
+                                #
+                                # The daemon's own session is a one-time copy of
+                                # this primary session, taken when
+                                # teleget_downloader.start() launches it just
+                                # below — so if the cache isn't warmed *before*
+                                # that copy happens, the daemon inherits a cold
+                                # cache and hits the exact same error internally,
+                                # just deeper in the pipeline and harder to
+                                # diagnose. Resolving by username here (which
+                                # Telethon can do via a fresh API call even with
+                                # no prior cache) warms the primary session's
+                                # cache first, so the copy the daemon receives is
+                                # already warm, and every later raw-numeric-ID
+                                # lookup — in this file and inside teleget9527 —
+                                # succeeds on the very first attempt.
+                                try:
+                                    from telethon import TelegramClient as _TelegramClient
+                                    from utils.constants import CONFIG_DIR as _WARM_CFG_DIR
+                                    _warm_session_dir = _WARM_CFG_DIR / "config" / "tg_session"
+                                    _warm_client = _TelegramClient(
+                                        str(_warm_session_dir / "kkafio"),
+                                        tg_data["api_id"], tg_data["api_hash"],
+                                    )
+                                    await _warm_client.connect()
+                                    await _warm_client.get_entity("KK_archive_modlibrary")
+                                    await _warm_client.disconnect()
+                                    logger.info("DLMOD",
+                                        "Warmed entity cache for KK_archive_modlibrary")
+                                except Exception as warm_err:
+                                    logger.warning("DLMOD",
+                                        f"Could not pre-warm channel entity cache "
+                                        f"(non-fatal, downloads may still fail on a "
+                                        f"cold cache): {warm_err}")
+
+                                # Create TGDownloader once and reuse across all downloads
+                                from utils.constants import CONFIG_DIR as _CFG_DIR
+                                _session_dir = _CFG_DIR / "config" / "tg_session"
+                                try:
+                                    from tg_downloader import TGDownloader
+                                    teleget_downloader = TGDownloader(
+                                        api_id=tg_data["api_id"],
+                                        api_hash=tg_data["api_hash"],
+                                        session_dir=str(_session_dir.resolve()),
+                                    )
+                                    await teleget_downloader.start("kkafio")
+                                    logger.info("DLMOD", "teleget9527 downloader started")
+                                except ImportError:
+                                    logger.info("DLMOD",
+                                        "teleget9527 not installed, using Telethon fallback "
+                                        "(install with: pip install teleget9527[fast])")
+
+                            chat_links: list[tuple[str | int, int | None]] = []
+                            if use_chat_links:
+                                chat_links = _parse_chat_links(self.telegram_chat_links_raw)
+                                if not chat_links:
+                                    logger.warning("DLMOD",
+                                        "Telegram Chat Links is enabled but no valid "
+                                        "chat links are configured — nothing to search.")
+
+                            source_label = _telegram_source_label(self.telegram_source)
+                            logger.info("DLMOD",
+                                f"Processing {len(telegram_queue)} mod(s) via {source_label}...")
 
                             try:
                                 for guid, rel_path in telegram_queue:
-                                    logger.info("DLMOD", f"  Looking up: {guid}")
-                                    tg_link = await _get_telegram_link(kk_client, guid)
-                                    if not tg_link:
-                                        logger.warning("DLMOD",
-                                            f"  {guid} — not found on koikatsucards.com")
-                                        unresolved.append(guid)
-                                        continue
-                                    logger.info("DLMOD", f"  Link: {tg_link}")
-                                    # Pass rel_path so the file is saved to the same
-                                    # subfolder as defined in the modpack index
-                                    success = await _download_via_teleget(
-                                        guid, tg_link, mods_dir, tg_data,
-                                        guid_str_map, teleget_downloader,
-                                        rel_path=rel_path,
-                                    )
+                                    found_source = False
+                                    success: bool | str = False
+
+                                    if use_koikatsucards:
+                                        logger.info("DLMOD", f"  Looking up: {guid}")
+                                        tg_link = await _get_telegram_link(kk_client, guid)
+                                        if tg_link:
+                                            found_source = True
+                                            logger.info("DLMOD", f"  Link: {tg_link}")
+                                            # Pass rel_path so the file is saved to the
+                                            # same subfolder as the modpack index
+                                            success = await _download_via_teleget(
+                                                guid, tg_link, mods_dir, tg_data,
+                                                guid_str_map, teleget_downloader,
+                                                rel_path=rel_path,
+                                            )
+                                        else:
+                                            logger.warning("DLMOD",
+                                                f"  {guid} — not found on koikatsucards.com")
+
+                                    if success not in (True, "skipped") and use_chat_links and chat_links:
+                                        if use_koikatsucards:
+                                            logger.info("DLMOD",
+                                                f"  Trying Telegram Chat Links for {guid}...")
+                                        chat_found, success = await _search_chat_links_and_download(
+                                            guid, chat_links, mods_dir, tg_data,
+                                            guid_str_map, rel_path=rel_path,
+                                        )
+                                        found_source = found_source or chat_found
+
                                     if success == "skipped":
                                         pass  # already existed — don't count or report
-                                    elif success:
+                                    elif success is True:
                                         failed_guids.discard(guid)
                                         downloaded_tg.add(guid)
                                         if guid in br_failed:
                                             fail -= 1
                                         ok += 1
-                                    else:
+                                    elif found_source:
+                                        # A source was identified somewhere but the
+                                        # download itself failed
                                         failed_guids.add(guid)
                                         if guid not in br_failed:
                                             fail += 1
+                                    else:
+                                        # No source found anywhere that was tried
+                                        unresolved.append(guid)
                             finally:
                                 if teleget_downloader is not None:
                                     try:
@@ -853,7 +1090,7 @@ class DownloadMissingMods(BaseTask):
             ok                = ok,
             fail              = fail,
             modpack_mode      = self.modpack_mode,
-            use_telethon      = use_telethon,
+            telegram_source   = _telegram_source_label(self.telegram_source),
             generated         = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 

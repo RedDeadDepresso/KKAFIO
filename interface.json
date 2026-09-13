@@ -677,27 +677,52 @@
         }
       ]
     },
-    "DownloadFromTelegram": {
-      "type": "switch",
-      "label": "Download from Telegram",
-      "description": "Enable downloading mods not found in BetterRepack via koikatsucards.com + Telegram.\n\nRequires a Telegram account. On first use KKAFIO will open https://my.telegram.org in your browser and ask for your API ID and API Hash, then ask for your phone number and verification code to sign in. Credentials are saved in %APPDATA%/KKAFIO/config/telegram.json.",
-      "default_case": "Yes",
+    "TelegramSource": {
+      "type": "select",
+      "label": "Telegram Source",
+      "description": "Where to look for mods not covered by BetterRepack:\n• No — don't use Telegram at all (default)\n• koikatsucards.com — look up each GUID there and download the linked Telegram message\n• Telegram Chat Links — search the chats/channels below directly for a file matching the GUID\n• koikatsucards.com + Telegram Chat Links — try koikatsucards.com first, then fall back to Telegram Chat Links for anything it couldn't find\n\nAny Telegram option requires a Telegram account: on first use KKAFIO opens https://my.telegram.org for your API ID/Hash, then asks for your phone number and verification code. Credentials are saved in %APPDATA%/KKAFIO/config/telegram.json.",
+      "default_case": "No",
       "cases": [
         {
-          "name": "Yes",
-          "label": "Enabled",
+          "name": "No",
+          "label": "No",
           "pipeline_override": {
-            "DownloadFromTelegram": true
+            "TelegramSource": "No"
           }
         },
         {
-          "name": "No",
-          "label": "Disabled",
+          "name": "KoikatsuCards",
+          "label": "koikatsucards.com",
           "pipeline_override": {
-            "DownloadFromTelegram": false
+            "TelegramSource": "KoikatsuCards"
+          }
+        },
+        {
+          "name": "ChatLinks",
+          "label": "Telegram Chat Links",
+          "pipeline_override": {
+            "TelegramSource": "ChatLinks"
+          }
+        },
+        {
+          "name": "Both",
+          "label": "koikatsucards.com + Telegram Chat Links",
+          "pipeline_override": {
+            "TelegramSource": "Both"
           }
         }
       ]
+    },
+    "TelegramChatLinks": {
+      "type": "textarea",
+      "name": "telegram_chat_links",
+      "label": "Telegram Chat Links",
+      "description": "One Telegram channel/group/chat link per line, used when Telegram Source is 'Telegram Chat Links' or the combined option. You must already be a member of each one. Add a topic ID (e.g. .../299) to search only that forum topic; a trailing '# comment' is ignored. Chats are tried in order, moving to the next one if a chat has no match.",
+      "placeholder": "https://t.me/kknowcc\nhttps://t.me/c/2549022984/299",
+      "default": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/KK_archive_modlibrary # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat",
+      "pipeline_override": {
+        "TelegramChatLinks": "{telegram_chat_links}"
+      }
     },
     "AutoResolve": {
       "type": "switch",
@@ -898,7 +923,8 @@
       "option": [
         "ContentTypes",
         "SideloaderModpack",
-        "DownloadFromTelegram",
+        "TelegramSource",
+        "TelegramChatLinks",
         "UseCache",
         "CharaDir",
         "SceneDir",
