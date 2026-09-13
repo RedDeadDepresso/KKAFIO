@@ -848,7 +848,7 @@ wheels = [
 [[package]]
 name = "teleget9527"
 version = "2.0.0"
-source = { git = "https://github.com/RedDeadDepresso/telebackup.git?rev=main#5976c1dca9963224660c6744deb96b2a76892b41" }
+source = { git = "https://github.com/RedDeadDepresso/telebackup.git?rev=main#3e04d9cd36e8f249ef3065053d7d211ae20c2255" }
 dependencies = [
     { name = "psutil" },
     { name = "telethon" },

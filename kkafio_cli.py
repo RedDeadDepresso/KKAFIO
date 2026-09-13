@@ -25,6 +25,7 @@ Global options:
 
 import sys
 import argparse
+import multiprocessing
 import traceback
 
 
@@ -960,6 +961,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 try:
     if __name__ == "__main__":
+        # [FIX-2026-09-13-FROZEN-DAEMON-ENTRYPOINT] Required for teleget9527's
+        # daemon to launch correctly when this app is run as a PyInstaller
+        # frozen exe: teleget9527 now spawns its download daemon via
+        # multiprocessing.Process in frozen environments (since sys.executable
+        # is this exe, not a generic Python interpreter, and can no longer be
+        # used to run download_daemon.py as a script argument). This is the
+        # standard multiprocessing requirement for any frozen Windows app that
+        # creates additional processes — it must be called first, before any
+        # other code, and has no effect when running from source.
+        multiprocessing.freeze_support()
+
         parser = build_parser()
         args = parser.parse_args()
         args.func(args)
