@@ -232,7 +232,23 @@ class FileManager:
             cmd.append("-p")          # prompt-less no-password attempt
 
         result = run_text(cmd, capture_output=True)
-        return result.returncode == 0
+        if result.returncode == 0:
+            return True
+
+        # 7-Zip can still create the output folder and write partial/0-byte
+        # copies of encrypted entries before it hits the password error, so
+        # a failed attempt (wrong/missing password, corrupted archive, etc.)
+        # can otherwise leave junk files behind even though nothing usable
+        # was actually extracted. Clean up before returning so a retry (with
+        # a different password, or none) starts from a clean folder, and so
+        # nothing is left over if extraction is abandoned entirely.
+        if extract_path.exists():
+            try:
+                shutil.rmtree(extract_path)
+            except OSError as e:
+                logger.error("ARCHIVE", f"Could not remove partial extraction folder {extract_path}: {e}")
+
+        return False
 
     def extract_archive(self, archive_path: Union[Path, str], task_config: dict = None):
         """Extract the archive using 7-Zip."""
