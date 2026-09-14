@@ -285,12 +285,14 @@ async def _search_chat_links_and_download(
     mods_dir: Path,
     tg_data: dict,
     guid_str_map: dict[str, str],
+    downloader=None,
     rel_path: str | None = None,
 ) -> tuple[bool, bool | str]:
     """Search each configured Telegram Chat Links entry, in order, for a
     .zipmod attachment matching `guid`. Moves on to the next chat if the
     current one has no match (not a member, chat doesn't exist, or nothing
-    found); stops at the first chat that does have a match, downloading it.
+    found); stops at the first chat that does have a match, downloading it
+    via teleget9527 (if `downloader` is provided) or plain Telethon.
 
     Returns (found_source, result):
       found_source — True if any chat had a matching .zipmod, regardless of
@@ -333,13 +335,47 @@ async def _search_chat_links_and_download(
                 return True, "skipped"
 
             logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
-            try:
-                await client.download_media(message, file=str(dest))
-            except Exception as e:
-                logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
-                return True, False
+            file_size = message.document.size
 
-            if not dest.exists() or dest.stat().st_size != message.document.size:
+            # Use teleget9527 if available (reuse the passed-in downloader instance),
+            # matching _download_via_teleget's exact pattern.
+            if downloader is not None:
+                try:
+                    entity = await client.get_entity(chat)
+                    raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
+
+                    def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                        if total > 0:
+                            mb_done  = downloaded // 1024 // 1024
+                            mb_total = total      // 1024 // 1024
+                            logger.info("DLMOD",
+                                f"    {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
+
+                    await downloader.download(
+                        chat_id=raw_chat_id,
+                        msg_id=message.id,
+                        save_path=str(dest.resolve()),
+                        progress_callback=_on_progress,
+                    )
+
+                    # Poll until file reaches expected size (up to 1 hour)
+                    for _ in range(3600):
+                        await asyncio.sleep(1)
+                        if dest.exists() and dest.stat().st_size >= file_size:
+                            break
+                except Exception as e:
+                    logger.error("DLMOD",
+                        f"    teleget9527 download failed [{guid}] from {where}: {e}")
+                    return True, False
+            else:
+                # Fallback: plain Telethon download_media
+                try:
+                    await client.download_media(message, file=str(dest))
+                except Exception as e:
+                    logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
+                    return True, False
+
+            if not dest.exists() or dest.stat().st_size != file_size:
                 logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
                 return True, False
 
@@ -983,22 +1019,24 @@ class DownloadMissingMods(BaseTask):
                                         f"(non-fatal, downloads may still fail on a "
                                         f"cold cache): {warm_err}")
 
-                                # Create TGDownloader once and reuse across all downloads
-                                from utils.constants import CONFIG_DIR as _CFG_DIR
-                                _session_dir = _CFG_DIR / "config" / "tg_session"
-                                try:
-                                    from tg_downloader import TGDownloader
-                                    teleget_downloader = TGDownloader(
-                                        api_id=tg_data["api_id"],
-                                        api_hash=tg_data["api_hash"],
-                                        session_dir=str(_session_dir.resolve()),
-                                    )
-                                    await teleget_downloader.start("kkafio")
-                                    logger.info("DLMOD", "teleget9527 downloader started")
-                                except ImportError:
-                                    logger.info("DLMOD",
-                                        "teleget9527 not installed, using Telethon fallback "
-                                        "(install with: pip install teleget9527[fast])")
+                            # Create TGDownloader once and reuse across all downloads,
+                            # for both the koikatsucards.com path and the Telegram Chat
+                            # Links path.
+                            from utils.constants import CONFIG_DIR as _CFG_DIR
+                            _session_dir = _CFG_DIR / "config" / "tg_session"
+                            try:
+                                from tg_downloader import TGDownloader
+                                teleget_downloader = TGDownloader(
+                                    api_id=tg_data["api_id"],
+                                    api_hash=tg_data["api_hash"],
+                                    session_dir=str(_session_dir.resolve()),
+                                )
+                                await teleget_downloader.start("kkafio")
+                                logger.info("DLMOD", "teleget9527 downloader started")
+                            except ImportError:
+                                logger.info("DLMOD",
+                                    "teleget9527 not installed, using Telethon fallback "
+                                    "(install with: pip install teleget9527[fast])")
 
                             chat_links: list[tuple[str | int, int | None]] = []
                             if use_chat_links:
@@ -1040,7 +1078,8 @@ class DownloadMissingMods(BaseTask):
                                                 f"  Trying Telegram Chat Links for {guid}...")
                                         chat_found, success = await _search_chat_links_and_download(
                                             guid, chat_links, mods_dir, tg_data,
-                                            guid_str_map, rel_path=rel_path,
+                                            guid_str_map, downloader=teleget_downloader,
+                                            rel_path=rel_path,
                                         )
                                         found_source = found_source or chat_found
 
