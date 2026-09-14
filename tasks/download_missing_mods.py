@@ -815,7 +815,7 @@ class DownloadMissingMods(BaseTask):
 
         # ── Step 2: modpack index ─────────────────────────────────────────
         game_type     = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
-        modpack_index = load_modpack_index(mods_dir, game_type=game_type) or {}
+        modpack_index = load_modpack_index(game_type=game_type) or {}
         if modpack_index:
             logger.info("DLMOD", f"Modpack index loaded: {len(modpack_index)} GUIDs")
         else:

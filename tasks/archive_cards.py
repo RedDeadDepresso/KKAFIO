@@ -112,7 +112,7 @@ class ArchiveCards(BaseTask):
             if not self.include_modpack and missing:
                 from utils.chara_ops import load_modpack_index
                 game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
-                modpack_index = load_modpack_index(mods_dir, game_type=game_type)
+                modpack_index = load_modpack_index(game_type=game_type)
                 if modpack_index:
                     in_modpack = missing & set(modpack_index.keys())
                     if in_modpack:

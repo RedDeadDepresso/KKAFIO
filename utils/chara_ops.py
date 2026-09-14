@@ -12,6 +12,7 @@ import struct
 import xml.etree.ElementTree as ET
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import cache
 from pathlib import Path
 
 import msgpack
@@ -444,19 +445,23 @@ MODPACK_INDEX_FILE_KK  = "kkafio_modpack_index_kk.json"
 MODPACK_INDEX_FILE_KKS = "kkafio_modpack_index_kks.json"
 
 
-def load_modpack_index(mods_dir: Path | None = None,
-                       game_type: str = GameType.KOIKATSU.value) -> dict[str, str] | None:
+@cache
+def load_modpack_index(game_type: str = GameType.KOIKATSU.value) -> dict[str, str] | None:
     """Load the pre-built Sideloader Modpack GUID index for the given game type.
 
     Uses kkafio_modpack_index_kks.json for KoikatsuSunshine,
     and kkafio_modpack_index_kk.json for all other variants.
 
-    Searches in:
-      1. The assets/ folder next to the running exe / script (shipped with the release)
-      2. mods_dir itself
-      3. mods_dir.parent (game root)
+    Looked up at assets/<index_file> next to the running exe / script (this
+    is always where it's shipped with the release — see docs/01-project-
+    structure.md).
 
     Returns {guid: relative_path_str} or None if not found.
+
+    Cached (per game_type) for the lifetime of the process — the index file
+    doesn't change mid-run, and this is otherwise re-read and re-parsed
+    from disk on every call (e.g. once per card in DeleteCards, which calls
+    scan_mods() → load_modpack_index() per file).
     """
     import sys
 
@@ -471,22 +476,18 @@ def load_modpack_index(mods_dir: Path | None = None,
     else:
         exe_dir = Path(__file__).resolve().parent.parent  # repo root
 
-    candidates = [exe_dir / "assets" / index_file]
-    if mods_dir is not None:
-        candidates.append(mods_dir / index_file)
-        candidates.append(mods_dir.parent / index_file)
+    index_path = exe_dir / "assets" / index_file
 
-    for index_path in candidates:
-        if index_path.exists():
-            try:
-                with index_path.open("r", encoding="utf-8") as f:
-                    data = _json.load(f)
-                guids = data.get("guids", {})
-                logger.info("CACHE",
-                    f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
-                return guids
-            except Exception as e:
-                logger.warning("CACHE", f"Could not load modpack index: {e}")
+    if index_path.exists():
+        try:
+            with index_path.open("r", encoding="utf-8") as f:
+                data = _json.load(f)
+            guids = data.get("guids", {})
+            logger.info("CACHE",
+                f"Modpack index loaded: {len(guids)} GUIDs from {index_path.name}")
+            return guids
+        except Exception as e:
+            logger.warning("CACHE", f"Could not load modpack index: {e}")
     return None
 
 
@@ -1039,7 +1040,7 @@ def scan_mods(mods_dir: Path, required: set[str],
     remaining = set(required)
 
     # ── Step 1: check modpack index ────────────────────────────────────────
-    modpack_index = load_modpack_index(mods_dir, game_type=game_type)
+    modpack_index = load_modpack_index(game_type=game_type)
 
     if modpack_index is not None:
         for guid in list(remaining):
