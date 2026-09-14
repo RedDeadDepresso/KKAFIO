@@ -566,27 +566,9 @@ def collect_png_guids(
                 prev_guids_by_file = prev.get("guids_by_file", {})
 
                 if prev_files:
-                    # Existence + fingerprint spot-check (cheap: os.stat() per
-                    # cached file, no file content is read). This alone is
-                    # sufficient to detect deleted/modified files — new files
-                    # don't need special handling here since the main loop
-                    # below naturally treats anything missing from old_files
-                    # as new and reads it.
-                    cache_ok = True
-                    for sp, fp in prev_files.items():
-                        p = Path(sp)
-                        if not p.exists():
-                            logger.info("CACHE", f"{label} cache stale (deleted files) — rebuilding")
-                            cache_ok = False
-                            break
-                        if _file_fp(p) != (fp[0], fp[1]):
-                            logger.info("CACHE", f"{label} cache stale (modified files) — rebuilding")
-                            cache_ok = False
-                            break
-                    if cache_ok:
-                        old_files         = prev_files
-                        old_guids_by_file = prev_guids_by_file
-                        logger.info("CACHE", f"{label} cache loaded: {len(old_files)} file fingerprints")
+                    old_files         = prev_files
+                    old_guids_by_file = prev_guids_by_file
+                    logger.info("CACHE", f"{label} cache loaded: {len(old_files)} file fingerprints")
                 else:
                     logger.info("CACHE", f"{label} cache empty — building for the first time")
         except Exception:
