@@ -11,9 +11,10 @@ from send2trash import send2trash
 
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
-    build_mods_cache, collect_chara_guids, collect_coord_guids, collect_scene_guids,
-    find_matching_coords, load_mods_cache, load_modpack_index, parse_chara_guids,
-    parse_coord_guids, parse_scene_guids, resolve_paths,
+    build_mods_cache, collect_chara_guids_by_file, collect_coord_guids_by_file,
+    collect_scene_guids_by_file, find_matching_coords, load_mods_cache,
+    load_modpack_index, parse_chara_guids, parse_coord_guids, parse_scene_guids,
+    resolve_paths,
 )
 from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import GameType
@@ -25,53 +26,32 @@ def _collect_guids_in_use(chara_dirs: list[Path], scene_dirs: list[Path],
                           exclude: set[Path], use_cache: bool = False) -> set[str]:
     """Return the union of every mod GUID referenced by every chara card in
     chara_dirs, every scene in scene_dirs, and every coordinate card in
-    coord_dirs. Used by CheckSharedMods to make sure a zipmod isn't deleted
-    out from under a character/scene/coordinate that isn't being touched.
+    coord_dirs, EXCLUDING the card(s) actually being deleted. Used by
+    CheckSharedMods to make sure a zipmod isn't deleted out from under a
+    character/scene/coordinate that isn't being touched.
 
-    When `use_cache` is True, this reuses the same incremental GUID caches
-    as DownloadMissingMods (`kkafio_chara_guid_cache.json` etc.), so repeat
-    runs against an unchanged folder skip re-parsing every card. Anything in
-    `exclude` (the file(s) actually being deleted) is scanned separately
-    since it must never be cached as "in use elsewhere".
+    This always scans (and, when `use_cache` is True, builds/reuses) the
+    full per-file GUID cache for each folder — including the file(s) in
+    `exclude` — then excludes those specific files' own GUIDs from the
+    union afterward. That means the same on-disk cache
+    (kkafio_chara_guid_cache.json etc.) can always be built/reused as-is,
+    regardless of whether the card(s) being deleted happen to live inside
+    one of these folders, instead of needing a separate uncached scan any
+    time that's the case.
     """
     guids: set[str] = set()
+    exclude_strs = {str(p.resolve()) for p in exclude}
 
-    def _has_excluded(dirs: list[Path]) -> bool:
-        """Cache collectors scan whole folders and can't skip individual
-        excluded files, so if any excluded file lives inside one of these
-        dirs we fall back to an uncached, exclude-aware scan instead."""
-        resolved_dirs = [d.resolve() for d in dirs]
-        return any(d in p.parents for d in resolved_dirs for p in exclude)
-
-    def _scan_uncached(dirs: list[Path], is_valid, parse_guids) -> set[str]:
-        found: set[str] = set()
-        for d in dirs:
-            if not d.exists():
-                continue
-            for png in d.rglob("*.png"):
-                if png.resolve() in exclude:
-                    continue
-                try:
-                    raw = png.read_bytes()
-                    if is_valid(raw):
-                        found.update(parse_guids(png))
-                except Exception:
-                    pass
-        return found
-
-    chara_is_valid = lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS)
-    scene_is_valid = lambda raw: get_card_type(raw) == CardType.SCENE
-    coord_is_valid = lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw)
-
-    for dirs, collector, is_valid, parse_guids in (
-        (chara_dirs, collect_chara_guids, chara_is_valid, parse_chara_guids),
-        (scene_dirs, collect_scene_guids, scene_is_valid, parse_scene_guids),
-        (coord_dirs, collect_coord_guids, coord_is_valid, parse_coord_guids),
+    for dirs, collect_by_file in (
+        (chara_dirs, collect_chara_guids_by_file),
+        (scene_dirs, collect_scene_guids_by_file),
+        (coord_dirs, collect_coord_guids_by_file),
     ):
-        if use_cache and not _has_excluded(dirs):
-            guids.update(collector(dirs, use_cache=True))
-        else:
-            guids.update(_scan_uncached(dirs, is_valid, parse_guids))
+        by_file = collect_by_file(dirs, use_cache=use_cache)
+        for path_str, file_guids in by_file.items():
+            if path_str in exclude_strs:
+                continue
+            guids.update(file_guids)
 
     return guids
 

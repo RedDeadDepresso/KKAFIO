@@ -526,7 +526,7 @@ def collect_png_guids(
     label: str,
     is_valid,
     parse_guids,
-) -> set[str]:
+) -> tuple[set[str], dict[str, list[str]]]:
     """Incrementally collect GUIDs from a set of PNG-based card files.
 
     Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
@@ -536,10 +536,20 @@ def collect_png_guids(
     and `parse_guids` extracts the GUIDs from files that pass.
 
     The cache file lives inside `dirs[0]`. When `use_cache` is False, this
-    does a full scan every time and does not read or write the cache.
+    does a full scan every time and does not read or write the cache — the
+    complete per-file scan still happens either way, so the returned
+    `guids_by_file` is always accurate for every currently-existing file
+    in `dirs`, regardless of the `use_cache` setting.
+
+    Returns (guids, guids_by_file):
+      guids         — the union of every GUID across every file
+      guids_by_file — {absolute_path_str: [guid, ...]} for every file, so
+                      callers can exclude specific files (e.g. cards about
+                      to be deleted) from the union after the fact, instead
+                      of needing a separate uncached scan that skips them.
     """
     if not dirs:
-        return set()
+        return set(), {}
 
     key        = "|".join(str(d) for d in dirs)
     cache_path = dirs[0] / cache_file
@@ -653,37 +663,76 @@ def collect_png_guids(
     else:
         logger.info("CACHE", f"{label} scan complete: {len(guids)} GUIDs")
 
-    return guids
+    return guids, new_guids_by_file
 
 
 def collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by chara cards in chara_dirs."""
     from utils.classifier import CardType, get_card_type
-    return collect_png_guids(
+    guids, _ = collect_png_guids(
         chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara",
         lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS),
         parse_chara_guids,
     )
+    return guids
+
+
+def collect_chara_guids_by_file(chara_dirs: list[Path], use_cache: bool) -> dict[str, list[str]]:
+    """Same as collect_chara_guids, but returns the per-file GUID mapping
+    ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
+    from utils.classifier import CardType, get_card_type
+    _, by_file = collect_png_guids(
+        chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara",
+        lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS),
+        parse_chara_guids,
+    )
+    return by_file
 
 
 def collect_scene_guids(scene_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by Studio scenes in scene_dirs."""
     from utils.classifier import CardType, get_card_type
-    return collect_png_guids(
+    guids, _ = collect_png_guids(
         scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene",
         lambda raw: get_card_type(raw) == CardType.SCENE,
         parse_scene_guids,
     )
+    return guids
+
+
+def collect_scene_guids_by_file(scene_dirs: list[Path], use_cache: bool) -> dict[str, list[str]]:
+    """Same as collect_scene_guids, but returns the per-file GUID mapping
+    ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
+    from utils.classifier import CardType, get_card_type
+    _, by_file = collect_png_guids(
+        scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene",
+        lambda raw: get_card_type(raw) == CardType.SCENE,
+        parse_scene_guids,
+    )
+    return by_file
 
 
 def collect_coord_guids(coord_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by coordinate cards in coord_dirs."""
     from utils.classifier import CardType, get_card_type, is_coordinate
-    return collect_png_guids(
+    guids, _ = collect_png_guids(
         coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord",
         lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw),
         parse_coord_guids,
     )
+    return guids
+
+
+def collect_coord_guids_by_file(coord_dirs: list[Path], use_cache: bool) -> dict[str, list[str]]:
+    """Same as collect_coord_guids, but returns the per-file GUID mapping
+    ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
+    from utils.classifier import CardType, get_card_type, is_coordinate
+    _, by_file = collect_png_guids(
+        coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord",
+        lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw),
+        parse_coord_guids,
+    )
+    return by_file
 
 
 # ---------------------------------------------------------------------------
