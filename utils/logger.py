@@ -35,14 +35,28 @@ RESET = "\033[0m"
 
 
 class ColorFormatter(logging.Formatter):
-    """Formats records as `LEVEL    | category | message`, colored by level."""
+    """
+    Formats records as `LEVEL    | category | message`, colored by level.
+
+    Colors are only emitted when `use_color` is True. Callers should base
+    that on whether the output stream is an actual terminal (`isatty()`) —
+    when stdout is piped (e.g. to a GUI subprocess reader), there's no
+    terminal to render ANSI codes, so skip generating them entirely rather
+    than having the consumer strip them back out.
+    """
+
+    def __init__(self, use_color: bool):
+        super().__init__()
+        self.use_color = use_color
 
     def format(self, record: logging.LogRecord) -> str:
         category = getattr(record, "category", "")
         level_name = record.levelname.ljust(8)
         category = category.ljust(8)
-        color = COLORS.get(record.levelname, "")
         message = record.getMessage()
+        if not self.use_color:
+            return f"{level_name} | {category} | {message}"
+        color = COLORS.get(record.levelname, "")
         return f"{color}{level_name} | {category} | {message}{RESET}"
 
 
@@ -100,8 +114,13 @@ def _build_logger() -> KafioLogger:
     base_logger.propagate = False  # don't also emit via the root logger
 
     if not base_logger.handlers:  # avoid duplicate handlers if re-imported
+        # Only color output when stdout is an actual terminal. When KKAFIO
+        # is spawned as a subprocess (e.g. by the MXU GUI) stdout is a pipe,
+        # isatty() is False, and there's no point emitting ANSI codes that
+        # the consumer would just have to strip back out.
+        use_color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
         handler = logging.StreamHandler(stream=sys.stdout)
-        handler.setFormatter(ColorFormatter())
+        handler.setFormatter(ColorFormatter(use_color=use_color))
         base_logger.addHandler(handler)
 
     return KafioLogger(base_logger)
