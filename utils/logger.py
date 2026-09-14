@@ -1,149 +1,110 @@
-# https://github.com/pur1fying/blue_archive_auto_script/blob/master/core/utils.py
 import logging
 import sys
-from typing import Union
+
+# Custom levels, slotted in around the stdlib ones so filtering still makes
+# sense (e.g. logger.setLevel(logging.WARNING) still hides SUCCESS/INFO).
+# stdlib: DEBUG=10 INFO=20 WARNING=30 ERROR=40 CRITICAL=50
+SUCCESS = 25
+SKIPPED = 31
+REPLACED = 32
+RENAMED = 33
+REMOVED = 34
+
+for _level_value, _level_name in (
+    (SUCCESS, "SUCCESS"),
+    (SKIPPED, "SKIPPED"),
+    (REPLACED, "REPLACED"),
+    (RENAMED, "RENAMED"),
+    (REMOVED, "REMOVED"),
+):
+    logging.addLevelName(_level_value, _level_name)
+
+COLORS = {
+    "DEBUG": "\033[90m",     # grey
+    "INFO": "\033[94m",      # blue
+    "SUCCESS": "\033[92m",   # green
+    "WARNING": "\033[93m",   # yellow/orange
+    "SKIPPED": "\033[93m",   # yellow/orange
+    "REPLACED": "\033[93m",  # yellow/orange
+    "RENAMED": "\033[93m",   # yellow/orange
+    "REMOVED": "\033[93m",   # yellow/orange
+    "ERROR": "\033[91m",     # red
+    "CRITICAL": "\033[91m",  # red
+}
+RESET = "\033[0m"
 
 
-class Logger:
+class ColorFormatter(logging.Formatter):
+    """Formats records as `LEVEL    | category | message`, colored by level."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        category = getattr(record, "category", "")
+        level_name = record.levelname.ljust(8)
+        category = category.ljust(8)
+        color = COLORS.get(record.levelname, "")
+        message = record.getMessage()
+        return f"{color}{level_name} | {category} | {message}{RESET}"
+
+
+class KafioLogger(logging.LoggerAdapter):
     """
-    Logger class for logging
+    Thin wrapper around a stdlib Logger that:
+      - requires a `category` (task tag) on every call, matching the old API
+      - exposes the custom status levels as named methods
     """
 
-    COLORS = {
-        "RESET": "\033[0m",
-        "INFO": "\033[94m",     # blue
-        "SUCCESS": "\033[92m",  # green
-        "ERROR": "\033[91m",    # red
-        "SKIPPED": "\033[93m",  # yellow/orange
-        "REPLACED": "\033[93m",  # yellow/orange
-        "RENAMED": "\033[93m",  # yellow/orange
-        "REMOVED": "\033[93m",  # yellow/orange
-    }
+    def __init__(self, logger: logging.Logger):
+        super().__init__(logger, extra={})
 
-    def __init__(self):
-        # Init logger box signal, logs and logger
-        self.logs = ""
-
-        # When running as script.exe stdout is block-buffered by default,
-        # which causes QProcess in the GUI to only receive output after the
-        # process exits. Reconfigure to line-buffered so each line is flushed
-        # immediately. Only needed when there is no signalBus (i.e. script.exe).
-        if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-
-        self.logger = logging.getLogger("KAFFIO_Logger")
-        formatter = logging.Formatter("%(levelname)s |%(category)s | %(message)s ")
-        handler1 = logging.StreamHandler(stream=sys.stdout)
-        handler1.setFormatter(formatter)
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(handler1)
-        # Status Text: INFO, SUCCESS, ERROR, SKIPPED, REPLACED, RENAMED, REMOVED
-        self.status = ['INFO', 'SUCCESS', 'ERROR', 'WARNING', 'SKIPPED', 'REPLACED', 'RENAMED', 'REMOVED']
-        # Create a list with each status padded with spaces
-        self.paddedStatus = [self.align(s) for s in self.status]
-        # Status HTML: <b style="color:$color">status</b>
-        self._line = '--------------------------------------------------------------------'
-
-    def __out__(self, category: str, message: str, level: int = 1, raw_print=False) -> None:
-        """
-        Output log
-        :param message: log message
-        :param level: log level
-        :return: None
-        """
-        # If raw_print is True, output log to logger box
-        if raw_print:
-            self.logs += message
-            return
-
-        while len(logging.root.handlers) > 0:
-            logging.root.handlers.pop()
-
-        # If logger box is not None, output log to logger box
-        # else output log to console
-        category = self.align(category)
-        status = self.paddedStatus[level - 1]
-        color_key = self.status[level - 1]
-        color = self.COLORS.get(color_key, "")
-        reset = self.COLORS["RESET"]    
-        try:
-            print(f"{color}{status} | {category} | {message}{reset}", flush=True)
-        except OSError:
-            pass
-
-    def align(self, string, maxLength=8):
-        space = ' '
-        return f"{string}{space * (maxLength - len(string))}"
+    def _log_with_category(self, level: int, category: str, message) -> None:
+        # Exceptions get logged as their string form, same as before.
+        self.logger.log(level, str(message), extra={"category": category})
 
     def info(self, category: str, message: str) -> None:
-        """
-        :param message: log message
+        self._log_with_category(logging.INFO, category, message)
 
-        Output info log
-        """
-        self.__out__(category, message, 1)
+    def success(self, category: str, message) -> None:
+        self._log_with_category(SUCCESS, category, message)
 
-    def success(self, category: str, message: Union[str, Exception]) -> None:
-        """
-        :param message: log message
-
-        Output error log
-        """
-        self.__out__(category, message, 2)
-
-    def error(self, category: str, message: Union[str, Exception]) -> None:
-        """
-        :param message: log message
-
-        Output error log
-        """
-        self.__out__(category, message, 3)
+    def error(self, category: str, message) -> None:
+        self._log_with_category(logging.ERROR, category, message)
 
     def warning(self, category: str, message: str) -> None:
-        """
-        :param message: log message
-
-        Output warn log
-        """
-        self.__out__(category, message, 4)
+        self._log_with_category(logging.WARNING, category, message)
 
     def skipped(self, category: str, message: str) -> None:
-        """
-        :param message: log message
-
-        Output warn log
-        """
-        self.__out__(category, message, 5)
+        self._log_with_category(SKIPPED, category, message)
 
     def replaced(self, category: str, message: str) -> None:
-        """
-        :param message: log message
-
-        Output warn log
-        """
-        self.__out__(category, message, 6)
+        self._log_with_category(REPLACED, category, message)
 
     def renamed(self, category: str, message: str) -> None:
-        """
-        :param message: log message
-
-        Output warn log
-        """
-        self.__out__(category, message, 7)
+        self._log_with_category(RENAMED, category, message)
 
     def removed(self, category: str, message: str) -> None:
-        """
-        :param message: log message
-
-        Output warn log
-        """
-        self.__out__(category, message, 8)
+        self._log_with_category(REMOVED, category, message)
 
     def line(self) -> None:
-        """
-        Output line
-        """
-        print('--------------------------------------------------------------------', flush=True)
+        print("--------------------------------------------------------------------", flush=True)
 
 
-logger = Logger()
+def _build_logger() -> KafioLogger:
+    # When running as script.exe stdout is block-buffered by default, which
+    # delays output until the process exits. Force line-buffering so each
+    # line is flushed immediately.
+    if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
+    base_logger = logging.getLogger("KAFIO")
+    base_logger.setLevel(logging.INFO)
+    base_logger.propagate = False  # don't also emit via the root logger
+
+    if not base_logger.handlers:  # avoid duplicate handlers if re-imported
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setFormatter(ColorFormatter())
+        base_logger.addHandler(handler)
+
+    return KafioLogger(base_logger)
+
+
+logger = _build_logger()
