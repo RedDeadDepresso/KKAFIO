@@ -11,11 +11,12 @@ from send2trash import send2trash
 
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
-    collect_chara_guids, collect_coord_guids, collect_scene_guids,
-    find_matching_coords, parse_chara_guids,
-    parse_coord_guids, parse_scene_guids, resolve_paths, scan_mods,
+    build_mods_cache, collect_chara_guids, collect_coord_guids, collect_scene_guids,
+    find_matching_coords, load_mods_cache, load_modpack_index, parse_chara_guids,
+    parse_coord_guids, parse_scene_guids, resolve_paths,
 )
 from utils.classifier import CardType, get_card_type, is_coordinate
+from utils.config import GameType
 from utils.logger import logger
 
 
@@ -86,6 +87,34 @@ class DeleteCards(BaseTask):
         self.include_coordinates: bool      = cfg.get("IncludeCoordinates", True)
         self.mods_dir_str       : str       = cfg.get("ModsDir", "")
         self.coord_dir_str      : str       = cfg.get("CoordDir", "")
+        # {mods_dir: {guid: path}} — built once per distinct mods_dir and
+        # reused for every card, instead of re-scanning/re-validating the
+        # whole mods folder from scratch on every single card. Entries are
+        # removed in-memory as their zipmods get deleted during the run, so
+        # later cards in the same run still see an accurate picture without
+        # ever touching disk again.
+        self._local_mods_maps: dict[Path, dict[str, Path]] = {}
+
+    def _get_local_mods_map(self, mods_dir: Path) -> dict[str, Path]:
+        mods_dir = mods_dir.resolve()
+        cached = self._local_mods_maps.get(mods_dir)
+        if cached is not None:
+            return cached
+
+        if self.use_cache:
+            guid_str_map = load_mods_cache(mods_dir)
+            if guid_str_map is None:
+                logger.info("DELETE", f"Building mods cache for {mods_dir.name}...")
+                guid_str_map = build_mods_cache(mods_dir, include_modpack=False)
+                logger.info("DELETE", f"Mods cache built: {len(guid_str_map)} GUIDs")
+            else:
+                logger.info("DELETE", f"Mods cache hit: {len(guid_str_map)} GUIDs")
+        else:
+            guid_str_map = build_mods_cache(mods_dir, include_modpack=False)
+
+        guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
+        self._local_mods_maps[mods_dir] = guid_map
+        return guid_map
 
     def _collect_files(self, content_path: Path, game_base: Path,
                        mods_ov: Path | None, coord_ov: Path | None,
@@ -141,9 +170,20 @@ class DeleteCards(BaseTask):
         if mods_dir and mods_dir.exists() and all_guids:
             logger.info("DELETE",
                 f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
+
+            local_map = self._get_local_mods_map(mods_dir)
+            game_type = self.config.config_data.get("Core", {}).get(
+                "GameType", GameType.KOIKATSU.value)
             # include_modpack is intentionally non-configurable here — never touch modpack mods
-            guid_map = scan_mods(mods_dir, all_guids, include_modpack=False,
-                                use_cache=self.use_cache)
+            modpack_index = load_modpack_index(game_type=game_type) or {}
+
+            guid_map: dict[str, Path] = {}
+            for guid in all_guids:
+                if guid in modpack_index:
+                    continue  # modpack-provided — never touched by DeleteCards
+                p = local_map.get(guid)
+                if p is not None and p.exists():
+                    guid_map[guid] = p
 
             kept_shared = 0
             if guids_in_use_elsewhere is not None:
@@ -157,9 +197,15 @@ class DeleteCards(BaseTask):
 
             logger.info("DELETE",
                 f"  Zipmods found: {len(guid_map)}  "
-                f"missing: {len(all_guids - set(guid_map.keys()) - (guids_in_use_elsewhere or set()))}"
+                f"missing: {len(all_guids - set(guid_map.keys()) - (guids_in_use_elsewhere or set()) - set(modpack_index))}"
                 + (f"  kept (shared): {kept_shared}" if kept_shared else ""))
             files.extend(guid_map.values())
+
+            # Reflect the deletions in the in-memory map so later cards in
+            # this same run don't need to re-scan the mods folder to see
+            # that these are now gone.
+            for guid in guid_map:
+                local_map.pop(guid, None)
         elif not mods_dir:
             logger.info("DELETE", "  Mods directory not available — skipping mod lookup")
 
