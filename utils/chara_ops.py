@@ -609,18 +609,29 @@ def collect_png_guids(
     else:
         logger.info("CACHE", f"Scanning {len(to_read)} {label.lower()}(s) for mod GUIDs...")
 
-    for png in to_read:
-        sp = str(png)
-        fp = _file_fp(png)
+    import os
+    workers = min(32, (os.cpu_count() or 4) * 2)
+
+    def _proc(png: Path):
         try:
             raw = png.read_bytes()
             if is_valid(raw):
-                file_guids = [g for g in parse_guids(png) if g]
+                return png, [g for g in parse_guids(png) if g]
+        except Exception:
+            pass
+        return png, None
+
+    if to_read:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for future in as_completed({ex.submit(_proc, png): png for png in to_read}):
+                png, file_guids = future.result()
+                if file_guids is None:
+                    continue
+                sp = str(png)
+                fp = _file_fp(png)
                 guids.update(file_guids)
                 new_files[sp] = [fp[0], fp[1]]
                 new_guids_by_file[sp] = file_guids
-        except Exception:
-            pass
 
     if use_cache:
         # Store guids_by_file for per-file incremental reuse next run
