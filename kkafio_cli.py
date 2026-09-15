@@ -26,7 +26,51 @@ Global options:
 import sys
 import argparse
 import multiprocessing
+import signal
 import traceback
+
+
+# ---------------------------------------------------------------------------
+# [FIX-2026-09-14-GRACEFUL-STOP] Graceful stop signal handling
+# ---------------------------------------------------------------------------
+def _raise_keyboard_interrupt(signum, frame):
+    raise KeyboardInterrupt()
+
+
+def install_graceful_stop_handler() -> None:
+    """
+    Make CTRL_BREAK_EVENT (Windows) and SIGTERM behave like Ctrl+C.
+
+    The MXU GUI wrapper stops this process by first sending
+    GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pid) and only escalating to an
+    unconditional TerminateProcess kill if the process doesn't exit within a
+    grace period. Python's default disposition for CTRL_BREAK_EVENT is to
+    terminate the process immediately with no chance to run any cleanup code
+    at all — no signal handler, no `finally` block, nothing — unless a
+    handler is explicitly installed for it.
+
+    Installing a handler that raises KeyboardInterrupt makes CTRL_BREAK_EVENT
+    behave exactly like Ctrl+C: it propagates up through asyncio.run() and
+    whatever task is currently running, unwinding through the same
+    `try`/`finally` paths a normal KeyboardInterrupt already would. In
+    particular, tasks/download_missing_mods.py's own
+    `finally: await teleget_downloader.shutdown()` block then runs as
+    intended, sending the download daemon subprocess a proper, graceful IPC
+    ShutdownRequest instead of leaving it orphaned mid-download.
+
+    SIGTERM is handled the same way for parity outside of Windows / outside
+    of the console-control-event mechanism specifically.
+    """
+    if sys.platform == "win32" and hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, _raise_keyboard_interrupt)
+
+    try:
+        signal.signal(signal.SIGTERM, _raise_keyboard_interrupt)
+    except (ValueError, AttributeError):
+        # signal.signal() can only be called from the main thread, and
+        # SIGTERM isn't available on every platform; skip silently rather
+        # than fail startup over a best-effort parity handler.
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -994,9 +1038,27 @@ try:
         # other code, and has no effect when running from source.
         multiprocessing.freeze_support()
 
+        # [FIX-2026-09-14-GRACEFUL-STOP] See install_graceful_stop_handler()
+        # docstring above. Must be installed before parsing args / running
+        # any task, so a Stop request arriving at any point afterward is
+        # guaranteed to be caught.
+        install_graceful_stop_handler()
+
         parser = build_parser()
         args = parser.parse_args()
         args.func(args)
+
+except KeyboardInterrupt:
+    # [FIX-2026-09-14-GRACEFUL-STOP] Raised either by a real Ctrl+C, or by
+    # our own SIGBREAK/SIGTERM handler above standing in for the MXU GUI's
+    # Stop button. By the time it reaches here, the task-level `finally`
+    # blocks (e.g. tasks/download_missing_mods.py's
+    # `await teleget_downloader.shutdown()`) have already run while this
+    # exception unwound through the running asyncio task. Exit quietly and
+    # successfully rather than falling through to the traceback/dump-file
+    # handling below, which is meant for genuinely unexpected errors.
+    print("\nStopped.")
+    sys.exit(0)
 
 except SystemExit:
     raise
