@@ -163,7 +163,7 @@ https://t.me/kknowcc # you need to be part of this chat
 - **Include Coordinates** *(on by default)*: when a selected file is a character card, also deletes the coordinate cards it uses (and their mods). Disable to delete only the character card. This option has no effect on coordinate cards or scenes selected directly.
 - Uses the same path resolution and coordinate matching as Archive Cards.
 - Never touches Sideloader Modpack mods.
-- **Check for Shared Mods** *(on by default)*: before deleting a zipmod, scans every character card in the game's chara folders, every scene in the Studio scene folder (if installed), and every coordinate card in the game's coordinate folder to confirm no other character, scene, or coordinate still references it. Any zipmod still in use elsewhere is kept instead of deleted, and logged as such. This scan reuses the same incremental GUID caches as Download Missing Mods (`kkafio_chara_guid_cache.json`, `kkafio_scene_guid_cache.json`, `kkafio_coord_guid_cache.json`) when **Use Cache** is on, so repeat runs skip re-parsing cards that haven't changed. Turning **Use Cache** off, or turning **Check for Shared Mods** off entirely, skips the scan (faster, especially with a large card collection) but reintroduces the risk described below.
+- **Check for Shared Mods** *(on by default)*: before deleting a zipmod, scans every character card in the game's chara folders (or **Custom Chara Directory**, if set), every scene in the Studio scene folder (or **Custom Scene Directory**, if set), and every coordinate card in the game's coordinate folder (or **Custom Coordinate Directory**, if set) to confirm no other character, scene, or coordinate still references it. Any zipmod still in use elsewhere is kept instead of deleted, and logged as such. This scan reuses the same incremental GUID caches as Download Missing Mods (`kkafio_chara_guid_cache.json`, `kkafio_scene_guid_cache.json`, `kkafio_coord_guid_cache.json`) when **Use Cache** is on, so repeat runs skip re-parsing cards that haven't changed. Turning **Use Cache** off, or turning **Check for Shared Mods** off entirely, skips the scan (faster, especially with a large card collection) but reintroduces the risk described below.
 - **Warning:** The shared-mod check only covers **zipmods** — it does not check whether a **coordinate file** is shared between characters. Removing a coordinate used by multiple cards will still break all of them. Only use this task when you're certain any coordinate files being removed are exclusive to the card(s) you're deleting. Files can still be recovered from the Recycle Bin.
 
 ---
@@ -357,7 +357,7 @@ kkafio_cli delete-cards  [CONTENT ...]
                            [--include-coordinates | --no-include-coordinates]
                            [--auto-resolve | --no-auto-resolve]
                            [--use-cache | --no-use-cache]
-                           [--mods-dir DIR] [--coord-dir DIR]
+                           [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
 
 # Global options (all commands):
 kkafio_cli --config PATH --instance N <command>

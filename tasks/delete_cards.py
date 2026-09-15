@@ -66,6 +66,8 @@ class DeleteCards(BaseTask):
         self.use_cache          : bool      = cfg.get("UseCache", True)
         self.include_coordinates: bool      = cfg.get("IncludeCoordinates", True)
         self.mods_dir_str       : str       = cfg.get("ModsDir", "")
+        self.chara_dir_str      : str       = cfg.get("CharaDir", "")
+        self.scene_dir_str      : str       = cfg.get("SceneDir", "")
         self.coord_dir_str      : str       = cfg.get("CoordDir", "")
         # {mods_dir: {guid: path}} — built once per distinct mods_dir and
         # reused for every card, instead of re-scanning/re-validating the
@@ -204,9 +206,18 @@ class DeleteCards(BaseTask):
         guids_in_use_elsewhere: set[str] | None = None
         if self.check_shared_mods:
             game_path  = self.config.game_path
-            chara_dirs = [d for d in (game_path.get("charaFemale"), game_path.get("charaMale")) if d]
-            scene_dirs = [game_path["scene"]] if "scene" in game_path else []
-            coord_dirs = [game_path["coordinate"]] if "coordinate" in game_path else []
+            if self.chara_dir_str:
+                chara_dirs = [Path(self.chara_dir_str)]
+            else:
+                chara_dirs = [d for d in (game_path.get("charaFemale"), game_path.get("charaMale")) if d]
+            if self.scene_dir_str:
+                scene_dirs = [Path(self.scene_dir_str)]
+            else:
+                scene_dirs = [game_path["scene"]] if "scene" in game_path else []
+            if self.coord_dir_str:
+                coord_dirs = [Path(self.coord_dir_str)]
+            else:
+                coord_dirs = [game_path["coordinate"]] if "coordinate" in game_path else []
             exclude    = {p.resolve() for p in content_paths}
 
             logger.info("DELETE",

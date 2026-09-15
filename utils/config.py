@@ -134,7 +134,7 @@ _TASK_DEFAULTS = {
     "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
     "UninstallContents":      {"Enable": False, "InputPath": ""},
     "FilterConvertKKS": {"Enable": False, "InputPath": "", "Filter": False, "Convert": False, "ExtractArchive": True, "Password": "Skip"},
-    "DeleteCards":      {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeCoordinates": True},
+    "DeleteCards":      {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "IncludeCoordinates": True},
     "ArchiveCards":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": "", "IncludeCoordinates": True},
     "GroupChara":       {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": ""},
     "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": ""},
@@ -193,6 +193,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("CheckSharedMods",    "CheckSharedMods")
         _set("AutoResolve",        "AutoResolve")
         _set("ModsDir",            "ModsDir")
+        _set("CharaDir",           "CharaDir")
+        _set("SceneDir",           "SceneDir")
         _set("CoordDir",           "CoordDir")
         _set("UseCache",           "UseCache")
         _set("IncludeCoordinates", "IncludeCoordinates")

@@ -171,7 +171,8 @@ def run_delete_cards(config, file_manager, content_paths: list[str] | None = Non
                      auto_resolve: bool | None = None,
                      use_cache: bool | None = None,
                      include_coordinates: bool | None = None,
-                     mods_dir: str | None = None, coord_dir: str | None = None):
+                     mods_dir: str | None = None, chara_dir: str | None = None,
+                     scene_dir: str | None = None, coord_dir: str | None = None):
     from tasks.delete_cards import DeleteCards
     module = DeleteCards(config, file_manager)
     if content_paths is not None:
@@ -186,6 +187,10 @@ def run_delete_cards(config, file_manager, content_paths: list[str] | None = Non
         module.include_coordinates = include_coordinates
     if mods_dir is not None:
         module.mods_dir_str = mods_dir
+    if chara_dir is not None:
+        module.chara_dir_str = chara_dir
+    if scene_dir is not None:
+        module.scene_dir_str = scene_dir
     if coord_dir is not None:
         module.coord_dir_str = coord_dir
     module.run()
@@ -528,7 +533,8 @@ def cmd_delete_cards(args):
                          auto_resolve=auto_resolve,
                          use_cache=use_cache,
                          include_coordinates=include_coordinates,
-                         mods_dir=args.mods_dir, coord_dir=args.coord_dir)
+                         mods_dir=args.mods_dir, chara_dir=args.chara_dir,
+                         scene_dir=args.scene_dir, coord_dir=args.coord_dir)
     except SystemExit:
         raise
     except Exception:
@@ -824,8 +830,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Only delete the character card itself, leave its coordinates alone")
     p.add_argument("--mods-dir",  default=None, metavar="DIR",
                    help="Mods directory (only used when --no-auto-resolve)")
+    p.add_argument("--chara-dir", default=None, metavar="DIR",
+                   help="Custom chara directory for the shared-mod check (default: game's chara folders)")
+    p.add_argument("--scene-dir", default=None, metavar="DIR",
+                   help="Custom scene directory for the shared-mod check (default: game's Studio scene folder)")
     p.add_argument("--coord-dir", default=None, metavar="DIR",
-                   help="Coordinate directory (only used when --no-auto-resolve)")
+                   help="Coordinate directory (used for coordinate matching when --no-auto-resolve, "
+                        "and for the shared-mod check; default: game's coordinate folder)")
     p.set_defaults(func=cmd_delete_cards)
 
     # archive-cards

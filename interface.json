@@ -593,7 +593,7 @@
       "type": "folder",
       "name": "chara_dir",
       "label": "Custom Chara Directory",
-      "description": "Override the character card folder to scan for missing mods. Leave empty to use the game's default chara folders (female + male).",
+      "description": "Override the character card folder to scan (used by Download Missing Mods to find missing mods, and by Delete Cards' Check for Shared Mods). Leave empty to use the game's default chara folders (female + male).",
       "default": "",
       "pipeline_override": {
         "CharaDir": "{chara_dir}"
@@ -603,7 +603,7 @@
       "type": "folder",
       "name": "scene_dir",
       "label": "Custom Scene Directory",
-      "description": "Override the Studio scene folder to scan for missing mods. Leave empty to use the game's default Studio scene folder (if installed).",
+      "description": "Override the Studio scene folder to scan (used by Download Missing Mods to find missing mods, and by Delete Cards' Check for Shared Mods). Leave empty to use the game's default Studio scene folder (if installed).",
       "default": "",
       "pipeline_override": {
         "SceneDir": "{scene_dir}"
@@ -613,7 +613,7 @@
       "type": "folder",
       "name": "coord_dir",
       "label": "Custom Coordinate Directory",
-      "description": "Override the coordinate folder path. Leave empty to use the game's default coordinate folder.",
+      "description": "Override the coordinate folder to scan (used by Download Missing Mods to find missing mods, and by Archive/Delete Cards for coordinate matching and Delete Cards' Check for Shared Mods). Leave empty to use the game's default coordinate folder.",
       "default": "",
       "pipeline_override": {
         "CoordDir": "{coord_dir}"
@@ -925,11 +925,11 @@
         "SideloaderModpack",
         "TelegramSource",
         "TelegramChatLinks",
+        "ModsDir",
         "UseCache",
         "CharaDir",
         "SceneDir",
-        "CoordDir",
-        "ModsDir"
+        "CoordDir"
       ]
     },
     {
@@ -1037,6 +1037,8 @@
         "UseCache",
         "AutoResolve",
         "ModsDir",
+        "CharaDir",
+        "SceneDir",
         "CoordDir"
       ]
     }
