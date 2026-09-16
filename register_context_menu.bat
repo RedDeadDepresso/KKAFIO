@@ -1,8 +1,16 @@
 @echo off
 :: Registers KKAFIO in the Explorer right-click menu for the current user.
 :: Does NOT require Administrator.
+::
+:: This is a thin wrapper: the actual work (removing any existing entries,
+:: asking for a language, asking which tasks to show and in what order, and
+:: writing the registry keys) is done by register_context_menu.ps1, since
+:: PowerShell handles Unicode text (task names with emoji, and non-English
+:: languages) far more reliably than a plain batch/.reg file can.
+
 set "EXE=%~dp0kkafio_cli.exe"
 set "GUI=%~dp0KKAFIO.exe"
+set "PS1=%~dp0register_context_menu.ps1"
 
 if not exist "%EXE%" (
     echo ERROR: kkafio_cli.exe not found in %~dp0
@@ -14,167 +22,15 @@ if not exist "%GUI%" (
     pause
     exit /b 1
 )
-
-:: Double backslashes for REG_SZ values inside a .reg file
-set "EXE_REG=%EXE:\=\\%"
-set "GUI_REG=%GUI:\=\\%"
-
-:: cmd /k keeps the window open after the task finishes so the user can read output.
-:: Each command is wrapped as: cmd.exe /k ""exe" args"
-:: The double outer quotes are required by cmd.exe when the inner string starts with a quote.
-
-set "REG_FILE=%TEMP%\KKAFIO_register.reg"
-(
-echo Windows Registry Editor Version 5.00
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO]
-echo "MUIVerb"="KKAFIO"
-echo "Icon"="\"%EXE_REG%\""
-echo "ExtendedSubCommandsKey"="Directory\\shell\\KKAFIO"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell]
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01FilterConvertKKS]
-echo @="Filter & Convert KKS Cards"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\01FilterConvertKKS\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-kks --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02FilterDuplicateContents]
-echo @="Filter Duplicate Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\02FilterDuplicateContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-duplicate-contents --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03DownloadMissingMods]
-echo @="Download Missing Mods"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\03DownloadMissingMods\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%1\" --scene-dir \"%%1\" --coord-dir \"%%1\" --mods-dir \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04InstallContents]
-echo @="Install Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\04InstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\05UninstallContents]
-echo @="Uninstall Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\05UninstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\06GroupChara]
-echo @="Group Characters"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\06GroupChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" group-chara --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07UngroupChara]
-echo @="Ungroup Characters"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\07UngroupChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" ungroup-chara --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\08RenameChara]
-echo @="Rename Characters"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\08RenameChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" rename-chara --input \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\09RunGUI]
-echo @="Run GUI"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO\shell\09RunGUI\command]
-echo @="\"%GUI_REG%\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO]
-echo "MUIVerb"="KKAFIO"
-echo "Icon"="\"%EXE_REG%\""
-echo "ExtendedSubCommandsKey"="Directory\\Background\\shell\\KKAFIO"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell]
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01FilterConvertKKS]
-echo @="Filter & Convert KKS Cards"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\01FilterConvertKKS\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-convert-kks --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02FilterDuplicateContents]
-echo @="Filter Duplicate Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\02FilterDuplicateContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" filter-duplicate-contents --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03DownloadMissingMods]
-echo @="Download Missing Mods"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\03DownloadMissingMods\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" download-missing-mods --chara-dir \"%%V\" --scene-dir \"%%V\" --coord-dir \"%%V\" --mods-dir \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04InstallContents]
-echo @="Install Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\04InstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" install-contents --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\05UninstallContents]
-echo @="Uninstall Contents"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\05UninstallContents\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" uninstall-contents --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\06GroupChara]
-echo @="Group Characters"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\06GroupChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" group-chara --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07UngroupChara]
-echo @="Ungroup Characters"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\07UngroupChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" ungroup-chara --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\08RenameChara]
-echo @="Rename Characters"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\08RenameChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" rename-chara --input \"%%V\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\09RunGUI]
-echo @="Run GUI"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO\shell\09RunGUI\command]
-echo @="\"%GUI_REG%\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO]
-echo "MUIVerb"="KKAFIO"
-echo "Icon"="\"%EXE_REG%\""
-echo "ExtendedSubCommandsKey"="SystemFileAssociations\\.png\\shell\\KKAFIO"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell]
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\01ArchiveChara]
-echo @="Archive Card/Scene"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\01ArchiveChara\command]
-echo @="cmd.exe /c \"\"%EXE_REG%\" archive-cards --context-menu \"%%1\"\""
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\02DeleteChara]
-echo @="Delete Card/Scene"
-echo.
-echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\02DeleteChara\command]
-echo @="cmd.exe /c \"\"%EXE_REG%\" delete-cards --context-menu \"%%1\"\""
-) > "%REG_FILE%"
-regedit /s "%REG_FILE%"
-if %errorLevel% neq 0 (
-    echo ERROR: regedit failed with code %errorLevel%.
+if not exist "%PS1%" (
+    echo ERROR: register_context_menu.ps1 not found in %~dp0
     pause
     exit /b 1
 )
-echo.
-echo KKAFIO context menu registered successfully.
-echo Note: If it doesn't appear immediately, restart Explorer.
-pause
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS1%" -Exe "%EXE%" -Gui "%GUI%"
+if %errorLevel% neq 0 (
+    echo ERROR: register_context_menu.ps1 failed with code %errorLevel%.
+    pause
+    exit /b 1
+)

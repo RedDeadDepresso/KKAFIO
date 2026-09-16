@@ -10,6 +10,8 @@ echo.
 echo [-HKEY_CURRENT_USER\Software\Classes\Directory\shell\KKAFIO]
 echo.
 echo [-HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\KKAFIO]
+echo.
+echo [-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO]
 ) > "%REG_FILE%"
 
 regedit /s "%REG_FILE%"

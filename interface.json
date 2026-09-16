@@ -1,12 +1,12 @@
 {
   "interface_version": 2,
   "name": "KKAFIO",
-  "label": "KKAFIO",
-  "title": "KKAFIO - Koikatsu Auto File I/O",
+  "label": "$root.label",
+  "title": "$root.title",
   "version": "2.1.0",
   "github": "https://github.com/RedDeadDepresso/KKAFIO",
   "mirrorchyan_rid": "",
-  "description": "Automated character card and mod management for Koikatsu / Koikatsu Sunshine",
+  "description": "$root.description",
   "icon": "assets/logo.png",
   "agent": {
     "child_exec": "python",
@@ -33,27 +33,27 @@
   "option": {
     "GameType": {
       "type": "select",
-      "label": "Game Type",
-      "description": "Which Koikatsu game this configuration targets",
+      "label": "$option.GameType.label",
+      "description": "$option.GameType.description",
       "default_case": "Koikatsu",
       "cases": [
         {
           "name": "Koikatsu",
-          "label": "Koikatsu",
+          "label": "$option.GameType.case.Koikatsu.label",
           "pipeline_override": {
             "GameType": "Koikatsu"
           }
         },
         {
           "name": "KoikatsuParty",
-          "label": "Koikatsu Party",
+          "label": "$option.GameType.case.KoikatsuParty.label",
           "pipeline_override": {
             "GameType": "KoikatsuParty"
           }
         },
         {
           "name": "KoikatsuSunshine",
-          "label": "Koikatsu Sunshine",
+          "label": "$option.GameType.case.KoikatsuSunshine.label",
           "pipeline_override": {
             "GameType": "KoikatsuSunshine"
           }
@@ -63,8 +63,8 @@
     "GamePath": {
       "type": "folder",
       "name": "game_path",
-      "label": "Game Installation Path",
-      "description": "Path to your Koikatsu / Koikatsu Party / Koikatsu Sunshine installation folder",
+      "label": "$option.GamePath.label",
+      "description": "$option.GamePath.description",
       "default": "C:/Program Files (x86)/Steam/steamapps/common/Koikatsu Party",
       "pipeline_override": {
         "Core": {
@@ -75,8 +75,8 @@
     "OutputPath": {
       "type": "folder",
       "name": "output_path",
-      "label": "Output Directory",
-      "description": "Where to save output files (backups, archives, etc.)",
+      "label": "$option.OutputPath.label",
+      "description": "$option.OutputPath.description",
       "default": "",
       "pipeline_override": {
         "OutputPath": "{output_path}"
@@ -84,12 +84,12 @@
     },
     "BackupFilename": {
       "type": "input",
-      "label": "Backup Filename",
-      "description": "Name for the backup file (without extension)",
+      "label": "$option.BackupFilename.label",
+      "description": "$option.BackupFilename.description",
       "inputs": [
         {
           "name": "filename",
-          "label": "Filename",
+          "label": "$option.BackupFilename.input.filename.label",
           "default": "koikatsu_backup",
           "pipeline_type": "string"
         }
@@ -101,8 +101,8 @@
     "DownloadOutputDir": {
       "type": "folder",
       "name": "output_dir",
-      "label": "Download Output Folder",
-      "description": "Where to save downloaded cards",
+      "label": "$option.DownloadOutputDir.label",
+      "description": "$option.DownloadOutputDir.description",
       "default": "",
       "pipeline_override": {
         "OutputDir": "{output_dir}"
@@ -111,8 +111,8 @@
     "DownloadLinks": {
       "type": "textarea",
       "name": "links",
-      "label": "Download Links",
-      "description": "One URL per line - supports db.bepis.moe and koikatsucards.com card pages",
+      "label": "$option.DownloadLinks.label",
+      "description": "$option.DownloadLinks.description",
       "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 3 | 1",
       "default": "",
       "pipeline_override": {
@@ -121,20 +121,20 @@
     },
     "SkipDownloaded": {
       "type": "switch",
-      "label": "Skip Already Downloaded",
-      "description": "Skip cards that have been downloaded before (tracked in download history)",
+      "label": "$option.SkipDownloaded.label",
+      "description": "$option.SkipDownloaded.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Skip",
+          "label": "$option.SkipDownloaded.case.Yes.label",
           "pipeline_override": {
             "SkipDownloaded": true
           }
         },
         {
           "name": "No",
-          "label": "Re-download",
+          "label": "$option.SkipDownloaded.case.No.label",
           "pipeline_override": {
             "SkipDownloaded": false
           }
@@ -144,8 +144,8 @@
     "InputPath": {
       "type": "folder",
       "name": "input_path",
-      "label": "Input Directory",
-      "description": "Folder to scan for cards",
+      "label": "$option.InputPath.label",
+      "description": "$option.InputPath.description",
       "default": "",
       "pipeline_override": {
         "InputPath": "{input_path}"
@@ -153,20 +153,20 @@
     },
     "Filter": {
       "type": "switch",
-      "label": "Move Cards Into Folders",
-      "description": "Move KK/KKSP cards into _KK_card_/ and KKS cards into _KKS_card_/. Leave off when staging cards for Install/Uninstall Contents — moving cards into subfolders here means Uninstall Contents won't be able to reliably find and remove them later.",
+      "label": "$option.Filter.label",
+      "description": "$option.Filter.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Move Into Folders",
+          "label": "$option.Filter.case.Yes.label",
           "pipeline_override": {
             "Filter": true
           }
         },
         {
           "name": "No",
-          "label": "Leave In Place",
+          "label": "$option.Filter.case.No.label",
           "pipeline_override": {
             "Filter": false
           }
@@ -175,20 +175,20 @@
     },
     "Convert": {
       "type": "switch",
-      "label": "Convert KKS → KK",
-      "description": "Produce a KK-compatible copy of each KKS card. If Filter is on, copies go to _KKS_to_KK_/ alongside the moved cards; if Filter is off, each copy is saved next to its original KKS card instead.",
+      "label": "$option.Convert.label",
+      "description": "$option.Convert.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Convert",
+          "label": "$option.Convert.case.Yes.label",
           "pipeline_override": {
             "Convert": true
           }
         },
         {
           "name": "No",
-          "label": "Skip",
+          "label": "$option.Convert.case.No.label",
           "pipeline_override": {
             "Convert": false
           }
@@ -197,20 +197,20 @@
     },
     "ExtractArchive": {
       "type": "switch",
-      "label": "Extract Archives",
-      "description": "Extract ZIP/RAR/7z files before processing",
+      "label": "$option.ExtractArchive.label",
+      "description": "$option.ExtractArchive.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Extract",
+          "label": "$option.ExtractArchive.case.Yes.label",
           "pipeline_override": {
             "ExtractArchive": true
           }
         },
         {
           "name": "No",
-          "label": "Skip",
+          "label": "$option.ExtractArchive.case.No.label",
           "pipeline_override": {
             "ExtractArchive": false
           }
@@ -219,20 +219,20 @@
     },
     "ArchivePassword": {
       "type": "select",
-      "label": "Archive Password Handling",
-      "description": "How to handle password-protected archives",
+      "label": "$option.ArchivePassword.label",
+      "description": "$option.ArchivePassword.description",
       "default_case": "Skip",
       "cases": [
         {
           "name": "Skip",
-          "label": "Skip Protected",
+          "label": "$option.ArchivePassword.case.Skip.label",
           "pipeline_override": {
             "Password": "Skip"
           }
         },
         {
           "name": "Request",
-          "label": "Request Password",
+          "label": "$option.ArchivePassword.case.Request.label",
           "pipeline_override": {
             "Password": "Request Password"
           }
@@ -241,20 +241,20 @@
     },
     "FuzzyMatching": {
       "type": "switch",
-      "label": "Fuzzy Character Matching",
-      "description": "Use fuzzy matching to find duplicate character cards",
+      "label": "$option.FuzzyMatching.label",
+      "description": "$option.FuzzyMatching.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Enabled",
+          "label": "$option.FuzzyMatching.case.Yes.label",
           "pipeline_override": {
             "FuzzyChara": true
           }
         },
         {
           "name": "No",
-          "label": "Disabled",
+          "label": "$option.FuzzyMatching.case.No.label",
           "pipeline_override": {
             "FuzzyChara": false
           }
@@ -263,37 +263,37 @@
     },
     "KeepStrategy": {
       "type": "select",
-      "label": "Keep Which Copy",
-      "description": "Which duplicate to keep as the original",
+      "label": "$option.KeepStrategy.label",
+      "description": "$option.KeepStrategy.description",
       "default_case": "Biggest file size",
       "cases": [
         {
           "name": "None",
-          "label": "None - move all copies"
+          "label": "$option.KeepStrategy.case.None.label"
         },
         {
           "name": "Newest",
-          "label": "Newest"
+          "label": "$option.KeepStrategy.case.Newest.label"
         },
         {
           "name": "Oldest",
-          "label": "Oldest"
+          "label": "$option.KeepStrategy.case.Oldest.label"
         },
         {
           "name": "Biggest file size",
-          "label": "Biggest file size"
+          "label": "$option.KeepStrategy.case.Biggest file size.label"
         },
         {
           "name": "Smallest file size",
-          "label": "Smallest file size"
+          "label": "$option.KeepStrategy.case.Smallest file size.label"
         },
         {
           "name": "Last alphabetically",
-          "label": "Last alphabetically"
+          "label": "$option.KeepStrategy.case.Last alphabetically.label"
         },
         {
           "name": "First alphabetically",
-          "label": "First alphabetically"
+          "label": "$option.KeepStrategy.case.First alphabetically.label"
         }
       ],
       "pipeline_override": {
@@ -302,21 +302,21 @@
     },
     "DuplicateAction": {
       "type": "select",
-      "label": "Duplicate Action",
-      "description": "What to do with duplicate files once a duplicate set is found:\n• Move & Rename — move duplicates into _duplicates_ and rename them after the kept copy (or the first duplicate found, if Keep Which Copy is 'None'), plus a number, e.g. foo_1.png, foo_2.png\n• Move — move duplicates into _duplicates_ keeping their original filenames\n• Delete — send duplicates straight to the Recycle Bin",
+      "label": "$option.DuplicateAction.label",
+      "description": "$option.DuplicateAction.description",
       "default_case": "Move & Rename",
       "cases": [
         {
           "name": "Move & Rename",
-          "label": "Move & Rename"
+          "label": "$option.DuplicateAction.case.Move & Rename.label"
         },
         {
           "name": "Move",
-          "label": "Move"
+          "label": "$option.DuplicateAction.case.Move.label"
         },
         {
           "name": "Delete",
-          "label": "Delete"
+          "label": "$option.DuplicateAction.case.Delete.label"
         }
       ],
       "pipeline_override": {
@@ -325,41 +325,41 @@
     },
     "InstallContentTypes": {
       "type": "checkbox",
-      "label": "Content Types",
-      "description": "Which content types to include",
+      "label": "$option.InstallContentTypes.label",
+      "description": "$option.InstallContentTypes.description",
       "default_case": ["Chara", "Mods", "Coords", "Scenes", "Overlays"],
       "cases": [
         {
           "name": "Chara",
-          "label": "Chara",
+          "label": "$option.InstallContentTypes.case.Chara.label",
           "pipeline_override": {
             "Chara": true
           }
         },
         {
           "name": "Mods",
-          "label": "Mods",
+          "label": "$option.InstallContentTypes.case.Mods.label",
           "pipeline_override": {
             "Mods": true
           }
         },
         {
           "name": "Coords",
-          "label": "Coords",
+          "label": "$option.InstallContentTypes.case.Coords.label",
           "pipeline_override": {
             "Coords": true
           }
         },
         {
           "name": "Scenes",
-          "label": "Scenes",
+          "label": "$option.InstallContentTypes.case.Scenes.label",
           "pipeline_override": {
             "Scenes": true
           }
         },
         {
           "name": "Overlays",
-          "label": "Overlays",
+          "label": "$option.InstallContentTypes.case.Overlays.label",
           "pipeline_override": {
             "Overlays": true
           }
@@ -368,27 +368,27 @@
     },
     "FileConflicts": {
       "type": "select",
-      "label": "File Conflict Handling",
-      "description": "How to handle existing files with the same name",
+      "label": "$option.FileConflicts.label",
+      "description": "$option.FileConflicts.description",
       "default_case": "Skip",
       "cases": [
         {
           "name": "Skip",
-          "label": "Skip",
+          "label": "$option.FileConflicts.case.Skip.label",
           "pipeline_override": {
             "FileConflicts": "Skip"
           }
         },
         {
           "name": "Replace",
-          "label": "Replace",
+          "label": "$option.FileConflicts.case.Replace.label",
           "pipeline_override": {
             "FileConflicts": "Replace"
           }
         },
         {
           "name": "Rename",
-          "label": "Rename",
+          "label": "$option.FileConflicts.case.Rename.label",
           "pipeline_override": {
             "FileConflicts": "Rename"
           }
@@ -398,8 +398,8 @@
     "RenameCharaPrompt": {
       "type": "textarea",
       "name": "prompt",
-      "label": "Rename Prompt",
-      "description": "Instructions sent to the LLM, followed by the character JSON. When this task runs, a dialog will show the combined prompt+JSON to copy, and a Paste button to submit the LLM's reply.",
+      "label": "$option.RenameCharaPrompt.label",
+      "description": "$option.RenameCharaPrompt.description",
       "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's well-known English name.\n\nRules:\n- Use Western name order: firstname = given name, lastname = family name.\n- Use the English name the character is commonly known by, not a literal\n  transliteration (e.g. lastname \"Tohsaka\" firstname \"Rin\", not \"Tosaka Rin\").\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n",
       "pipeline_override": {
         "Prompt": "{prompt}"
@@ -407,20 +407,20 @@
     },
     "SkipAlreadyRenamed": {
       "type": "switch",
-      "label": "Skip Already Renamed",
-      "description": "Skip cards whose filename already matches a known translated name in the cache",
+      "label": "$option.SkipAlreadyRenamed.label",
+      "description": "$option.SkipAlreadyRenamed.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Skip",
+          "label": "$option.SkipAlreadyRenamed.case.Yes.label",
           "pipeline_override": {
             "SkipAlreadyRenamed": true
           }
         },
         {
           "name": "No",
-          "label": "Rescan",
+          "label": "$option.SkipAlreadyRenamed.case.No.label",
           "pipeline_override": {
             "SkipAlreadyRenamed": false
           }
@@ -429,20 +429,20 @@
     },
     "UpdateMetadata": {
       "type": "switch",
-      "label": "Update Card Metadata",
-      "description": "Write the translated names into the card's internal metadata (lastname / firstname / nickname)",
+      "label": "$option.UpdateMetadata.label",
+      "description": "$option.UpdateMetadata.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Update",
+          "label": "$option.UpdateMetadata.case.Yes.label",
           "pipeline_override": {
             "UpdateMetadata": true
           }
         },
         {
           "name": "No",
-          "label": "Skip",
+          "label": "$option.UpdateMetadata.case.No.label",
           "pipeline_override": {
             "UpdateMetadata": false
           }
@@ -451,20 +451,20 @@
     },
     "RenameFiles": {
       "type": "switch",
-      "label": "Rename PNG Files",
-      "description": "Also rename the PNG file on disk to match the translated name (e.g. Tohsaka_Rin.png)",
+      "label": "$option.RenameFiles.label",
+      "description": "$option.RenameFiles.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Rename",
+          "label": "$option.RenameFiles.case.Yes.label",
           "pipeline_override": {
             "RenameFiles": true
           }
         },
         {
           "name": "No",
-          "label": "Keep",
+          "label": "$option.RenameFiles.case.No.label",
           "pipeline_override": {
             "RenameFiles": false
           }
@@ -474,8 +474,8 @@
     "GroupCharaPrompt": {
       "type": "textarea",
       "name": "prompt",
-      "label": "LLM Prompt",
-      "description": "Instructions sent to the LLM, followed by the character JSON. When this task runs, a dialog will show the combined prompt+JSON to copy, and a Paste button to submit the LLM's reply.",
+      "label": "$option.GroupCharaPrompt.label",
+      "description": "$option.GroupCharaPrompt.description",
       "placeholder": "You will receive a JSON object whose keys identify Koikatsu character card files…",
       "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official English title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n",
       "pipeline_override": {
@@ -484,20 +484,20 @@
     },
     "GroupCharaIncludeSubfolders": {
       "type": "switch",
-      "label": "Include subfolders",
-      "description": "Also export character cards from subfolders. Disable to skip already-sorted cards.",
+      "label": "$option.GroupCharaIncludeSubfolders.label",
+      "description": "$option.GroupCharaIncludeSubfolders.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Include",
+          "label": "$option.GroupCharaIncludeSubfolders.case.Yes.label",
           "pipeline_override": {
             "IncludeSubfolders": true
           }
         },
         {
           "name": "No",
-          "label": "Skip subfolders",
+          "label": "$option.GroupCharaIncludeSubfolders.case.No.label",
           "pipeline_override": {
             "IncludeSubfolders": false
           }
@@ -506,20 +506,20 @@
     },
     "DeleteEmptyFolders": {
       "type": "switch",
-      "label": "Delete Empty Folders",
-      "description": "Remove empty subfolders after ungrouping",
+      "label": "$option.DeleteEmptyFolders.label",
+      "description": "$option.DeleteEmptyFolders.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Delete",
+          "label": "$option.DeleteEmptyFolders.case.Yes.label",
           "pipeline_override": {
             "DeleteEmptyFolders": true
           }
         },
         {
           "name": "No",
-          "label": "Keep",
+          "label": "$option.DeleteEmptyFolders.case.No.label",
           "pipeline_override": {
             "DeleteEmptyFolders": false
           }
@@ -528,17 +528,17 @@
     },
     "ArchiveFormat": {
       "type": "select",
-      "label": "Archive Format",
-      "description": "Output archive format",
+      "label": "$option.ArchiveFormat.label",
+      "description": "$option.ArchiveFormat.description",
       "default_case": "7z",
       "cases": [
         {
           "name": "7z",
-          "label": "7-Zip"
+          "label": "$option.ArchiveFormat.case.7z.label"
         },
         {
           "name": "zip",
-          "label": "ZIP"
+          "label": "$option.ArchiveFormat.case.zip.label"
         }
       ],
       "pipeline_override": {
@@ -547,20 +547,20 @@
     },
     "CombinedArchive": {
       "type": "switch",
-      "label": "Combined Archive",
-      "description": "Put all cards in one archive (otherwise one per card)",
+      "label": "$option.CombinedArchive.label",
+      "description": "$option.CombinedArchive.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Single archive",
+          "label": "$option.CombinedArchive.case.Yes.label",
           "pipeline_override": {
             "CombinedArchive": true
           }
         },
         {
           "name": "No",
-          "label": "One per card",
+          "label": "$option.CombinedArchive.case.No.label",
           "pipeline_override": {
             "CombinedArchive": false
           }
@@ -569,20 +569,20 @@
     },
     "IncludeModpack": {
       "type": "switch",
-      "label": "Include Sideloader Modpack",
-      "description": "Include zipmods from Sideloader Modpack folders",
+      "label": "$option.IncludeModpack.label",
+      "description": "$option.IncludeModpack.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Include",
+          "label": "$option.IncludeModpack.case.Yes.label",
           "pipeline_override": {
             "IncludeModpack": true
           }
         },
         {
           "name": "No",
-          "label": "Exclude",
+          "label": "$option.IncludeModpack.case.No.label",
           "pipeline_override": {
             "IncludeModpack": false
           }
@@ -592,8 +592,8 @@
     "CharaDir": {
       "type": "folder",
       "name": "chara_dir",
-      "label": "Custom Chara Directory",
-      "description": "Override the character card folder to scan (used by Download Missing Mods to find missing mods, and by Delete Cards' Check for Shared Mods). Leave empty to use the game's default chara folders (female + male).",
+      "label": "$option.CharaDir.label",
+      "description": "$option.CharaDir.description",
       "default": "",
       "pipeline_override": {
         "CharaDir": "{chara_dir}"
@@ -602,8 +602,8 @@
     "SceneDir": {
       "type": "folder",
       "name": "scene_dir",
-      "label": "Custom Scene Directory",
-      "description": "Override the Studio scene folder to scan (used by Download Missing Mods to find missing mods, and by Delete Cards' Check for Shared Mods). Leave empty to use the game's default Studio scene folder (if installed).",
+      "label": "$option.SceneDir.label",
+      "description": "$option.SceneDir.description",
       "default": "",
       "pipeline_override": {
         "SceneDir": "{scene_dir}"
@@ -612,8 +612,8 @@
     "CoordDir": {
       "type": "folder",
       "name": "coord_dir",
-      "label": "Custom Coordinate Directory",
-      "description": "Override the coordinate folder to scan (used by Download Missing Mods to find missing mods, and by Archive/Delete Cards for coordinate matching and Delete Cards' Check for Shared Mods). Leave empty to use the game's default coordinate folder.",
+      "label": "$option.CoordDir.label",
+      "description": "$option.CoordDir.description",
       "default": "",
       "pipeline_override": {
         "CoordDir": "{coord_dir}"
@@ -621,27 +621,27 @@
     },
     "ContentTypes": {
       "type": "checkbox",
-      "label": "Content Types to Scan",
-      "description": "Which content types to scan for referenced mod GUIDs. Deselect a type to skip scanning it (and skip requiring its directory to be resolvable).",
+      "label": "$option.ContentTypes.label",
+      "description": "$option.ContentTypes.description",
       "default_case": ["Chara", "Scene", "Coord"],
       "cases": [
         {
           "name": "Chara",
-          "label": "Characters",
+          "label": "$option.ContentTypes.case.Chara.label",
           "pipeline_override": {
             "ScanChara": true
           }
         },
         {
           "name": "Scene",
-          "label": "Scenes",
+          "label": "$option.ContentTypes.case.Scene.label",
           "pipeline_override": {
             "ScanScene": true
           }
         },
         {
           "name": "Coord",
-          "label": "Coordinates",
+          "label": "$option.ContentTypes.case.Coord.label",
           "pipeline_override": {
             "ScanCoord": true
           }
@@ -650,27 +650,27 @@
     },
     "SideloaderModpack": {
       "type": "select",
-      "label": "Sideloader Modpack",
-      "description": "How to handle Sideloader Modpack mods:\n• Skip — ignore modpack GUIDs entirely; only download non-modpack mods\n• Only Used — download missing modpack mods that are actually used by installed cards\n• All — download every GUID in the modpack index that is not installed locally",
+      "label": "$option.SideloaderModpack.label",
+      "description": "$option.SideloaderModpack.description",
       "default_case": "Skip",
       "cases": [
         {
           "name": "Skip",
-          "label": "Skip",
+          "label": "$option.SideloaderModpack.case.Skip.label",
           "pipeline_override": {
             "SideloaderModpack": "Skip"
           }
         },
         {
           "name": "OnlyUsed",
-          "label": "Only Used",
+          "label": "$option.SideloaderModpack.case.OnlyUsed.label",
           "pipeline_override": {
             "SideloaderModpack": "OnlyUsed"
           }
         },
         {
           "name": "All",
-          "label": "All",
+          "label": "$option.SideloaderModpack.case.All.label",
           "pipeline_override": {
             "SideloaderModpack": "All"
           }
@@ -679,34 +679,34 @@
     },
     "TelegramSource": {
       "type": "select",
-      "label": "Telegram Source",
-      "description": "Where to look for mods not covered by BetterRepack:\n• No — don't use Telegram at all\n• koikatsucards.com — look up each GUID there and download the linked Telegram message\n• Telegram Chat Links — search the chats/channels below directly for a file matching the GUID\n• koikatsucards.com + Telegram Chat Links — try koikatsucards.com first, then fall back to Telegram Chat Links for anything it couldn't find\n\nAny Telegram option requires a Telegram account: on first use KKAFIO opens https://my.telegram.org for your API ID/Hash, then asks for your phone number and verification code. Credentials are saved in %APPDATA%/KKAFIO/config/telegram.json.",
+      "label": "$option.TelegramSource.label",
+      "description": "$option.TelegramSource.description",
       "default_case": "No",
       "cases": [
         {
           "name": "No",
-          "label": "No",
+          "label": "$option.TelegramSource.case.No.label",
           "pipeline_override": {
             "TelegramSource": "No"
           }
         },
         {
           "name": "KoikatsuCards",
-          "label": "koikatsucards.com",
+          "label": "$option.TelegramSource.case.KoikatsuCards.label",
           "pipeline_override": {
             "TelegramSource": "KoikatsuCards"
           }
         },
         {
           "name": "ChatLinks",
-          "label": "Telegram Chat Links",
+          "label": "$option.TelegramSource.case.ChatLinks.label",
           "pipeline_override": {
             "TelegramSource": "ChatLinks"
           }
         },
         {
           "name": "Both",
-          "label": "koikatsucards.com + Telegram Chat Links",
+          "label": "$option.TelegramSource.case.Both.label",
           "pipeline_override": {
             "TelegramSource": "Both"
           }
@@ -716,8 +716,8 @@
     "TelegramChatLinks": {
       "type": "textarea",
       "name": "telegram_chat_links",
-      "label": "Telegram Chat Links",
-      "description": "One Telegram channel/group/chat link per line, used when Telegram Source is 'Telegram Chat Links' or the combined option. You must already be a member of each one. Add a topic ID (e.g. .../299) to search only that forum topic; a trailing '# comment' is ignored. Chats are tried in order, moving to the next one if a chat has no match.",
+      "label": "$option.TelegramChatLinks.label",
+      "description": "$option.TelegramChatLinks.description",
       "placeholder": "https://t.me/kknowcc\nhttps://t.me/c/2549022984/299",
       "default": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/KK_archive_modlibrary # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat",
       "pipeline_override": {
@@ -726,20 +726,20 @@
     },
     "AutoResolve": {
       "type": "switch",
-      "label": "Auto-Resolve Paths",
-      "description": "If the selected card is inside the game folder, uses the game's mods and coordinate directories automatically. Otherwise falls back to the card's parent folder. Disable to use the Custom Mods Directory and Custom Coordinate Directory fields instead.",
+      "label": "$option.AutoResolve.label",
+      "description": "$option.AutoResolve.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Auto-detect",
+          "label": "$option.AutoResolve.case.Yes.label",
           "pipeline_override": {
             "AutoResolve": true
           }
         },
         {
           "name": "No",
-          "label": "Specify manually",
+          "label": "$option.AutoResolve.case.No.label",
           "pipeline_override": {
             "AutoResolve": false
           }
@@ -749,8 +749,8 @@
     "ModsDir": {
       "type": "folder",
       "name": "mods_dir",
-      "label": "Custom Mods Directory",
-      "description": "Override the mods folder path. Leave empty to use the game's default mods folder.",
+      "label": "$option.ModsDir.label",
+      "description": "$option.ModsDir.description",
       "default": "",
       "pipeline_override": {
         "ModsDir": "{mods_dir}"
@@ -758,20 +758,20 @@
     },
     "UseCache": {
       "type": "switch",
-      "label": "Use Cache",
-      "description": "Use cached mod/coordinate scan results to speed up processing",
+      "label": "$option.UseCache.label",
+      "description": "$option.UseCache.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Use Cache",
+          "label": "$option.UseCache.case.Yes.label",
           "pipeline_override": {
             "UseCache": true
           }
         },
         {
           "name": "No",
-          "label": "Rescan",
+          "label": "$option.UseCache.case.No.label",
           "pipeline_override": {
             "UseCache": false
           }
@@ -781,8 +781,8 @@
     "ContentPaths": {
       "type": "file_list",
       "name": "content_paths",
-      "label": "Character / Coordinate / Scene Cards",
-      "description": "Select character cards, coordinate cards, or Studio scene PNG files to operate on",
+      "label": "$option.ContentPaths.label",
+      "description": "$option.ContentPaths.description",
       "file_filter": "PNG files (*.png)",
       "default": [],
       "pipeline_override": {
@@ -791,20 +791,20 @@
     },
     "IncludeCoordinates": {
       "type": "switch",
-      "label": "Include Coordinates",
-      "description": "When the selected file is a character card, also apply this action to the coordinate cards it uses (and their mods). Has no effect when the selected file is already a coordinate or a Studio scene",
+      "label": "$option.IncludeCoordinates.label",
+      "description": "$option.IncludeCoordinates.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Include Coordinates",
+          "label": "$option.IncludeCoordinates.case.Yes.label",
           "pipeline_override": {
             "IncludeCoordinates": true
           }
         },
         {
           "name": "No",
-          "label": "Character Only",
+          "label": "$option.IncludeCoordinates.case.No.label",
           "pipeline_override": {
             "IncludeCoordinates": false
           }
@@ -813,20 +813,20 @@
     },
     "CheckSharedMods": {
       "type": "switch",
-      "label": "Check for Shared Mods",
-      "description": "Before deleting a zipmod, check that no other installed character, scene, or coordinate still uses it, and keep it if so. Disabling speeds things up but risks breaking content that shares a mod with what you're deleting.",
+      "label": "$option.CheckSharedMods.label",
+      "description": "$option.CheckSharedMods.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Check",
+          "label": "$option.CheckSharedMods.case.Yes.label",
           "pipeline_override": {
             "CheckSharedMods": true
           }
         },
         {
           "name": "No",
-          "label": "Skip Check",
+          "label": "$option.CheckSharedMods.case.No.label",
           "pipeline_override": {
             "CheckSharedMods": false
           }
@@ -835,27 +835,27 @@
     },
     "BackupFolders": {
       "type": "checkbox",
-      "label": "Folders to Back Up",
-      "description": "Select which game folders to include in the backup. Mods: zipmods from your mods folder. Sideloader Modpack folders are always excluded, since those are re-downloadable and would bloat the archive.",
+      "label": "$option.BackupFolders.label",
+      "description": "$option.BackupFolders.description",
       "default_case": [],
       "cases": [
         {
           "name": "Mods",
-          "label": "Mods",
+          "label": "$option.BackupFolders.case.Mods.label",
           "pipeline_override": {
             "mods": true
           }
         },
         {
           "name": "UserData",
-          "label": "UserData",
+          "label": "$option.BackupFolders.case.UserData.label",
           "pipeline_override": {
             "UserData": true
           }
         },
         {
           "name": "BepInEx",
-          "label": "BepInEx",
+          "label": "$option.BackupFolders.case.BepInEx.label",
           "pipeline_override": {
             "BepInEx": true
           }
@@ -866,45 +866,45 @@
   "group": [
     {
       "name": "card-management",
-      "label": "Card Management",
+      "label": "$group.card-management.label",
       "default_expand": true
     },
     {
       "name": "duplicate-handling",
-      "label": "Duplicate Handling",
+      "label": "$group.duplicate-handling.label",
       "default_expand": false
     },
     {
       "name": "backup",
-      "label": "Backup & Restore",
+      "label": "$group.backup.label",
       "default_expand": false
     }
   ],
   "task": [
     {
       "name": "CreateBackup",
-      "label": "💾 Create Backup",
+      "label": "$task.CreateBackup.label",
       "entry": "CreateBackup",
       "default_check": false,
-      "description": "Create a 7-Zip backup of game folders",
+      "description": "$task.CreateBackup.description",
       "group": ["backup"],
       "option": ["OutputPath", "BackupFilename", "BackupFolders"]
     },
     {
       "name": "DownloadContents",
-      "label": "📥 Download Contents",
+      "label": "$task.DownloadContents.label",
       "entry": "DownloadContents",
       "default_check": false,
-      "description": "Download chara, coordinates and scenes from db.bepis.moe or koikatsucards.com",
+      "description": "$task.DownloadContents.description",
       "group": ["card-management"],
       "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
     },
     {
       "name": "FilterConvertKKS",
-      "label": "🔧 Filter & Convert KKS Cards",
+      "label": "$task.FilterConvertKKS.label",
       "entry": "FilterConvertKKS",
       "default_check": false,
-      "description": "Filter and optionally convert KKS cards to KK format",
+      "description": "$task.FilterConvertKKS.description",
       "group": ["card-management"],
       "option": [
         "InputPath",
@@ -916,10 +916,10 @@
     },
     {
       "name": "DownloadMissingMods",
-      "label": "⬇️ Download Missing Mods",
+      "label": "$task.DownloadMissingMods.label",
       "entry": "DownloadMissingMods",
       "default_check": false,
-      "description": "Find mods referenced by character cards but not installed locally, then download them from BetterRepack or via Telegram.",
+      "description": "$task.DownloadMissingMods.description",
       "option": [
         "ContentTypes",
         "SideloaderModpack",
@@ -934,10 +934,10 @@
     },
     {
       "name": "FilterDuplicateContents",
-      "label": "🧹 Filter Duplicate Contents",
+      "label": "$task.FilterDuplicateContents.label",
       "entry": "FilterDuplicateContents",
       "default_check": false,
-      "description": "Find and handle duplicate PNG cards and zipmod files",
+      "description": "$task.FilterDuplicateContents.description",
       "group": ["duplicate-handling"],
       "option": [
         "InputPath",
@@ -949,10 +949,10 @@
     },
     {
       "name": "InstallContents",
-      "label": "📦 Install Contents",
+      "label": "$task.InstallContents.label",
       "entry": "InstallContents",
       "default_check": false,
-      "description": "Copy character cards, coordinates, mods, scenes and overlays into the game",
+      "description": "$task.InstallContents.description",
       "group": ["card-management"],
       "option": [
         "InputPath",
@@ -964,37 +964,37 @@
     },
     {
       "name": "UninstallContents",
-      "label": "↩️ Uninstall Contents",
+      "label": "$task.UninstallContents.label",
       "entry": "UninstallContents",
       "default_check": false,
-      "description": "Uninstall character cards and their mods from the game",
+      "description": "$task.UninstallContents.description",
       "group": ["card-management"],
       "option": ["InputPath", "InstallContentTypes"]
     },
     {
       "name": "GroupChara",
-      "label": "🗂️ Group Characters",
+      "label": "$task.GroupChara.label",
       "entry": "GroupChara",
       "default_check": false,
-      "description": "Move character cards into series subfolders using an LLM (shows a Copy/Paste dialog when run)",
+      "description": "$task.GroupChara.description",
       "group": ["card-management"],
       "option": ["InputPath", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
     },
     {
       "name": "UngroupChara",
-      "label": "📂 Ungroup Characters",
+      "label": "$task.UngroupChara.label",
       "entry": "UngroupChara",
       "default_check": false,
-      "description": "Move cards from subfolders back to top-level folder",
+      "description": "$task.UngroupChara.description",
       "group": ["card-management"],
       "option": ["InputPath", "DeleteEmptyFolders"]
     },
     {
       "name": "RenameChara",
-      "label": "✏️ Rename Characters",
+      "label": "$task.RenameChara.label",
       "entry": "RenameChara",
       "default_check": false,
-      "description": "Translate character card names to English using an LLM (shows a Copy/Paste dialog when run)",
+      "description": "$task.RenameChara.description",
       "group": ["card-management"],
       "option": [
         "InputPath",
@@ -1006,10 +1006,10 @@
     },
     {
       "name": "ArchiveCards",
-      "label": "🎁 Archive Cards",
+      "label": "$task.ArchiveCards.label",
       "entry": "ArchiveCards",
       "default_check": false,
-      "description": "Bundle character cards, coordinate cards, or Studio scenes with their zipmods (and, for character cards, matching coordinates)",
+      "description": "$task.ArchiveCards.description",
       "group": ["card-management"],
       "option": [
         "OutputPath",
@@ -1026,10 +1026,10 @@
     },
     {
       "name": "DeleteCards",
-      "label": "🗑️ Delete Cards",
+      "label": "$task.DeleteCards.label",
       "entry": "DeleteCards",
       "default_check": false,
-      "description": "Send character cards, coordinate cards, or Studio scenes and their associated mods/coords to Recycle Bin",
+      "description": "$task.DeleteCards.description",
       "group": ["card-management"],
       "option": [
         "ContentPaths",
@@ -1047,8 +1047,8 @@
   "preset": [
     {
       "name": "AllTasks",
-      "label": "⚡ All Tasks",
-      "description": "Run all available tasks in order",
+      "label": "$preset.AllTasks.label",
+      "description": "$preset.AllTasks.description",
       "task": [
         {
           "name": "CreateBackup"
@@ -1090,8 +1090,8 @@
     },
     {
       "name": "InstallAndFilter",
-      "label": "📥 Install & Filter",
-      "description": "Filter duplicates, convert KKS cards, then install into the game",
+      "label": "$preset.InstallAndFilter.label",
+      "description": "$preset.InstallAndFilter.description",
       "task": [
         {
           "name": "FilterDuplicateContents"
@@ -1106,8 +1106,8 @@
     },
     {
       "name": "BackupAndClean",
-      "label": "💾 Backup & Clean",
-      "description": "Create a backup, then archive and delete selected characters",
+      "label": "$preset.BackupAndClean.label",
+      "description": "$preset.BackupAndClean.description",
       "task": [
         {
           "name": "CreateBackup"
@@ -1122,8 +1122,8 @@
     },
     {
       "name": "GroupAndRename",
-      "label": "✏️ Group & Rename",
-      "description": "sort them into series folders then translate card names to English",
+      "label": "$preset.GroupAndRename.label",
+      "description": "$preset.GroupAndRename.description",
       "task": [
         {
           "name": "GroupChara"
@@ -1135,8 +1135,8 @@
     },
     {
       "name": "DownloadAndInstall",
-      "label": "⬇️ Download & Install",
-      "description": "Download new cards then install them into the game",
+      "label": "$preset.DownloadAndInstall.label",
+      "description": "$preset.DownloadAndInstall.description",
       "task": [
         {
           "name": "DownloadContents"
@@ -1149,5 +1149,13 @@
         }
       ]
     }
-  ]
+  ],
+  "languages": {
+    "en_us": "resource/i18n/en_us.json",
+    "zh_cn": "resource/i18n/zh_cn.json",
+    "zh_tw": "resource/i18n/zh_tw.json",
+    "ja_jp": "resource/i18n/ja_jp.json",
+    "ko_kr": "resource/i18n/ko_kr.json",
+    "ru_ru": "resource/i18n/ru_ru.json"
+  }
 }
