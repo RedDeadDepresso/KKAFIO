@@ -102,7 +102,7 @@
       "type": "folder",
       "name": "output_dir",
       "label": "Download Output Folder",
-      "description": "Where to save downloaded cards. Defaults to the Female chara folder.",
+      "description": "Where to save downloaded cards",
       "default": "",
       "pipeline_override": {
         "OutputDir": "{output_dir}"
@@ -145,7 +145,7 @@
       "type": "folder",
       "name": "input_path",
       "label": "Input Directory",
-      "description": "Folder to scan for character cards / archives",
+      "description": "Folder to scan for cards",
       "default": "",
       "pipeline_override": {
         "InputPath": "{input_path}"
@@ -154,7 +154,7 @@
     "Filter": {
       "type": "switch",
       "label": "Move Cards Into Folders",
-      "description": "Move KK/KKSP cards into _KK_card_/ and KKS cards into _KKS_card_/. Off by default. Leave off when staging cards for Install/Uninstall Contents — moving cards into subfolders here means Uninstall Contents won't be able to reliably find and remove them later.",
+      "description": "Move KK/KKSP cards into _KK_card_/ and KKS cards into _KKS_card_/. Leave off when staging cards for Install/Uninstall Contents — moving cards into subfolders here means Uninstall Contents won't be able to reliably find and remove them later.",
       "default_case": "No",
       "cases": [
         {
@@ -303,7 +303,7 @@
     "DuplicateAction": {
       "type": "select",
       "label": "Duplicate Action",
-      "description": "What to do with duplicate files once a duplicate set is found:\n• Move & Rename — move duplicates into _duplicates_ and rename them after the kept copy (or the first duplicate found, if Keep Which Copy is 'None'), plus a number, e.g. foo_1.png, foo_2.png (default)\n• Move — move duplicates into _duplicates_ keeping their original filenames\n• Delete — send duplicates straight to the Recycle Bin",
+      "description": "What to do with duplicate files once a duplicate set is found:\n• Move & Rename — move duplicates into _duplicates_ and rename them after the kept copy (or the first duplicate found, if Keep Which Copy is 'None'), plus a number, e.g. foo_1.png, foo_2.png\n• Move — move duplicates into _duplicates_ keeping their original filenames\n• Delete — send duplicates straight to the Recycle Bin",
       "default_case": "Move & Rename",
       "cases": [
         {
@@ -326,7 +326,7 @@
     "InstallContentTypes": {
       "type": "checkbox",
       "label": "Content Types",
-      "description": "Which content types to include. All five are included by default.",
+      "description": "Which content types to include",
       "default_case": ["Chara", "Mods", "Coords", "Scenes", "Overlays"],
       "cases": [
         {
@@ -622,7 +622,7 @@
     "ContentTypes": {
       "type": "checkbox",
       "label": "Content Types to Scan",
-      "description": "Which content types to scan for referenced mod GUIDs. All three are scanned by default; deselect a type to skip scanning it (and skip requiring its directory to be resolvable).",
+      "description": "Which content types to scan for referenced mod GUIDs. Deselect a type to skip scanning it (and skip requiring its directory to be resolvable).",
       "default_case": ["Chara", "Scene", "Coord"],
       "cases": [
         {
@@ -651,7 +651,7 @@
     "SideloaderModpack": {
       "type": "select",
       "label": "Sideloader Modpack",
-      "description": "How to handle Sideloader Modpack mods:\n• Skip — ignore modpack GUIDs entirely; only download non-modpack mods\n• Only Used — download missing modpack mods that are actually used by installed cards (default)\n• All — download every GUID in the modpack index that is not installed locally",
+      "description": "How to handle Sideloader Modpack mods:\n• Skip — ignore modpack GUIDs entirely; only download non-modpack mods\n• Only Used — download missing modpack mods that are actually used by installed cards\n• All — download every GUID in the modpack index that is not installed locally",
       "default_case": "Skip",
       "cases": [
         {
@@ -680,7 +680,7 @@
     "TelegramSource": {
       "type": "select",
       "label": "Telegram Source",
-      "description": "Where to look for mods not covered by BetterRepack:\n• No — don't use Telegram at all (default)\n• koikatsucards.com — look up each GUID there and download the linked Telegram message\n• Telegram Chat Links — search the chats/channels below directly for a file matching the GUID\n• koikatsucards.com + Telegram Chat Links — try koikatsucards.com first, then fall back to Telegram Chat Links for anything it couldn't find\n\nAny Telegram option requires a Telegram account: on first use KKAFIO opens https://my.telegram.org for your API ID/Hash, then asks for your phone number and verification code. Credentials are saved in %APPDATA%/KKAFIO/config/telegram.json.",
+      "description": "Where to look for mods not covered by BetterRepack:\n• No — don't use Telegram at all\n• koikatsucards.com — look up each GUID there and download the linked Telegram message\n• Telegram Chat Links — search the chats/channels below directly for a file matching the GUID\n• koikatsucards.com + Telegram Chat Links — try koikatsucards.com first, then fall back to Telegram Chat Links for anything it couldn't find\n\nAny Telegram option requires a Telegram account: on first use KKAFIO opens https://my.telegram.org for your API ID/Hash, then asks for your phone number and verification code. Credentials are saved in %APPDATA%/KKAFIO/config/telegram.json.",
       "default_case": "No",
       "cases": [
         {
@@ -792,7 +792,7 @@
     "IncludeCoordinates": {
       "type": "switch",
       "label": "Include Coordinates",
-      "description": "When the selected file is a character card, also apply this action to the coordinate cards it uses (and their mods). Has no effect when the selected file is already a coordinate or a Studio scene. On by default.",
+      "description": "When the selected file is a character card, also apply this action to the coordinate cards it uses (and their mods). Has no effect when the selected file is already a coordinate or a Studio scene",
       "default_case": "Yes",
       "cases": [
         {
@@ -814,7 +814,7 @@
     "CheckSharedMods": {
       "type": "switch",
       "label": "Check for Shared Mods",
-      "description": "Before deleting a zipmod, check that no other installed character, scene, or coordinate still uses it, and keep it if so. On by default; disabling speeds things up but risks breaking content that shares a mod with what you're deleting.",
+      "description": "Before deleting a zipmod, check that no other installed character, scene, or coordinate still uses it, and keep it if so. Disabling speeds things up but risks breaking content that shares a mod with what you're deleting.",
       "default_case": "Yes",
       "cases": [
         {
@@ -925,8 +925,8 @@
         "SideloaderModpack",
         "TelegramSource",
         "TelegramChatLinks",
-        "ModsDir",
         "UseCache",
+        "ModsDir",
         "CharaDir",
         "SceneDir",
         "CoordDir"
@@ -952,7 +952,7 @@
       "label": "📦 Install Contents",
       "entry": "InstallContents",
       "default_check": false,
-      "description": "Copy character cards, mods, scenes and overlays into the game",
+      "description": "Copy character cards, coordinates, mods, scenes and overlays into the game",
       "group": ["card-management"],
       "option": [
         "InputPath",
