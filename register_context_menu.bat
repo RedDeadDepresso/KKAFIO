@@ -160,13 +160,13 @@ echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFI
 echo @="Archive Card/Scene"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\01ArchiveChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" archive-cards \"%%1\"\""
+echo @="cmd.exe /c \"\"%EXE_REG%\" archive-cards --context-menu \"%%1\"\""
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\02DeleteChara]
 echo @="Delete Card/Scene"
 echo.
 echo [HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO\shell\02DeleteChara\command]
-echo @="cmd.exe /k \"\"%EXE_REG%\" delete-cards \"%%1\"\""
+echo @="cmd.exe /c \"\"%EXE_REG%\" delete-cards --context-menu \"%%1\"\""
 ) > "%REG_FILE%"
 regedit /s "%REG_FILE%"
 if %errorLevel% neq 0 (

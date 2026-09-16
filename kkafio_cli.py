@@ -570,6 +570,15 @@ def cmd_delete_cards(args):
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["DeleteCards"]["Enable"] = True
         content_paths = args.content if args.content else None
+
+        if getattr(args, "context_menu", False) and content_paths and len(content_paths) == 1:
+            from pathlib import Path
+            from utils.context_menu_batch import coordinate_batch
+            batch = coordinate_batch("delete-cards", Path(content_paths[0]))
+            if batch is None:
+                return  # a sibling invocation is handling this whole batch
+            content_paths = [str(p) for p in batch]
+
         check_shared_mods   = None if args.check_shared_mods is None else bool(args.check_shared_mods)
         auto_resolve        = None if args.auto_resolve is None else bool(args.auto_resolve)
         use_cache           = None if args.use_cache is None else bool(args.use_cache)
@@ -582,6 +591,8 @@ def cmd_delete_cards(args):
                          include_coordinates=include_coordinates,
                          mods_dir=args.mods_dir, chara_dir=args.chara_dir,
                          scene_dir=args.scene_dir, coord_dir=args.coord_dir)
+        if getattr(args, "context_menu", False):
+            input("\nPress Enter to close...")
     except SystemExit:
         raise
     except Exception:
@@ -595,6 +606,23 @@ def cmd_archive_cards(args):
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["ArchiveCards"]["Enable"] = True
         content_paths       = args.content if args.content else None
+        output_dir          = args.output_dir
+
+        if getattr(args, "context_menu", False) and content_paths and len(content_paths) == 1:
+            import os
+            from pathlib import Path
+            from utils.context_menu_batch import coordinate_batch
+            batch = coordinate_batch("archive-cards", Path(content_paths[0]))
+            if batch is None:
+                return  # a sibling invocation is handling this whole batch
+            content_paths = [str(p) for p in batch]
+            if output_dir is None:
+                # Default to the common parent folder of everything selected
+                # (the same folder they're in, for a normal single-folder
+                # multi-select) rather than each card's own folder, since
+                # they're now being combined into one archive.
+                output_dir = os.path.commonpath([str(Path(p).parent) for p in batch])
+
         auto_resolve        = None if args.auto_resolve is None else bool(args.auto_resolve)
         use_cache           = None if args.use_cache is None else bool(args.use_cache)
         include_modpack     = None if args.include_modpack is None else bool(args.include_modpack)
@@ -608,7 +636,9 @@ def cmd_archive_cards(args):
                           combined=combined,
                           include_coordinates=include_coordinates,
                           mods_dir=args.mods_dir, coord_dir=args.coord_dir,
-                          output_dir=args.output_dir)
+                          output_dir=output_dir)
+        if getattr(args, "context_menu", False):
+            input("\nPress Enter to close...")
     except SystemExit:
         raise
     except Exception:
@@ -889,6 +919,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--coord-dir", default=None, metavar="DIR",
                    help="Coordinate directory (used for coordinate matching when --no-auto-resolve, "
                         "and for the shared-mod check; default: game's coordinate folder)")
+    p.add_argument("--context-menu", action="store_true", default=False,
+                   help="Internal flag set by register_context_menu.bat: coalesces multiple "
+                        "simultaneous Explorer-selection invocations (one per selected file) "
+                        "into a single combined run instead of processing each file separately.")
     p.set_defaults(func=cmd_delete_cards)
 
     # archive-cards
@@ -932,6 +966,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Coordinate directory override")
     p.add_argument("--output-dir", default=None, metavar="DIR",
                    help="Output directory (default: same folder as chara card/scene)")
+    p.add_argument("--context-menu", action="store_true", default=False,
+                   help="Internal flag set by register_context_menu.bat: coalesces multiple "
+                        "simultaneous Explorer-selection invocations (one per selected file) "
+                        "into a single combined run instead of processing each file separately, "
+                        "and defaults --output-dir to the common parent folder of the selection.")
     p.set_defaults(func=cmd_archive_cards)
 
     # ungroup-chara
