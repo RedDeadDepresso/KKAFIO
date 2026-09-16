@@ -1,17 +1,40 @@
 ﻿<#
     KKAFIO context menu registration.
-    Called by register_context_menu.bat - not meant to be run standalone,
-    though it works fine if you do (just pass -Exe/-Gui yourself).
     Registry-only, HKCU, no Administrator required.
+
+    Run register_context_menu.bat instead of this file directly - Windows'
+    default PowerShell execution policy blocks .ps1 scripts from running at
+    all, and the .bat wrapper (which isn't subject to that policy) launches
+    this with -ExecutionPolicy Bypass for just that one run.
+
+    By default it looks for kkafio_cli.exe and KKAFIO.exe next to this
+    script; pass -Exe/-Gui to point somewhere else.
 #>
 param(
-    [Parameter(Mandatory = $true)][string]$Exe,
-    [Parameter(Mandatory = $true)][string]$Gui
+    [string]$Exe = (Join-Path $PSScriptRoot 'kkafio_cli.exe'),
+    [string]$Gui = (Join-Path $PSScriptRoot 'KKAFIO.exe')
 )
 
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
+function Wait-KeyAndExit {
+    param([int]$Code = 1)
+    Write-Host ""
+    Write-Host "Press any key to exit..."
+    [void][System.Console]::ReadKey($true)
+    exit $Code
+}
+
+if (-not (Test-Path $Exe)) {
+    Write-Host "ERROR: kkafio_cli.exe not found at `"$Exe`"."
+    Wait-KeyAndExit
+}
+if (-not (Test-Path $Gui)) {
+    Write-Host "ERROR: KKAFIO.exe not found at `"$Gui`"."
+    Wait-KeyAndExit
+}
 
 # ---------------------------------------------------------------------------
 # Task catalog. ArgsTemplate uses {P} as a stand-in for the path placeholder
@@ -32,8 +55,8 @@ $FolderTasks = @(
 # two PNG-file-association commands (different registry root/context).
 $RunGuiTask   = [ordered]@{ Id = 'RunGUI' }
 $PngTasks = @(
-    [ordered]@{ Id = 'ArchiveChara'; Cli = 'archive-cards'; ArgsTemplate = '--context-menu "{P}"' }
-    [ordered]@{ Id = 'DeleteChara';  Cli = 'delete-cards';  ArgsTemplate = '--context-menu "{P}"' }
+    [ordered]@{ Id = 'ArchiveCards'; Cli = 'archive-cards'; ArgsTemplate = '"{P}" --context-menu' }
+    [ordered]@{ Id = 'DeleteCards';  Cli = 'delete-cards';  ArgsTemplate = '"{P}" --context-menu' }
 )
 
 # ---------------------------------------------------------------------------
@@ -52,8 +75,8 @@ $Labels = @{
         UngroupChara            = "📂 Ungroup Characters"
         RenameChara             = "✏️ Rename Characters"
         RunGUI                  = "▶️ Run GUI"
-        ArchiveChara            = "🎁 Archive Card/Scene"
-        DeleteChara             = "🗑️ Delete Card/Scene"
+        ArchiveCards            = "🎁 Archive Cards"
+        DeleteCards             = "🗑️ Delete Cards"
     }
     zh_cn = @{
         FilterConvertKKS        = "🔧 过滤并转换 KKS 卡片"
@@ -65,8 +88,8 @@ $Labels = @{
         UngroupChara            = "📂 取消分组角色"
         RenameChara             = "✏️ 重命名角色"
         RunGUI                  = "▶️ 启动图形界面"
-        ArchiveChara            = "🎁 归档卡片/场景"
-        DeleteChara             = "🗑️ 删除卡片/场景"
+        ArchiveCards            = "🎁 归档卡片"
+        DeleteCards             = "🗑️ 删除卡片"
     }
     zh_tw = @{
         FilterConvertKKS        = "🔧 過濾並轉換 KKS 卡片"
@@ -78,8 +101,8 @@ $Labels = @{
         UngroupChara            = "📂 取消分組角色"
         RenameChara             = "✏️ 重新命名角色"
         RunGUI                  = "▶️ 啟動圖形介面"
-        ArchiveChara            = "🎁 歸檔卡片/場景"
-        DeleteChara             = "🗑️ 刪除卡片/場景"
+        ArchiveCards            = "🎁 歸檔卡片"
+        DeleteCards             = "🗑️ 刪除卡片"
     }
     ja = @{
         FilterConvertKKS        = "🔧 KKSカードのフィルタと変換"
@@ -91,8 +114,8 @@ $Labels = @{
         UngroupChara            = "📂 キャラのグループ化を解除"
         RenameChara             = "✏️ キャラをリネーム"
         RunGUI                  = "▶️ GUIを起動"
-        ArchiveChara            = "🎁 カード／シーンをアーカイブ"
-        DeleteChara             = "🗑️ カード／シーンを削除"
+        ArchiveCards            = "🎁 カードをアーカイブ"
+        DeleteCards             = "🗑️ カードを削除"
     }
     ko = @{
         FilterConvertKKS        = "🔧 KKS 카드 필터 및 변환"
@@ -104,8 +127,8 @@ $Labels = @{
         UngroupChara            = "📂 캐릭터 그룹 해제"
         RenameChara             = "✏️ 캐릭터 이름 변경"
         RunGUI                  = "▶️ GUI 실행"
-        ArchiveChara            = "🎁 카드/씬 보관"
-        DeleteChara             = "🗑️ 카드/씬 삭제"
+        ArchiveCards            = "🎁 카드 보관"
+        DeleteCards             = "🗑️ 카드 삭제"
     }
     ru = @{
         FilterConvertKKS        = "🔧 Фильтр и конвертация карточек KKS"
@@ -117,8 +140,8 @@ $Labels = @{
         UngroupChara            = "📂 Разгруппировать персонажей"
         RenameChara             = "✏️ Переименовать персонажей"
         RunGUI                  = "▶️ Запустить графический интерфейс"
-        ArchiveChara            = "🎁 Архивировать карточку/сцену"
-        DeleteChara             = "🗑️ Удалить карточку/сцену"
+        ArchiveCards            = "🎁 Архивировать карточки"
+        DeleteCards             = "🗑️ Удалить карточки"
     }
 }
 
@@ -190,6 +213,8 @@ $Ui = @{
         PressKey      = "Нажмите любую клавишу для выхода..."
     }
 }
+
+try {
 
 # ---------------------------------------------------------------------------
 # Step 1: unregister any existing KKAFIO context menu entries first, so
@@ -301,9 +326,9 @@ function New-MenuItem {
 }
 
 function Build-Command {
-    param([string]$TargetExe, [string]$Cli, [string]$ArgsTemplate, [string]$Placeholder)
+    param([string]$TargetExe, [string]$Cli, [string]$ArgsTemplate, [string]$Placeholder, [string]$CmdSwitch = '/k')
     $argsStr = $ArgsTemplate -replace '\{P\}', $Placeholder
-    return 'cmd.exe /k ""' + $TargetExe + '" ' + $Cli + ' ' + $argsStr + '"'
+    return 'cmd.exe ' + $CmdSwitch + ' ""' + $TargetExe + '" ' + $Cli + ' ' + $argsStr + '"'
 }
 
 # ---------------------------------------------------------------------------
@@ -338,8 +363,10 @@ New-MenuItem -ShellPath (Join-Path $BgRoot 'shell') -KeyName $guiKeyName -Label 
 
 # ---------------------------------------------------------------------------
 # Step 5: register the fixed PNG file-association entries
-# (Archive Card/Scene, Delete Card/Scene) - always present, not affected by
-# the folder task selection above since they live under a different root.
+# (Archive Cards, Delete Cards) - always present, not affected by the folder
+# task selection above since they live under a different root. These run
+# with "cmd.exe /c" (window closes when the task finishes, unlike the /k used
+# for the folder tasks above) and pass --context-menu to the CLI.
 # ---------------------------------------------------------------------------
 $PngRoot = 'HKCU:\Software\Classes\SystemFileAssociations\.png\shell\KKAFIO'
 New-MenuRoot -RootPath $PngRoot -ShellSubPath 'SystemFileAssociations\.png\shell\KKAFIO'
@@ -349,13 +376,20 @@ foreach ($task in $PngTasks) {
     $keyName = "{0:D2}{1}" -f $pngIndex, $task.Id
     $label = $L[$task.Id]
     New-MenuItem -ShellPath (Join-Path $PngRoot 'shell') -KeyName $keyName -Label $label `
-        -CommandLine (Build-Command -TargetExe $Exe -Cli $task.Cli -ArgsTemplate $task.ArgsTemplate -Placeholder '%1')
+        -CommandLine (Build-Command -TargetExe $Exe -Cli $task.Cli -ArgsTemplate $task.ArgsTemplate -Placeholder '%1' -CmdSwitch '/c')
     $pngIndex++
 }
 
 Write-Host ""
 Write-Host $T.Done
 Write-Host $T.RestartNote
+
+} catch {
+    Write-Host ""
+    Write-Host "ERROR: $($_.Exception.Message)"
+    Write-Host $_.ScriptStackTrace
+}
+
 Write-Host ""
-Write-Host $T.PressKey
+if ($T) { Write-Host $T.PressKey } else { Write-Host "Press any key to exit..." }
 [void][System.Console]::ReadKey($true)

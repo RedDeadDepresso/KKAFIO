@@ -275,7 +275,9 @@ Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to the re
 
 ## Context Menu Integration
 
-Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
+Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. (It's a thin wrapper around `register_context_menu.ps1` — using the `.bat` avoids Windows' default PowerShell execution policy, which otherwise blocks `.ps1` scripts from running at all.) It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
+
+It first removes any existing KKAFIO menu entries, then asks you to pick a language (used for the menu labels and the script's own prompts) and which folder tasks to include and in what order (enter the numbers shown, e.g. `3 1 4 6`; leave blank for all tasks in the default order). "Run GUI" and the PNG entries below are always included. Re-run it any time to change your language or task selection — no need to run an "unregister" step first.
 
 **On folders and folder backgrounds:**
 
@@ -293,12 +295,12 @@ Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explo
 
 **On PNG files (single or multi-select):**
 
-| Entry               | Action                                   |
-| -------------------- | ------------------------------------------ |
-| Archive Card/Scene | `archive-cards <selected files>` |
-| Delete Card/Scene  | `delete-cards <selected files>`  |
+| Entry         | Action                                                |
+| -------------- | ------------------------------------------------------ |
+| Archive Cards | `archive-cards <selected files> --context-menu` |
+| Delete Cards  | `delete-cards <selected files> --context-menu`  |
 
-Run `unregister_context_menu.bat` to remove all entries.
+Run `unregister_context_menu.bat` to remove all entries without registering new ones.
 
 ## CLI Usage
 

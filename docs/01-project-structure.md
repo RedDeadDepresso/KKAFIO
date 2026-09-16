@@ -6,8 +6,9 @@
 KKAFIO-dev/
 ├── kkafio_cli.py                    # CLI entry point — argparse, subcommands, task dispatch
 ├── interface.json                   # Schema describing every task/option for the GUI (see doc 03)
-├── register_context_menu.bat        # Adds right-click Explorer entries that call kkafio_cli
-├── unregister_context_menu.bat      # Removes them
+├── register_context_menu.bat        # Thin wrapper (bypasses PowerShell's execution policy) that runs register_context_menu.ps1
+├── register_context_menu.ps1        # Adds right-click Explorer entries that call kkafio_cli (unregisters first, then prompts for language + task selection)
+├── unregister_context_menu.bat      # Removes them without registering new ones
 │
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
 │   ├── build_modpack_index.py       # Regenerates assets/kkafio_modpack_index_*.json
