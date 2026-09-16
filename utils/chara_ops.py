@@ -379,24 +379,25 @@ def _coord_matches_slot(slot: dict, coord: dict, threshold: float = 0.70) -> boo
 
 
 def find_matching_coords(chara_coords: list[dict], coord_dir: Path,
-                         use_cache: bool = False) -> list[Path]:
+                         use_cache: bool = False,
+                         coord_map: dict[str, dict] | None = None) -> list[Path]:
     """Return coord PNGs that match any slot in the chara.
 
-    When use_cache=True, loads (or rebuilds) a JSON cache at
-    coord_dir.parent/kkafio_coord_cache.json keyed by the directory mtime.
+    When use_cache=True (and coord_map isn't already supplied), loads or
+    incrementally rebuilds a JSON cache at coord_dir/kkafio_coord_cache.json.
     Parsing is parallelised (I/O bound) in both cached and non-cached paths.
+
+    Pass a pre-built `coord_map` (from build_coord_cache()) to skip loading/
+    building it here entirely — useful for callers processing many chara
+    cards against the same coord_dir in one run, so the folder only needs
+    to be scanned once instead of once per card.
     """
     if not coord_dir.exists():
         return []
 
-    if use_cache:
-        coord_map = load_coord_cache(coord_dir)
+    if coord_map is not None or use_cache:
         if coord_map is None:
-            logger.info("CACHE", f"Building coordinate cache for {coord_dir.name}...")
-            coord_map = build_coord_cache(coord_dir)
-            logger.info("CACHE", f"Coordinate cache built: {len(coord_map)} files")
-        else:
-            logger.info("CACHE", f"Coordinate cache hit: {len(coord_map)} files")
+            coord_map = build_coord_cache(coord_dir, use_cache=True)
 
         matched: list[Path] = []
         for path_str, fp in coord_map.items():
@@ -721,57 +722,6 @@ def collect_coord_guids_by_file(coord_dirs: list[Path], use_cache: bool) -> dict
 # Mods cache  (incremental)
 # ---------------------------------------------------------------------------
 
-def load_mods_cache(mods_dir: Path) -> dict[str, str] | None:
-    """Return {guid: absolute_path} from cache, or None if stale.
-
-    Stale conditions:
-    - Any cached path no longer exists on disk (deleted files)
-    - The number of zipmods on disk differs from what the cache recorded
-      (new files added or more files deleted than paths in guids)
-    """
-    cache_path = mods_dir / MODS_CACHE_FILE
-    try:
-        data = _json.loads(cache_path.read_text(encoding="utf-8"))
-        if data.get("mods_dir") != str(mods_dir):
-            return None
-        guid_map: dict[str, str] = data["guids"]
-
-        # Quick count check — if the number of zipmods on disk differs from
-        # the number of file fingerprints stored, something changed.
-        # Use stored file_count if available, otherwise count files dict.
-        cached_file_count = (
-            data.get("file_count")
-            or len(data.get("files", {}))
-            or len(guid_map)
-        )
-        disk_file_count = sum(1 for _ in mods_dir.rglob("*.zipmod"))
-        if disk_file_count != cached_file_count:
-            logger.info("CACHE",
-                f"Mods cache stale ({disk_file_count} on disk vs "
-                f"{cached_file_count} cached) — rebuilding")
-            return None
-
-        # Spot-check: verify cached paths still exist and fingerprints match
-        files = data.get("files", {})
-        for sp in guid_map.values():
-            p = Path(sp)
-            if not p.exists():
-                logger.info("CACHE", "Mods cache stale (deleted files detected) — rebuilding")
-                return None
-            if sp in files:
-                fp = files[sp]
-                if isinstance(fp, list) and len(fp) >= 2:
-                    mtime, size = fp[0], fp[1]
-                    current = _file_fp(p)
-                    if current != (mtime, size):
-                        logger.info("CACHE", "Mods cache stale (modified files detected) — rebuilding")
-                        return None
-
-        return guid_map
-    except Exception:
-        return None
-
-
 def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
                     files: dict | None = None) -> None:
     """Persist {guid: str(path)} (and optional file fingerprints) to cache."""
@@ -791,21 +741,28 @@ def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
         pass
 
 
-def build_mods_cache(mods_dir: Path, include_modpack: bool = False) -> dict[str, str]:
-    """Incrementally scan zipmods and return {guid: str(abs_path)}, saving to cache.
+def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
+                     use_cache: bool = True) -> dict[str, str]:
+    """Incrementally scan zipmods and return {guid: str(abs_path)}.
 
     Unchanged files (same mtime + size) are reused from the previous cache.
-    Only new or changed zipmods are opened. Deleted files are pruned.
+    Only new or changed zipmods are opened. Deleted files are pruned
+    automatically, since only files actually present on disk are scanned —
+    callers never need a separate staleness check before calling this.
+
+    When `use_cache` is False, does a full scan every time and does not
+    read or write the cache file.
     """
     cache_path = mods_dir / MODS_CACHE_FILE
     old_files: dict = {}
-    try:
-        prev = _json.loads(cache_path.read_text(encoding="utf-8"))
-        if prev.get("mods_dir") == str(mods_dir):
-            old_files = {sp: fp for sp, fp in prev.get("files", {}).items()
-                         if isinstance(fp, list) and len(fp) == 3}
-    except Exception:
-        pass
+    if use_cache:
+        try:
+            prev = _json.loads(cache_path.read_text(encoding="utf-8"))
+            if prev.get("mods_dir") == str(mods_dir):
+                old_files = {sp: fp for sp, fp in prev.get("files", {}).items()
+                             if isinstance(fp, list) and len(fp) == 3}
+        except Exception:
+            pass
 
     # Only iterate files actually present on disk — deleted files are implicitly pruned
     all_zips = [
@@ -829,72 +786,36 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False) -> dict[str,
         else:
             to_read.append(zp)
 
+    reused = len(all_zips) - len(to_read)
+    if reused:
+        logger.info("CACHE", f"Mods cache: {reused} unchanged, {len(to_read)} new/changed")
+    elif to_read:
+        logger.info("CACHE", f"Scanning {len(to_read)} zipmod(s) for GUIDs...")
+
     import os
     workers = min(32, (os.cpu_count() or 4) * 2)
 
     def _proc(zp: Path):
         return zp, guid_from_zipmod(zp)
 
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        for future in as_completed({ex.submit(_proc, zp): zp for zp in to_read}):
-            zp, guid = future.result()
-            sp = str(zp)
-            fp = _file_fp(zp)
-            new_files[sp] = [fp[0], fp[1], guid]
-            if guid:
-                guid_map[guid] = sp
+    if to_read:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for future in as_completed({ex.submit(_proc, zp): zp for zp in to_read}):
+                zp, guid = future.result()
+                sp = str(zp)
+                fp = _file_fp(zp)
+                new_files[sp] = [fp[0], fp[1], guid]
+                if guid:
+                    guid_map[guid] = sp
 
-    save_mods_cache(mods_dir, guid_map, new_files)
+    if use_cache:
+        save_mods_cache(mods_dir, guid_map, new_files)
     return guid_map
 
 
 # ---------------------------------------------------------------------------
 # Coord cache  (incremental)
 # ---------------------------------------------------------------------------
-
-def load_coord_cache(coord_dir: Path) -> dict[str, dict] | None:
-    """Return {str(path): fingerprint_dict} from cache, or None if stale.
-
-    Stale if: file count changed, any cached path missing, or any mtime/size differs.
-    """
-    cache_path = coord_dir / COORD_CACHE_FILE
-    try:
-        data = _json.loads(cache_path.read_text(encoding="utf-8"))
-        if data.get("coord_dir") != str(coord_dir):
-            return None
-        coord_map: dict[str, dict] = data["coords"]
-
-        # Count check
-        cached_file_count = (
-            data.get("file_count")
-            or len(data.get("files", {}))
-            or len(coord_map)
-        )
-        disk_file_count = sum(1 for _ in coord_dir.rglob("*.png"))
-        if disk_file_count != cached_file_count:
-            logger.info("CACHE",
-                f"Coord cache stale ({disk_file_count} on disk vs "
-                f"{cached_file_count} cached) — rebuilding")
-            return None
-
-        # Existence + fingerprint check
-        files = data.get("files", {})
-        for sp in coord_map:
-            p = Path(sp)
-            if not p.exists():
-                logger.info("CACHE", "Coord cache stale (deleted files detected) — rebuilding")
-                return None
-            if sp in files:
-                fp = files[sp]
-                if isinstance(fp, list) and len(fp) >= 2:
-                    if _file_fp(p) != (fp[0], fp[1]):
-                        logger.info("CACHE", "Coord cache stale (modified files detected) — rebuilding")
-                        return None
-
-        return coord_map
-    except Exception:
-        return None
-
 
 def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict],
                      files: dict | None = None) -> None:
@@ -971,25 +892,31 @@ def _coord_matches_slot_cached(slot: dict, cached: dict,
     )
 
 
-def build_coord_cache(coord_dir: Path) -> dict[str, dict]:
-    """Incrementally parse coord PNGs and return {str(path): fingerprint}, saving to cache.
+def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, dict]:
+    """Incrementally parse coord PNGs and return {str(path): fingerprint}.
 
     Unchanged files (same mtime + size) are reused from the previous cache.
-    Only new or changed PNGs are fully parsed.
+    Only new or changed PNGs are fully parsed. Deleted files are pruned
+    automatically, since only files actually present on disk are scanned —
+    callers never need a separate staleness check before calling this.
+
+    When `use_cache` is False, does a full scan every time and does not
+    read or write the cache file.
     """
     import os
 
     cache_path = coord_dir / COORD_CACHE_FILE
     old_files:  dict = {}
     old_coords: dict = {}
-    try:
-        prev = _json.loads(cache_path.read_text(encoding="utf-8"))
-        if prev.get("coord_dir") == str(coord_dir):
-            old_files  = {sp: fp for sp, fp in prev.get("files",  {}).items()
-                          if isinstance(fp, list) and len(fp) == 2}
-            old_coords = prev.get("coords", {})
-    except Exception:
-        pass
+    if use_cache:
+        try:
+            prev = _json.loads(cache_path.read_text(encoding="utf-8"))
+            if prev.get("coord_dir") == str(coord_dir):
+                old_files  = {sp: fp for sp, fp in prev.get("files",  {}).items()
+                              if isinstance(fp, list) and len(fp) == 2}
+                old_coords = prev.get("coords", {})
+        except Exception:
+            pass
 
     all_pngs  = sorted(coord_dir.rglob("*.png"))
     coord_map: dict[str, dict] = {}
@@ -1006,20 +933,28 @@ def build_coord_cache(coord_dir: Path) -> dict[str, dict]:
         else:
             to_parse.append(png)
 
-    workers = min(32, (os.cpu_count() or 4) * 2)
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = {ex.submit(_parse_coord_outfit, png): png for png in to_parse}
-        for future in as_completed(futures):
-            outfit = future.result()
-            if outfit is None:
-                continue
-            png = outfit["path"]
-            sp  = str(png)
-            fp  = _file_fp(png)
-            new_files[sp] = [fp[0], fp[1]]
-            coord_map[sp] = _outfit_to_cache(outfit)
+    reused = len(all_pngs) - len(to_parse)
+    if reused:
+        logger.info("CACHE", f"Coord cache: {reused} unchanged, {len(to_parse)} new/changed")
+    elif to_parse:
+        logger.info("CACHE", f"Parsing {len(to_parse)} coordinate PNG(s)...")
 
-    save_coord_cache(coord_dir, coord_map, new_files)
+    workers = min(32, (os.cpu_count() or 4) * 2)
+    if to_parse:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            futures = {ex.submit(_parse_coord_outfit, png): png for png in to_parse}
+            for future in as_completed(futures):
+                outfit = future.result()
+                if outfit is None:
+                    continue
+                png = outfit["path"]
+                sp  = str(png)
+                fp  = _file_fp(png)
+                new_files[sp] = [fp[0], fp[1]]
+                coord_map[sp] = _outfit_to_cache(outfit)
+
+    if use_cache:
+        save_coord_cache(coord_dir, coord_map, new_files)
     return coord_map
 
 
@@ -1091,13 +1026,7 @@ def scan_mods(mods_dir: Path, required: set[str],
 
     # ── Step 2: local scan for GUIDs not found in the index ───────────────
     if use_cache:
-        guid_str_map = load_mods_cache(mods_dir)
-        if guid_str_map is None:
-            logger.info("CACHE", f"Building mods cache for {mods_dir.name}...")
-            guid_str_map = build_mods_cache(mods_dir, include_modpack=include_modpack)
-            logger.info("CACHE", f"Mods cache built: {len(guid_str_map)} GUIDs")
-        else:
-            logger.info("CACHE", f"Mods cache hit: {len(guid_str_map)} GUIDs")
+        guid_str_map = build_mods_cache(mods_dir, include_modpack=include_modpack, use_cache=True)
         for guid in remaining:
             if guid in guid_str_map:
                 p = Path(guid_str_map[guid])

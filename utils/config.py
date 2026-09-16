@@ -139,7 +139,7 @@ _TASK_DEFAULTS = {
     "GroupChara":       {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": ""},
     "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": ""},
     "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
-    "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename"},
+    "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename", "UseCache": True},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
     "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"}
@@ -236,6 +236,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         v = _extract_opt(opt_values, "KeepStrategy")
         if v: cfg["Keep"] = v
         _set("DuplicateAction", "DuplicateAction")
+        _set("UseCache", "UseCache")
 
     elif task_name == "CreateBackup":
         _set("OutputPath", "OutputPath")

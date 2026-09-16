@@ -11,8 +11,8 @@ from send2trash import send2trash
 
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
-    build_mods_cache, collect_chara_guids_by_file, collect_coord_guids_by_file,
-    collect_scene_guids_by_file, find_matching_coords, load_mods_cache,
+    build_coord_cache, build_mods_cache, collect_chara_guids_by_file,
+    collect_coord_guids_by_file, collect_scene_guids_by_file, find_matching_coords,
     load_modpack_index, parse_chara_guids, parse_coord_guids, parse_scene_guids,
     resolve_paths,
 )
@@ -76,6 +76,9 @@ class DeleteCards(BaseTask):
         # later cards in the same run still see an accurate picture without
         # ever touching disk again.
         self._local_mods_maps: dict[Path, dict[str, Path]] = {}
+        # {coord_dir: {path_str: fingerprint}} — same idea as
+        # _local_mods_maps, for the coordinate-matching cache.
+        self._local_coord_maps: dict[Path, dict[str, dict]] = {}
 
     def _get_local_mods_map(self, mods_dir: Path) -> dict[str, Path]:
         mods_dir = mods_dir.resolve()
@@ -83,20 +86,21 @@ class DeleteCards(BaseTask):
         if cached is not None:
             return cached
 
-        if self.use_cache:
-            guid_str_map = load_mods_cache(mods_dir)
-            if guid_str_map is None:
-                logger.info("DELETE", f"Building mods cache for {mods_dir.name}...")
-                guid_str_map = build_mods_cache(mods_dir, include_modpack=False)
-                logger.info("DELETE", f"Mods cache built: {len(guid_str_map)} GUIDs")
-            else:
-                logger.info("DELETE", f"Mods cache hit: {len(guid_str_map)} GUIDs")
-        else:
-            guid_str_map = build_mods_cache(mods_dir, include_modpack=False)
+        guid_str_map = build_mods_cache(mods_dir, include_modpack=False, use_cache=self.use_cache)
 
         guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
         self._local_mods_maps[mods_dir] = guid_map
         return guid_map
+
+    def _get_coord_map(self, coord_dir: Path) -> dict[str, dict]:
+        coord_dir = coord_dir.resolve()
+        cached = self._local_coord_maps.get(coord_dir)
+        if cached is not None:
+            return cached
+
+        coord_map = build_coord_cache(coord_dir, use_cache=self.use_cache)
+        self._local_coord_maps[coord_dir] = coord_map
+        return coord_map
 
     def _collect_files(self, content_path: Path, game_base: Path,
                        mods_ov: Path | None, coord_ov: Path | None,
@@ -130,8 +134,9 @@ class DeleteCards(BaseTask):
                 from kkloader import KoikatuCharaData
                 try:
                     kc = KoikatuCharaData.load(str(content_path))
+                    coord_map = self._get_coord_map(coord_dir)
                     coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
-                                                        use_cache=self.use_cache)
+                                                        coord_map=coord_map)
                     logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")
                     for cp in coord_paths:
                         logger.info("DELETE", f"    {cp.name}")

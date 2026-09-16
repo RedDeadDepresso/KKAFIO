@@ -55,6 +55,10 @@
   - `overlays/` — unclassified PNGs
   - `mods/` — zipmod files
 - **Keep strategy** controls which copy of a duplicate set is kept in place: Newest, Oldest, Biggest file size (default), Smallest file size, Last alphabetically, First alphabetically, or None (move all copies).
+- **Use Cache** (on by default) — remembers each file's content hash (and perceptual hash, for fuzzy chara matching) keyed by its mtime + size, so a repeat scan only re-hashes files that are new or have changed. Uses three separate cache files in the scanned folder:
+  - `kkafio_duplicate_png_cache.json` — MD5 + category for every PNG
+  - `kkafio_duplicate_fuzzy_cache.json` — perceptual hash for chara cards only (kept separate since it's only computed when **Fuzzy Matching** is on, and is much more expensive than the plain MD5 hash)
+  - `kkafio_duplicate_mods_cache.json` — MD5 for every zipmod
 - **Duplicate Action** controls what happens to the copies that aren't kept:
   - **Move & Rename** *(default)*: moves duplicates into `_duplicates_/<category>/` and renames them so it's obvious which card they're a copy of.
     - If **Keep strategy** is **None** (all copies moved, none kept in place), the first duplicate found in each set keeps its own name, and every other duplicate in that set is renamed after it with a number — e.g. `bar.png`, `bar_1.png`, `bar_2.png`.
@@ -327,6 +331,7 @@ kkafio_cli filter-duplicate-contents [--input DIR]
                              [--fuzzy | --no-fuzzy]
                              [--keep STRATEGY]
                              [--action move-rename|move|delete]
+                             [--use-cache | --no-use-cache]
 
 kkafio_cli install-contents   [--input DIR]
                            [--extract-archive | --no-extract-archive]

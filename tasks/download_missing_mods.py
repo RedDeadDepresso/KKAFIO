@@ -40,7 +40,6 @@ from utils.chara_ops import (
     collect_chara_guids,
     collect_coord_guids,
     collect_scene_guids,
-    load_mods_cache,
     load_modpack_index,
     save_mods_cache,
 )
@@ -803,13 +802,8 @@ class DownloadMissingMods(BaseTask):
         logger.info("DLMOD", f"Modpack   : {self.modpack_mode}")
 
         # ── Step 1: mods cache ────────────────────────────────────────────
-        guid_str_map = load_mods_cache(mods_dir) if self.use_cache else None
-        if guid_str_map is None:
-            logger.info("DLMOD", "Building mods cache...")
-            guid_str_map = build_mods_cache(mods_dir, include_modpack=False)
-            logger.info("DLMOD", f"Mods cache built: {len(guid_str_map)} local GUIDs")
-        else:
-            logger.info("DLMOD", f"Mods cache loaded: {len(guid_str_map)} local GUIDs")
+        guid_str_map = build_mods_cache(mods_dir, include_modpack=False, use_cache=self.use_cache)
+        logger.info("DLMOD", f"Local GUIDs: {len(guid_str_map)}")
 
         local_guids: set[str] = set(guid_str_map.keys())
 

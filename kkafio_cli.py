@@ -315,7 +315,8 @@ def run_group_chara(config, file_manager, input_path: str | None = None,
 
 def run_filter_duplicate_contents(config, file_manager, input_path: str | None = None,
                           fuzzy: bool | None = None,
-                          keep: str | None = None, duplicate_action: str | None = None):
+                          keep: str | None = None, duplicate_action: str | None = None,
+                          use_cache: bool | None = None):
     from tasks.filter_duplicate_contents import FilterDuplicateContents
     from pathlib import Path
     if input_path is not None:
@@ -327,6 +328,8 @@ def run_filter_duplicate_contents(config, file_manager, input_path: str | None =
         module.keep = keep
     if duplicate_action is not None:
         module.duplicate_action = duplicate_action
+    if use_cache is not None:
+        module.use_cache = use_cache
     module.run()
 
 
@@ -677,6 +680,11 @@ def cmd_filter_duplicate_contents(args):
             fuzzy = True
         elif args.fuzzy is False:
             fuzzy = False
+        use_cache = None
+        if args.use_cache is True:
+            use_cache = True
+        elif args.use_cache is False:
+            use_cache = False
         duplicate_action = {
             "move-rename": "Move & Rename",
             "move":        "Move",
@@ -684,7 +692,7 @@ def cmd_filter_duplicate_contents(args):
         }.get(args.action)
         run_filter_duplicate_contents(config, file_manager, input_path=args.input,
                               fuzzy=fuzzy, keep=args.keep,
-                              duplicate_action=duplicate_action)
+                              duplicate_action=duplicate_action, use_cache=use_cache)
     except SystemExit:
         raise
     except Exception:
@@ -1003,6 +1011,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "(or the first duplicate found, if --keep is 'None — move all copies'), "
                         "with a number suffix. 'move' moves them to _duplicates_/ keeping their "
                         "original filenames. 'delete' sends them straight to the recycle bin.")
+    g2 = p.add_mutually_exclusive_group()
+    g2.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
+                    help="Cache file hashes (and phashes, for fuzzy matching) to speed up "
+                         "repeat scans (overrides config)")
+    g2.add_argument("--no-use-cache", dest="use_cache", action="store_false",
+                    help="Disable cache and re-hash every file (overrides config)")
     p.set_defaults(func=cmd_filter_duplicate_contents)
 
     # create-backup

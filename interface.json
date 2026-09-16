@@ -941,6 +941,7 @@
       "group": ["duplicate-handling"],
       "option": [
         "InputPath",
+        "UseCache",
         "FuzzyMatching",
         "KeepStrategy",
         "DuplicateAction"

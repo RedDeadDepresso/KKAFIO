@@ -10,8 +10,9 @@ from typing import Literal
 
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
-    find_matching_coords, in_modpack_folder, parse_chara_guids,
-    parse_coord_guids, parse_scene_guids, resolve_paths, scan_mods,
+    build_coord_cache, build_mods_cache, find_matching_coords, in_modpack_folder,
+    load_modpack_index, parse_chara_guids, parse_coord_guids, parse_scene_guids,
+    resolve_paths,
 )
 from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import GameType
@@ -38,6 +39,31 @@ class ArchiveCards(BaseTask):
         self.mods_dir_str       : str       = cfg.get("ModsDir", "")
         self.coord_dir_str      : str       = cfg.get("CoordDir", "")
         self.output_dir_str     : str       = cfg.get("OutputPath", "")
+        # Built once per distinct mods_dir/coord_dir and reused across every
+        # card in the run, instead of re-scanning the whole folder from
+        # scratch for every single card.
+        self._local_mods_maps : dict[Path, dict[str, Path]]  = {}
+        self._local_coord_maps: dict[Path, dict[str, dict]]  = {}
+
+    def _get_local_mods_map(self, mods_dir: Path) -> dict[str, Path]:
+        mods_dir = mods_dir.resolve()
+        cached = self._local_mods_maps.get(mods_dir)
+        if cached is not None:
+            return cached
+        guid_str_map = build_mods_cache(mods_dir, include_modpack=self.include_modpack,
+                                        use_cache=self.use_cache)
+        guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
+        self._local_mods_maps[mods_dir] = guid_map
+        return guid_map
+
+    def _get_coord_map(self, coord_dir: Path) -> dict[str, dict]:
+        coord_dir = coord_dir.resolve()
+        cached = self._local_coord_maps.get(coord_dir)
+        if cached is not None:
+            return cached
+        coord_map = build_coord_cache(coord_dir, use_cache=self.use_cache)
+        self._local_coord_maps[coord_dir] = coord_map
+        return coord_map
 
     def _process_one(self, content_path: Path, game_base: Path,
                      mods_ov: Path | None,
@@ -75,8 +101,9 @@ class ArchiveCards(BaseTask):
                 from kkloader import KoikatuCharaData
                 try:
                     kc = KoikatuCharaData.load(str(content_path))
+                    coord_map = self._get_coord_map(coord_dir)
                     coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
-                                                        use_cache=self.use_cache)
+                                                        coord_map=coord_map)
                     logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")
                     for cp in coord_paths:
                         logger.info("ARCHV", f"    {cp.name}")
@@ -91,13 +118,27 @@ class ArchiveCards(BaseTask):
 
         all_guids = set(own_guids) | coord_guids_all
         zipmod_paths: list[Path] = []
+        game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
 
         if mods_dir and mods_dir.exists() and all_guids:
             logger.info("ARCHV",
                 f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
-            guid_map = scan_mods(mods_dir, all_guids,
-                                 include_modpack=self.include_modpack,
-                                 use_cache=self.use_cache)
+
+            modpack_index = load_modpack_index(game_type=game_type) or {}
+            local_map = self._get_local_mods_map(mods_dir)
+
+            guid_map: dict[str, Path] = {}
+            for guid in all_guids:
+                if guid in modpack_index:
+                    if self.include_modpack:
+                        p = mods_dir / modpack_index[guid]
+                        if p.exists():
+                            guid_map[guid] = p
+                    continue  # resolved via index either way — never fall through to local scan
+                p = local_map.get(guid)
+                if p is not None and p.exists():
+                    guid_map[guid] = p
+
             if not self.include_modpack:
                 skipped = sum(1 for zp in mods_dir.rglob("*.zipmod")
                               if in_modpack_folder(zp, mods_dir))
@@ -106,19 +147,6 @@ class ArchiveCards(BaseTask):
                         f"  Skipped {skipped} zipmod(s) in Sideloader Modpack folder(s)")
             zipmod_paths = list(guid_map.values())
             missing = all_guids - set(guid_map.keys())
-
-            # When include_modpack is off, GUIDs that are in the Sideloader
-            # Modpack index are intentionally excluded — don't warn about them
-            if not self.include_modpack and missing:
-                from utils.chara_ops import load_modpack_index
-                game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
-                modpack_index = load_modpack_index(game_type=game_type)
-                if modpack_index:
-                    in_modpack = missing & set(modpack_index.keys())
-                    if in_modpack:
-                        logger.info("ARCHV",
-                            f"  {len(in_modpack)} GUID(s) belong to Sideloader Modpack (excluded by setting)")
-                    missing = missing - in_modpack
 
             logger.info("ARCHV",
                 f"  Zipmods found: {len(zipmod_paths)}  missing: {len(missing)}")

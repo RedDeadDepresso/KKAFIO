@@ -1,5 +1,6 @@
 import hashlib
 import io
+import json as _json
 import shutil
 import struct
 from collections import defaultdict
@@ -33,6 +34,45 @@ ACTION_MOVE        = "Move"
 ACTION_DELETE      = "Delete"
 
 Category = Literal["chara", "coordinate", "mods", "overlays", "scene"]
+
+# ---------------------------------------------------------------------------
+# Cache — per-file fingerprint (mtime, size) reuse, same idea as the
+# incremental caches elsewhere in KKAFIO. Split into three separate cache
+# files so toggling Fuzzy Chara on/off (an expensive, chara-only operation)
+# never invalidates or forces recomputation of the cheaper MD5 hashes, and
+# vice versa.
+# ---------------------------------------------------------------------------
+
+PNG_CACHE_FILE   = "kkafio_duplicate_png_cache.json"    # MD5 + category, all PNGs
+FUZZY_CACHE_FILE = "kkafio_duplicate_fuzzy_cache.json"  # phash, chara cards only
+MODS_CACHE_FILE  = "kkafio_duplicate_mods_cache.json"   # MD5, zipmods only
+
+
+def _file_fp(p: Path) -> list[int]:
+    st = p.stat()
+    return [int(st.st_mtime), st.st_size]
+
+
+def _load_duplic_cache(folder_path: Path, cache_file: str) -> dict[str, dict]:
+    """Return {abs_path_str: {"fp": [mtime, size], ...}} from the given
+    cache file, or {} if missing/unreadable/for a different folder."""
+    cache_path = folder_path / cache_file
+    try:
+        data = _json.loads(cache_path.read_text(encoding="utf-8"))
+        if data.get("dir") == str(folder_path):
+            return data.get("files", {})
+    except Exception:
+        pass
+    return {}
+
+
+def _save_duplic_cache(folder_path: Path, cache_file: str, files: dict[str, dict]) -> None:
+    cache_path = folder_path / cache_file
+    data = {"dir": str(folder_path), "files": files}
+    try:
+        cache_path.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        logger.warning("DUPLIC", f"Could not save {cache_file}: {e}")
 
 # ---------------------------------------------------------------------------
 # PNG payload extraction
@@ -224,27 +264,12 @@ def _build_rename_map(to_handle: list[Path], keep_path: Path | None) -> dict[Pat
 # Fuzzy grouping — union-find, same pattern as reference script
 # ---------------------------------------------------------------------------
 
-def _fuzzy_group(paths: list[Path]) -> list[list[Path]]:
-    """Group paths by perceptual similarity. Reads each file once."""
+def _fuzzy_group(paths: list[Path], phashes: list[str | None]) -> list[list[Path]]:
+    """Group paths by perceptual similarity, given precomputed phashes
+    (same order/length as paths — a None entry means that file's phash
+    couldn't be computed, so it's never grouped with anything)."""
     if not paths:
         return []
-
-    phashes: list[str | None] = []
-    fuzzy_unavailable = False
-
-    for path in paths:
-        try:
-            data = path.read_bytes()
-            image_bytes = _get_png_image_bytes(data)
-            ph = _phash(image_bytes)
-            if ph is None and not fuzzy_unavailable:
-                logger.error("DUPLIC",
-                    "pillow/imagehash not installed. Install with: pip install pillow imagehash")
-                fuzzy_unavailable = True
-        except Exception as e:
-            logger.error("DUPLIC", f"Could not hash {path.name}: {e}")
-            ph = None
-        phashes.append(ph)
 
     n = len(paths)
     parent = list(range(n))
@@ -288,6 +313,7 @@ class FilterDuplicateContents:
         self.fuzzy_chara : bool = cfg.get("FuzzyChara", False)
         self.keep        : str  = cfg.get("Keep",       KEEP_BIGGEST)
         self.duplicate_action : str = cfg.get("DuplicateAction", ACTION_MOVE_RENAME)
+        self.use_cache   : bool = cfg.get("UseCache",   True)
 
     def run(self, folder_path: Path | None = None) -> None:
         if folder_path is None:
@@ -302,6 +328,7 @@ class FilterDuplicateContents:
         logger.info("DUPLIC", f"Keep strategy   : {self.keep}")
         logger.info("DUPLIC", f"Fuzzy chara     : {self.fuzzy_chara}")
         logger.info("DUPLIC", f"Duplicate action: {self.duplicate_action}")
+        logger.info("DUPLIC", f"Use cache       : {self.use_cache}")
 
         # ------------------------------------------------------------------
         # 1. Collect all files
@@ -337,19 +364,31 @@ class FilterDuplicateContents:
         hash_dict: dict[str, list[Path]]         = defaultdict(list)
         category_map: dict[str, Category | None] = {}
 
+        png_cache = _load_duplic_cache(folder_path, PNG_CACHE_FILE) if self.use_cache else {}
+        new_png_cache: dict[str, dict] = {}
+
         def _hash_png(path: Path):
-            """Read and fingerprint one PNG. Runs in a thread pool worker."""
+            """Fingerprint one PNG (MD5 of the character-data payload, or
+            the whole file for non-chara PNGs) + classify it. Reuses the
+            cached result if the file's mtime/size haven't changed since
+            the last run. Runs in a thread pool worker."""
+            sp = str(path)
+            fp = _file_fp(path)
+            cached = png_cache.get(sp)
+            if cached and cached.get("fp") == fp:
+                return path, cached["md5"], cached.get("category"), fp, True
             data    = path.read_bytes()
             payload = _get_png_payload(data)
-            fp      = _md5(payload) if payload else _md5(data)
+            digest  = _md5(payload) if payload else _md5(data)
             cat     = _classify(data)
-            return path, fp, cat
+            return path, digest, cat, fp, False
 
         # Use min(32, cpu_count * 2) workers — I/O bound so more threads help
         workers = min(32, (os.cpu_count() or 4) * 2)
         logger.info("DUPLIC", f"Hashing {len(png_files)} PNG files (workers: {workers})...")
 
         completed = 0
+        reused_png = 0
         futures = {}
         with ThreadPoolExecutor(max_workers=workers) as ex:
             futures = {ex.submit(_hash_png, p): p for p in png_files}
@@ -358,13 +397,22 @@ class FilterDuplicateContents:
                 if completed % 100 == 0:
                     logger.info("DUPLIC", f"Processed {completed}/{len(png_files)}...")
                 try:
-                    path, fp, cat = future.result()
-                    hash_dict[fp].append(path)
-                    if fp not in category_map:
-                        category_map[fp] = cat
+                    path, digest, cat, fp, was_cached = future.result()
+                    hash_dict[digest].append(path)
+                    if digest not in category_map:
+                        category_map[digest] = cat
+                    new_png_cache[str(path)] = {"fp": fp, "md5": digest, "category": cat}
+                    if was_cached:
+                        reused_png += 1
                 except Exception as e:
                     path = futures[future]
                     logger.error("DUPLIC", f"Could not read {path.name}: {e}")
+
+        if self.use_cache:
+            _save_duplic_cache(folder_path, PNG_CACHE_FILE, new_png_cache)
+        if reused_png:
+            logger.info("DUPLIC",
+                f"PNG cache: {reused_png} unchanged, {len(png_files) - reused_png} new/changed")
 
         # ------------------------------------------------------------------
         # 3. Exact duplicate groups — any hash with 2+ files
@@ -407,7 +455,43 @@ class FilterDuplicateContents:
             if fuzzy_candidates:
                 logger.info("DUPLIC",
                     f"Fuzzy matching {len(fuzzy_candidates)} chara cards...")
-                for group in _fuzzy_group(fuzzy_candidates):
+
+                fuzzy_cache = _load_duplic_cache(folder_path, FUZZY_CACHE_FILE) if self.use_cache else {}
+                new_fuzzy_cache: dict[str, dict] = {}
+                phashes: list[str | None] = []
+                fuzzy_unavailable = False
+                reused_fuzzy = 0
+
+                for path in fuzzy_candidates:
+                    sp = str(path)
+                    fp = _file_fp(path)
+                    cached = fuzzy_cache.get(sp)
+                    if cached and cached.get("fp") == fp:
+                        ph = cached.get("phash")
+                        reused_fuzzy += 1
+                    else:
+                        try:
+                            data = path.read_bytes()
+                            image_bytes = _get_png_image_bytes(data)
+                            ph = _phash(image_bytes)
+                            if ph is None and not fuzzy_unavailable:
+                                logger.error("DUPLIC",
+                                    "pillow/imagehash not installed. Install with: pip install pillow imagehash")
+                                fuzzy_unavailable = True
+                        except Exception as e:
+                            logger.error("DUPLIC", f"Could not hash {path.name}: {e}")
+                            ph = None
+                    phashes.append(ph)
+                    new_fuzzy_cache[sp] = {"fp": fp, "phash": ph}
+
+                if self.use_cache:
+                    _save_duplic_cache(folder_path, FUZZY_CACHE_FILE, new_fuzzy_cache)
+                if reused_fuzzy:
+                    logger.info("DUPLIC",
+                        f"Fuzzy cache: {reused_fuzzy} unchanged, "
+                        f"{len(fuzzy_candidates) - reused_fuzzy} new/changed")
+
+                for group in _fuzzy_group(fuzzy_candidates, phashes):
                     if len(group) > 1:
                         duplicate_groups.append((group, "chara"))
                         logger.info("DUPLIC",
@@ -417,18 +501,39 @@ class FilterDuplicateContents:
         # ------------------------------------------------------------------
         # 5. Zipmod grouping
         # ------------------------------------------------------------------
+        mods_cache = _load_duplic_cache(folder_path, MODS_CACHE_FILE) if self.use_cache else {}
+        new_mods_cache: dict[str, dict] = {}
+
+        def _hash_mod(path: Path):
+            sp = str(path)
+            fp = _file_fp(path)
+            cached = mods_cache.get(sp)
+            if cached and cached.get("fp") == fp:
+                return path, cached["md5"], fp, True
+            return path, _md5_file(path), fp, False
+
         mod_hash_dict: dict[str, list[Path]] = defaultdict(list)
+        reused_mods = 0
         if mod_files:
             logger.info("DUPLIC", f"Hashing {len(mod_files)} zipmod file(s)...")
             with ThreadPoolExecutor(max_workers=workers) as ex:
-                mod_futures = {ex.submit(_md5_file, p): p for p in mod_files}
+                mod_futures = {ex.submit(_hash_mod, p): p for p in mod_files}
                 for future in as_completed(mod_futures):
                     try:
-                        fp = future.result()
-                        mod_hash_dict[fp].append(mod_futures[future])
+                        path, digest, fp, was_cached = future.result()
+                        mod_hash_dict[digest].append(path)
+                        new_mods_cache[str(path)] = {"fp": fp, "md5": digest}
+                        if was_cached:
+                            reused_mods += 1
                     except Exception as e:
                         path = mod_futures[future]
                         logger.error("DUPLIC", f"Could not read {path.name}: {e}")
+
+            if self.use_cache:
+                _save_duplic_cache(folder_path, MODS_CACHE_FILE, new_mods_cache)
+            if reused_mods:
+                logger.info("DUPLIC",
+                    f"Mods cache: {reused_mods} unchanged, {len(mod_files) - reused_mods} new/changed")
 
         for fp, files in mod_hash_dict.items():
             if len(files) > 1:
