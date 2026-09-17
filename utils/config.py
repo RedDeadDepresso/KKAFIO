@@ -128,6 +128,7 @@ _TASK_KEY = {
     "CreateBackup":     "CreateBackup",
     "DownloadContents":    "DownloadContents",
     "DownloadMissingMods": "DownloadMissingMods",
+    "ExportMods":       "ExportMods",
 }
 
 _TASK_DEFAULTS = {
@@ -142,7 +143,8 @@ _TASK_DEFAULTS = {
     "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename", "UseCache": True},
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
-    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"}
+    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"},
+    "ExportMods":       {"Enable": False, "OutputPath": "", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""}
 }
 
 
@@ -263,6 +265,13 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SideloaderModpack",   "SideloaderModpack")
         _set("TelegramSource",      "TelegramSource")
         _set("TelegramChatLinks",   "TelegramChatLinks")
+
+    elif task_name == "ExportMods":
+        _set("OutputPath",   "OutputPath")
+        _set("Guids",        "Guids")
+        _set("RenameToGuid", "RenameToGuid")
+        _set("UseCache",     "UseCache")
+        _set("ModsDir",      "ModsDir")
 
     return cfg
 
@@ -450,6 +459,7 @@ class Config:
 
         self.archive_cards    = self.config_data["ArchiveCards"]
         self.download_missing_mods  = self.config_data["DownloadMissingMods"]
+        self.export_mods            = self.config_data["ExportMods"]
         self.download_contents   = self.config_data["DownloadContents"]
         self.delete_cards     = self.config_data["DeleteCards"]
         self.create_backup    = self.config_data["CreateBackup"]

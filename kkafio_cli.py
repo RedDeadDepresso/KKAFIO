@@ -265,6 +265,27 @@ def run_download_missing_mods(config, file_manager,
     module.run()
 
 
+def run_export_mods(config, file_manager,
+                    output_path: str | None = None,
+                    guids: str | None = None,
+                    rename_to_guid: bool | None = None,
+                    use_cache: bool | None = None,
+                    mods_dir: str | None = None):
+    from tasks.export_mods import ExportMods
+    module = ExportMods(config, file_manager)
+    if output_path is not None:
+        module.output_path_str = output_path
+    if guids is not None:
+        module.guids_raw = guids
+    if rename_to_guid is not None:
+        module.rename_to_guid = rename_to_guid
+    if use_cache is not None:
+        module.use_cache = use_cache
+    if mods_dir is not None:
+        module.mods_dir_str = mods_dir
+    module.run()
+
+
 
 def run_delete_cards(config, file_manager, content_paths: list[str] | None = None,
                      check_shared_mods: bool | None = None,
@@ -448,6 +469,7 @@ def cmd_run(args):
         "DeleteCards":      lambda: run_delete_cards(config, file_manager),
         "DownloadContents":    lambda: run_download_contents(config, file_manager),
         "DownloadMissingMods": lambda: run_download_missing_mods(config, file_manager),
+        "ExportMods":       lambda: run_export_mods(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS": lambda: run_filter_convert_kks(config, file_manager),
         "FilterDuplicateContents": lambda: run_filter_duplicate_contents(config, file_manager),
@@ -617,6 +639,30 @@ def cmd_download_missing_mods(args):
         raise
     except Exception:
         _write_traceback("DownloadMissingMods")
+        sys.exit(1)
+
+
+def cmd_export_mods(args):
+    _clear_traceback()
+    try:
+        from pathlib import Path
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
+        config.config_data["ExportMods"]["Enable"] = True
+        guids = args.guids
+        if args.guids_file:
+            guids = Path(args.guids_file).read_text(encoding="utf-8")
+        rename_to_guid = None if args.rename_to_guid is None else bool(args.rename_to_guid)
+        use_cache      = None if args.use_cache is None else bool(args.use_cache)
+        run_export_mods(config, file_manager,
+                        output_path=args.output,
+                        guids=guids,
+                        rename_to_guid=rename_to_guid,
+                        use_cache=use_cache,
+                        mods_dir=args.mods_dir)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("ExportMods")
         sys.exit(1)
 
 
@@ -936,6 +982,35 @@ def build_parser() -> argparse.ArgumentParser:
                         "--telegram-source is ChatLinks or Both. Default: the two example "
                         "chats shipped in the config.")
     p.set_defaults(func=cmd_download_missing_mods)
+
+    # export-mods
+    p = sub.add_parser(
+        "export-mods",
+        help="Find zipmods by GUID and copy them into an output folder",
+    )
+    p.add_argument("--output", "-o", metavar="DIR", default=None,
+                   help="Output directory to copy exported zipmods into (default: ExportMods.OutputPath from config)")
+    g_guids = p.add_mutually_exclusive_group()
+    g_guids.add_argument("--guids", metavar="TEXT", default=None,
+                   help="GUIDs to export — one per line or comma-separated. Accepts a Download "
+                        "Missing Mods report pasted directly (bullets like '!', '\u2717', '+', '~' and "
+                        "trailing '(...)' notes are stripped automatically). "
+                        "(default: ExportMods.Guids from config)")
+    g_guids.add_argument("--guids-file", metavar="FILE", default=None,
+                   help="Read GUIDs from a text file instead of passing them inline "
+                        "(e.g. a saved kkafio_missing_mods_report.txt)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--rename-to-guid",    dest="rename_to_guid", action="store_true",  default=None,
+                   help="Rename each exported zipmod to <guid>.zipmod (default: on)")
+    g.add_argument("--no-rename-to-guid", dest="rename_to_guid", action="store_false",
+                   help="Keep each exported zipmod's original filename")
+    g_cache = p.add_mutually_exclusive_group()
+    g_cache.add_argument("--use-cache",    dest="use_cache", action="store_true",  default=None,
+                    help="Use the mods cache to skip re-scanning unchanged zipmods (default: on)")
+    g_cache.add_argument("--no-use-cache", dest="use_cache", action="store_false")
+    p.add_argument("--mods-dir", default=None, metavar="DIR",
+                   help="Override the mods directory to search (default: game mods dir from config)")
+    p.set_defaults(func=cmd_export_mods)
 
     # delete-cards
     p = sub.add_parser(

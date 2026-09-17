@@ -90,6 +90,13 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Custom Chara Directory / Custom Scene Directory / Custom Coordinate Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped (same for coordinates if no default coordinate folder exists).
 - **Use Cache** (on by default) — caches the mods list and the GUID scan for each selected content type. Each cache is invalidated automatically when its folder changes.
 
+**Export Mods** — find specific mods by GUID and copy them out into a folder:
+- **GUIDs** — paste GUIDs one per line, comma-separated, or straight out of a Download Missing Mods report section (e.g. the "Unresolvable mods" list). Report bullets (`!`, `✗`, `+`, `~`) and trailing `(...)` notes are stripped automatically; plain description/path lines from the report are ignored rather than misread as GUIDs.
+- **Rename to GUID** *(on by default)*: renames each exported file to `<guid>.zipmod`, so it's obvious which file is which. Turn off to keep each file's original filename.
+- Searches both the regular mods folder and any Sideloader Modpack subfolder inside it — unlike Archive/Delete Cards, exporting a copy doesn't touch or remove anything, so modpack-covered mods are fair game too.
+- **Custom Mods Directory** — leave blank to use the game's default mods folder.
+- **Use Cache** (on by default) — reuses the same incremental mods cache as the other tasks.
+
 **Telegram Chat Links** — one link per line, used when **Telegram Source** is `Telegram Chat Links` or the combined option. You must already be a member of each chat. Add a topic ID (e.g. `.../299`) to search only that forum topic instead of the whole chat; a trailing `# comment` is ignored. Chats are tried in the order listed, moving to the next one if a chat has no match. Defaults to:
 ```
 https://t.me/c/2549022984/299 # you need to be part of this chat
@@ -319,6 +326,11 @@ kkafio_cli download-missing-mods [--mods-dir DIR] [--chara-dir DIR] [--scene-dir
                                  [--telegram-source No|KoikatsuCards|ChatLinks|Both]
                                  [--telegram-chat-links LINKS]
 
+kkafio_cli export-mods [--output DIR] [--guids TEXT | --guids-file FILE]
+                        [--rename-to-guid | --no-rename-to-guid]
+                        [--use-cache | --no-use-cache]
+                        [--mods-dir DIR]
+
 kkafio_cli create-backup  [--output DIR] [--filename NAME]
                           [--mods | --no-mods]
                           [--userdata | --no-userdata]
@@ -396,8 +408,8 @@ To run from source:
 ## Acknowledgements
 
 - [MistEO](https://github.com/MistEO) for the [GUI](https://github.com/MistEO/MXU).
-- [great-majority](https://github.com/MistEO) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
+- [great-majority](https://github.com/great-majority) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
 - [xwc9527](https://github.com/xwc9527/telebackup) for [TeleBackup](https://github.com/xwc9527/telebackup), High-Speed Telegram Download Engine.
-- [Kiramei](https://github.com/Kiramei) for the logger. Original [here](https://github.com/Kiramei/blue_archive_auto_script/blob/master/core/utils.py).
+- [galact-byte](https://github.com/galact-byte) for caching logic taken from [KKTools](https://github.com/galact-byte/KKTools).
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).
