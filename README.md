@@ -400,6 +400,12 @@ To run from source:
 5. Open KKAFIO.exe and configure settings to your preference.
 6. Press **Start**.
 
+## Languages
+
+The GUI (task names, option labels, dialogs, etc.) and the [right-click context menu](#context-menu-integration) are available in English, Simplified Chinese, Traditional Chinese, Japanese, Korean, and Russian. Pick a language in MXU's settings, or in the language prompt shown by `register_context_menu.bat`.
+
+Everything else — CLI output, log files, and error messages — is English-only, and intentionally so: keeping logs in one language makes them far easier to search for, share when reporting a bug, and debug against the source.
+
 ## Known Issues
 
 - Any `.png` that cannot be classified as a chara card or coordinate is treated as an overlay. Files in the wrong category can be found in `UserData/Overlays` — sort by date to identify and remove them.
