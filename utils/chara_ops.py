@@ -746,12 +746,22 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
     """Incrementally scan zipmods and return {guid: str(abs_path)}.
 
     Unchanged files (same mtime + size) are reused from the previous cache.
-    Only new or changed zipmods are opened. Deleted files are pruned
-    automatically, since only files actually present on disk are scanned —
-    callers never need a separate staleness check before calling this.
+    Only new or changed zipmods are opened. Deleted files (among the ones
+    actually in scope for this call's include_modpack setting) are pruned
+    automatically — callers never need a separate staleness check before
+    calling this.
 
     When `use_cache` is False, does a full scan every time and does not
     read or write the cache file.
+
+    The cache file is shared between include_modpack=True and
+    include_modpack=False callers on the same mods_dir. Saved entries for
+    files outside the *current* call's filter (e.g. Sideloader Modpack
+    zipmods during an include_modpack=False call) are carried forward
+    untouched rather than dropped, so alternating between the two modes
+    across different tasks never forces a full rescan of "the other side"
+    — each mode's own cached entries persist until that mode is the one
+    actually looking at them again.
     """
     cache_path = mods_dir / MODS_CACHE_FILE
     old_files: dict = {}
@@ -769,10 +779,13 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
         zp for zp in mods_dir.rglob("*.zipmod")
         if include_modpack or not in_modpack_folder(zp, mods_dir)
     ]
+    all_zip_strs = {str(zp) for zp in all_zips}
 
     guid_map:  dict[str, str] = {}
-    new_files: dict           = {}
-    to_read:   list[Path]     = []
+    # Carry forward everything already cached — including entries this
+    # call's filter doesn't cover — so they aren't lost when we save below.
+    new_files: dict       = dict(old_files)
+    to_read:   list[Path] = []
 
     for zp in all_zips:
         sp = str(zp)
@@ -780,11 +793,26 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
         old = old_files.get(sp)
         if old is not None and (old[0], old[1]) == fp:
             guid = old[2]
-            new_files[sp] = old
             if guid:
                 guid_map[guid] = sp
         else:
             to_read.append(zp)
+
+    # Prune stale entries for files that no longer exist — but only among
+    # ones that would have been in scope for this call's filter. An entry
+    # outside that scope (e.g. a modpack zipmod during an
+    # include_modpack=False call) is left alone entirely; if it was
+    # actually deleted, the next call that has it in scope will notice.
+    for sp in list(new_files.keys()):
+        if sp in all_zip_strs:
+            continue
+        p = Path(sp)
+        try:
+            in_scope = include_modpack or not in_modpack_folder(p, mods_dir)
+        except Exception:
+            in_scope = True
+        if in_scope and not p.exists():
+            del new_files[sp]
 
     reused = len(all_zips) - len(to_read)
     if reused:
