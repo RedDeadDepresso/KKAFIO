@@ -191,5 +191,13 @@
   "preset.GroupAndRename.label": "✏️ グループ化とリネーム",
   "preset.GroupAndRename.description": "シリーズフォルダに整理してから、カード名を英語に翻訳する",
   "preset.DownloadAndInstall.label": "⬇️ ダウンロードとインストール",
-  "preset.DownloadAndInstall.description": "新しいカードをダウンロードしてからゲームにインストールする"
+  "preset.DownloadAndInstall.description": "新しいカードをダウンロードしてからゲームにインストールする",
+  "task.ExportMods.label": "📤 MODをエクスポート",
+  "task.ExportMods.description": "GUIDでzipmodを検索し、出力フォルダにコピーします。必要に応じて <guid>.zipmod にリネームできます",
+  "option.Guids.label": "GUID",
+  "option.Guids.description": "検索してエクスポートするMODのGUIDを1行に1つずつ（またはカンマ区切りで）入力します。「不足しているMODをダウンロード」レポートの一部をそのまま貼り付けることもできます——「!」「✗」「+」「~」のような箇条書き記号や末尾の「(...)」注記は自動的に取り除かれ、レポート内の通常の説明／パス行は無視されます。「#」で始まるコメント行も無視されます。",
+  "option.RenameToGuid.label": "GUIDにリネーム",
+  "option.RenameToGuid.description": "エクスポートした各zipmodを <guid>.zipmod にリネームし、どのファイルか分かりやすくします。オフにすると各ファイルの元のファイル名を保持します。",
+  "option.RenameToGuid.case.Yes.label": "リネームする",
+  "option.RenameToGuid.case.No.label": "元の名前を保持"
 }

@@ -727,8 +727,8 @@
     "Guids": {
       "type": "textarea",
       "name": "guids",
-      "label": "GUIDs",
-      "description": "One mod GUID per line (or comma-separated) to find and export. You can paste a section straight out of a Download Missing Mods report — bullets like '!', '\u2717', '+', '~' and trailing '(...)' notes are stripped automatically, and plain description/path lines from the report are ignored. '#'-comment lines are ignored too.",
+      "label": "$option.Guids.label",
+      "description": "$option.Guids.description",
       "placeholder": "GaryuX.Chloe\nAnotherAuthor.SomeMod",
       "default": "",
       "pipeline_override": {
@@ -737,20 +737,20 @@
     },
     "RenameToGuid": {
       "type": "switch",
-      "label": "Rename to GUID",
-      "description": "Rename each exported zipmod to <guid>.zipmod so it's obvious which file is which. Turn off to keep each file's original filename.",
+      "label": "$option.RenameToGuid.label",
+      "description": "$option.RenameToGuid.description",
       "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
-          "label": "Rename",
+          "label": "$option.RenameToGuid.case.Yes.label",
           "pipeline_override": {
             "RenameToGuid": true
           }
         },
         {
           "name": "No",
-          "label": "Keep Original Names",
+          "label": "$option.RenameToGuid.case.No.label",
           "pipeline_override": {
             "RenameToGuid": false
           }
@@ -967,10 +967,10 @@
     },
     {
       "name": "ExportMods",
-      "label": "📤 Export Mods",
+      "label": "$task.ExportMods.label",
       "entry": "ExportMods",
       "default_check": false,
-      "description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to <guid>.zipmod",
+      "description": "$task.ExportMods.description",
       "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
     },
     {

@@ -136,6 +136,7 @@ jobs:
           --hidden-import "tasks.delete_cards"
           --hidden-import "tasks.download_contents"
           --hidden-import "tasks.download_missing_mods"
+          --hidden-import "tasks.export_mods"
           --hidden-import "tasks.filter_convert_kks"
           --hidden-import "tasks.filter_duplicate_contents"
           --hidden-import "tasks.group_chara"
@@ -171,6 +172,9 @@ jobs:
           if (Test-Path "assets\kkafio_modpack_index_kk.json")  { Copy-Item "assets\kkafio_modpack_index_kk.json"  "$dst\assets\kkafio_modpack_index_kk.json" }
           if (Test-Path "assets\kkafio_modpack_index_kks.json") { Copy-Item "assets\kkafio_modpack_index_kks.json" "$dst\assets\kkafio_modpack_index_kks.json" }
           if (Test-Path "assets\xkcd_colors.json")              { Copy-Item "assets\xkcd_colors.json"              "$dst\assets\xkcd_colors.json" }
+
+          # resource/ (interface.json i18n translation files, and anything else added under resource/)
+          if (Test-Path "resource") { Copy-Item "resource" "$dst\resource" -Recurse -Force }
 
           # Install MXU → rename to KKAFIO.exe
           $mxuDir = "downloads\MXU"

@@ -191,5 +191,13 @@
   "preset.GroupAndRename.label": "✏️ 分组并重命名",
   "preset.GroupAndRename.description": "将角色分类到系列文件夹中，然后将卡片名称翻译为英文",
   "preset.DownloadAndInstall.label": "⬇️ 下载并安装",
-  "preset.DownloadAndInstall.description": "下载新卡片，然后将其安装到游戏中"
+  "preset.DownloadAndInstall.description": "下载新卡片，然后将其安装到游戏中",
+  "task.ExportMods.label": "📤 导出模组",
+  "task.ExportMods.description": "按 GUID 查找 zipmod 并复制到输出文件夹，可选择重命名为 <guid>.zipmod",
+  "option.Guids.label": "GUID",
+  "option.Guids.description": "要查找并导出的模组 GUID，每行一个（或用逗号分隔）。你可以直接粘贴“下载缺失模组”报告中的一段——像“!”“✗”“+”“~”这样的项目符号以及末尾的“(...)”备注会被自动去除，报告中的普通说明/路径行也会被忽略。以“#”开头的注释行同样会被忽略。",
+  "option.RenameToGuid.label": "重命名为 GUID",
+  "option.RenameToGuid.description": "将每个导出的 zipmod 重命名为 <guid>.zipmod，以便清楚分辨每个文件。关闭此项则保留各文件的原始文件名。",
+  "option.RenameToGuid.case.Yes.label": "重命名",
+  "option.RenameToGuid.case.No.label": "保留原文件名"
 }
