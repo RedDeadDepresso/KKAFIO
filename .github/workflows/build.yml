@@ -153,6 +153,7 @@ jobs:
 
           # Helper scripts
           if (Test-Path "register_context_menu.bat")   { Copy-Item "register_context_menu.bat"   $dst }
+          if (Test-Path "register_context_menu.ps1")   { Copy-Item "register_context_menu.ps1"   $dst }
           if (Test-Path "unregister_context_menu.bat") { Copy-Item "unregister_context_menu.bat" $dst }
 
           # interface.json — patch version field with the release tag
