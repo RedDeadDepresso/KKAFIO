@@ -236,7 +236,7 @@ wheels = [
 
 [[package]]
 name = "hatchling"
-version = "1.32.0"
+version = "1.32.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
@@ -245,9 +245,9 @@ dependencies = [
     { name = "tomlkit" },
     { name = "trove-classifiers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/69/08/33331757185504aae48b8d9bd78cec03a76e3aecfb52e549d05a2347c0dd/hatchling-1.32.0.tar.gz", hash = "sha256:0bdbde4a52b06c37e3eca395f85a762bf0ef06fe374fd8ae429dc6be10230f5f", size = 57783, upload-time = "2026-08-11T05:03:44.114Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/7f/b20bd29978bec1f2ddd3bbc1cdc5829bb2dd5c1476facd8a84bfe9934c5e/hatchling-1.32.3.tar.gz", hash = "sha256:acdd4436d84d829c6e7ae6df723241d8f0bca9c5bad5a6148bd41f2ea6b8a792", size = 58154, upload-time = "2026-09-17T20:05:11.675Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/84/1798b6d85ecde0e31546004efd25c5de1b1f49250644a60cce460e12593a/hatchling-1.32.0-py3-none-any.whl", hash = "sha256:0e17c9c3b9aa7c625acc8d0f5b622f107d5049af9ecf5ada4de1aada5be7cdbc", size = 78435, upload-time = "2026-08-11T05:03:42.644Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/89/268c7e4b2bcf2071047366c4c3b4b0e89f640e13ea7bfdaf1df6c40e5140/hatchling-1.32.3-py3-none-any.whl", hash = "sha256:d05b350af5d9aa5bf7b34b434a45a742b99e67d0b48ea67d240cfeab98e13945", size = 78895, upload-time = "2026-09-17T20:05:10.38Z" },
 ]
 
 [[package]]
@@ -303,11 +303,11 @@ wheels = [
 
 [[package]]
 name = "idna"
-version = "3.19"
+version = "3.20"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5f/f7/abb373e5757eaec4b922b92f97ec8d6d7e057cf06778247604fbc4e7c3f3/idna-3.19.tar.gz", hash = "sha256:5e0811a4383b21dc5838069f801c4fb62113b7447663d2530d2bd6e77b49bf15", size = 215237, upload-time = "2026-08-18T05:14:24.27Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f5/08/8eea9d4b8302028f3abb2c0813953f7aec26d33b7a8960ed760e65ff29fa/idna-3.20.tar.gz", hash = "sha256:a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44", size = 216463, upload-time = "2026-09-17T14:11:04.752Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/b0/0e52c878c53f245edd3a11020f20979b3f490f245af532c7cae3027754b5/idna-3.19-py3-none-any.whl", hash = "sha256:815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4", size = 68550, upload-time = "2026-08-18T05:14:22.343Z" },
+    { url = "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl", hash = "sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c", size = 69583, upload-time = "2026-09-17T14:11:03.168Z" },
 ]
 
 [[package]]
@@ -941,7 +941,7 @@ wheels = [
 [[package]]
 name = "teleget9527"
 version = "2.0.0"
-source = { git = "https://github.com/RedDeadDepresso/telebackup.git?rev=main#4134db80e7ca8bcfd3a6533ef5944baf1a55c9f6" }
+source = { git = "https://github.com/RedDeadDepresso/telebackup.git?rev=main#379af61b30256e249cec7ac24984a660e8cc562f" }
 dependencies = [
     { name = "psutil" },
     { name = "telethon" },
@@ -967,14 +967,14 @@ wheels = [
 
 [[package]]
 name = "tifffile"
-version = "2026.9.9"
+version = "2026.9.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/52/fdf44e2de6ccd641d4b21eec7a875f5b1c3e28e8108032b4e5da63839db9/tifffile-2026.9.9.tar.gz", hash = "sha256:5e5a0dfa16e6376bf062bc46e21b896fbfe895fcb47559af9c64b9b2d77bb4a0", size = 442579, upload-time = "2026-09-08T23:28:11.069Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/da/39803ba58b0ada6ba3841724368e4a9676475379cb4b70cdf3152b2caa3b/tifffile-2026.9.15.tar.gz", hash = "sha256:2ad086262b5bd3b3804f2d044926e5f63d8f6ae72b235d8b774f164b79f587c4", size = 442944, upload-time = "2026-09-15T16:38:49.397Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4f/bc/699eecd5f5829e28939e8dc22aeff0a65b8d37af80a4f6543d26e1184ad2/tifffile-2026.9.9-py3-none-any.whl", hash = "sha256:f7e48417d8e83a559349f8fe6c1e302afd57e564276124bab84111129f43925a", size = 273280, upload-time = "2026-09-08T23:28:09.706Z" },
+    { url = "https://files.pythonhosted.org/packages/38/68/5adfb759d1a7e3ffb7ff43512908bcfe8514882b290ef6bc6df8efa9b425/tifffile-2026.9.15-py3-none-any.whl", hash = "sha256:9a4a74671c72645e0d48372ff2d20ec1625b1cd52067a72fbd021435dd044794", size = 273353, upload-time = "2026-09-15T16:38:47.92Z" },
 ]
 
 [[package]]
