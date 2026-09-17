@@ -74,6 +74,62 @@ def install_graceful_stop_handler() -> None:
 
 
 # ---------------------------------------------------------------------------
+# [FIX-2026-09-14-SUPPRESS-TELEGET-CONSOLE-LOGS] Quiet teleget9527's INFO
+# console output in frozen builds, without losing it from the log file.
+# ---------------------------------------------------------------------------
+def suppress_teleget_console_logs() -> None:
+    """
+    Prevent teleget9527's per-module logs (download_manager_v2,
+    download_daemon_core, download_ipc, etc. — all created via
+    `logging.getLogger(__name__)` with no level/handlers of their own, so
+    they inherit and propagate to the root logger) from being printed to
+    this process's stdout at all, while still letting them reach any file
+    handler teleget itself later attaches.
+
+    Errors surfaced by tasks/download_missing_mods.py are already reported
+    to the user through KKAFIO's own error handling (which points them at
+    the log file), so there's no need to also mirror teleget's own
+    WARNING/ERROR-level lines to the console for visibility — this
+    suppresses everything, not just INFO/DEBUG.
+
+    Why this has to run *before* anything else touches logging: teleget's
+    own AccountScheduler.__init__ does the equivalent of:
+
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            logging.basicConfig(level=logging.INFO,
+                                 handlers=[logging.StreamHandler(sys.stdout)])
+
+    — i.e. it only adds its own console handler if the root logger doesn't
+    already have one. Attaching a NullHandler here first satisfies that
+    check (a NullHandler still counts as "a handler is present"), so
+    teleget never adds its own real console handler at all — and since
+    NullHandler discards everything unconditionally, no teleget-originated
+    record reaches the console at any level.
+
+    Note this only affects *this* (main/orchestrator) process. The
+    download daemon runs as a separate multiprocessing child process that
+    re-imports and re-executes fresh — multiprocessing.freeze_support()
+    intercepts before any of this module's own __main__ code (including
+    this function) ever runs there, so it can't reach the daemon's logging
+    setup at all. The daemon's console output is silenced separately, via
+    the `daemon_console_log_level` value passed into TGDownloader's
+    `config=` argument (see tasks/download_missing_mods.py), which requires
+    a small corresponding change in teleget9527 itself to decouple its
+    daemon-side file and console handler levels (previously tied together).
+    """
+    import logging
+
+    root_logger = logging.getLogger()
+    # Keep the *logger's* own level permissive (INFO) so records still reach
+    # the handler-filtering stage at all — teleget's own file handler (added
+    # later via _setup_unified_logging(), independent of this) sets its own,
+    # more permissive level (DEBUG) and will still capture everything.
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(logging.NullHandler())
+
+
+# ---------------------------------------------------------------------------
 # Core loader
 # ---------------------------------------------------------------------------
 
@@ -1096,6 +1152,17 @@ try:
         # any task, so a Stop request arriving at any point afterward is
         # guaranteed to be caught.
         install_graceful_stop_handler()
+
+        # [FIX-2026-09-14-SUPPRESS-TELEGET-CONSOLE-LOGS] Only suppress
+        # teleget's verbose per-download-part INFO logging in packaged
+        # (frozen) builds — keep full detail on the console for developers
+        # running from source. Must run before build_parser()/args.func(args)
+        # ever gets a chance to import/construct teleget's TGDownloader
+        # (indirectly, via tasks/download_missing_mods.py), since teleget
+        # only attaches its own console handler if the root logger doesn't
+        # already have one.
+        if getattr(sys, "frozen", False):
+            suppress_teleget_console_logs()
 
         parser = build_parser()
         args = parser.parse_args()

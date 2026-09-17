@@ -31,6 +31,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -1020,10 +1021,49 @@ class DownloadMissingMods(BaseTask):
                             _session_dir = _CFG_DIR / "config" / "tg_session"
                             try:
                                 from tg_downloader import TGDownloader
+
+                                # [FIX-2026-09-14-SUPPRESS-TELEGET-CONSOLE-LOGS]
+                                # The download daemon runs as a separate
+                                # multiprocessing child process, re-executing
+                                # this frozen app fresh — kkafio_cli.py's own
+                                # __main__ logic (including the console-log
+                                # suppression it applies to *this* process,
+                                # see suppress_teleget_console_logs()) never
+                                # runs there at all, since
+                                # multiprocessing.freeze_support() intercepts
+                                # before reaching it. daemon_console_log_level
+                                # is a separate teleget9527 config key
+                                # (added specifically to support this) that
+                                # controls only the daemon's console handler,
+                                # independent of its file handler — unlike
+                                # daemon_log_level, which controls both
+                                # together. Setting it to CRITICAL effectively
+                                # silences the daemon's console output
+                                # entirely (nothing below CRITICAL is ever
+                                # emitted there) while its log file keeps
+                                # full INFO/DEBUG detail for troubleshooting.
+                                # Errors from this task are already reported
+                                # to the user through KKAFIO's own error
+                                # handling, which points them at the log
+                                # file, so there's no need to also mirror
+                                # teleget's own console output for
+                                # visibility. Only applied in frozen/packaged
+                                # builds — keep full console detail for
+                                # developers running from source.
+                                _teleget_config = (
+                                    {
+                                        "daemon_log_level": "INFO",
+                                        "daemon_console_log_level": "WARNING",
+                                    }
+                                    if getattr(sys, "frozen", False)
+                                    else None
+                                )
+
                                 teleget_downloader = TGDownloader(
                                     api_id=tg_data["api_id"],
                                     api_hash=tg_data["api_hash"],
                                     session_dir=str(_session_dir.resolve()),
+                                    config=_teleget_config,
                                 )
                                 await teleget_downloader.start("kkafio")
                                 logger.info("DLMOD", "teleget9527 downloader started")
