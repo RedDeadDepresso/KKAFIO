@@ -1050,20 +1050,11 @@ class DownloadMissingMods(BaseTask):
                                 # visibility. Only applied in frozen/packaged
                                 # builds — keep full console detail for
                                 # developers running from source.
-                                _teleget_config = (
-                                    {
-                                        "daemon_log_level": "INFO",
-                                        "daemon_console_log_level": "WARNING",
-                                    }
-                                    if getattr(sys, "frozen", False)
-                                    else None
-                                )
 
                                 teleget_downloader = TGDownloader(
                                     api_id=tg_data["api_id"],
                                     api_hash=tg_data["api_hash"],
                                     session_dir=str(_session_dir.resolve()),
-                                    config=_teleget_config,
                                 )
                                 await teleget_downloader.start("kkafio")
                                 logger.info("DLMOD", "teleget9527 downloader started")
