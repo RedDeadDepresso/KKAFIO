@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal
 
-from tasks.base_task import validate_input_path
+from tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
 from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import Config
 from utils.file_manager import FileManager
@@ -321,7 +321,7 @@ class FilterDuplicateContents:
         folder_path = Path(folder_path)
         duplicates_root = folder_path / self.DUPLICATES_DIR
 
-        validate_input_path("DUPLIC", folder_path)
+        validate_input_path("DUPLIC", folder_path, default_path=DEFAULT_DOWNLOADS_PATH)
 
         logger.line()
         logger.info("DUPLIC", f"Scanning        : {folder_path}")

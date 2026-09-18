@@ -72,14 +72,14 @@
         }
       }
     },
-    "OutputPath": {
+    "BackupOutputPath": {
       "type": "folder",
-      "name": "output_path",
+      "name": "backup_output_path",
       "label": "$option.OutputPath.label",
       "description": "$option.OutputPath.description",
-      "default": "",
+      "default": "C:/KKAFIO/Backups",
       "pipeline_override": {
-        "OutputPath": "{output_path}"
+        "OutputPath": "{backup_output_path}"
       }
     },
     "BackupFilename": {
@@ -103,7 +103,7 @@
       "name": "output_dir",
       "label": "$option.DownloadOutputDir.label",
       "description": "$option.DownloadOutputDir.description",
-      "default": "",
+      "default": "C:/KKAFIO/Downloads",
       "pipeline_override": {
         "OutputDir": "{output_dir}"
       }
@@ -149,6 +149,16 @@
       "default": "",
       "pipeline_override": {
         "InputPath": "{input_path}"
+      }
+    },
+    "DownloadsInputPath": {
+      "type": "folder",
+      "name": "downloads_input_path",
+      "label": "$option.InputPath.label",
+      "description": "$option.InputPath.description",
+      "default": "C:/KKAFIO/Downloads",
+      "pipeline_override": {
+        "InputPath": "{downloads_input_path}"
       }
     },
     "Filter": {
@@ -735,6 +745,16 @@
         "Guids": "{guids}"
       }
     },
+    "ExportOutputPath": {
+      "type": "folder",
+      "name": "export_output_path",
+      "label": "$option.OutputPath.label",
+      "description": "$option.OutputPath.description",
+      "default": "C:/KKAFIO/Exported Mods",
+      "pipeline_override": {
+        "OutputPath": "{export_output_path}"
+      }
+    },
     "RenameToGuid": {
       "type": "switch",
       "label": "$option.RenameToGuid.label",
@@ -820,6 +840,16 @@
       "default": [],
       "pipeline_override": {
         "ContentPaths": "{content_paths}"
+      }
+    },
+    "ArchiveOutputPath": {
+      "type": "folder",
+      "name": "archive_output_path",
+      "label": "$option.OutputPath.label",
+      "description": "$option.OutputPath.description",
+      "default": "C:/KKAFIO/Archived Cards",
+      "pipeline_override": {
+        "OutputPath": "{archive_output_path}"
       }
     },
     "IncludeCoordinates": {
@@ -921,7 +951,7 @@
       "default_check": false,
       "description": "$task.CreateBackup.description",
       "group": ["backup"],
-      "option": ["OutputPath", "BackupFilename", "BackupFolders"]
+      "option": ["BackupOutputPath", "BackupFilename", "BackupFolders"]
     },
     {
       "name": "DownloadContents",
@@ -940,7 +970,7 @@
       "description": "$task.FilterConvertKKS.description",
       "group": ["card-management"],
       "option": [
-        "InputPath",
+        "DownloadsInputPath",
         "Filter",
         "Convert",
         "ExtractArchive",
@@ -971,7 +1001,13 @@
       "entry": "ExportMods",
       "default_check": false,
       "description": "$task.ExportMods.description",
-      "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
+      "option": [
+        "ExportOutputPath",
+        "Guids",
+        "RenameToGuid",
+        "UseCache",
+        "ModsDir"
+      ]
     },
     {
       "name": "FilterDuplicateContents",
@@ -981,7 +1017,7 @@
       "description": "$task.FilterDuplicateContents.description",
       "group": ["duplicate-handling"],
       "option": [
-        "InputPath",
+        "DownloadsInputPath",
         "UseCache",
         "FuzzyMatching",
         "KeepStrategy",
@@ -996,7 +1032,7 @@
       "description": "$task.InstallContents.description",
       "group": ["card-management"],
       "option": [
-        "InputPath",
+        "DownloadsInputPath",
         "InstallContentTypes",
         "FileConflicts",
         "ExtractArchive",
@@ -1010,7 +1046,7 @@
       "default_check": false,
       "description": "$task.UninstallContents.description",
       "group": ["card-management"],
-      "option": ["InputPath", "InstallContentTypes"]
+      "option": ["DownloadsInputPath", "InstallContentTypes"]
     },
     {
       "name": "GroupChara",
@@ -1053,7 +1089,7 @@
       "description": "$task.ArchiveCards.description",
       "group": ["card-management"],
       "option": [
-        "OutputPath",
+        "ArchiveOutputPath",
         "ContentPaths",
         "CombinedArchive",
         "ArchiveFormat",

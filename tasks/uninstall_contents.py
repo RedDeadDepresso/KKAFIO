@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tasks.base_task import validate_input_path
+from tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
 from utils.content_resolver import ContentTypeResolver
 from utils.config import Config, GameType
 from utils.file_manager import FileManager
@@ -31,7 +31,7 @@ class UninstallContents(ContentTypeResolver):
 
     def run(self):
         folder_path = self.input_path
-        validate_input_path("UNINST", folder_path)
+        validate_input_path("UNINST", folder_path, default_path=DEFAULT_DOWNLOADS_PATH)
 
         foldername = folder_path.name
         logger.line()

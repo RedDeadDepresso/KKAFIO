@@ -18,6 +18,7 @@ class CreateBackup:
         self.output_path = self.config.create_backup["OutputPath"]
     
     def run(self):
+        self.output_path.mkdir(parents=True, exist_ok=True)
         output_path = self.output_path / self.filename
         self.file_manager.create_game_archive(self.folders, output_path)
 

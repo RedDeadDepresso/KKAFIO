@@ -17,7 +17,7 @@ Convert    — produce a KK-compatible copy of each KKS card (binary header
 
 import shutil
 from pathlib import Path
-from tasks.base_task import validate_input_path
+from tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
 from utils.config import Config
 from utils.classifier import CardType, get_card_type
 from utils.file_manager import FileManager
@@ -77,7 +77,7 @@ class FilterConvertKKS:
     def run(self) -> None:
         path = Path(self.config.filter_convert_kks["InputPath"])
 
-        validate_input_path("FILTER", path)
+        validate_input_path("FILTER", path, default_path=DEFAULT_DOWNLOADS_PATH)
 
         if self.extract_archive:
             self._extract_archives(path)

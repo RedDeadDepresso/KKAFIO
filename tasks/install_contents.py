@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from tasks.base_task import validate_input_path
+from tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
 from utils.content_resolver import ContentTypeResolver
 from utils.config import Config, GameType
 from utils.file_manager import FileManager
@@ -36,7 +36,7 @@ class InstallContents(ContentTypeResolver):
             folder_path = self.input_path
         folder_path = Path(folder_path)
 
-        validate_input_path("INSTALL", folder_path)
+        validate_input_path("INSTALL", folder_path, default_path=DEFAULT_DOWNLOADS_PATH)
 
         foldername = folder_path.name
         logger.line()

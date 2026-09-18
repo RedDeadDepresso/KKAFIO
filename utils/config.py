@@ -158,7 +158,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
             cfg[config_key] = v
 
     if task_name == "InstallContents":
-        _set("InputPath",      "InputPath")
+        _set("InputPath",      "DownloadsInputPath")
         _set("ExtractArchive", "ExtractArchive")
         selected = _extract_opt(opt_values, "InstallContentTypes")
         if selected is not None:
@@ -173,7 +173,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         if v: cfg["Password"] = v
 
     elif task_name == "UninstallContents":
-        _set("InputPath", "InputPath")
+        _set("InputPath", "DownloadsInputPath")
         selected = _extract_opt(opt_values, "InstallContentTypes")
         if selected is not None:
             cfg["Chara"]    = "Chara"    in selected
@@ -183,7 +183,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
             cfg["Overlays"] = "Overlays" in selected
 
     elif task_name == "FilterConvertKKS":
-        _set("InputPath",      "InputPath")
+        _set("InputPath",      "DownloadsInputPath")
         _set("Filter",         "Filter")
         _set("Convert",        "Convert")
         _set("ExtractArchive", "ExtractArchive")
@@ -209,7 +209,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("UseCache",           "UseCache")
         _set("IncludeModpack",     "IncludeModpack")
         _set("CombinedArchive",    "CombinedArchive")
-        _set("OutputPath",         "OutputPath")
+        _set("OutputPath",         "ArchiveOutputPath")
         _set("IncludeCoordinates", "IncludeCoordinates")
         v = _extract_opt(opt_values, "ArchiveFormat")
         if v: cfg["Format"] = v
@@ -233,7 +233,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("DeleteEmptyFolders", "DeleteEmptyFolders")
 
     elif task_name == "FilterDuplicateContents":
-        _set("InputPath",  "InputPath")
+        _set("InputPath",  "DownloadsInputPath")
         _set("FuzzyChara", "FuzzyMatching")
         v = _extract_opt(opt_values, "KeepStrategy")
         if v: cfg["Keep"] = v
@@ -241,7 +241,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("UseCache", "UseCache")
 
     elif task_name == "CreateBackup":
-        _set("OutputPath", "OutputPath")
+        _set("OutputPath", "BackupOutputPath")
         v = _extract_opt(opt_values, "BackupFilename")
         if v: cfg["Filename"] = v
         selected = _extract_opt(opt_values, "BackupFolders")
@@ -267,7 +267,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("TelegramChatLinks",   "TelegramChatLinks")
 
     elif task_name == "ExportMods":
-        _set("OutputPath",   "OutputPath")
+        _set("OutputPath",   "ExportOutputPath")
         _set("Guids",        "Guids")
         _set("RenameToGuid", "RenameToGuid")
         _set("UseCache",     "UseCache")
@@ -444,6 +444,22 @@ class Config:
             else:
                 logger.info("SCRIPT", f"Optional path not found (skipping): {path}")
 
+    # Per-task (InputPath/OutputPath) defaults shipped in interface.json —
+    # kept in sync manually. If a task's folder is unset by the user (still
+    # exactly this default) and doesn't exist yet, it's created automatically
+    # instead of failing validation; a folder the user chose themselves is
+    # still treated as an error if missing, since that's more likely a typo
+    # worth surfacing than something we should silently paper over.
+    _DEFAULT_TASK_PATHS = {
+        ("InstallContents", "InputPath"):          "C:/KKAFIO/Downloads",
+        ("UninstallContents", "InputPath"):        "C:/KKAFIO/Downloads",
+        ("FilterConvertKKS", "InputPath"):         "C:/KKAFIO/Downloads",
+        ("FilterDuplicateContents", "InputPath"):  "C:/KKAFIO/Downloads",
+        ("CreateBackup", "OutputPath"):             "C:/KKAFIO/Backups",
+        ("ArchiveCards", "OutputPath"):              "C:/KKAFIO/Archived Cards",
+        ("ExportMods", "OutputPath"):                "C:/KKAFIO/Exported Mods",
+    }
+
     def validate_tasks(self):
         for task in _TASK_KEY:
             task_config = self.config_data.get(task, {})
@@ -454,6 +470,11 @@ class Config:
                     path_obj = Path(task_config[key])
                     task_config[key] = path_obj
                     if not path_obj.exists():
+                        default = self._DEFAULT_TASK_PATHS.get((task, key))
+                        if default is not None and path_obj == Path(default):
+                            logger.info("SCRIPT", f"{key} does not exist yet, creating default folder for {task}: {path_obj}")
+                            path_obj.mkdir(parents=True, exist_ok=True)
+                            continue
                         logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
                         raise Exception(f"Path invalid: {path_obj}")
 
