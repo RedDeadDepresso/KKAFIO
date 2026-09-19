@@ -199,5 +199,14 @@
   "option.RenameToGuid.label": "Rename to GUID",
   "option.RenameToGuid.description": "Rename each exported zipmod to [guid].zipmod so it's obvious which file is which. Turn off to keep each file's original filename.",
   "option.RenameToGuid.case.Yes.label": "Rename",
-  "option.RenameToGuid.case.No.label": "Keep Original Names"
+  "option.RenameToGuid.case.No.label": "Keep Original Names",
+  "group.mod-management.label": "Mod Management",
+  "task.CompressCardsTextures.label": "🗜️ Compress Cards Textures",
+  "task.CompressCardsTextures.description": "Recompress the textures inside chara/coordinate cards with KoiCardTexTool, shrinking file size dramatically with minimal quality loss",
+  "option.KoiCardTexToolPath.label": "KoiCardTexTool Path",
+  "option.KoiCardTexToolPath.description": "Folder containing (or where to install) KoiCardTexTool.exe. If the exe isn't found there, KKAFIO downloads and extracts the latest release automatically before running it.",
+  "option.DeleteOriginalCards.label": "Delete Original Cards",
+  "option.DeleteOriginalCards.description": "After compressing, find every card whose filename ends in [zip] (e.g. CardA[zip].png), and if the original (CardA.png) still exists alongside it, send the original to the Recycle Bin.",
+  "option.DeleteOriginalCards.case.Yes.label": "Delete Originals",
+  "option.DeleteOriginalCards.case.No.label": "Keep Both"
 }

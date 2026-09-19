@@ -199,5 +199,14 @@
   "option.RenameToGuid.label": "重新命名為 GUID",
   "option.RenameToGuid.description": "將每個匯出的 zipmod 重新命名為 [guid].zipmod，以便清楚分辨每個檔案。關閉此項則保留各檔案的原始檔名。",
   "option.RenameToGuid.case.Yes.label": "重新命名",
-  "option.RenameToGuid.case.No.label": "保留原始檔名"
+  "option.RenameToGuid.case.No.label": "保留原始檔名",
+  "group.mod-management.label": "模組管理",
+  "task.CompressCardsTextures.label": "🗜️ 壓縮卡片紋理",
+  "task.CompressCardsTextures.description": "使用 KoiCardTexTool 重新壓縮角色/服裝卡內的紋理，在畫質損失極小的情況下大幅縮小檔案體積",
+  "option.KoiCardTexToolPath.label": "KoiCardTexTool 路徑",
+  "option.KoiCardTexToolPath.description": "存放（或用於安裝）KoiCardTexTool.exe 的資料夾。若該位置找不到該 exe，KKAFIO 會在執行前自動下載並解壓縮最新版本。",
+  "option.DeleteOriginalCards.label": "刪除原始卡片",
+  "option.DeleteOriginalCards.description": "壓縮完成後，尋找所有檔名以 [zip] 結尾的卡片（例如 CardA[zip].png），若同目錄下仍存在原始檔案（CardA.png），則將其傳送到資源回收筒。",
+  "option.DeleteOriginalCards.case.Yes.label": "刪除原始檔案",
+  "option.DeleteOriginalCards.case.No.label": "兩者都保留"
 }

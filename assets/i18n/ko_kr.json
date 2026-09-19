@@ -199,5 +199,14 @@
   "option.RenameToGuid.label": "GUID로 이름 변경",
   "option.RenameToGuid.description": "내보낸 각 zipmod의 이름을 [guid].zipmod로 변경하여 어떤 파일인지 쉽게 알아볼 수 있게 합니다. 끄면 각 파일의 원래 파일 이름을 유지합니다.",
   "option.RenameToGuid.case.Yes.label": "이름 변경",
-  "option.RenameToGuid.case.No.label": "원래 이름 유지"
+  "option.RenameToGuid.case.No.label": "원래 이름 유지",
+  "group.mod-management.label": "모드 관리",
+  "task.CompressCardsTextures.label": "🗜️ 카드 텍스처 압축",
+  "task.CompressCardsTextures.description": "KoiCardTexTool을 사용해 캐릭터/코디 카드 안의 텍스처를 재압축하여 화질 저하를 최소화하면서 파일 크기를 크게 줄입니다",
+  "option.KoiCardTexToolPath.label": "KoiCardTexTool 경로",
+  "option.KoiCardTexToolPath.description": "KoiCardTexTool.exe가 있는(또는 설치할) 폴더입니다. 해당 위치에 exe가 없으면 KKAFIO가 실행 전에 최신 릴리스를 자동으로 다운로드하여 압축을 풉니다.",
+  "option.DeleteOriginalCards.label": "원본 카드 삭제",
+  "option.DeleteOriginalCards.description": "압축 후 파일명이 [zip]로 끝나는 모든 카드(예: CardA[zip].png)를 찾고, 원본(CardA.png)이 같은 위치에 남아 있으면 휴지통으로 보냅니다.",
+  "option.DeleteOriginalCards.case.Yes.label": "원본 삭제",
+  "option.DeleteOriginalCards.case.No.label": "둘 다 유지"
 }

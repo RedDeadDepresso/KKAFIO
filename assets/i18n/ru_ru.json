@@ -199,5 +199,14 @@
   "option.RenameToGuid.label": "Переименовать по GUID",
   "option.RenameToGuid.description": "Переименовать каждый экспортированный zipmod в [guid].zipmod, чтобы было понятно, какой это файл. Отключите, чтобы сохранить исходные имена файлов.",
   "option.RenameToGuid.case.Yes.label": "Переименовать",
-  "option.RenameToGuid.case.No.label": "Сохранить исходные имена"
+  "option.RenameToGuid.case.No.label": "Сохранить исходные имена",
+  "group.mod-management.label": "Управление модами",
+  "task.CompressCardsTextures.label": "🗜️ Сжать текстуры карточек",
+  "task.CompressCardsTextures.description": "Повторно сжимает текстуры внутри карточек персонажей/образов с помощью KoiCardTexTool, значительно уменьшая размер файлов при минимальной потере качества",
+  "option.KoiCardTexToolPath.label": "Путь к KoiCardTexTool",
+  "option.KoiCardTexToolPath.description": "Папка, содержащая (или куда установить) KoiCardTexTool.exe. Если exe там не найден, KKAFIO автоматически скачает и распакует последний релиз перед запуском.",
+  "option.DeleteOriginalCards.label": "Удалять исходные карточки",
+  "option.DeleteOriginalCards.description": "После сжатия найти все карточки, чьё имя файла заканчивается на [zip] (например, CardA[zip].png), и если оригинал (CardA.png) всё ещё существует рядом, отправить его в корзину.",
+  "option.DeleteOriginalCards.case.Yes.label": "Удалять оригиналы",
+  "option.DeleteOriginalCards.case.No.label": "Оставить оба"
 }

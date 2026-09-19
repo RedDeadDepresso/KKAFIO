@@ -154,8 +154,8 @@
     "KoiCardTexToolPath": {
       "type": "folder",
       "name": "koi_card_tex_tool_path",
-      "label": "KoiCardTexTool Path",
-      "description": "Folder containing (or where to install) KoiCardTexTool.exe. If the exe isn't found there, KKAFIO downloads and extracts the latest release automatically before running it.",
+      "label": "$option.KoiCardTexToolPath.label",
+      "description": "$option.KoiCardTexToolPath.description",
       "default": "C:/KoiCardTexTool",
       "pipeline_override": {
         "KoiCardTexToolPath": "{koi_card_tex_tool_path}"
@@ -163,20 +163,20 @@
     },
     "DeleteOriginalCards": {
       "type": "switch",
-      "label": "Delete Original Cards",
-      "description": "After compressing, find every card whose filename ends in [zip] (e.g. CardA[zip].png), and if the original (CardA.png) still exists alongside it, send the original to the Recycle Bin.",
+      "label": "$option.DeleteOriginalCards.label",
+      "description": "$option.DeleteOriginalCards.description",
       "default_case": "No",
       "cases": [
         {
           "name": "Yes",
-          "label": "Delete Originals",
+          "label": "$option.DeleteOriginalCards.case.Yes.label",
           "pipeline_override": {
             "DeleteOriginalCards": true
           }
         },
         {
           "name": "No",
-          "label": "Keep Both",
+          "label": "$option.DeleteOriginalCards.case.No.label",
           "pipeline_override": {
             "DeleteOriginalCards": false
           }
@@ -1034,10 +1034,10 @@
     },
     {
       "name": "CompressCardsTextures",
-      "label": "🗜️ Compress Cards Textures",
+      "label": "$task.CompressCardsTextures.label",
       "entry": "CompressCardsTextures",
       "default_check": false,
-      "description": "Recompress the textures inside chara/coordinate cards with KoiCardTexTool, shrinking file size dramatically with minimal quality loss",
+      "description": "$task.CompressCardsTextures.description",
       "group": ["card-management"],
       "option": ["InputPath", "KoiCardTexToolPath", "DeleteOriginalCards"]
     },
