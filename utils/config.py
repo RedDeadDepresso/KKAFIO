@@ -129,6 +129,7 @@ _TASK_KEY = {
     "DownloadContents":    "DownloadContents",
     "DownloadMissingMods": "DownloadMissingMods",
     "ExportMods":       "ExportMods",
+    "CompressCardsTextures": "CompressCardsTextures",
 }
 
 _TASK_DEFAULTS = {
@@ -144,7 +145,8 @@ _TASK_DEFAULTS = {
     "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
     "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"},
-    "ExportMods":       {"Enable": False, "OutputPath": "", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""}
+    "ExportMods":       {"Enable": False, "OutputPath": "", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
+    "CompressCardsTextures": {"Enable": False, "InputPath": "", "KoiCardTexToolPath": "", "DeleteOriginalCards": False}
 }
 
 
@@ -272,6 +274,11 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("RenameToGuid", "RenameToGuid")
         _set("UseCache",     "UseCache")
         _set("ModsDir",      "ModsDir")
+
+    elif task_name == "CompressCardsTextures":
+        _set("InputPath",           "InputPath")
+        _set("KoiCardTexToolPath",  "KoiCardTexToolPath")
+        _set("DeleteOriginalCards", "DeleteOriginalCards")
 
     return cfg
 
@@ -481,6 +488,7 @@ class Config:
         self.archive_cards    = self.config_data["ArchiveCards"]
         self.download_missing_mods  = self.config_data["DownloadMissingMods"]
         self.export_mods            = self.config_data["ExportMods"]
+        self.compress_cards_textures = self.config_data["CompressCardsTextures"]
         self.download_contents   = self.config_data["DownloadContents"]
         self.delete_cards     = self.config_data["DeleteCards"]
         self.create_backup    = self.config_data["CreateBackup"]

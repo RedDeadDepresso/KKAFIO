@@ -151,15 +151,37 @@
         "InputPath": "{input_path}"
       }
     },
-    "DownloadsInputPath": {
+    "KoiCardTexToolPath": {
       "type": "folder",
-      "name": "downloads_input_path",
-      "label": "$option.InputPath.label",
-      "description": "$option.InputPath.description",
-      "default": "C:/KKAFIO/Downloads",
+      "name": "koi_card_tex_tool_path",
+      "label": "KoiCardTexTool Path",
+      "description": "Folder containing (or where to install) KoiCardTexTool.exe. If left empty, defaults to the input folder itself. If the exe isn't found there, KKAFIO downloads and extracts the latest release automatically before running it.",
+      "default": "C:/KoiCardTexTool",
       "pipeline_override": {
-        "InputPath": "{downloads_input_path}"
+        "KoiCardTexToolPath": "{koi_card_tex_tool_path}"
       }
+    },
+    "DeleteOriginalCards": {
+      "type": "switch",
+      "label": "Delete Original Cards",
+      "description": "After compressing, find every card whose filename ends in [zip] (e.g. CardA[zip].png), and if the original (CardA.png) still exists alongside it, send the original to the Recycle Bin. Off by default.",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "Delete Originals",
+          "pipeline_override": {
+            "DeleteOriginalCards": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "Keep Both",
+          "pipeline_override": {
+            "DeleteOriginalCards": false
+          }
+        }
+      ]
     },
     "Filter": {
       "type": "switch",
@@ -1000,14 +1022,16 @@
       "label": "$task.ExportMods.label",
       "entry": "ExportMods",
       "default_check": false,
-      "description": "$task.ExportMods.description",
-      "option": [
-        "ExportOutputPath",
-        "Guids",
-        "RenameToGuid",
-        "UseCache",
-        "ModsDir"
-      ]
+      "description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to <guid>.zipmod",
+      "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
+    },
+    {
+      "name": "CompressCardsTextures",
+      "label": "🗜️ Compress Cards Textures",
+      "entry": "CompressCardsTextures",
+      "default_check": false,
+      "description": "Recompress the textures inside chara/coordinate cards with KoiCardTexTool, shrinking file size dramatically with minimal quality loss",
+      "option": ["InputPath", "KoiCardTexToolPath", "DeleteOriginalCards"]
     },
     {
       "name": "FilterDuplicateContents",
@@ -1141,6 +1165,9 @@
         },
         {
           "name": "DownloadMissingMods"
+        },
+        {
+          "name": "CompressCardsTextures"
         },
         {
           "name": "InstallContents"

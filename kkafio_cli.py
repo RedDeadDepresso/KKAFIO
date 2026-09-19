@@ -287,6 +287,21 @@ def run_export_mods(config, file_manager,
     module.run()
 
 
+def run_compress_cards_textures(config, file_manager,
+                                input_path: str | None = None,
+                                tool_path: str | None = None,
+                                delete_original: bool | None = None):
+    from tasks.compress_cards_textures import CompressCardsTextures
+    module = CompressCardsTextures(config, file_manager)
+    if input_path is not None:
+        module.input_path_str = input_path
+    if tool_path is not None:
+        module.tool_path_str = tool_path
+    if delete_original is not None:
+        module.delete_original = delete_original
+    module.run()
+
+
 
 def run_delete_cards(config, file_manager, content_paths: list[str] | None = None,
                      check_shared_mods: bool | None = None,
@@ -471,6 +486,7 @@ def cmd_run(args):
         "DownloadContents":    lambda: run_download_contents(config, file_manager),
         "DownloadMissingMods": lambda: run_download_missing_mods(config, file_manager),
         "ExportMods":       lambda: run_export_mods(config, file_manager),
+        "CompressCardsTextures": lambda: run_compress_cards_textures(config, file_manager),
         "CreateBackup":     lambda: run_create_backup(config, file_manager),
         "FilterConvertKKS": lambda: run_filter_convert_kks(config, file_manager),
         "FilterDuplicateContents": lambda: run_filter_duplicate_contents(config, file_manager),
@@ -664,6 +680,23 @@ def cmd_export_mods(args):
         raise
     except Exception:
         _write_traceback("ExportMods")
+        sys.exit(1)
+
+
+def cmd_compress_cards_textures(args):
+    _clear_traceback()
+    try:
+        config, file_manager = _load_core(args.config, instance_index=args.instance)
+        config.config_data["CompressCardsTextures"]["Enable"] = True
+        delete_original = None if args.delete_original is None else bool(args.delete_original)
+        run_compress_cards_textures(config, file_manager,
+                                    input_path=args.input,
+                                    tool_path=args.tool_path,
+                                    delete_original=delete_original)
+    except SystemExit:
+        raise
+    except Exception:
+        _write_traceback("CompressCardsTextures")
         sys.exit(1)
 
 
@@ -1012,6 +1045,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mods-dir", default=None, metavar="DIR",
                    help="Override the mods directory to search (default: game mods dir from config)")
     p.set_defaults(func=cmd_export_mods)
+
+    # compress-cards-textures
+    p = sub.add_parser(
+        "compress-cards-textures",
+        help="Recompress the textures inside chara/coordinate cards with KoiCardTexTool",
+    )
+    p.add_argument("--input", "-i", metavar="DIR", default=None,
+                   help="Folder to scan (default: CompressCardsTextures.InputPath from config)")
+    p.add_argument("--tool-path", metavar="DIR", default=None,
+                   help="Folder containing (or where to install) KoiCardTexTool.exe "
+                        "(default: the input folder itself)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--delete-original",    dest="delete_original", action="store_true",  default=None,
+                   help="Send the original card to the Recycle Bin once a compressed "
+                        "[zip] version exists alongside it (default: off)")
+    g.add_argument("--no-delete-original", dest="delete_original", action="store_false",
+                   help="Keep both the original and the compressed [zip] version")
+    p.set_defaults(func=cmd_compress_cards_textures)
 
     # delete-cards
     p = sub.add_parser(
