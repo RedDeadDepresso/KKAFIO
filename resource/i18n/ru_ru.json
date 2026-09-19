@@ -193,11 +193,11 @@
   "preset.DownloadAndInstall.label": "⬇️ Загрузка и установка",
   "preset.DownloadAndInstall.description": "Загрузить новые карточки, затем установить их в игру",
   "task.ExportMods.label": "📤 Экспортировать моды",
-  "task.ExportMods.description": "Найти zipmod по GUID и скопировать их в выходную папку, при необходимости переименовав в <guid>.zipmod",
+  "task.ExportMods.description": "Найти zipmod по GUID и скопировать их в выходную папку, при необходимости переименовав в [guid].zipmod",
   "option.Guids.label": "GUID",
   "option.Guids.description": "По одному GUID мода на строку (или через запятую) для поиска и экспорта. Можно вставить фрагмент прямо из отчёта «Загрузка недостающих модов» — маркеры вроде «!», «✗», «+», «~» и завершающие пометки «(...)» удаляются автоматически, а обычные строки описания/пути из отчёта игнорируются. Строки-комментарии, начинающиеся с «#», также игнорируются.",
   "option.RenameToGuid.label": "Переименовать по GUID",
-  "option.RenameToGuid.description": "Переименовать каждый экспортированный zipmod в <guid>.zipmod, чтобы было понятно, какой это файл. Отключите, чтобы сохранить исходные имена файлов.",
+  "option.RenameToGuid.description": "Переименовать каждый экспортированный zipmod в [guid].zipmod, чтобы было понятно, какой это файл. Отключите, чтобы сохранить исходные имена файлов.",
   "option.RenameToGuid.case.Yes.label": "Переименовать",
   "option.RenameToGuid.case.No.label": "Сохранить исходные имена"
 }

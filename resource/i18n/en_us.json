@@ -193,11 +193,11 @@
   "preset.DownloadAndInstall.label": "⬇️ Download & Install",
   "preset.DownloadAndInstall.description": "Download new cards then install them into the game",
   "task.ExportMods.label": "📤 Export Mods",
-  "task.ExportMods.description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to <guid>.zipmod",
+  "task.ExportMods.description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to [guid].zipmod",
   "option.Guids.label": "GUIDs",
   "option.Guids.description": "One mod GUID per line (or comma-separated) to find and export. You can paste a section straight out of a Download Missing Mods report — bullets like '!', '✗', '+', '~' and trailing '(...)' notes are stripped automatically, and plain description/path lines from the report are ignored. '#'-comment lines are ignored too.",
   "option.RenameToGuid.label": "Rename to GUID",
-  "option.RenameToGuid.description": "Rename each exported zipmod to <guid>.zipmod so it's obvious which file is which. Turn off to keep each file's original filename.",
+  "option.RenameToGuid.description": "Rename each exported zipmod to [guid].zipmod so it's obvious which file is which. Turn off to keep each file's original filename.",
   "option.RenameToGuid.case.Yes.label": "Rename",
   "option.RenameToGuid.case.No.label": "Keep Original Names"
 }

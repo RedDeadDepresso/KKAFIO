@@ -164,7 +164,7 @@
     "DeleteOriginalCards": {
       "type": "switch",
       "label": "Delete Original Cards",
-      "description": "After compressing, find every card whose filename ends in [zip] (e.g. CardA[zip].png), and if the original (CardA.png) still exists alongside it, send the original to the Recycle Bin. Off by default.",
+      "description": "After compressing, find every card whose filename ends in [zip] (e.g. CardA[zip].png), and if the original (CardA.png) still exists alongside it, send the original to the Recycle Bin.",
       "default_case": "No",
       "cases": [
         {
@@ -750,8 +750,8 @@
       "name": "telegram_chat_links",
       "label": "$option.TelegramChatLinks.label",
       "description": "$option.TelegramChatLinks.description",
-      "placeholder": "https://t.me/kknowcc\nhttps://t.me/c/2549022984/299",
-      "default": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/KK_archive_modlibrary # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat",
+      "placeholder": "https://t.me/c/2549022984\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc",
+      "default": "# You need to be a member of all these chats if you want to search mods within them\nhttps://t.me/c/2549022984\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc",
       "pipeline_override": {
         "TelegramChatLinks": "{telegram_chat_links}"
       }
@@ -955,6 +955,11 @@
       "default_expand": true
     },
     {
+      "name": "mod-management",
+      "label": "$group.mod-management.label",
+      "default_expand": true
+    },
+    {
       "name": "duplicate-handling",
       "label": "$group.duplicate-handling.label",
       "default_expand": false
@@ -1005,6 +1010,7 @@
       "entry": "DownloadMissingMods",
       "default_check": false,
       "description": "$task.DownloadMissingMods.description",
+      "group": ["mod-management"],
       "option": [
         "ContentTypes",
         "SideloaderModpack",
@@ -1022,7 +1028,8 @@
       "label": "$task.ExportMods.label",
       "entry": "ExportMods",
       "default_check": false,
-      "description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to <guid>.zipmod",
+      "description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to [guid].zipmod",
+      "group": ["mod-management"],
       "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
     },
     {
@@ -1031,6 +1038,7 @@
       "entry": "CompressCardsTextures",
       "default_check": false,
       "description": "Recompress the textures inside chara/coordinate cards with KoiCardTexTool, shrinking file size dramatically with minimal quality loss",
+      "group": ["card-management"],
       "option": ["InputPath", "KoiCardTexToolPath", "DeleteOriginalCards"]
     },
     {

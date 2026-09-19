@@ -1035,7 +1035,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "(e.g. a saved kkafio_missing_mods_report.txt)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--rename-to-guid",    dest="rename_to_guid", action="store_true",  default=None,
-                   help="Rename each exported zipmod to <guid>.zipmod (default: on)")
+                   help="Rename each exported zipmod to [guid].zipmod (default: on)")
     g.add_argument("--no-rename-to-guid", dest="rename_to_guid", action="store_false",
                    help="Keep each exported zipmod's original filename")
     g_cache = p.add_mutually_exclusive_group()

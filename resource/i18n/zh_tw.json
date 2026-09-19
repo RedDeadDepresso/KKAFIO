@@ -193,11 +193,11 @@
   "preset.DownloadAndInstall.label": "⬇️ 下載並安裝",
   "preset.DownloadAndInstall.description": "下載新卡片，然後將其安裝到遊戲中",
   "task.ExportMods.label": "📤 匯出模組",
-  "task.ExportMods.description": "依 GUID 尋找 zipmod 並複製到輸出資料夾，可選擇重新命名為 <guid>.zipmod",
+  "task.ExportMods.description": "依 GUID 尋找 zipmod 並複製到輸出資料夾，可選擇重新命名為 [guid].zipmod",
   "option.Guids.label": "GUID",
   "option.Guids.description": "要尋找並匯出的模組 GUID，每行一個（或以逗號分隔）。你可以直接貼上「下載遺失模組」報告中的一段——像「!」「✗」「+」「~」這樣的項目符號以及結尾的「(...)」備註會自動被移除，報告中的一般說明／路徑行也會被忽略。以「#」開頭的註解行同樣會被忽略。",
   "option.RenameToGuid.label": "重新命名為 GUID",
-  "option.RenameToGuid.description": "將每個匯出的 zipmod 重新命名為 <guid>.zipmod，以便清楚分辨每個檔案。關閉此項則保留各檔案的原始檔名。",
+  "option.RenameToGuid.description": "將每個匯出的 zipmod 重新命名為 [guid].zipmod，以便清楚分辨每個檔案。關閉此項則保留各檔案的原始檔名。",
   "option.RenameToGuid.case.Yes.label": "重新命名",
   "option.RenameToGuid.case.No.label": "保留原始檔名"
 }
