@@ -1266,11 +1266,11 @@
     }
   ],
   "languages": {
-    "en_us": "resource/i18n/en_us.json",
-    "zh_cn": "resource/i18n/zh_cn.json",
-    "zh_tw": "resource/i18n/zh_tw.json",
-    "ja_jp": "resource/i18n/ja_jp.json",
-    "ko_kr": "resource/i18n/ko_kr.json",
-    "ru_ru": "resource/i18n/ru_ru.json"
+    "en_us": "assets/i18n/en_us.json",
+    "zh_cn": "assets/i18n/zh_cn.json",
+    "zh_tw": "assets/i18n/zh_tw.json",
+    "ja_jp": "assets/i18n/ja_jp.json",
+    "ko_kr": "assets/i18n/ko_kr.json",
+    "ru_ru": "assets/i18n/ru_ru.json"
   }
 }

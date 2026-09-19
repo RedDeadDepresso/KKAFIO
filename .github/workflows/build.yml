@@ -162,18 +162,20 @@ jobs:
             $iface | ConvertTo-Json -Depth 10 | Set-Content "$dst\interface.json" -Encoding UTF8
           }
 
-          # assets/ (logo, modpack indexes, colour data)
-          if (!(Test-Path "$dst\assets")) { New-Item -ItemType Directory -Force -Path "$dst\assets" }
-          if (Test-Path "assets\logo.png") { Copy-Item "assets\logo.png" "$dst\assets\logo.png" }
-          if (Test-Path "assets\kkafio_modpack_index_kk.json")  { Copy-Item "assets\kkafio_modpack_index_kk.json"  "$dst\assets\kkafio_modpack_index_kk.json" }
-          if (Test-Path "assets\kkafio_modpack_index_kks.json") { Copy-Item "assets\kkafio_modpack_index_kks.json" "$dst\assets\kkafio_modpack_index_kks.json" }
-          if (Test-Path "assets\xkcd_colors.json")              { Copy-Item "assets\xkcd_colors.json"              "$dst\assets\xkcd_colors.json" }
-
-          # resource/ (interface.json i18n translation files, and anything else added under resource/)
-          if (Test-Path "resource") { Copy-Item "resource" "$dst\resource" -Recurse -Force }
+          # assets/ (logo, modpack indexes, colour data, i18n)
+          if (Test-Path "assets") { Copy-Item "assets" "$dst\assets" -Recurse -Force }
 
           # scripts/ (helper scripts added under scripts/)
           if (Test-Path "scripts") { Copy-Item "scripts" "$dst\scripts" -Recurse -Force }
+
+          # kkafio_setup.bat
+          if (Test-Path "kkafio_setup.bat")   { Copy-Item "kkafio_setup.bat"   $dst }
+
+          # README.md
+          if (Test-Path "README.md")   { Copy-Item "README.md"   $dst }
+
+          # LICENSE
+          if (Test-Path "LICENSE")   { Copy-Item "LICENSE"   $dst }
 
           # Install MXU → rename to KKAFIO.exe
           $mxuDir = "downloads\MXU"
