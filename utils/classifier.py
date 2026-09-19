@@ -119,7 +119,7 @@ def _get_color_matcher() -> tuple[list[str], "cKDTree"]:
     else:
         exe_dir = Path(__file__).resolve().parent.parent
 
-    color_data_path = exe_dir / "assets" / _COLOR_DATA_FILE
+    color_data_path = exe_dir / "assets" / "data" / _COLOR_DATA_FILE
 
     with color_data_path.open("r", encoding="utf-8") as f:
         palette: dict[str, str] = json.load(f)

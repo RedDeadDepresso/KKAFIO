@@ -477,7 +477,7 @@ def load_modpack_index(game_type: str = GameType.KOIKATSU.value) -> dict[str, st
     else:
         exe_dir = Path(__file__).resolve().parent.parent  # repo root
 
-    index_path = exe_dir / "assets" / index_file
+    index_path = exe_dir / "assets" / "data" / index_file
 
     if index_path.exists():
         try:
