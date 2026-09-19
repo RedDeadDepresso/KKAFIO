@@ -282,7 +282,7 @@ Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to the re
 
 ## Context Menu Integration
 
-Run `register_context_menu.bat` to add a **KKAFIO** submenu to the Windows Explorer right-click menu. (It's a thin wrapper around `register_context_menu.ps1` — using the `.bat` avoids Windows' default PowerShell execution policy, which otherwise blocks `.ps1` scripts from running at all.) It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
+Run `kkafio_setup.bat` (in the KKAFIO install root) and choose **Register context menu** to add a **KKAFIO** submenu to the Windows Explorer right-click menu. Under the hood this runs `scripts\register_context_menu.bat`, a thin wrapper around `scripts\register_context_menu.ps1` — using the `.bat` avoids Windows' default PowerShell execution policy, which otherwise blocks `.ps1` scripts from running at all. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
 
 It first removes any existing KKAFIO menu entries, then asks you to pick a language (used for the menu labels and the script's own prompts) and which folder tasks to include and in what order (enter the numbers shown, e.g. `3 1 4 6`; leave blank for all tasks in the default order). "Run GUI" and the PNG entries below are always included. Re-run it any time to change your language or task selection — no need to run an "unregister" step first.
 
@@ -307,7 +307,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Archive Cards | `archive-cards <selected files> --context-menu` |
 | Delete Cards  | `delete-cards <selected files> --context-menu`  |
 
-Run `unregister_context_menu.bat` to remove all entries without registering new ones.
+Run `kkafio_setup.bat` and choose **Unregister context menu** to remove all entries without registering new ones.
 
 ## CLI Usage
 
@@ -400,9 +400,16 @@ To run from source:
 5. Open KKAFIO.exe and configure settings to your preference.
 6. Press **Start**.
 
+Run `kkafio_setup.bat` (in the install root) any time for a few optional setup utilities:
+
+1. **Create default task folders** — creates `C:\KKAFIO\Backups`, `Downloads`, `Archived Cards`, and `Exported Mods` ahead of time (these are also created automatically on first use of a task left at its default path).
+2. **Register context menu** — see [Context Menu Integration](#context-menu-integration).
+3. **Unregister context menu** — removes it again.
+4. **Delete KKAFIO config and default task folders** — deletes `%APPDATA%\KKAFIO` (saved config, Telegram session, download history) and `C:\KKAFIO` (the four folders above). Asks for confirmation first; cannot be undone.
+
 ## Languages
 
-The GUI (task names, option labels, dialogs, etc.) and the [right-click context menu](#context-menu-integration) are available in English, Simplified Chinese, Traditional Chinese, Japanese, Korean, and Russian. Pick a language in MXU's settings, or in the language prompt shown by `register_context_menu.bat`.
+The GUI (task names, option labels, dialogs, etc.) and the [right-click context menu](#context-menu-integration) are available in English, Simplified Chinese, Traditional Chinese, Japanese, Korean, and Russian. Pick a language in MXU's settings, or in the language prompt shown when registering the context menu via `kkafio_setup.bat`.
 
 Everything else — CLI output, log files, and error messages — is English-only, and intentionally so: keeping logs in one language makes them far easier to search for, share when reporting a bug, and debug against the source.
 

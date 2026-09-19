@@ -15,8 +15,9 @@ Task commands (arguments override config; omit to use config value):
     kkafio_cli list-instances
 
 Shell context menu:
-    Run register_context_menu.bat as Administrator to add KKAFIO to the
-    Explorer right-click menu.  Run unregister_context_menu.bat to remove it.
+    Run kkafio_setup.bat and choose "Register context menu" to add KKAFIO to
+    the Explorer right-click menu (no Administrator required). Choose
+    "Unregister context menu" to remove it.
 
 Global options:
     --config PATH   use a custom config.json instead of %APPDATA%/KKAFIO/config/mxu-KKAFIO.json
@@ -1051,7 +1052,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Coordinate directory (used for coordinate matching when --no-auto-resolve, "
                         "and for the shared-mod check; default: game's coordinate folder)")
     p.add_argument("--context-menu", action="store_true", default=False,
-                   help="Internal flag set by register_context_menu.bat: coalesces multiple "
+                   help="Internal flag set by the context menu (via kkafio_setup.bat): coalesces multiple "
                         "simultaneous Explorer-selection invocations (one per selected file) "
                         "into a single combined run instead of processing each file separately.")
     p.set_defaults(func=cmd_delete_cards)
@@ -1098,7 +1099,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", default=None, metavar="DIR",
                    help="Output directory (default: same folder as chara card/scene)")
     p.add_argument("--context-menu", action="store_true", default=False,
-                   help="Internal flag set by register_context_menu.bat: coalesces multiple "
+                   help="Internal flag set by the context menu (via kkafio_setup.bat): coalesces multiple "
                         "simultaneous Explorer-selection invocations (one per selected file) "
                         "into a single combined run instead of processing each file separately, "
                         "and defaults --output-dir to the common parent folder of the selection.")

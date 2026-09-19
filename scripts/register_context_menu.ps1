@@ -7,12 +7,13 @@
     all, and the .bat wrapper (which isn't subject to that policy) launches
     this with -ExecutionPolicy Bypass for just that one run.
 
-    By default it looks for kkafio_cli.exe and KKAFIO.exe next to this
-    script; pass -Exe/-Gui to point somewhere else.
+    By default it looks for kkafio_cli.exe and KKAFIO.exe one folder up from
+    this script (the KKAFIO install root, since this script lives in
+    scripts\); pass -Exe/-Gui to point somewhere else.
 #>
 param(
-    [string]$Exe = (Join-Path $PSScriptRoot 'kkafio_cli.exe'),
-    [string]$Gui = (Join-Path $PSScriptRoot 'KKAFIO.exe')
+    [string]$Exe = (Join-Path $PSScriptRoot '..\kkafio_cli.exe'),
+    [string]$Gui = (Join-Path $PSScriptRoot '..\KKAFIO.exe')
 )
 
 $ErrorActionPreference = 'Stop'
