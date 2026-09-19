@@ -97,6 +97,11 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Custom Mods Directory** — leave blank to use the game's default mods folder.
 - **Use Cache** (on by default) — reuses the same incremental mods cache as the other tasks.
 
+**Compress Cards Textures** — recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
+- **KoiCardTexTool Path** — folder containing (or where to install) `KoiCardTexTool.exe`. Defaults to `C:/KoiCardTexTool`. If the exe isn't found there (checked recursively, in case the release zip nests it in a subfolder), KKAFIO downloads and extracts the latest release automatically before running it.
+- Runs `KoiCardTexTool.exe batch <input> <input>` — the same folder is used for both input and output, so compressed copies land right alongside the originals, named `CardA[zip].png` for an original `CardA.png`. Its output is streamed live into the log, the same way 7-Zip's output is.
+- **Delete Original Cards** *(off by default)*: after compressing, finds every card whose filename ends in `[zip]`, and if the matching original (with `[zip]` removed from the name) still exists alongside it, sends the original to the Recycle Bin.
+
 **Telegram Chat Links** — one link per line, used when **Telegram Source** is `Telegram Chat Links` or the combined option. You must already be a member of each chat. Add a topic ID (e.g. `.../299`) to search only that forum topic instead of the whole chat; a trailing `# comment` is ignored. Chats are tried in the order listed, moving to the next one if a chat has no match. Defaults to:
 ```
 https://t.me/c/2549022984/299 # you need to be part of this chat
@@ -330,6 +335,9 @@ kkafio_cli export-mods [--output DIR] [--guids TEXT | --guids-file FILE]
                         [--rename-to-guid | --no-rename-to-guid]
                         [--use-cache | --no-use-cache]
                         [--mods-dir DIR]
+
+kkafio_cli compress-cards-textures [--input DIR] [--tool-path DIR]
+                                   [--delete-original | --no-delete-original]
 
 kkafio_cli create-backup  [--output DIR] [--filename NAME]
                           [--mods | --no-mods]

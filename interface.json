@@ -155,7 +155,7 @@
       "type": "folder",
       "name": "koi_card_tex_tool_path",
       "label": "KoiCardTexTool Path",
-      "description": "Folder containing (or where to install) KoiCardTexTool.exe. If left empty, defaults to the input folder itself. If the exe isn't found there, KKAFIO downloads and extracts the latest release automatically before running it.",
+      "description": "Folder containing (or where to install) KoiCardTexTool.exe. If the exe isn't found there, KKAFIO downloads and extracts the latest release automatically before running it.",
       "default": "C:/KoiCardTexTool",
       "pipeline_override": {
         "KoiCardTexToolPath": "{koi_card_tex_tool_path}"

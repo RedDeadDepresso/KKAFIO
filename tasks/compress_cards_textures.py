@@ -32,7 +32,7 @@ class CompressCardsTextures(BaseTask):
         super().__init__(config, file_manager)
         cfg = self.config.compress_cards_textures
         self.input_path_str  : str  = cfg.get("InputPath", "")
-        self.tool_path_str   : str  = cfg.get("KoiCardTexToolPath", "")
+        self.tool_path_str   : str  = cfg.get("KoiCardTexToolPath", "C:/KoiCardTexTool")
         self.delete_original : bool = cfg.get("DeleteOriginalCards", False)
 
     def _find_exe(self, tool_dir: Path) -> Path | None:
@@ -111,9 +111,8 @@ class CompressCardsTextures(BaseTask):
         input_path = Path(self.input_path_str)
         validate_input_path("KOITEX", input_path)
 
-        # Default the tool's own folder to the input folder itself when not
-        # explicitly configured, so "download it if missing" naturally means
-        # "download it right into the cards folder" in the common case.
+        # Falls back to the input folder itself if KoiCardTexToolPath was
+        # ever explicitly cleared out (its normal default is C:/KoiCardTexTool).
         tool_dir = Path(self.tool_path_str) if self.tool_path_str else input_path
 
         exe_path = self._ensure_tool(tool_dir)

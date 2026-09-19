@@ -146,7 +146,7 @@ _TASK_DEFAULTS = {
     "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
     "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"},
     "ExportMods":       {"Enable": False, "OutputPath": "", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
-    "CompressCardsTextures": {"Enable": False, "InputPath": "", "KoiCardTexToolPath": "", "DeleteOriginalCards": False}
+    "CompressCardsTextures": {"Enable": False, "InputPath": "", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False}
 }
 
 
