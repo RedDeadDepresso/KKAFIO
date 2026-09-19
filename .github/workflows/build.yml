@@ -131,6 +131,7 @@ jobs:
           --hidden-import "utils.subprocess_utils"
           --hidden-import "utils.telegram_config"
           --hidden-import "tasks.archive_cards"
+          --hidden-import "tasks.compress_cards_textures.py"
           --hidden-import "tasks.base_task"
           --hidden-import "tasks.create_backup"
           --hidden-import "tasks.delete_cards"
@@ -152,11 +153,6 @@ jobs:
         run: |
           $dst = "dist\KKAFIO"
 
-          # Helper scripts
-          if (Test-Path "register_context_menu.bat")   { Copy-Item "register_context_menu.bat"   $dst }
-          if (Test-Path "register_context_menu.ps1")   { Copy-Item "register_context_menu.ps1"   $dst }
-          if (Test-Path "unregister_context_menu.bat") { Copy-Item "unregister_context_menu.bat" $dst }
-
           # interface.json — patch version field with the release tag
           if (Test-Path "interface.json") {
             $iface = Get-Content "interface.json" -Raw | ConvertFrom-Json
@@ -175,6 +171,9 @@ jobs:
 
           # resource/ (interface.json i18n translation files, and anything else added under resource/)
           if (Test-Path "resource") { Copy-Item "resource" "$dst\resource" -Recurse -Force }
+
+          # scripts/ (helper scripts added under scripts/)
+          if (Test-Path "scripts") { Copy-Item "scripts" "$dst\scripts" -Recurse -Force }
 
           # Install MXU → rename to KKAFIO.exe
           $mxuDir = "downloads\MXU"
