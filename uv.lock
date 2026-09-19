@@ -396,7 +396,7 @@ dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "kkloader"
-version = "0.1.23"
+version = "0.1.24"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "brotli" },
@@ -404,9 +404,9 @@ dependencies = [
     { name = "lz4" },
     { name = "msgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/20/b8/8fe13cef38e738d456bcff6e8cdf19d855e4e78076595762b784eab783d4/kkloader-0.1.23.tar.gz", hash = "sha256:00c0ac6b85739ed71cd7f284f226072ad8dd7f09310de30cb18c2e6c39ad98fb", size = 15274070, upload-time = "2026-08-18T08:20:23.958Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c3/40/11206090f99d8302b007d65f00519f77d5b751cd756fc94134729bbd685f/kkloader-0.1.24.tar.gz", hash = "sha256:f1ad4ac3fa057fab38376a015cc728581162e6f448b50ee42d0a521799e6762b", size = 16282779, upload-time = "2026-09-17T22:07:26.944Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/52/595e5ce1ac4157b2c52fc6f59b589a57472a90869cf2547c43d09abd8d91/kkloader-0.1.23-py3-none-any.whl", hash = "sha256:c5559c4f4705ecf392d42ec8a596900f42df9cba477d54b6c7b215329cccec68", size = 72624, upload-time = "2026-08-18T08:20:21.675Z" },
+    { url = "https://files.pythonhosted.org/packages/74/4d/12c4bd8f13ec648375b95f54bbae30ae48ef727c7fbc8ea09e4184721580/kkloader-0.1.24-py3-none-any.whl", hash = "sha256:47f77bb0bee57a221d9bf3c69d9f87e380f57ee8b0561ac0ec4994e188607aca", size = 78301, upload-time = "2026-09-17T22:07:24.391Z" },
 ]
 
 [[package]]
