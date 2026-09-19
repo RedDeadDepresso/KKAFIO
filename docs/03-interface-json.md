@@ -151,23 +151,23 @@ All GUI-facing `label`/`description` strings (top-level, `group`, `option`,
 option `cases`, option `inputs`, `task`, and `preset`) are written as
 `"$dotted.key"` references rather than literal text. The top-level
 `"languages"` field maps each supported language code to a JSON file under
-`resource/i18n/` containing the actual strings for that language:
+`assets/i18n/` containing the actual strings for that language:
 
 ```jsonc
 "languages": {
-  "en_us": "resource/i18n/en_us.json",
-  "zh_cn": "resource/i18n/zh_cn.json",
-  "zh_tw": "resource/i18n/zh_tw.json",
-  "ja_jp": "resource/i18n/ja_jp.json",
-  "ko_kr": "resource/i18n/ko_kr.json",
-  "ru_ru": "resource/i18n/ru_ru.json"
+  "en_us": "assets/i18n/en_us.json",
+  "zh_cn": "assets/i18n/zh_cn.json",
+  "zh_tw": "assets/i18n/zh_tw.json",
+  "ja_jp": "assets/i18n/ja_jp.json",
+  "ko_kr": "assets/i18n/ko_kr.json",
+  "ru_ru": "assets/i18n/ru_ru.json"
 }
 ```
 
 This is purely a GUI/MXU concern (part of the ProjectInterface V2 schema) —
 Python never reads `label`, `description`, or the `languages` files at all.
 When adding a new option/task/preset, add its label/description text under a
-new key in **every** file in `resource/i18n/`, then reference that key with
+new key in **every** file in `assets/i18n/`, then reference that key with
 a `$` prefix in `interface.json` — a missing translation key just falls back
 to showing the raw `$key` string in the GUI, so keep the language files in
 sync.
