@@ -960,8 +960,18 @@
   },
   "group": [
     {
+      "name": "content-management",
+      "label": "$group.content-management.label",
+      "default_expand": true
+    },
+    {
       "name": "card-management",
       "label": "$group.card-management.label",
+      "default_expand": true
+    },
+    {
+      "name": "chara-management",
+      "label": "$group.chara-management.label",
       "default_expand": true
     },
     {
@@ -977,7 +987,7 @@
       "entry": "CreateBackup",
       "default_check": false,
       "description": "$task.CreateBackup.description",
-      "group": ["card-management"],
+      "group": ["content-management"],
       "option": ["BackupOutputPath", "BackupFilename", "BackupFolders"]
     },
     {
@@ -986,7 +996,7 @@
       "entry": "DownloadContents",
       "default_check": false,
       "description": "$task.DownloadContents.description",
-      "group": ["card-management"],
+      "group": ["content-management"],
       "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
     },
     {
@@ -995,7 +1005,7 @@
       "entry": "FilterConvertKKS",
       "default_check": false,
       "description": "$task.FilterConvertKKS.description",
-      "group": ["card-management"],
+      "group": ["chara-management"],
       "option": [
         "DownloadsInputPath",
         "Filter",
@@ -1010,7 +1020,7 @@
       "entry": "FilterDuplicateContents",
       "default_check": false,
       "description": "$task.FilterDuplicateContents.description",
-      "group": ["card-management"],
+      "group": ["content-management"],
       "option": [
         "DownloadsInputPath",
         "UseCache",
@@ -1057,7 +1067,7 @@
       "entry": "InstallContents",
       "default_check": false,
       "description": "$task.InstallContents.description",
-      "group": ["card-management"],
+      "group": ["content-management"],
       "option": [
         "DownloadsInputPath",
         "InstallContentTypes",
@@ -1072,7 +1082,7 @@
       "entry": "UninstallContents",
       "default_check": false,
       "description": "$task.UninstallContents.description",
-      "group": ["card-management"],
+      "group": ["content-management"],
       "option": ["DownloadsInputPath", "InstallContentTypes"]
     },
     {
@@ -1081,7 +1091,7 @@
       "entry": "GroupChara",
       "default_check": false,
       "description": "$task.GroupChara.description",
-      "group": ["card-management"],
+      "group": ["chara-management"],
       "option": ["InputPath", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
     },
     {
@@ -1090,7 +1100,7 @@
       "entry": "UngroupChara",
       "default_check": false,
       "description": "$task.UngroupChara.description",
-      "group": ["card-management"],
+      "group": ["chara-management"],
       "option": ["InputPath", "DeleteEmptyFolders"]
     },
     {
@@ -1099,7 +1109,7 @@
       "entry": "RenameChara",
       "default_check": false,
       "description": "$task.RenameChara.description",
-      "group": ["card-management"],
+      "group": ["chara-management"],
       "option": [
         "InputPath",
         "SkipAlreadyRenamed",
