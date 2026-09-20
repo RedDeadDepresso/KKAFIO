@@ -968,16 +968,6 @@
       "name": "mod-management",
       "label": "$group.mod-management.label",
       "default_expand": true
-    },
-    {
-      "name": "duplicate-handling",
-      "label": "$group.duplicate-handling.label",
-      "default_expand": false
-    },
-    {
-      "name": "backup",
-      "label": "$group.backup.label",
-      "default_expand": false
     }
   ],
   "task": [
@@ -987,7 +977,7 @@
       "entry": "CreateBackup",
       "default_check": false,
       "description": "$task.CreateBackup.description",
-      "group": ["backup"],
+      "group": ["card-management"],
       "option": ["BackupOutputPath", "BackupFilename", "BackupFolders"]
     },
     {
@@ -1015,6 +1005,21 @@
       ]
     },
     {
+      "name": "FilterDuplicateContents",
+      "label": "$task.FilterDuplicateContents.label",
+      "entry": "FilterDuplicateContents",
+      "default_check": false,
+      "description": "$task.FilterDuplicateContents.description",
+      "group": ["card-management"],
+      "option": [
+        "DownloadsInputPath",
+        "UseCache",
+        "FuzzyMatching",
+        "KeepStrategy",
+        "DuplicateAction"
+      ]
+    },
+    {
       "name": "DownloadMissingMods",
       "label": "$task.DownloadMissingMods.label",
       "entry": "DownloadMissingMods",
@@ -1034,15 +1039,6 @@
       ]
     },
     {
-      "name": "ExportMods",
-      "label": "$task.ExportMods.label",
-      "entry": "ExportMods",
-      "default_check": false,
-      "description": "$task.ExportMods.description",
-      "group": ["mod-management"],
-      "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
-    },
-    {
       "name": "CompressCardsTextures",
       "label": "$task.CompressCardsTextures.label",
       "entry": "CompressCardsTextures",
@@ -1053,21 +1049,6 @@
         "DownloadsInputPath",
         "KoiCardTexToolPath",
         "DeleteOriginalCards"
-      ]
-    },
-    {
-      "name": "FilterDuplicateContents",
-      "label": "$task.FilterDuplicateContents.label",
-      "entry": "FilterDuplicateContents",
-      "default_check": false,
-      "description": "$task.FilterDuplicateContents.description",
-      "group": ["duplicate-handling"],
-      "option": [
-        "DownloadsInputPath",
-        "UseCache",
-        "FuzzyMatching",
-        "KeepStrategy",
-        "DuplicateAction"
       ]
     },
     {
@@ -1165,6 +1146,15 @@
         "SceneDir",
         "CoordDir"
       ]
+    },
+    {
+      "name": "ExportMods",
+      "label": "$task.ExportMods.label",
+      "entry": "ExportMods",
+      "default_check": false,
+      "description": "$task.ExportMods.description",
+      "group": ["mod-management"],
+      "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
     }
   ],
   "preset": [
