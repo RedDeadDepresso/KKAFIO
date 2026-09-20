@@ -90,14 +90,9 @@ See [Download Missing Mods Workflows](#download-missing-mods-workflows) below fo
 - **Custom Chara Directory / Custom Scene Directory / Custom Coordinate Directory / Custom Mods Directory** — leave blank to use the game's default directories. Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped (same for coordinates if no default coordinate folder exists).
 - **Use Cache** (on by default) — caches the mods list and the GUID scan for each selected content type. Each cache is invalidated automatically when its folder changes.
 
-**Export Mods** — find specific mods by GUID and copy them out into a folder:
-- **GUIDs** — paste GUIDs one per line, comma-separated, or straight out of a Download Missing Mods report section (e.g. the "Unresolvable mods" list). Report bullets (`!`, `✗`, `+`, `~`) and trailing `(...)` notes are stripped automatically; plain description/path lines from the report are ignored rather than misread as GUIDs.
-- **Rename to GUID** *(on by default)*: renames each exported file to `<guid>.zipmod`, so it's obvious which file is which. Turn off to keep each file's original filename.
-- Searches both the regular mods folder and any Sideloader Modpack subfolder inside it — unlike Archive/Delete Cards, exporting a copy doesn't touch or remove anything, so modpack-covered mods are fair game too.
-- **Custom Mods Directory** — leave blank to use the game's default mods folder.
-- **Use Cache** (on by default) — reuses the same incremental mods cache as the other tasks.
+**6. Compress Cards Textures**
 
-**Compress Cards Textures** — recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
+- Recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
 - **KoiCardTexTool Path** — folder containing (or where to install) `KoiCardTexTool.exe`. Defaults to `C:/KoiCardTexTool`. If the exe isn't found there (checked recursively, in case the release zip nests it in a subfolder), KKAFIO downloads and extracts the latest release automatically before running it.
 - Runs `KoiCardTexTool.exe batch <input> <input>` — the same folder is used for both input and output, so compressed copies land right alongside the originals, named `CardA[zip].png` for an original `CardA.png`. Its output is streamed live into the log, the same way 7-Zip's output is.
 - **Delete Original Cards** *(off by default)*: after compressing, finds every card whose filename ends in `[zip]`, and if the matching original (with `[zip]` removed from the name) still exists alongside it, sends the original to the Recycle Bin.
@@ -115,7 +110,7 @@ https://t.me/kknowcc # you need to be part of this chat
 
 > ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
 
-**6. Install Contents**
+**7. Install Contents**
 
 - Given a folder containing chara cards, coordinate cards, scenes, overlays, and zipmod files, copies them into their respective game directories.
 - Respects the configured **Game Type**: Koikatsu Sunshine installs KK, KKSP, and KKS cards. Koikatsu / Koikatsu Party installs KK and KKSP cards only — KKS cards are skipped with a log message.
@@ -123,13 +118,13 @@ https://t.me/kknowcc # you need to be part of this chat
 - Extracts ZIP / RAR / 7z archives automatically (configurable).
 - If both Filter & Convert KKS Cards and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
-**7. Uninstall Contents**
+**8. Uninstall Contents**
 
 - Reverse of Install Contents: given the same folder, deletes the matching files from the game directories.
 - **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
 - **Warning:** Uninstall Contents does not check whether a zipmod or coordinate file is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
-**8. Group Chara**
+**9. Group Chara**
 
 - Groups character cards into subfolders named after their series, using an LLM.
 - Workflow:
@@ -142,12 +137,12 @@ https://t.me/kknowcc # you need to be part of this chat
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
 
-**9. Ungroup Chara**
+**10. Ungroup Chara**
 
 - Reverse of Group Chara: moves all cards from subfolders back to the top-level input folder.
 - **Optional:** Deletes empty subfolders after moving (on by default).
 
-**10. Rename Chara**
+**11. Rename Chara**
 
 - Translates character card names to English using an LLM.
 - Workflow:
@@ -164,7 +159,7 @@ https://t.me/kknowcc # you need to be part of this chat
 - **Warning:** Group Chara uses card metadata to extract character names. It is recommended to use **Rename Chara after Group Chara if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
 - **Warning:** It is possible to modify the prompt to allow for transliteration, rather than limiting it to just the character's English name. However, the transliteration of Chinese characters can differ significantly from that of English characters. Transliterating Japanese characters tends to yield better results, although there may be exceptions.
 
-**11. Archive Cards**
+**12. Archive Cards**
 
 - Given a list of character cards, coordinate cards, and/or Studio scene files, bundles each one with its required zipmods into a single archive.
 - **Include Coordinates** *(on by default)*: when a selected file is a character card, also bundles the coordinate cards it uses (matched by colour fingerprint, not filename) along with their mods. Disable to archive the character card by itself. This option has no effect on coordinate cards or scenes selected directly — a coordinate card is always archived with just its own mods, and scenes never have coordinates.
@@ -173,7 +168,7 @@ https://t.me/kknowcc # you need to be part of this chat
 - Output format: **7z** (default) or **zip**.
 - **Combined archive** option puts all selected files into one archive (default), or creates one archive per file.
 
-**12. Delete Cards**
+**13. Delete Cards**
 
 - Given a list of character cards, coordinate cards, and/or Studio scene files, sends each one together with its required zipmods to the recycle bin.
 - **Include Coordinates** *(on by default)*: when a selected file is a character card, also deletes the coordinate cards it uses (and their mods). Disable to delete only the character card. This option has no effect on coordinate cards or scenes selected directly.
@@ -181,6 +176,15 @@ https://t.me/kknowcc # you need to be part of this chat
 - Never touches Sideloader Modpack mods.
 - **Check for Shared Mods** *(on by default)*: before deleting a zipmod, scans every character card in the game's chara folders (or **Custom Chara Directory**, if set), every scene in the Studio scene folder (or **Custom Scene Directory**, if set), and every coordinate card in the game's coordinate folder (or **Custom Coordinate Directory**, if set) to confirm no other character, scene, or coordinate still references it. Any zipmod still in use elsewhere is kept instead of deleted, and logged as such. This scan reuses the same incremental GUID caches as Download Missing Mods (`kkafio_chara_guid_cache.json`, `kkafio_scene_guid_cache.json`, `kkafio_coord_guid_cache.json`) when **Use Cache** is on, so repeat runs skip re-parsing cards that haven't changed. Turning **Use Cache** off, or turning **Check for Shared Mods** off entirely, skips the scan (faster, especially with a large card collection) but reintroduces the risk described below.
 - **Warning:** The shared-mod check only covers **zipmods** — it does not check whether a **coordinate file** is shared between characters. Removing a coordinate used by multiple cards will still break all of them. Only use this task when you're certain any coordinate files being removed are exclusive to the card(s) you're deleting. Files can still be recovered from the Recycle Bin.
+
+**14. Export Mods**
+
+- Find specific mods by GUID and copy them out into a folder:
+- **GUIDs** — paste GUIDs one per line, comma-separated, or straight out of a Download Missing Mods report section (e.g. the "Unresolvable mods" list). Report bullets (`!`, `✗`, `+`, `~`) and trailing `(...)` notes are stripped automatically; plain description/path lines from the report are ignored rather than misread as GUIDs.
+- **Rename to GUID** *(on by default)*: renames each exported file to `<guid>.zipmod`, so it's obvious which file is which. Turn off to keep each file's original filename.
+- Searches both the regular mods folder and any Sideloader Modpack subfolder inside it — unlike Archive/Delete Cards, exporting a copy doesn't touch or remove anything, so modpack-covered mods are fair game too.
+- **Custom Mods Directory** — leave blank to use the game's default mods folder.
+- **Use Cache** (on by default) — reuses the same incremental mods cache as the other tasks.
 
 ---
 
@@ -236,7 +240,11 @@ Enable **Download Missing Mods** with:
 
 KKAFIO scans the selected content types in the staging folder, finds which mods they reference, and downloads any missing ones into the staging folder alongside them.
 
-**Step 5 — Install**
+**Step 5 — Compress textures** *(optional)*
+
+Enable **Compress Cards Textures** with the staging folder as **Input Directory**. This recompresses the textures inside your newly-staged chara/coordinate cards before they're installed, so the smaller `[zip]` versions are what end up in your game folders. Turn on **Delete Original Cards** so only the compressed copies get installed, rather than both.
+
+**Step 6 — Install**
 
 Enable **Install Contents** with the staging folder as input. KKAFIO copies everything — cards, coordinates, scenes, overlays, and zipmods — into the correct game directories.
 
