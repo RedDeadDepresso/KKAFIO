@@ -201,12 +201,10 @@
   "task.ExportMods.description": "GUID로 zipmod를 찾아 출력 폴더로 복사합니다. 필요하면 [guid].zipmod로 이름을 바꿀 수 있습니다",
   "preset.AllTasks.label": "⚡ 모든 작업",
   "preset.AllTasks.description": "사용 가능한 모든 작업을 순서대로 실행합니다",
-  "preset.InstallAndFilter.label": "📥 설치 및 필터",
-  "preset.InstallAndFilter.description": "중복 항목을 필터링하고 KKS 카드를 변환한 뒤 게임에 설치합니다",
-  "preset.BackupAndClean.label": "💾 백업 및 정리",
-  "preset.BackupAndClean.description": "백업을 생성한 뒤 선택한 캐릭터를 보관하고 삭제합니다",
-  "preset.GroupAndRename.label": "✏️ 그룹화 및 이름 변경",
-  "preset.GroupAndRename.description": "시리즈 폴더로 정리한 뒤 카드 이름을 영어로 번역합니다",
-  "preset.DownloadAndInstall.label": "⬇️ 다운로드 및 설치",
-  "preset.DownloadAndInstall.description": "새 카드를 다운로드한 뒤 게임에 설치합니다"
+  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
+  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
+  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
+  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
+  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
+  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
 }

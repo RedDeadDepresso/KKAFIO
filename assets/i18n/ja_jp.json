@@ -201,12 +201,10 @@
   "task.ExportMods.description": "GUIDでzipmodを検索し、出力フォルダにコピーします。必要に応じて [guid].zipmod にリネームできます",
   "preset.AllTasks.label": "⚡ すべてのタスク",
   "preset.AllTasks.description": "利用可能なすべてのタスクを順番に実行する",
-  "preset.InstallAndFilter.label": "📥 インストールとフィルタ",
-  "preset.InstallAndFilter.description": "重複をフィルタし、KKSカードを変換してからゲームにインストールする",
-  "preset.BackupAndClean.label": "💾 バックアップとクリーン",
-  "preset.BackupAndClean.description": "バックアップを作成し、選択したキャラをアーカイブして削除する",
-  "preset.GroupAndRename.label": "✏️ グループ化とリネーム",
-  "preset.GroupAndRename.description": "シリーズフォルダに整理してから、カード名を英語に翻訳する",
-  "preset.DownloadAndInstall.label": "⬇️ ダウンロードとインストール",
-  "preset.DownloadAndInstall.description": "新しいカードをダウンロードしてからゲームにインストールする"
+  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
+  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
+  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
+  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
+  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
+  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
 }

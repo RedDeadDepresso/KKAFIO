@@ -201,12 +201,10 @@
   "task.ExportMods.description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to [guid].zipmod",
   "preset.AllTasks.label": "⚡ All Tasks",
   "preset.AllTasks.description": "Run all available tasks in order",
-  "preset.InstallAndFilter.label": "📥 Install & Filter",
-  "preset.InstallAndFilter.description": "Filter duplicates, convert KKS cards, then install into the game",
-  "preset.BackupAndClean.label": "💾 Backup & Clean",
-  "preset.BackupAndClean.description": "Create a backup, then archive and delete selected characters",
-  "preset.GroupAndRename.label": "✏️ Group & Rename",
-  "preset.GroupAndRename.description": "sort them into series folders then translate card names to English",
-  "preset.DownloadAndInstall.label": "⬇️ Download & Install",
-  "preset.DownloadAndInstall.description": "Download new cards then install them into the game"
+  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
+  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
+  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
+  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
+  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
+  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
 }

@@ -65,7 +65,7 @@
       "name": "game_path",
       "label": "$option.GamePath.label",
       "description": "$option.GamePath.description",
-      "default": "C:/Program Files (x86)/Steam/steamapps/common/Koikatsu Party",
+      "default": "",
       "pipeline_override": {
         "Core": {
           "GamePath": "{game_path}"
@@ -1183,13 +1183,26 @@
           "name": "FilterConvertKKS"
         },
         {
-          "name": "FilterDuplicateContents"
+          "name": "FilterDuplicateContents",
+          "option": {
+            "DuplicateAction": "Delete"
+          }
         },
         {
-          "name": "DownloadMissingMods"
+          "name": "DownloadMissingMods",
+          "option": {
+            "TelegramSource": "Both",
+            "ModsDir": "C:/KKAFIO/Downloads",
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "SceneDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads"
+          }
         },
         {
-          "name": "CompressCardsTextures"
+          "name": "CompressCardsTextures",
+          "option": {
+            "DeleteOriginalCards": "Yes"
+          }
         },
         {
           "name": "InstallContents"
@@ -1218,15 +1231,37 @@
       ]
     },
     {
-      "name": "InstallAndFilter",
-      "label": "$preset.InstallAndFilter.label",
-      "description": "$preset.InstallAndFilter.description",
+      "name": "DownloadFilterAndInstall",
+      "label": "$preset.DownloadFilterAndInstall.label",
+      "description": "$preset.DownloadFilterAndInstall.description",
       "task": [
         {
-          "name": "FilterDuplicateContents"
+          "name": "DownloadContents"
         },
         {
           "name": "FilterConvertKKS"
+        },
+        {
+          "name": "FilterDuplicateContents",
+          "option": {
+            "DuplicateAction": "Delete"
+          }
+        },
+        {
+          "name": "DownloadMissingMods",
+          "option": {
+            "TelegramSource": "Both",
+            "ModsDir": "C:/KKAFIO/Downloads",
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "SceneDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads"
+          }
+        },
+        {
+          "name": "CompressCardsTextures",
+          "option": {
+            "DeleteOriginalCards": "Yes"
+          }
         },
         {
           "name": "InstallContents"
@@ -1234,47 +1269,38 @@
       ]
     },
     {
-      "name": "BackupAndClean",
-      "label": "$preset.BackupAndClean.label",
-      "description": "$preset.BackupAndClean.description",
-      "task": [
-        {
-          "name": "CreateBackup"
-        },
-        {
-          "name": "ArchiveCards"
-        },
-        {
-          "name": "DeleteCards"
-        }
-      ]
-    },
-    {
-      "name": "GroupAndRename",
-      "label": "$preset.GroupAndRename.label",
-      "description": "$preset.GroupAndRename.description",
+      "name": "OrganizeContents",
+      "label": "$preset.OrganizeContents.label",
+      "description": "$preset.OrganizeContents.description",
       "task": [
         {
           "name": "GroupChara"
         },
         {
           "name": "RenameChara"
+        },
+        {
+          "name": "DeleteCards"
+        },
+        {
+          "name": "DownloadMissingMods",
+          "option": {
+            "SideloaderModpack": "OnlyUsed",
+            "TelegramSource": "Both"
+          }
         }
       ]
     },
     {
-      "name": "DownloadAndInstall",
-      "label": "$preset.DownloadAndInstall.label",
-      "description": "$preset.DownloadAndInstall.description",
+      "name": "ExportContents",
+      "label": "$preset.ExportContents.label",
+      "description": "$preset.ExportContents.description",
       "task": [
         {
-          "name": "DownloadContents"
+          "name": "ArchiveCards"
         },
         {
-          "name": "DownloadMissingMods"
-        },
-        {
-          "name": "InstallContents"
+          "name": "ExportMods"
         }
       ]
     }

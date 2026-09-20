@@ -201,12 +201,10 @@
   "task.ExportMods.description": "Найти zipmod по GUID и скопировать их в выходную папку, при необходимости переименовав в [guid].zipmod",
   "preset.AllTasks.label": "⚡ Все задачи",
   "preset.AllTasks.description": "Выполнить все доступные задачи по порядку",
-  "preset.InstallAndFilter.label": "📥 Установка и фильтрация",
-  "preset.InstallAndFilter.description": "Отфильтровать дубликаты, конвертировать карточки KKS, затем установить в игру",
-  "preset.BackupAndClean.label": "💾 Резервная копия и очистка",
-  "preset.BackupAndClean.description": "Создать резервную копию, затем архивировать и удалить выбранных персонажей",
-  "preset.GroupAndRename.label": "✏️ Группировка и переименование",
-  "preset.GroupAndRename.description": "Распределить персонажей по папкам серий, затем перевести имена карточек на английский",
-  "preset.DownloadAndInstall.label": "⬇️ Загрузка и установка",
-  "preset.DownloadAndInstall.description": "Загрузить новые карточки, затем установить их в игру"
+  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
+  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
+  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
+  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
+  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
+  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
 }

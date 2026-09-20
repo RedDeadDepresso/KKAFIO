@@ -201,12 +201,10 @@
   "task.ExportMods.description": "依 GUID 尋找 zipmod 並複製到輸出資料夾，可選擇重新命名為 [guid].zipmod",
   "preset.AllTasks.label": "⚡ 全部任務",
   "preset.AllTasks.description": "依序執行所有可用任務",
-  "preset.InstallAndFilter.label": "📥 安裝並過濾",
-  "preset.InstallAndFilter.description": "過濾重複項、轉換 KKS 卡片，然後安裝到遊戲中",
-  "preset.BackupAndClean.label": "💾 備份並清理",
-  "preset.BackupAndClean.description": "建立備份，然後歸檔並刪除所選角色",
-  "preset.GroupAndRename.label": "✏️ 分組並重新命名",
-  "preset.GroupAndRename.description": "將角色分類到系列資料夾中，然後將卡片名稱翻譯為英文",
-  "preset.DownloadAndInstall.label": "⬇️ 下載並安裝",
-  "preset.DownloadAndInstall.description": "下載新卡片，然後將其安裝到遊戲中"
+  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
+  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
+  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
+  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
+  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
+  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
 }
