@@ -2,9 +2,9 @@
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - 코이카츠 자동 파일 입출력 도구",
   "root.description": "Koikatsu / Koikatsu Sunshine용 카드 및 모드 자동 관리 도구",
-  "group.content-management.label": "[TODO] group.content-management.label",
+  "group.content-management.label": "콘텐츠 관리",
   "group.card-management.label": "카드 관리",
-  "group.chara-management.label": "[TODO] group.chara-management.label",
+  "group.chara-management.label": "캐릭터 관리",
   "group.mod-management.label": "모드 관리",
   "option.GameType.label": "게임 종류",
   "option.GameType.description": "이 구성이 대상으로 하는 코이카츠 게임 버전",
@@ -201,10 +201,10 @@
   "task.ExportMods.description": "GUID로 zipmod를 찾아 출력 폴더로 복사합니다. 필요하면 [guid].zipmod로 이름을 바꿀 수 있습니다",
   "preset.AllTasks.label": "⚡ 모든 작업",
   "preset.AllTasks.description": "사용 가능한 모든 작업을 순서대로 실행합니다",
-  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
-  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
-  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
-  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
-  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
-  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
+  "preset.DownloadFilterAndInstall.label": "📥 다운로드·필터링·설치",
+  "preset.DownloadFilterAndInstall.description": "새 콘텐츠 다운로드, KKS 카드 필터링·변환, 중복 제거, 누락된 모드 가져오기, 텍스처 압축, 설치까지 한 번에 실행합니다",
+  "preset.OrganizeInstalledContents.label": "🗂️ 콘텐츠 정리",
+  "preset.OrganizeInstalledContents.description": "설치된 캐릭터를 그룹화·이름 변경하고, 불필요한 카드를 삭제하며, 아직 누락된 모드를 다운로드합니다",
+  "preset.ExportInstalledContents.label": "📤 콘텐츠 내보내기",
+  "preset.ExportInstalledContents.description": "캐릭터 카드를 압축 보관하고, 그 카드가 필요로 하는 모드를 공유 폴더로 내보냅니다"
 }

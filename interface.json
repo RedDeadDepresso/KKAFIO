@@ -1269,10 +1269,13 @@
       ]
     },
     {
-      "name": "OrganizeContents",
-      "label": "$preset.OrganizeContents.label",
-      "description": "$preset.OrganizeContents.description",
+      "name": "OrganizeInstalledContents",
+      "label": "$preset.OrganizeInstalledContents.label",
+      "description": "$preset.OrganizeInstalledContents.description",
       "task": [
+        {
+          "name": "FilterDuplicateContents"
+        },
         {
           "name": "GroupChara"
         },
@@ -1292,9 +1295,9 @@
       ]
     },
     {
-      "name": "ExportContents",
-      "label": "$preset.ExportContents.label",
-      "description": "$preset.ExportContents.description",
+      "name": "ExportInstalledContents",
+      "label": "$preset.ExportInstalledContents.label",
+      "description": "$preset.ExportInstalledContents.description",
       "task": [
         {
           "name": "ArchiveCards"

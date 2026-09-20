@@ -2,9 +2,9 @@
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - 心跳文件自动化工具",
   "root.description": "适用于 Koikatsu / Koikatsu Sunshine 的卡片与模组自动化管理工具",
-  "group.content-management.label": "[TODO] group.content-management.label",
+  "group.content-management.label": "内容管理",
   "group.card-management.label": "卡片管理",
-  "group.chara-management.label": "[TODO] group.chara-management.label",
+  "group.chara-management.label": "角色管理",
   "group.mod-management.label": "模组管理",
   "option.GameType.label": "游戏类型",
   "option.GameType.description": "此配置针对的 Koikatsu 游戏版本",
@@ -201,10 +201,10 @@
   "task.ExportMods.description": "按 GUID 查找 zipmod 并复制到输出文件夹，可选择重命名为 [guid].zipmod",
   "preset.AllTasks.label": "⚡ 全部任务",
   "preset.AllTasks.description": "按顺序运行所有可用任务",
-  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
-  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
-  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
-  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
-  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
-  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
+  "preset.DownloadFilterAndInstall.label": "📥 下载、筛选并安装",
+  "preset.DownloadFilterAndInstall.description": "下载新内容、筛选并转换 KKS 卡片、去除重复项、获取缺失的模组、压缩纹理，并一次性完成安装",
+  "preset.OrganizeInstalledContents.label": "🗂️ 整理内容",
+  "preset.OrganizeInstalledContents.description": "对已安装的角色进行分组、重命名，删除不需要的卡片，并下载它们仍缺失的模组",
+  "preset.ExportInstalledContents.label": "📤 导出内容",
+  "preset.ExportInstalledContents.description": "将角色卡打包归档，并将其依赖的模组导出到可分享的文件夹中"
 }

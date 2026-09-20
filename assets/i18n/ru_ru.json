@@ -2,9 +2,9 @@
   "root.label": "KKAFIO",
   "root.title": "KKAFIO — автоматизация файлов Koikatsu",
   "root.description": "Автоматическое управление карточками и модами для Koikatsu / Koikatsu Sunshine",
-  "group.content-management.label": "[TODO] group.content-management.label",
+  "group.content-management.label": "Управление контентом",
   "group.card-management.label": "Управление карточками",
-  "group.chara-management.label": "[TODO] group.chara-management.label",
+  "group.chara-management.label": "Управление персонажами",
   "group.mod-management.label": "Управление модами",
   "option.GameType.label": "Тип игры",
   "option.GameType.description": "Версия Koikatsu, для которой предназначена эта конфигурация",
@@ -201,10 +201,10 @@
   "task.ExportMods.description": "Найти zipmod по GUID и скопировать их в выходную папку, при необходимости переименовав в [guid].zipmod",
   "preset.AllTasks.label": "⚡ Все задачи",
   "preset.AllTasks.description": "Выполнить все доступные задачи по порядку",
-  "preset.DownloadFilterAndInstall.label": "[TODO] preset.DownloadFilterAndInstall.label",
-  "preset.DownloadFilterAndInstall.description": "[TODO] preset.DownloadFilterAndInstall.description",
-  "preset.OrganizeContents.label": "[TODO] preset.OrganizeContents.label",
-  "preset.OrganizeContents.description": "[TODO] preset.OrganizeContents.description",
-  "preset.ExportContents.label": "[TODO] preset.ExportContents.label",
-  "preset.ExportContents.description": "[TODO] preset.ExportContents.description"
+  "preset.DownloadFilterAndInstall.label": "📥 Загрузка, фильтрация и установка",
+  "preset.DownloadFilterAndInstall.description": "Скачать новый контент, отфильтровать и конвертировать карточки KKS, убрать дубликаты, скачать недостающие моды, сжать текстуры и установить всё за один проход",
+  "preset.OrganizeInstalledContents.label": "🗂️ Организация контента",
+  "preset.OrganizeInstalledContents.description": "Сгруппировать и переименовать установленных персонажей, удалить ненужные карточки и скачать недостающие для них моды",
+  "preset.ExportInstalledContents.label": "📤 Экспорт контента",
+  "preset.ExportInstalledContents.description": "Заархивировать карточки персонажей и экспортировать нужные им моды в папку для передачи"
 }
