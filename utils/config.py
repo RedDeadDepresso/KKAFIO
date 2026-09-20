@@ -276,7 +276,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("ModsDir",      "ModsDir")
 
     elif task_name == "CompressCardsTextures":
-        _set("InputPath",           "InputPath")
+        _set("InputPath",           "DownloadsInputPath")
         _set("KoiCardTexToolPath",  "KoiCardTexToolPath")
         _set("DeleteOriginalCards", "DeleteOriginalCards")
 
@@ -462,6 +462,7 @@ class Config:
         ("UninstallContents", "InputPath"):        "C:/KKAFIO/Downloads",
         ("FilterConvertKKS", "InputPath"):         "C:/KKAFIO/Downloads",
         ("FilterDuplicateContents", "InputPath"):  "C:/KKAFIO/Downloads",
+        ("CompressCardsTextures", "InputPath"):    "C:/KKAFIO/Downloads",
         ("CreateBackup", "OutputPath"):             "C:/KKAFIO/Backups",
         ("ArchiveCards", "OutputPath"):              "C:/KKAFIO/Archived Cards",
         ("ExportMods", "OutputPath"):                "C:/KKAFIO/Exported Mods",

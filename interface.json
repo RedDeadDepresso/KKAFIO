@@ -151,6 +151,16 @@
         "InputPath": "{input_path}"
       }
     },
+    "DownloadsInputPath": {
+      "type": "folder",
+      "name": "downloads_input_path",
+      "label": "$option.InputPath.label",
+      "description": "$option.InputPath.description",
+      "default": "C:/KKAFIO/Downloads",
+      "pipeline_override": {
+        "InputPath": "{downloads_input_path}"
+      }
+    },
     "KoiCardTexToolPath": {
       "type": "folder",
       "name": "koi_card_tex_tool_path",
@@ -1039,7 +1049,11 @@
       "default_check": false,
       "description": "$task.CompressCardsTextures.description",
       "group": ["card-management"],
-      "option": ["InputPath", "KoiCardTexToolPath", "DeleteOriginalCards"]
+      "option": [
+        "DownloadsInputPath",
+        "KoiCardTexToolPath",
+        "DeleteOriginalCards"
+      ]
     },
     {
       "name": "FilterDuplicateContents",

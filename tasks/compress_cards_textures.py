@@ -16,7 +16,7 @@ from pathlib import Path
 
 from send2trash import send2trash
 
-from tasks.base_task import BaseTask, validate_input_path
+from tasks.base_task import BaseTask, DEFAULT_DOWNLOADS_PATH, validate_input_path
 from utils.logger import logger
 from utils.subprocess_utils import popen_text
 
@@ -109,7 +109,7 @@ class CompressCardsTextures(BaseTask):
             logger.error("KOITEX", "No input folder specified.")
             return
         input_path = Path(self.input_path_str)
-        validate_input_path("KOITEX", input_path)
+        validate_input_path("KOITEX", input_path, default_path=DEFAULT_DOWNLOADS_PATH)
 
         # Falls back to the input folder itself if KoiCardTexToolPath was
         # ever explicitly cleared out (its normal default is C:/KoiCardTexTool).
