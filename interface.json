@@ -1038,7 +1038,7 @@
       "label": "$task.ExportMods.label",
       "entry": "ExportMods",
       "default_check": false,
-      "description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to [guid].zipmod",
+      "description": "$task.ExportMods.description",
       "group": ["mod-management"],
       "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
     },

@@ -172,6 +172,27 @@ a `$` prefix in `interface.json` — a missing translation key just falls back
 to showing the raw `$key` string in the GUI, so keep the language files in
 sync.
 
+Doing that by hand for every `assets/i18n/*.json` file is easy to get wrong
+or forget — `tools/sync_i18n_keys.py` automates it: it walks
+`interface.json` for every `"$dotted.key"` reference (top-level, group,
+option, option cases, option inputs, task, preset — the same list as
+above), then for each language listed under `"languages"` adds any key
+that's missing and removes any key that's no longer referenced, leaving the
+value of every key that's still used untouched. A brand-new key is seeded
+with `en_us.json`'s text (if it has one) or a `"[TODO] dotted.key"`
+placeholder otherwise, and either way gets flagged in the output as still
+needing a real translation.
+
+```sh
+python tools/sync_i18n_keys.py            # add/remove keys in place
+python tools/sync_i18n_keys.py --dry-run  # preview without writing anything
+python tools/sync_i18n_keys.py --check    # exit 1 if out of sync (CI); changes nothing
+```
+
+Run it (without `--check`) after adding or renaming anything in
+`interface.json`, then fill in any `[TODO]` placeholders it reports before
+shipping.
+
 ## `preset` entries
 
 Named bundles of tasks that can be enabled all at once from the GUI (⚡ All
