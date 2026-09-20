@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - 코이카츠 자동 파일 입출력 도구",
-  "root.description": "Koikatsu / Koikatsu Sunshine용 캐릭터 카드 및 모드 자동 관리 도구",
+  "root.description": "Koikatsu / Koikatsu Sunshine용 카드 및 모드 자동 관리 도구",
   "group.card-management.label": "카드 관리",
   "group.duplicate-handling.label": "중복 항목 처리",
   "group.backup.label": "백업 및 복원",
@@ -140,7 +140,7 @@
   "option.ModsDir.label": "사용자 지정 모드 디렉터리",
   "option.ModsDir.description": "모드 폴더 경로를 재지정합니다. 비워두면 게임의 기본 모드 폴더를 사용합니다.",
   "option.UseCache.label": "캐시 사용",
-  "option.UseCache.description": "캐시된 모드/코디 스캔 결과를 사용하여 처리 속도를 높입니다",
+  "option.UseCache.description": "캐시된 모드/카드 스캔 결과를 사용하여 처리 속도를 높입니다",
   "option.UseCache.case.Yes.label": "캐시 사용",
   "option.UseCache.case.No.label": "다시 스캔",
   "option.ContentPaths.label": "캐릭터 / 코디 / 씬 카드",

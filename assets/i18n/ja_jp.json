@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - コイカツ自動ファイル入出力ツール",
-  "root.description": "Koikatsu / Koikatsu Sunshine 向けのキャラカード・MOD自動管理ツール",
+  "root.description": "Koikatsu / Koikatsu Sunshine 向けのカード・MOD自動管理ツール",
   "group.card-management.label": "カード管理",
   "group.duplicate-handling.label": "重複処理",
   "group.backup.label": "バックアップと復元",
@@ -140,7 +140,7 @@
   "option.ModsDir.label": "カスタムMODディレクトリ",
   "option.ModsDir.description": "MODフォルダのパスを上書きします。空欄の場合はゲームのデフォルトのMODフォルダを使用します。",
   "option.UseCache.label": "キャッシュを使用",
-  "option.UseCache.description": "キャッシュされたMOD／コーディネートのスキャン結果を使用して処理を高速化する",
+  "option.UseCache.description": "キャッシュされたMOD／カードのスキャン結果を使用して処理を高速化する",
   "option.UseCache.case.Yes.label": "キャッシュを使用",
   "option.UseCache.case.No.label": "再スキャン",
   "option.ContentPaths.label": "キャラ／コーディネート／シーンカード",

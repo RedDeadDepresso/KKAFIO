@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - 心跳文件自動化工具",
-  "root.description": "適用於 Koikatsu / Koikatsu Sunshine 的角色卡與模組自動化管理工具",
+  "root.description": "適用於 Koikatsu / Koikatsu Sunshine 的卡片與模組自動化管理工具",
   "group.card-management.label": "卡片管理",
   "group.duplicate-handling.label": "重複項處理",
   "group.backup.label": "備份與還原",
@@ -140,7 +140,7 @@
   "option.ModsDir.label": "自訂模組目錄",
   "option.ModsDir.description": "覆寫模組資料夾路徑。留空則使用遊戲預設的模組資料夾。",
   "option.UseCache.label": "使用快取",
-  "option.UseCache.description": "使用快取的模組／衣裝掃描結果以加快處理速度",
+  "option.UseCache.description": "使用快取的模組／卡片掃描結果以加快處理速度",
   "option.UseCache.case.Yes.label": "使用快取",
   "option.UseCache.case.No.label": "重新掃描",
   "option.ContentPaths.label": "角色卡 / 衣裝 / 場景卡",

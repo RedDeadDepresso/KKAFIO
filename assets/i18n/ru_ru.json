@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO — автоматизация файлов Koikatsu",
-  "root.description": "Автоматическое управление карточками персонажей и модами для Koikatsu / Koikatsu Sunshine",
+  "root.description": "Автоматическое управление карточками и модами для Koikatsu / Koikatsu Sunshine",
   "group.card-management.label": "Управление карточками",
   "group.duplicate-handling.label": "Обработка дубликатов",
   "group.backup.label": "Резервное копирование и восстановление",
@@ -140,7 +140,7 @@
   "option.ModsDir.label": "Пользовательский каталог модов",
   "option.ModsDir.description": "Переопределить путь к папке модов. Оставьте пустым, чтобы использовать стандартную папку модов игры.",
   "option.UseCache.label": "Использовать кэш",
-  "option.UseCache.description": "Использовать кэшированные результаты сканирования модов/нарядов для ускорения обработки",
+  "option.UseCache.description": "Использовать кэшированные результаты сканирования модов/карточек для ускорения обработки",
   "option.UseCache.case.Yes.label": "Использовать кэш",
   "option.UseCache.case.No.label": "Пересканировать",
   "option.ContentPaths.label": "Карточки персонажей / нарядов / сцен",

@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - Koikatsu Auto File I/O",
-  "root.description": "Automated character card and mod management for Koikatsu / Koikatsu Sunshine",
+  "root.description": "Automated card and mod management for Koikatsu / Koikatsu Sunshine",
   "group.card-management.label": "Card Management",
   "group.duplicate-handling.label": "Duplicate Handling",
   "group.backup.label": "Backup & Restore",
@@ -140,7 +140,7 @@
   "option.ModsDir.label": "Custom Mods Directory",
   "option.ModsDir.description": "Override the mods folder path. Leave empty to use the game's default mods folder.",
   "option.UseCache.label": "Use Cache",
-  "option.UseCache.description": "Use cached mod/coordinate scan results to speed up processing",
+  "option.UseCache.description": "Use cached mod/card scan results to speed up processing",
   "option.UseCache.case.Yes.label": "Use Cache",
   "option.UseCache.case.No.label": "Rescan",
   "option.ContentPaths.label": "Character / Coordinate / Scene Cards",

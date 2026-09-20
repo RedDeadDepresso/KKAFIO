@@ -1,7 +1,7 @@
 [project]
 name = "kkafio"
 version = "2.1.0"
-description = "Koikatsu Auto File I/O. Create backup, filter and convert kks cards, install/remove chara given a folder."
+description = "Koikatsu Auto File I/O. Automated card and mod management for Koikatsu / Koikatsu Sunshine."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
