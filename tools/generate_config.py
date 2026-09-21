@@ -29,9 +29,10 @@ a warning rather than guessed at. The accessor property names are derived
 by converting each task's PascalCase name to snake_case.
 
 Everything else in utils/config.py (docstring, imports, GameType enum,
-_extract_opt, _extract_special_task_params, the Config class itself) is
-genuine hand-written logic with no interface.json equivalent, so it's kept
-as a fixed template and never touched by this script.
+_extract_opt, _extract_special_task_params, the Config class itself, and
+list_instances()) is genuine hand-written logic with no interface.json
+equivalent, so it's kept as a fixed template and never touched by this
+script.
 
 Usage:
   python tools/generate_config.py                # write utils/config.py
@@ -618,6 +619,20 @@ class Config:
                         raise Exception(f"Path invalid: {path_obj}")
 
 {ACCESSOR_PROPERTIES}
+
+
+# ---------------------------------------------------------------------------
+# Utility: list all instances
+# ---------------------------------------------------------------------------
+
+def list_instances(config_file: str) -> list[tuple[int, str]]:
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            mxu = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+    return [(i, inst.get("name", f"Instance {i}"))
+            for i, inst in enumerate(mxu.get("instances", []))]
 '''
 
 

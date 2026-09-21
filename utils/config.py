@@ -499,3 +499,17 @@ class Config:
         self.archive_cards             = self.config_data["ArchiveCards"]
         self.delete_cards              = self.config_data["DeleteCards"]
         self.export_mods               = self.config_data["ExportMods"]
+
+
+# ---------------------------------------------------------------------------
+# Utility: list all instances
+# ---------------------------------------------------------------------------
+
+def list_instances(config_file: str) -> list[tuple[int, str]]:
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            mxu = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+    return [(i, inst.get("name", f"Instance {i}"))
+            for i, inst in enumerate(mxu.get("instances", []))]
