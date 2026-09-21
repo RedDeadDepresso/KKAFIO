@@ -28,19 +28,23 @@ Windows-only (msvcrt-based file locking); safe to import elsewhere since the
 only public function no-ops with a single-item batch on other platforms.
 """
 
-import hashlib
 import json
 import sys
 import tempfile
 import time
 from pathlib import Path
 
+import xxhash
+
 _DEBOUNCE_SECONDS = 0.6   # how long the leader waits for siblings to register
 _STALE_SECONDS     = 5.0  # a leftover batch file older than this is ignored
 
 
 def _batch_file_paths(task_name: str, parent_dir: Path) -> tuple[Path, Path]:
-    key = hashlib.md5(f"{task_name}|{parent_dir}".encode("utf-8")).hexdigest()[:16]
+    # Must be identical across the separate Explorer-spawned processes, so use a
+    # deterministic hash (not Python's per-process-randomised built-in hash()).
+    # xxh3_64 hexdigest is exactly 16 chars.
+    key = xxhash.xxh3_64_hexdigest(f"{task_name}|{parent_dir}".encode("utf-8"))
     tmp = Path(tempfile.gettempdir())
     return tmp / f"kkafio_ctxmenu_{key}.lock", tmp / f"kkafio_ctxmenu_{key}.json"
 
