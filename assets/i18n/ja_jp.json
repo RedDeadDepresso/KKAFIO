@@ -175,7 +175,7 @@
   "task.CreateBackup.description": "ゲームフォルダの7-Zipバックアップを作成する",
   "task.DownloadContents.label": "⬇️ コンテンツをダウンロード",
   "task.DownloadContents.description": "db.bepis.moe または koikatsucards.com からキャラ、コーディネート、シーンをダウンロードする",
-  "task.FilterConvertKKS.label": "🔧 KKSカードのフィルタと変換",
+  "task.FilterConvertKKS.label": "🔧 KKSキャラのフィルタと変換",
   "task.FilterConvertKKS.description": "KKSカードをフィルタし、必要に応じてKK形式に変換する",
   "task.FilterDuplicateContents.label": "🧹 重複コンテンツをフィルタ",
   "task.FilterDuplicateContents.description": "重複するPNGカードとzipmodファイルを検出して処理する",
@@ -203,8 +203,8 @@
   "preset.AllTasks.description": "利用可能なすべてのタスクを順番に実行する",
   "preset.DownloadFilterAndInstall.label": "📥 ダウンロード・フィルター・インストール",
   "preset.DownloadFilterAndInstall.description": "新規コンテンツのダウンロード、KKSカードのフィルター・変換、重複の削除、不足MODの取得、テクスチャ圧縮、インストールを一度にまとめて実行する",
-  "preset.OrganizeInstalledContents.label": "🗂️ コンテンツを整理",
-  "preset.OrganizeInstalledContents.description": "インストール済みキャラクターのグループ化・リネーム、不要なカードの削除、不足しているMODのダウンロードを行う",
-  "preset.ExportInstalledContents.label": "📤 コンテンツをエクスポート",
-  "preset.ExportInstalledContents.description": "キャラカードをアーカイブし、それらが依存するMODを共有用フォルダにエクスポートする"
+  "preset.OrganizeInstalledContents.label": "🗂️ インストール済みコンテンツを整理",
+  "preset.OrganizeInstalledContents.description": "重複コンテンツを除外し、インストール済みキャラクターのグループ化・リネームを行い、不要なカードを削除し、不足しているMODをダウンロードする",
+  "preset.ExportInstalledContents.label": "📤 インストール済みコンテンツをエクスポート",
+  "preset.ExportInstalledContents.description": "MODを同梱してカードをアーカイブし、さらに追加のMODをGUIDでエクスポートして、インストール済みコンテンツを他のユーザーと共有できるようにする"
 }

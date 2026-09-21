@@ -175,7 +175,7 @@
   "task.CreateBackup.description": "建立遊戲資料夾的 7-Zip 備份",
   "task.DownloadContents.label": "⬇️ 下載內容",
   "task.DownloadContents.description": "從 db.bepis.moe 或 koikatsucards.com 下載角色卡、衣裝與場景",
-  "task.FilterConvertKKS.label": "🔧 過濾並轉換 KKS 卡片",
+  "task.FilterConvertKKS.label": "🔧 過濾並轉換 KKS 角色",
   "task.FilterConvertKKS.description": "過濾並可選擇將 KKS 卡片轉換為 KK 格式",
   "task.FilterDuplicateContents.label": "🧹 過濾重複內容",
   "task.FilterDuplicateContents.description": "尋找並處理重複的 PNG 卡片與 zipmod 檔案",
@@ -203,8 +203,8 @@
   "preset.AllTasks.description": "依序執行所有可用任務",
   "preset.DownloadFilterAndInstall.label": "📥 下載、篩選並安裝",
   "preset.DownloadFilterAndInstall.description": "下載新內容、篩選並轉換 KKS 卡片、去除重複項、取得缺少的模組、壓縮紋理，並一次完成安裝",
-  "preset.OrganizeInstalledContents.label": "🗂️ 整理內容",
-  "preset.OrganizeInstalledContents.description": "將已安裝的角色分組、重新命名，刪除不需要的卡片，並下載它們仍缺少的模組",
-  "preset.ExportInstalledContents.label": "📤 匯出內容",
-  "preset.ExportInstalledContents.description": "將角色卡封裝成壓縮檔，並將其依賴的模組匯出到可分享的資料夾中"
+  "preset.OrganizeInstalledContents.label": "🗂️ 整理已安裝內容",
+  "preset.OrganizeInstalledContents.description": "篩除重複內容，將已安裝的角色分組、重新命名，刪除不需要的卡片，並下載它們仍缺少的模組",
+  "preset.ExportInstalledContents.label": "📤 匯出已安裝內容",
+  "preset.ExportInstalledContents.description": "將卡片與其內建的模組一起封裝成壓縮檔，並依 GUID 匯出其他模組，方便將已安裝內容分享給其他玩家"
 }

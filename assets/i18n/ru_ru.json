@@ -175,7 +175,7 @@
   "task.CreateBackup.description": "Создать резервную копию папок игры в формате 7-Zip",
   "task.DownloadContents.label": "⬇️ Загрузить содержимое",
   "task.DownloadContents.description": "Загрузить персонажей, наряды и сцены с db.bepis.moe или koikatsucards.com",
-  "task.FilterConvertKKS.label": "🔧 Фильтр и конвертация карточек KKS",
+  "task.FilterConvertKKS.label": "🔧 Фильтр и конвертация персонажей KKS",
   "task.FilterConvertKKS.description": "Отфильтровать и при необходимости конвертировать карточки KKS в формат KK",
   "task.FilterDuplicateContents.label": "🧹 Фильтр дублирующегося содержимого",
   "task.FilterDuplicateContents.description": "Найти и обработать дублирующиеся PNG-карточки и файлы zipmod",
@@ -203,8 +203,8 @@
   "preset.AllTasks.description": "Выполнить все доступные задачи по порядку",
   "preset.DownloadFilterAndInstall.label": "📥 Загрузка, фильтрация и установка",
   "preset.DownloadFilterAndInstall.description": "Скачать новый контент, отфильтровать и конвертировать карточки KKS, убрать дубликаты, скачать недостающие моды, сжать текстуры и установить всё за один проход",
-  "preset.OrganizeInstalledContents.label": "🗂️ Организация контента",
-  "preset.OrganizeInstalledContents.description": "Сгруппировать и переименовать установленных персонажей, удалить ненужные карточки и скачать недостающие для них моды",
-  "preset.ExportInstalledContents.label": "📤 Экспорт контента",
-  "preset.ExportInstalledContents.description": "Заархивировать карточки персонажей и экспортировать нужные им моды в папку для передачи"
+  "preset.OrganizeInstalledContents.label": "🗂️ Организация установленного контента",
+  "preset.OrganizeInstalledContents.description": "Убрать дубликаты контента, сгруппировать и переименовать установленных персонажей, удалить ненужные карточки и скачать недостающие для них моды",
+  "preset.ExportInstalledContents.label": "📤 Экспорт установленного контента",
+  "preset.ExportInstalledContents.description": "Заархивировать карточки вместе с их модами и экспортировать дополнительные моды по GUID — чтобы поделиться установленным контентом с другими игроками"
 }

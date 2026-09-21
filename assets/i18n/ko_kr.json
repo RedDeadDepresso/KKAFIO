@@ -175,7 +175,7 @@
   "task.CreateBackup.description": "게임 폴더의 7-Zip 백업을 생성합니다",
   "task.DownloadContents.label": "⬇️ 콘텐츠 다운로드",
   "task.DownloadContents.description": "db.bepis.moe 또는 koikatsucards.com에서 캐릭터, 코디, 씬을 다운로드합니다",
-  "task.FilterConvertKKS.label": "🔧 KKS 카드 필터 및 변환",
+  "task.FilterConvertKKS.label": "🔧 KKS 캐릭터 필터 및 변환",
   "task.FilterConvertKKS.description": "KKS 카드를 필터링하고 선택적으로 KK 형식으로 변환합니다",
   "task.FilterDuplicateContents.label": "🧹 중복 콘텐츠 필터",
   "task.FilterDuplicateContents.description": "중복된 PNG 카드와 zipmod 파일을 찾아 처리합니다",
@@ -203,8 +203,8 @@
   "preset.AllTasks.description": "사용 가능한 모든 작업을 순서대로 실행합니다",
   "preset.DownloadFilterAndInstall.label": "📥 다운로드·필터링·설치",
   "preset.DownloadFilterAndInstall.description": "새 콘텐츠 다운로드, KKS 카드 필터링·변환, 중복 제거, 누락된 모드 가져오기, 텍스처 압축, 설치까지 한 번에 실행합니다",
-  "preset.OrganizeInstalledContents.label": "🗂️ 콘텐츠 정리",
-  "preset.OrganizeInstalledContents.description": "설치된 캐릭터를 그룹화·이름 변경하고, 불필요한 카드를 삭제하며, 아직 누락된 모드를 다운로드합니다",
-  "preset.ExportInstalledContents.label": "📤 콘텐츠 내보내기",
-  "preset.ExportInstalledContents.description": "캐릭터 카드를 압축 보관하고, 그 카드가 필요로 하는 모드를 공유 폴더로 내보냅니다"
+  "preset.OrganizeInstalledContents.label": "🗂️ 설치된 콘텐츠 정리",
+  "preset.OrganizeInstalledContents.description": "중복 콘텐츠를 제거하고, 설치된 캐릭터를 그룹화·이름 변경하고, 불필요한 카드를 삭제하며, 아직 누락된 모드를 다운로드합니다",
+  "preset.ExportInstalledContents.label": "📤 설치된 콘텐츠 내보내기",
+  "preset.ExportInstalledContents.description": "모드가 포함된 카드를 압축 보관하고, 추가 모드를 GUID로 내보내어 설치된 콘텐츠를 다른 사용자와 공유할 수 있도록 합니다"
 }

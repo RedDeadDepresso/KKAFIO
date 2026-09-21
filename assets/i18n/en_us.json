@@ -175,7 +175,7 @@
   "task.CreateBackup.description": "Create a 7-Zip backup of game folders",
   "task.DownloadContents.label": "⬇️ Download Contents",
   "task.DownloadContents.description": "Download chara, coordinates and scenes from db.bepis.moe or koikatsucards.com",
-  "task.FilterConvertKKS.label": "🔧 Filter & Convert KKS Cards",
+  "task.FilterConvertKKS.label": "🔧 Filter & Convert KKS Characters",
   "task.FilterConvertKKS.description": "Filter and optionally convert KKS cards to KK format",
   "task.FilterDuplicateContents.label": "🧹 Filter Duplicate Contents",
   "task.FilterDuplicateContents.description": "Find and handle duplicate PNG cards and zipmod files",
@@ -204,7 +204,7 @@
   "preset.DownloadFilterAndInstall.label": "📥 Download, Filter & Install",
   "preset.DownloadFilterAndInstall.description": "Download new content, filter and convert KKS cards, remove duplicates, grab missing mods, compress textures, and install everything in one pass",
   "preset.OrganizeInstalledContents.label": "🗂️ Organize Installed Contents",
-  "preset.OrganizeInstalledContents.description": "Group and rename installed characters, delete unwanted cards, and download any mods they're still missing",
+  "preset.OrganizeInstalledContents.description": "Filter out duplicate content, group and rename installed characters, delete unwanted cards, and download any mods they're still missing",
   "preset.ExportInstalledContents.label": "📤 Export Installed Contents",
-  "preset.ExportInstalledContents.description": "Archive character cards and export the mods they depend on into a shareable folder"
+  "preset.ExportInstalledContents.description": "Archive cards with their mods bundled in and export additional mods by GUID, ready to share your installed content with other players"
 }
