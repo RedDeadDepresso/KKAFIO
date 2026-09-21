@@ -1274,7 +1274,11 @@
       "description": "$preset.OrganizeInstalledContents.description",
       "task": [
         {
-          "name": "FilterDuplicateContents"
+          "name": "FilterDuplicateContents",
+          "option": {
+            "DownloadsInputPath": "",
+            "DuplicateAction": "Delete"
+          }
         },
         {
           "name": "GroupChara"
