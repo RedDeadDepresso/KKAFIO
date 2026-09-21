@@ -149,8 +149,12 @@ class FileManager:
         if not path_to_7zip:
             raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
         flag = "-t7z" if fmt == "7z" else "-tzip"
-        cmd = [path_to_7zip, "a", flag, str(output_path)] + [str(f) for f in files]
-        result = run_text(cmd, capture_output=True)
+        # -sccUTF-8 makes 7-Zip write its console output as UTF-8, so decode it
+        # as UTF-8 explicitly instead of relying on the process-wide locale
+        # (which is UTF-8 under MXU because kkafio.rs sets PYTHONUTF8=1, but
+        # would be the legacy codepage when run from a terminal).
+        cmd = [path_to_7zip, "a", flag, "-sccUTF-8", str(output_path)] + [str(f) for f in files]
+        result = run_text(cmd, capture_output=True, encoding="utf-8")
         if result.returncode not in (0, 1):
             raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
     
@@ -179,13 +183,15 @@ class FileManager:
             "Sideloader Modpack - Animations",
         ]
 
-        cmd = [path_to_7zip, "a", "-t7z", "-bsp1", str(archive_path)]
+        cmd = [path_to_7zip, "a", "-t7z", "-bsp1", "-sccUTF-8", str(archive_path)]
         cmd += [str(f) for f in folders]
         cmd += [f"-xr!{folder}" for folder in exclude_folders]
 
+        # -sccUTF-8 (above) makes 7-Zip emit UTF-8, so decode it as UTF-8
+        # regardless of the process locale.
         process = popen_text(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            cwd=self.config.game_path['base'],
+            cwd=self.config.game_path['base'], encoding="utf-8",
         )
 
         self.write_backup_info(archive_path, process.pid)
