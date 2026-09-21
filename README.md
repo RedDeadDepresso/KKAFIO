@@ -33,7 +33,7 @@
   - The session is validated against `koikatsucards.com/api/session` before use. If it is expired, you are prompted for a new one automatically.
   - The session is stored in `%APPDATA%/KKAFIO/config/kkd_session.json`. It does not need to be entered in MXU settings.
 
-**3. Filter & Convert KKS Cards**
+**3. Filter & Convert KKS Characters**
 
 - Functions similarly to [FlYiNGPoTAToChiP's KK_SunshineCardFilter](https://github.com/FlYiNGPoTAToChiP/KK_SunshineCardFilter).
 - Given a folder, the task:
@@ -116,7 +116,7 @@ https://t.me/kknowcc # you need to be part of this chat
 - Respects the configured **Game Type**: Koikatsu Sunshine installs KK, KKSP, and KKS cards. Koikatsu / Koikatsu Party installs KK and KKSP cards only — KKS cards are skipped with a log message.
 - Scene cards (Studio) are installed only if the Studio `scene` folder is present.
 - Extracts ZIP / RAR / 7z archives automatically (configurable).
-- If both Filter & Convert KKS Cards and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
+- If both Filter & Convert KKS Characters and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
 **8. Uninstall Contents**
 
@@ -216,7 +216,7 @@ Use **Download Contents** to download cards from db.bepis.moe or koikatsucards.c
 
 **Step 2 — Filter & Convert** *(optional)*
 
-Enable **Filter & Convert KKS Cards** with the staging folder as input.
+Enable **Filter & Convert KKS Characters** with the staging folder as input.
 - Set **Extract Archives** on — this unpacks any ZIP/RAR/7z files in the staging folder before the rest of the pipeline runs.
 - **Leave Filter off** (its default). Filter moves cards into `_KK_card_/`/`_KKS_card_/` subfolders, which breaks **Uninstall Contents**' ability to accurately find and remove a character's files later — Uninstall Contents matches by the file's location in your input folder, and cards buried in a filter subfolder won't line up with what actually got installed. Since it's off by default, you don't need to change anything here unless you specifically want the sorted subfolders for another reason.
 - **If you're on Koikatsu Sunshine, leave Convert KKS → KK off too.** Sunshine already loads KK, KKSP, and KKS cards natively (see [Game Type](#game-type)), so converting KKS cards to KK-compatible copies just creates redundant duplicate cards you'll then have to deduplicate again in the next step. Convert KKS → KK is only useful if you're preparing cards for a non-Sunshine Koikatsu/Koikatsu Party install.
@@ -303,7 +303,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 
 | Entry | Action |
 |---|---|
-| Filter & Convert KKS Cards | `filter-convert-kks --input <folder>` |
+| Filter & Convert KKS Characters | `filter-convert-kks --input <folder>` |
 | Filter Duplicate Contents | `filter-duplicate-contents --input <folder>` |
 | Download Missing Mods | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder>` |
 | Install Contents | `install-contents --input <folder>` |
