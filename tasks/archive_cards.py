@@ -67,9 +67,13 @@ class ArchiveCards(BaseTask):
 
     def _process_one(self, content_path: Path, game_base: Path,
                      mods_ov: Path | None,
-                     coord_ov: Path | None) -> tuple[list[Path], list[Path], set[str], set[str]]:
-        """Return (coord_paths, zipmod_paths, missing, all_guids) for a single
-        chara card, coordinate card, or Studio scene."""
+                     coord_ov: Path | None) -> tuple[list[Path], list[Path], set[str], set[str], set[str]]:
+        """Return (coord_paths, zipmod_paths, missing, modpack_missing,
+        all_guids) for a single chara card, coordinate card, or Studio
+        scene. `missing` is GUIDs that couldn't be found anywhere;
+        `modpack_missing` is GUIDs that exist in the Sideloader Modpack but
+        were deliberately excluded (only ever non-empty when
+        include_modpack is off)."""
         logger.info("ARCHV", f"Processing: {content_path.name}")
 
         raw       = content_path.read_bytes()
@@ -118,6 +122,8 @@ class ArchiveCards(BaseTask):
 
         all_guids = set(own_guids) | coord_guids_all
         zipmod_paths: list[Path] = []
+        missing: set[str] = set()
+        modpack_missing: set[str] = set()
         game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
 
         if mods_dir and mods_dir.exists() and all_guids:
@@ -146,16 +152,27 @@ class ArchiveCards(BaseTask):
                     logger.info("ARCHV",
                         f"  Skipped {skipped} zipmod(s) in Sideloader Modpack folder(s)")
             zipmod_paths = list(guid_map.values())
-            missing = all_guids - set(guid_map.keys())
+            all_missing = all_guids - set(guid_map.keys())
+
+            # When include_modpack is off, some "missing" GUIDs aren't
+            # actually unavailable — they're just excluded because they're
+            # covered by the Sideloader Modpack. Report those separately so
+            # it's clear they're not a real problem.
+            modpack_missing = all_missing & set(modpack_index.keys()) if not self.include_modpack else set()
+            missing = all_missing - modpack_missing
 
             logger.info("ARCHV",
-                f"  Zipmods found: {len(zipmod_paths)}  missing: {len(missing)}")
+                f"  Zipmods found: {len(zipmod_paths)}  missing: {len(missing)}"
+                + (f"  in Sideloader Modpack (excluded): {len(modpack_missing)}"
+                   if modpack_missing else ""))
             for m in sorted(missing):
                 logger.warning("ARCHV", f"    (missing) {m}")
+            for m in sorted(modpack_missing):
+                logger.info("ARCHV", f"    (Sideloader Modpack, not included) {m}")
         elif not mods_dir:
             logger.info("ARCHV", "  Mods directory not available — skipping mod lookup")
 
-        return coord_paths, zipmod_paths, missing if mods_dir and mods_dir.exists() and all_guids else set(), all_guids
+        return coord_paths, zipmod_paths, missing, modpack_missing, all_guids
 
     @staticmethod
     def _display_name(content_path: Path) -> str:
@@ -184,7 +201,7 @@ class ArchiveCards(BaseTask):
 
         cards: list of {
             path, display_name, coords: [Path], mods: [Path],
-            missing: set[str], all_guids: set[str]
+            missing: set[str], modpack_missing: set[str], all_guids: set[str]
         }
         """
         lines: list[str] = []
@@ -201,10 +218,12 @@ class ArchiveCards(BaseTask):
 
         total_mods    = set()
         total_missing = set()
+        total_modpack_missing = set()
 
         for card in cards:
             total_mods.update(p.name for p in card["mods"])
             total_missing.update(card["missing"])
+            total_modpack_missing.update(card.get("modpack_missing", set()))
 
             lines.append(f"Card      : {card['display_name']}")
             lines.append(f"File      : {card['path'].name}")
@@ -227,6 +246,11 @@ class ArchiveCards(BaseTask):
                 for m in sorted(card["missing"]):
                     lines.append(f"  ! {m}")
 
+            if card.get("modpack_missing"):
+                lines.append("Mods excluded (in Sideloader Modpack, not bundled):")
+                for m in sorted(card["modpack_missing"]):
+                    lines.append(f"  ! {m}")
+
             lines.append("")
 
         if len(cards) > 1:
@@ -239,6 +263,21 @@ class ArchiveCards(BaseTask):
                 lines.append("Missing GUIDs:")
                 for m in sorted(total_missing):
                     lines.append(f"  ! {m}")
+
+        if total_modpack_missing:
+            lines += [
+                "",
+                "=" * 60,
+                "",
+                "Mods excluded — Sideloader Modpack",
+                "-----------------------------------",
+                "These GUIDs are available via the Sideloader Modpack but were NOT",
+                "bundled in this archive, since Include Modpack is off. The recipient",
+                "needs the Sideloader Modpack installed to have these mods.",
+                "",
+            ]
+            for m in sorted(total_modpack_missing):
+                lines.append(f"  ! {m}")
 
         if not include_modpack:
             lines += [
@@ -274,19 +313,20 @@ class ArchiveCards(BaseTask):
                 if not content_path.is_file():
                     logger.error("ARCHV", f"Not found: {content_path}")
                     continue
-                coord_paths, zipmod_paths, missing, all_guids = self._process_one(
+                coord_paths, zipmod_paths, missing, modpack_missing, all_guids = self._process_one(
                     content_path, game_base, mods_ov, coord_ov)
                 for f in [content_path] + coord_paths + zipmod_paths:
                     if f not in seen:
                         seen.add(f)
                         all_files.append(f)
                 card_infos.append({
-                    "path":         content_path,
-                    "display_name": self._display_name(content_path),
-                    "coords":       coord_paths,
-                    "mods":         zipmod_paths,
-                    "missing":      missing,
-                    "all_guids":    all_guids,
+                    "path":            content_path,
+                    "display_name":    self._display_name(content_path),
+                    "coords":          coord_paths,
+                    "mods":            zipmod_paths,
+                    "missing":         missing,
+                    "modpack_missing": modpack_missing,
+                    "all_guids":       all_guids,
                 })
 
             if not all_files:
@@ -326,7 +366,7 @@ class ArchiveCards(BaseTask):
                     logger.error("ARCHV", f"Not found: {content_path}")
                     continue
                 logger.line()
-                coord_paths, zipmod_paths, missing, all_guids = self._process_one(
+                coord_paths, zipmod_paths, missing, modpack_missing, all_guids = self._process_one(
                     content_path, game_base, mods_ov, coord_ov)
                 all_files    = [content_path] + coord_paths + zipmod_paths
                 out_dir      = output_dir or content_path.parent
@@ -335,12 +375,13 @@ class ArchiveCards(BaseTask):
                 archive_path = out_dir / archive_name
 
                 card_info = {
-                    "path":         content_path,
-                    "display_name": self._display_name(content_path),
-                    "coords":       coord_paths,
-                    "mods":         zipmod_paths,
-                    "missing":      missing,
-                    "all_guids":    all_guids,
+                    "path":            content_path,
+                    "display_name":    self._display_name(content_path),
+                    "coords":          coord_paths,
+                    "mods":            zipmod_paths,
+                    "missing":         missing,
+                    "modpack_missing": modpack_missing,
+                    "all_guids":       all_guids,
                 }
                 readme_text = self._build_readme(
                     [card_info], archive_name, self.include_modpack, generated)
