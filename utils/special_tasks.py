@@ -274,23 +274,54 @@ def _windows_screen_off() -> None:
     )
 
 
+# Grace period before a shutdown/restart actually happens, giving the user a
+# window to notice and cancel it (`shutdown /a` on Windows, `shutdown -c` on
+# Linux) if it was triggered unexpectedly — e.g. by a misconfigured pipeline,
+# or while something important is still open elsewhere. Not applied to
+# sleep/screenoff, which are non-destructive and instantly reversible.
+POWER_ACTION_DELAY_SECONDS = 30
+
+
 def run_power(param: dict, stop: threading.Event) -> bool:
     action = str(param.get("power_action", "shutdown")).strip()
+    delay  = param.get("power_delay_seconds", POWER_ACTION_DELAY_SECONDS)
+    try:
+        delay = max(0, int(delay))
+    except (TypeError, ValueError):
+        delay = POWER_ACTION_DELAY_SECONDS
     _log().info("MXU_POWER", f"action={action}")
     try:
         if sys.platform == "win32":
             if action == "shutdown":
-                _run_cmd(["shutdown", "/s", "/f", "/t", "0"])
+                _log().info("MXU_POWER",
+                    f"Shutting down in {delay}s — run 'shutdown /a' to cancel.")
+                _run_cmd(["shutdown", "/s", "/f", "/t", str(delay)])
+                if delay and stop.wait(delay):
+                    _log().info("MXU_POWER", "Stop requested — cancelling scheduled shutdown.")
+                    _run_cmd(["shutdown", "/a"])
+                    return False
             elif action == "restart":
-                _run_cmd(["shutdown", "/r", "/f", "/t", "0"])
+                _log().info("MXU_POWER",
+                    f"Restarting in {delay}s — run 'shutdown /a' to cancel.")
+                _run_cmd(["shutdown", "/r", "/f", "/t", str(delay)])
+                if delay and stop.wait(delay):
+                    _log().info("MXU_POWER", "Stop requested — cancelling scheduled restart.")
+                    _run_cmd(["shutdown", "/a"])
+                    return False
             elif action == "sleep":
                 _run_cmd(["rundll32", "powrprof.dll,SetSuspendState", "0", "1", "0"])
             elif action == "screenoff":
                 _windows_screen_off()
         elif sys.platform == "darwin":
             if action == "shutdown":
+                if delay and stop.wait(delay):
+                    _log().info("MXU_POWER", "Shutdown cancelled (Stop requested).")
+                    return False
                 subprocess.run(["osascript", "-e", "tell app \"System Events\" to shut down"])
             elif action == "restart":
+                if delay and stop.wait(delay):
+                    _log().info("MXU_POWER", "Restart cancelled (Stop requested).")
+                    return False
                 subprocess.run(["osascript", "-e", "tell app \"System Events\" to restart"])
             elif action == "sleep":
                 subprocess.run(["pmset", "sleepnow"])           # whole system
@@ -298,9 +329,15 @@ def run_power(param: dict, stop: threading.Event) -> bool:
                 subprocess.run(["pmset", "displaysleepnow"])    # display only
         else:
             if action == "shutdown":
-                subprocess.run(["systemctl", "poweroff"])
+                _log().info("MXU_POWER",
+                    f"Shutting down in {delay}s — run 'shutdown -c' to cancel.")
+                subprocess.run(["shutdown", "-P", f"+{max(1, delay // 60) if delay else 0}"]
+                               if delay else ["systemctl", "poweroff"])
             elif action == "restart":
-                subprocess.run(["systemctl", "reboot"])
+                _log().info("MXU_POWER",
+                    f"Restarting in {delay}s — run 'shutdown -c' to cancel.")
+                subprocess.run(["shutdown", "-r", f"+{max(1, delay // 60) if delay else 0}"]
+                               if delay else ["systemctl", "reboot"])
             elif action == "sleep":
                 subprocess.run(["systemctl", "suspend"])
             elif action == "screenoff":

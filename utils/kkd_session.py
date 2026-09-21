@@ -48,23 +48,48 @@ def _save(session: str) -> None:
         logger.warning("KKDSES", f"Could not save kkd_session.json: {e}")
 
 
-def _is_valid(session: str) -> bool:
-    """Return True if the session cookie is accepted by koikatsucards.com."""
+def _is_valid(session: str) -> bool | None:
+    """Check whether the session cookie is accepted by koikatsucards.com.
+
+    Returns True/False when the server actually answered the question (an
+    expired/invalid cookie authenticates as {"user": null}, or the endpoint
+    returns 401/403), and None when the check itself couldn't be performed
+    (DNS/connection failure, timeout, 5xx, unexpected response shape) — the
+    caller decides what to do in that case, since a network hiccup is not
+    evidence that the cookie is bad.
+    """
+    # Cookie is scoped to koikatsucards.com only, matching how the cookie is
+    # attached everywhere else it's used (see _make_client in
+    # download_contents.py) — this call shouldn't send it anywhere else even
+    # though this request always goes straight to SESSION_API.
+    cookies = httpx.Cookies()
+    cookies.set("kkd_session", session, domain="koikatsucards.com")
     try:
         r = httpx.get(
             SESSION_API,
-            cookies={"kkd_session": session},
+            cookies=cookies,
             timeout=10,
             follow_redirects=True,
         )
+    except httpx.HTTPError as e:
+        logger.warning("KKDSES", f"Could not reach koikatsucards.com to validate kkd_session: {e}")
+        return None
+
+    if r.status_code in (401, 403):
+        return False           # explicitly rejected — definitely invalid
+    if r.status_code >= 500:
+        logger.warning("KKDSES",
+            f"koikatsucards.com returned {r.status_code} while validating kkd_session")
+        return None             # server-side issue, not a verdict on the cookie
+
+    try:
         r.raise_for_status()
         data = r.json()
-        return data.get("user") is not None
     except Exception as e:
-        logger.warning("KKDSES", f"Could not validate kkd_session: {e}")
-        # If the request itself fails (network error etc.) assume valid
-        # to avoid locking users out unnecessarily
-        return True
+        logger.warning("KKDSES", f"Unexpected response validating kkd_session: {e}")
+        return None
+
+    return data.get("user") is not None
 
 
 def _prompt() -> str | None:
@@ -99,8 +124,16 @@ def get_or_prompt() -> str | None:
 
     if session:
         logger.info("KKDSES", "Validating kkd_session against koikatsucards.com...")
-        if _is_valid(session):
+        valid = _is_valid(session)
+        if valid is True:
             logger.info("KKDSES", "kkd_session is valid.")
+            return session
+        if valid is None:
+            # Couldn't reach the validation endpoint — that's not evidence
+            # the cookie is bad, so use the stored one rather than prompting
+            # the user for a cookie we can't confirm is any better.
+            logger.warning("KKDSES",
+                "Could not validate kkd_session (network issue) — using stored session as-is.")
             return session
         logger.warning("KKDSES", "kkd_session is invalid or expired.")
 
@@ -112,11 +145,16 @@ def get_or_prompt() -> str | None:
         return None
 
     logger.info("KKDSES", "Validating new kkd_session...")
-    if not _is_valid(new_session):
+    valid = _is_valid(new_session)
+    if valid is False:
         logger.error("KKDSES",
             "The provided kkd_session is not valid. "
             "Make sure you are logged in and copied the correct cookie value.")
         return None
+    if valid is None:
+        logger.warning("KKDSES",
+            "Could not confirm the new kkd_session is valid (network issue) — "
+            "saving it anyway; downloads will simply fail if it turns out to be wrong.")
 
     _save(new_session)
     logger.success("KKDSES", "kkd_session saved and validated.")

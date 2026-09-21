@@ -261,11 +261,28 @@ def process(folder_path: Path, json_str: str,
         nickname = nd.get("nickname", "").strip()
 
         if update_metadata:
+            # Save to a temp file next to the card and only replace the
+            # original once the write has fully succeeded and the result
+            # looks like a real, parseable chara card. kc.save() writes
+            # in a single pass; saving in place means a crash, a disk-full
+            # error, or a bad write partway through leaves the card
+            # corrupted with the original gone for good. Going through a
+            # temp file + os.replace means the original is only ever
+            # touched by the atomic rename at the very end.
+            tmp_path = png.with_name(png.name + ".kkafio_rename.tmp")
             try:
                 kc["Parameter"]["lastname"]  = last
                 kc["Parameter"]["firstname"] = first
                 kc["Parameter"]["nickname"]  = nickname
-                kc.save(str(png))
+                kc.save(str(tmp_path))
+
+                # Sanity-check the written file before trusting it enough to
+                # overwrite the original.
+                new_raw = tmp_path.read_bytes()
+                if get_card_type(new_raw) not in (CardType.KK, CardType.KKSP):
+                    raise ValueError("saved file does not look like a valid chara card")
+
+                os.replace(tmp_path, png)
                 logger.info("RENAME",
                     f"Metadata: {png.name} → {last} {first} ({nickname})")
                 updated += 1
@@ -273,6 +290,12 @@ def process(folder_path: Path, json_str: str,
                 logger.error("RENAME", f"Could not update metadata for {png.name}: {e}")
                 skipped += 1
                 continue
+            finally:
+                if tmp_path.exists():
+                    try:
+                        tmp_path.unlink()
+                    except OSError:
+                        pass
 
         if rename_files:
             stem = _stem_for(nd)

@@ -127,7 +127,7 @@ def _save_history(history: dict[str, str]) -> None:
 # Async HTTP client
 # ---------------------------------------------------------------------------
 
-def _make_client(cookies: dict | None = None):
+def _make_client(cookies: dict | None = None, cookie_domain: str | None = None):
     import httpx
     limits = httpx.Limits(
         max_connections=MAX_CONNECTIONS,
@@ -140,8 +140,21 @@ def _make_client(cookies: dict | None = None):
             "Chrome/124.0.0.0 Safari/537.36"
         )
     }
+    # A plain dict of cookies is attached to EVERY request this client makes,
+    # regardless of host. koikatsucards.com's download-menu links can be
+    # absolute URLs to a different host (a CDN, say), and this client also
+    # follows redirects, so without domain scoping the kkd_session cookie
+    # would be sent to whatever host a card's download link happens to
+    # point to. httpx.Cookies with an explicit domain is scoped by
+    # cookiejar matching and is only ever attached to requests to that host.
+    cookie_jar: httpx.Cookies | dict = {}
+    if cookies:
+        cookie_jar = httpx.Cookies()
+        for name, value in cookies.items():
+            cookie_jar.set(name, value, domain=cookie_domain or "")
+
     return httpx.AsyncClient(
-        limits=limits, headers=headers, cookies=cookies or {},
+        limits=limits, headers=headers, cookies=cookie_jar,
         follow_redirects=True, timeout=30, http2=True,
     )
 
@@ -483,7 +496,8 @@ class DownloadContents(BaseTask):
         async def _run_all() -> None:
             nonlocal total_ok, total_fail
             async with _make_client() as bepis_client, \
-                       _make_client(cookies=kkd_cookies) as kk_client:
+                       _make_client(cookies=kkd_cookies,
+                                    cookie_domain="koikatsucards.com") as kk_client:
                 for url_str, page_start, page_end in urls:
                     if BEPIS_URL in url_str:
                         ok, fail = await _download_bepis(

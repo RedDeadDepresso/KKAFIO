@@ -293,7 +293,7 @@ class ArchiveCards(BaseTask):
         content_paths = [Path(p) for p in self.content_paths if p]
         if not content_paths:
             logger.error("ARCHV", "No character cards, coordinates, or scenes specified")
-            return
+            raise Exception("ArchiveCards: no content paths specified")
 
         game_base  = Path(self.config.config_data["Core"]["GamePath"])
         mods_ov    = Path(self.mods_dir_str)   if self.mods_dir_str   else None
@@ -331,7 +331,7 @@ class ArchiveCards(BaseTask):
 
             if not all_files:
                 logger.error("ARCHV", "No files to archive")
-                return
+                raise Exception("ArchiveCards: no files to archive")
 
             out_dir = output_dir or content_paths[0].parent
             out_dir.mkdir(parents=True, exist_ok=True)
@@ -351,14 +351,23 @@ class ArchiveCards(BaseTask):
             logger.info("ARCHV",
                 f"Creating combined {self.format} archive: {archive_name} "
                 f"({len(all_files)} file(s) + README.txt)")
+            archive_failed = False
             try:
                 self.file_manager.create_archive(
                     all_files + [readme_tmp], archive_path, self.format)
                 logger.success("ARCHV", f"Done: {archive_path}")
             except Exception as e:
                 logger.error("ARCHV", f"Archive creation failed: {e}")
+                archive_failed = True
             finally:
                 readme_tmp.unlink(missing_ok=True)
+
+            # Re-raise so a pipeline running DeleteCards right after this
+            # step doesn't proceed to delete cards whose archive was never
+            # actually created (Ctrl+C aside, this makes cmd_run's
+            # try/except in kkafio_cli.py abort the remaining tasks).
+            if archive_failed:
+                raise Exception("ArchiveCards: archive creation failed")
 
         else:
             for content_path in content_paths:
@@ -392,11 +401,20 @@ class ArchiveCards(BaseTask):
                 logger.info("ARCHV",
                     f"  Creating {self.format} archive: {archive_name} "
                     f"({len(all_files)} file(s) + README.txt)")
+                archive_failed = False
                 try:
                     self.file_manager.create_archive(
                         all_files + [readme_tmp], archive_path, self.format)
                     logger.success("ARCHV", f"  Done: {archive_path}")
                 except Exception as e:
                     logger.error("ARCHV", f"  Archive creation failed: {e}")
+                    archive_failed = True
                 finally:
                     readme_tmp.unlink(missing_ok=True)
+
+                if archive_failed:
+                    # Stop instead of continuing to the next card / to a
+                    # later DeleteCards step as if every archive had
+                    # succeeded.
+                    raise Exception(
+                        f"ArchiveCards: archive creation failed for {content_path.name}")
