@@ -1164,7 +1164,7 @@
       "default_check": false,
       "description": "$task.ExportMods.description",
       "group": ["mod-management"],
-      "option": ["OutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
+      "option": ["ExportOutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
     }
   ],
   "preset": [
