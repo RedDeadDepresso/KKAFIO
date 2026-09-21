@@ -1225,12 +1225,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--no-fuzzy", dest="fuzzy", action="store_false",
                    help="Disable fuzzy matching (overrides config)")
     p.add_argument("--keep", metavar="STRATEGY", default=None,
-                   choices=['None — move all copies', 'Newest', 'Oldest', 'Biggest file size', 'Smallest file size', 'Last alphabetically', 'First alphabetically'],
+                   choices=['None', 'Newest', 'Oldest', 'Biggest file size', 'Smallest file size', 'Last alphabetically', 'First alphabetically'],
                    help="Which copy to keep as the original (overrides config)")
     p.add_argument("--action", choices=["move-rename", "move", "delete"], default=None,
                    help="What to do with duplicates (overrides config). 'move-rename' (default) "
                         "moves duplicates to _duplicates_/ and renames them after the kept copy "
-                        "(or the first duplicate found, if --keep is 'None — move all copies'), "
+                        "(or the first duplicate found, if --keep is 'None'), "
                         "with a number suffix. 'move' moves them to _duplicates_/ keeping their "
                         "original filenames. 'delete' sends them straight to the recycle bin.")
     g2 = p.add_mutually_exclusive_group()
