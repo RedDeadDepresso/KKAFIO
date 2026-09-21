@@ -1053,7 +1053,7 @@ class DownloadMissingMods(BaseTask):
                                 _teleget_config = (
                                     {
                                         "daemon_log_level": "INFO",
-                                        "daemon_console_log_level": "WARNING",
+                                        "daemon_console_log_level": "CRITICAL",
                                     }
                                     if getattr(sys, "frozen", False)
                                     else None
