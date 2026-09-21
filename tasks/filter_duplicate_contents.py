@@ -1,4 +1,3 @@
-import hashlib
 import io
 import json as _json
 import shutil
@@ -6,6 +5,8 @@ import struct
 from collections import defaultdict
 from pathlib import Path
 from typing import Literal
+
+import xxhash
 
 from tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
 from utils.classifier import CardType, get_card_type, is_coordinate
@@ -39,13 +40,13 @@ Category = Literal["chara", "coordinate", "mods", "overlays", "scene"]
 # Cache — per-file fingerprint (mtime, size) reuse, same idea as the
 # incremental caches elsewhere in KKAFIO. Split into three separate cache
 # files so toggling Fuzzy Chara on/off (an expensive, chara-only operation)
-# never invalidates or forces recomputation of the cheaper MD5 hashes, and
+# never invalidates or forces recomputation of the cheaper content hashes, and
 # vice versa.
 # ---------------------------------------------------------------------------
 
-PNG_CACHE_FILE   = "kkafio_duplicate_png_cache.json"    # MD5 + category, all PNGs
+PNG_CACHE_FILE   = "kkafio_duplicate_png_cache.json"    # XXH3 + category, all PNGs
 FUZZY_CACHE_FILE = "kkafio_duplicate_fuzzy_cache.json"  # phash, chara cards only
-MODS_CACHE_FILE  = "kkafio_duplicate_mods_cache.json"   # MD5, zipmods only
+MODS_CACHE_FILE  = "kkafio_duplicate_mods_cache.json"   # XXH3, zipmods only
 
 
 def _file_fp(p: Path) -> list[int]:
@@ -118,12 +119,14 @@ def _get_png_image_bytes(data: bytes) -> bytes:
 # Hashing
 # ---------------------------------------------------------------------------
 
-def _md5(data: bytes) -> str:
-    return hashlib.md5(data).hexdigest()
+def _xxh(data: bytes) -> str:
+    """Non-cryptographic 128-bit content hash (XXH3). Much faster than MD5 and
+    plenty for duplicate detection — collisions are astronomically unlikely."""
+    return xxhash.xxh3_128_hexdigest(data)
 
 
-def _md5_file(path: Path) -> str:
-    h = hashlib.md5()
+def _xxh_file(path: Path) -> str:
+    h = xxhash.xxh3_128()
     with path.open("rb") as f:
         while chunk := f.read(8 * 1024 * 1024):
             h.update(chunk)
@@ -368,18 +371,18 @@ class FilterDuplicateContents:
         new_png_cache: dict[str, dict] = {}
 
         def _hash_png(path: Path):
-            """Fingerprint one PNG (MD5 of the character-data payload, or
+            """Fingerprint one PNG (XXH3 of the character-data payload, or
             the whole file for non-chara PNGs) + classify it. Reuses the
             cached result if the file's mtime/size haven't changed since
             the last run. Runs in a thread pool worker."""
             sp = str(path)
             fp = _file_fp(path)
             cached = png_cache.get(sp)
-            if cached and cached.get("fp") == fp:
-                return path, cached["md5"], cached.get("category"), fp, True
+            if cached and cached.get("fp") == fp and "xxh" in cached:
+                return path, cached["xxh"], cached.get("category"), fp, True
             data    = path.read_bytes()
             payload = _get_png_payload(data)
-            digest  = _md5(payload) if payload else _md5(data)
+            digest  = _xxh(payload) if payload else _xxh(data)
             cat     = _classify(data)
             return path, digest, cat, fp, False
 
@@ -401,7 +404,7 @@ class FilterDuplicateContents:
                     hash_dict[digest].append(path)
                     if digest not in category_map:
                         category_map[digest] = cat
-                    new_png_cache[str(path)] = {"fp": fp, "md5": digest, "category": cat}
+                    new_png_cache[str(path)] = {"fp": fp, "xxh": digest, "category": cat}
                     if was_cached:
                         reused_png += 1
                 except Exception as e:
@@ -508,9 +511,9 @@ class FilterDuplicateContents:
             sp = str(path)
             fp = _file_fp(path)
             cached = mods_cache.get(sp)
-            if cached and cached.get("fp") == fp:
-                return path, cached["md5"], fp, True
-            return path, _md5_file(path), fp, False
+            if cached and cached.get("fp") == fp and "xxh" in cached:
+                return path, cached["xxh"], fp, True
+            return path, _xxh_file(path), fp, False
 
         mod_hash_dict: dict[str, list[Path]] = defaultdict(list)
         reused_mods = 0
@@ -522,7 +525,7 @@ class FilterDuplicateContents:
                     try:
                         path, digest, fp, was_cached = future.result()
                         mod_hash_dict[digest].append(path)
-                        new_mods_cache[str(path)] = {"fp": fp, "md5": digest}
+                        new_mods_cache[str(path)] = {"fp": fp, "xxh": digest}
                         if was_cached:
                             reused_mods += 1
                     except Exception as e:

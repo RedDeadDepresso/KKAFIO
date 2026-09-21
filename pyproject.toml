@@ -15,6 +15,7 @@ dependencies = [
     "scikit-image>=0.24.0",
     "send2trash>=1.8.3",
     "teleget9527[fast]",
+    "xxhash>=4.0.1",
 ]
 
 [dependency-groups]
