@@ -42,7 +42,6 @@ from utils.chara_ops import (
     collect_coord_guids,
     collect_scene_guids,
     load_modpack_index,
-    save_mods_cache,
 )
 from utils.config import GameType
 from utils.logger import logger
@@ -85,29 +84,49 @@ def _make_http_client(cookies: dict | None = None):
 async def _download_betterrepack(
     client, guid: str, rel_path: str, mods_dir: Path,
     guid_str_map: dict[str, str],
-) -> bool:
-    url  = f"{BETTERREPACK_BASE}/{rel_path.replace(chr(92), '/')}"
-    dest = mods_dir / rel_path.replace("/", os.sep)
+) -> bool | str:
+    """Download one modpack zipmod. Returns True (downloaded), "skipped"
+    (already present and intact) or False (failed)."""
+    import zipfile
 
+    url  = f"{BETTERREPACK_BASE}/{rel_path.replace(chr(92), '/')}"
+    dest = mods_dir / rel_path.replace("\\", os.sep).replace("/", os.sep)
+
+    # Only trust an existing file if it is a complete zip. Earlier versions
+    # streamed straight into the final name, so an interrupted download could
+    # leave a truncated .zipmod behind that would otherwise be "skipped" forever.
     if dest.exists():
-        return "skipped"
+        if await asyncio.to_thread(zipfile.is_zipfile, dest):
+            return "skipped"
+        logger.warning("DLMOD", f"Existing file is incomplete/corrupt, re-downloading: {dest.name}")
 
     logger.info("DLMOD", f"BetterRepack ↓ {dest.name}")
+    # Download to "<name>.part" and rename only once the body is complete.
+    part = dest.with_name(dest.name + ".part")
+    completed = False
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         async with client.stream("GET", url) as r:
             r.raise_for_status()
             import aiofiles
-            async with aiofiles.open(dest, "wb") as f:
+            async with aiofiles.open(part, "wb") as f:
                 async for chunk in r.aiter_bytes(chunk_size=65536):
                     await f.write(chunk)
+        os.replace(part, dest)
+        completed = True
         logger.success("DLMOD", f"Downloaded: {dest.name}")
         guid_str_map[guid] = str(dest)
-        save_mods_cache(mods_dir, guid_str_map)
         return True
     except Exception as e:
         logger.error("DLMOD", f"BetterRepack failed [{guid}]: {e}")
         return False
+    finally:
+        if not completed:
+            # Errors and cancellation (Stop / Ctrl+C) alike.
+            try:
+                part.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 # ---------------------------------------------------------------------------
@@ -381,7 +400,6 @@ async def _search_chat_links_and_download(
 
             logger.success("DLMOD", f"Downloaded: {file_name}")
             guid_str_map[guid] = str(dest)
-            save_mods_cache(mods_dir, guid_str_map)
             return True, True
 
         return False, False  # no configured chat had a matching .zipmod
@@ -509,8 +527,24 @@ async def _download_via_teleget(
         str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"]
     )
     await meta_client.connect()
-    message = await meta_client.get_messages(chat_identifier, ids=message_id)
-    await meta_client.disconnect()
+    try:
+        message = await meta_client.get_messages(chat_identifier, ids=message_id)
+
+        # teleget9527 wants the bare numeric chat ID of the chat the link
+        # actually points at. This used to be hardcoded to the
+        # KK_archive_modlibrary channel, so a link into any other chat would
+        # have fetched message N of the wrong chat.
+        raw_chat_id: int | None = None
+        try:
+            raw_chat_id = (await meta_client.get_entity(chat_identifier)).id
+        except Exception as e:
+            if str(chat_identifier).lower() == "@kk_archive_modlibrary":
+                raw_chat_id = KK_ARCHIVE_CHAT_ID   # known channel; safe fallback
+            else:
+                logger.warning("DLMOD",
+                    f"Could not resolve chat {chat_identifier} for teleget9527: {e}")
+    finally:
+        await meta_client.disconnect()
 
     if message is None or message.document is None:
         logger.error("DLMOD", f"No file in message {message_id} [{guid}]")
@@ -547,8 +581,10 @@ async def _download_via_teleget(
                     logger.info("DLMOD",
                         f"  {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
 
+            if raw_chat_id is None:
+                raise RuntimeError(f"cannot resolve chat {chat_identifier}")
             await downloader.download(
-                chat_id=KK_ARCHIVE_CHAT_ID,
+                chat_id=raw_chat_id,
                 msg_id=message_id,
                 save_path=str(dest.resolve()),
                 progress_callback=_on_progress,
@@ -583,7 +619,6 @@ async def _download_via_teleget(
 
     logger.success("DLMOD", f"Downloaded: {file_name}")
     guid_str_map[guid] = str(dest)
-    save_mods_cache(mods_dir, guid_str_map)
     return True
 
 
@@ -1141,7 +1176,19 @@ class DownloadMissingMods(BaseTask):
                                     except Exception:
                                         pass  # suppress ShutdownRequest bug in teleget9527
 
-        asyncio.run(_run_all())
+        try:
+            asyncio.run(_run_all())
+        finally:
+            # Refresh the shared mods cache once, incrementally: only the
+            # zipmods that are new since the last scan get opened. (Writing
+            # {guid: path} on every download, as this used to, dropped the
+            # per-file fingerprints and forced a full rescan next time.)
+            # Runs on Stop / Ctrl+C too.
+            if self.use_cache:
+                try:
+                    build_mods_cache(mods_dir, include_modpack=False, use_cache=True)
+                except Exception as e:
+                    logger.warning("DLMOD", f"Could not refresh mods cache: {e}")
 
         logger.line()
 

@@ -19,6 +19,9 @@ from utils.logger import logger
 # ---------------------------------------------------------------------------
 
 KEEP_NONE      = "None — move all copies"
+# interface.json's KeepStrategy case is named plain "None" (the MXU GUI sends
+# that), while the CLI's --keep choice is the longer KEEP_NONE label. Accept both.
+_KEEP_NONE_ALIASES = {KEEP_NONE, "None"}
 KEEP_NEWEST    = "Newest"
 KEEP_OLDEST    = "Oldest"
 KEEP_BIGGEST   = "Biggest file size"
@@ -182,7 +185,7 @@ def _tiebreak(paths: list[Path]) -> Path:
 
 
 def _select_keep(paths: list[Path], keep: str) -> Path | None:
-    if keep == KEEP_NONE:
+    if keep in _KEEP_NONE_ALIASES:
         return None
     if keep == KEEP_NEWEST:
         best = max(p.stat().st_mtime for p in paths)

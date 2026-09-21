@@ -93,8 +93,25 @@ def run_wait_until(param: dict, stop: threading.Event) -> bool:
     return True
 
 
-def run_launch(param: dict, stop: threading.Event) -> bool:
+def _split_args(args_str: str) -> list[str]:
+    """Split a user-typed argument string into a list.
+
+    shlex's default POSIX mode treats backslash as an escape character, which
+    silently strips the separators out of Windows paths ("C:\\Games\\x"
+    becomes "C:Gamesx"). On Windows use non-POSIX mode and drop the outer
+    quotes it leaves on quoted tokens (subprocess re-quotes as needed).
+    """
     import shlex
+    if not args_str:
+        return []
+    if sys.platform != "win32":
+        return shlex.split(args_str)
+    tokens = shlex.split(args_str, posix=False)
+    return [t[1:-1] if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'" else t
+            for t in tokens]
+
+
+def run_launch(param: dict, stop: threading.Event) -> bool:
     from pathlib import Path
 
     program = str(param.get("program", "")).strip()
@@ -126,7 +143,7 @@ def run_launch(param: dict, stop: threading.Event) -> bool:
         except subprocess.CalledProcessError:
             pass  # not running
 
-    args_list = shlex.split(args_str) if args_str else []
+    args_list = _split_args(args_str)
     cwd = str(Path(program).parent) if Path(program).parent.exists() else None
 
     if use_cmd and sys.platform == "win32":
@@ -234,6 +251,29 @@ def run_killproc(param: dict, stop: threading.Event) -> bool:
         return False
 
 
+def _windows_screen_off() -> None:
+    """Turn the monitor(s) off by broadcasting WM_SYSCOMMAND / SC_MONITORPOWER.
+
+    The script is passed with -EncodedCommand so no shell quoting is involved.
+    Fixes over the previous inline version: the type literal needs brackets
+    ([W.W]::..., "W.W::..." is a PowerShell parse error), the broadcast handle
+    is HWND_BROADCAST (0xFFFF), not -1, and PostMessage is used instead of
+    SendMessage so an unresponsive window can't hang the call.
+    """
+    import base64
+    ps = (
+        "Add-Type -Name W -Namespace W -MemberDefinition '"
+        "[DllImport(\"user32.dll\")] public static extern bool PostMessage("
+        "IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);' | Out-Null; "
+        "[void][W.W]::PostMessage([IntPtr]0xFFFF, 0x0112, [IntPtr]0xF170, [IntPtr]2)"
+    )
+    encoded = base64.b64encode(ps.encode("utf-16-le")).decode("ascii")
+    subprocess.run(
+        ["powershell", "-NoProfile", "-EncodedCommand", encoded],
+        creationflags=0x0800_0000,
+    )
+
+
 def run_power(param: dict, stop: threading.Event) -> bool:
     action = str(param.get("power_action", "shutdown")).strip()
     _log().info("MXU_POWER", f"action={action}")
@@ -246,24 +286,16 @@ def run_power(param: dict, stop: threading.Event) -> bool:
             elif action == "sleep":
                 _run_cmd(["rundll32", "powrprof.dll,SetSuspendState", "0", "1", "0"])
             elif action == "screenoff":
-                # Send WM_SYSCOMMAND SC_MONITORPOWER 2 via PowerShell
-                ps = (
-                    "Add-Type -Name W -Namespace W -MemberDefinition "
-                    "'[DllImport(\"user32.dll\")] public static extern int "
-                    "SendMessage(IntPtr h,int m,int w,int l);' | Out-Null; "
-                    "W.W::SendMessage(-1, 0x0112, 0xF170, 2)"
-                )
-                subprocess.run(
-                    ["powershell", "-NoProfile", "-Command", ps],
-                    creationflags=0x0800_0000,
-                )
+                _windows_screen_off()
         elif sys.platform == "darwin":
             if action == "shutdown":
                 subprocess.run(["osascript", "-e", "tell app \"System Events\" to shut down"])
             elif action == "restart":
                 subprocess.run(["osascript", "-e", "tell app \"System Events\" to restart"])
-            elif action in ("sleep", "screenoff"):
-                subprocess.run(["pmset", "displaysleepnow"])
+            elif action == "sleep":
+                subprocess.run(["pmset", "sleepnow"])           # whole system
+            elif action == "screenoff":
+                subprocess.run(["pmset", "displaysleepnow"])    # display only
         else:
             if action == "shutdown":
                 subprocess.run(["systemctl", "poweroff"])

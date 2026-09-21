@@ -881,16 +881,25 @@ def _outfit_to_cache(outfit: dict) -> dict:
     }
 
 
+def _norm(v):
+    """Recursively convert lists/tuples to tuples so a fingerprint compares
+    equal whether it came straight from msgpack (tuples/lists mixed) or
+    round-tripped through JSON (lists only)."""
+    if isinstance(v, (list, tuple)):
+        return tuple(_norm(i) for i in v)
+    return v
+
+
 def _outfit_from_cache(fp: dict, path: Path) -> dict:
-    """Reconstruct a fake outfit dict from a cached fingerprint for matching."""
-    # We rebuild minimal clothes/accessory structures that _coord_matches_slot
-    # can compare.  The fingerprint is the only thing that matters.
+    """Reconstruct a fake outfit dict from a cached fingerprint for matching.
+
+    Everything is normalised with _norm() so it can be compared against a
+    live slot fingerprint built by _clothes_fp()/_acc_fp() (which use tuples).
+    """
     return {
-        "_cached_fp":        fp["clothes_fp"],
+        "_cached_fp":        _norm(fp["clothes_fp"]),
         "_cached_acc_occ":   frozenset(fp["acc_occupied"]),
-        "_cached_acc_col":   {int(k): tuple(tuple(c) if c else None
-                                            for c in v)
-                              for k, v in fp["acc_colors"].items()},
+        "_cached_acc_col":   {int(k): _norm(v) for k, v in fp["acc_colors"].items()},
         "path": path,
     }
 
@@ -898,10 +907,10 @@ def _outfit_from_cache(fp: dict, path: Path) -> dict:
 def _coord_matches_slot_cached(slot: dict, cached: dict,
                                threshold: float = 0.70) -> bool:
     """Match a chara slot against a cached coord fingerprint."""
-    c_fp   = _clothes_fp(slot["clothes"])
+    c_fp   = _norm(_clothes_fp(slot["clothes"]))
     co_fp  = cached["_cached_fp"]
     n      = max(len(c_fp), len(co_fp), 1)
-    hits   = sum(1 for a, b in zip(c_fp, co_fp) if list(a) == b)
+    hits   = sum(1 for a, b in zip(c_fp, co_fp) if a == b)
     if hits / n < threshold:
         return False
 
@@ -913,11 +922,7 @@ def _coord_matches_slot_cached(slot: dict, cached: dict,
     if c_occ != co_occ:
         return False
     shared = c_occ & co_occ
-    return all(
-        (tuple(tuple(x) if x else None for x in c_col.get(i, ())) ==
-         co_col.get(i))
-        for i in shared
-    )
+    return all(_norm(c_col.get(i, ())) == co_col.get(i, ()) for i in shared)
 
 
 def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, dict]:

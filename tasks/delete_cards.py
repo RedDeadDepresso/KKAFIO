@@ -5,6 +5,7 @@ delete_cards.py — Send character cards, coordinate cards (or Studio scenes)
 
 
 
+import os
 from pathlib import Path
 
 from send2trash import send2trash
@@ -21,26 +22,31 @@ from utils.config import GameType
 from utils.logger import logger
 
 
+def _path_key(p: Path | str) -> str:
+    """Canonical string for comparing paths regardless of case (Windows),
+    symlinks/junctions, or relative segments. Both the scanned cards and the
+    exclusion set must go through this, otherwise a card can fail to exclude
+    itself just because its folder was configured with different casing."""
+    return os.path.normcase(os.path.realpath(str(p)))
+
+
 def _collect_guids_in_use(chara_dirs: list[Path], scene_dirs: list[Path],
                           coord_dirs: list[Path],
                           exclude: set[Path], use_cache: bool = False) -> set[str]:
     """Return the union of every mod GUID referenced by every chara card in
     chara_dirs, every scene in scene_dirs, and every coordinate card in
-    coord_dirs, EXCLUDING the card(s) actually being deleted. Used by
+    coord_dirs, EXCLUDING every file in `exclude` (the cards being deleted
+    *and* any coordinate cards bundled for deletion with them). Used by
     CheckSharedMods to make sure a zipmod isn't deleted out from under a
     character/scene/coordinate that isn't being touched.
 
-    This always scans (and, when `use_cache` is True, builds/reuses) the
-    full per-file GUID cache for each folder — including the file(s) in
-    `exclude` — then excludes those specific files' own GUIDs from the
-    union afterward. That means the same on-disk cache
-    (kkafio_chara_guid_cache.json etc.) can always be built/reused as-is,
-    regardless of whether the card(s) being deleted happen to live inside
-    one of these folders, instead of needing a separate uncached scan any
-    time that's the case.
+    The full per-file GUID cache for each folder is always built/reused —
+    including the file(s) in `exclude` — and those files' own GUIDs are
+    dropped from the union afterward, so the same on-disk cache can be reused
+    no matter where the cards being deleted live.
     """
     guids: set[str] = set()
-    exclude_strs = {str(p.resolve()) for p in exclude}
+    exclude_keys = {_path_key(p) for p in exclude}
 
     for dirs, collect_by_file in (
         (chara_dirs, collect_chara_guids_by_file),
@@ -49,7 +55,7 @@ def _collect_guids_in_use(chara_dirs: list[Path], scene_dirs: list[Path],
     ):
         by_file = collect_by_file(dirs, use_cache=use_cache)
         for path_str, file_guids in by_file.items():
-            if path_str in exclude_strs:
+            if _path_key(path_str) in exclude_keys:
                 continue
             guids.update(file_guids)
 
@@ -102,9 +108,13 @@ class DeleteCards(BaseTask):
         self._local_coord_maps[coord_dir] = coord_map
         return coord_map
 
-    def _collect_files(self, content_path: Path, game_base: Path,
-                       mods_ov: Path | None, coord_ov: Path | None,
-                       guids_in_use_elsewhere: set[str] | None) -> list[Path]:
+    def _plan_card(self, content_path: Path, game_base: Path,
+                   mods_ov: Path | None, coord_ov: Path | None) -> dict:
+        """Phase 1: work out which card/coordinate files go with
+        `content_path` and which mod GUIDs they reference. Does NOT look at
+        mods yet — that has to wait until every card in the batch has been
+        planned, so the shared-mod check knows the complete set of files that
+        are about to be deleted (including bundled coordinates)."""
         logger.info("DELETE", f"Processing: {content_path.name}")
 
         raw       = content_path.read_bytes()
@@ -152,51 +162,65 @@ class DeleteCards(BaseTask):
             own_guids = []
             logger.warning("DELETE", "  Unrecognized card type — deleting file as-is, no mods scanned")
 
-        all_guids = set(own_guids) | coord_guids
+        return {
+            "content_path": content_path,
+            "files":        files,
+            "all_guids":    set(own_guids) | coord_guids,
+            "mods_dir":     mods_dir,
+        }
 
-        if mods_dir and mods_dir.exists() and all_guids:
-            logger.info("DELETE",
-                f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
+    def _resolve_mods(self, plan: dict,
+                      guids_in_use_elsewhere: set[str] | None) -> list[Path]:
+        """Phase 2: find the zipmods that can be deleted along with a planned
+        card, skipping modpack mods and mods still used by any card that is
+        NOT part of this deletion batch."""
+        mods_dir  = plan["mods_dir"]
+        all_guids = plan["all_guids"]
 
-            local_map = self._get_local_mods_map(mods_dir)
-            game_type = self.config.config_data.get("Core", {}).get(
-                "GameType", GameType.KOIKATSU.value)
-            # include_modpack is intentionally non-configurable here — never touch modpack mods
-            modpack_index = load_modpack_index(game_type=game_type) or {}
+        if not (mods_dir and mods_dir.exists() and all_guids):
+            if not mods_dir:
+                logger.info("DELETE", "  Mods directory not available — skipping mod lookup")
+            return []
 
-            guid_map: dict[str, Path] = {}
-            for guid in all_guids:
-                if guid in modpack_index:
-                    continue  # modpack-provided — never touched by DeleteCards
-                p = local_map.get(guid)
-                if p is not None and p.exists():
-                    guid_map[guid] = p
+        logger.info("DELETE",
+            f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
 
-            kept_shared = 0
-            if guids_in_use_elsewhere is not None:
-                for guid in list(guid_map.keys()):
-                    if guid in guids_in_use_elsewhere:
-                        logger.info("DELETE",
-                            f"    Keeping {guid_map[guid].name} — still used by another "
-                            "installed character/scene")
-                        del guid_map[guid]
-                        kept_shared += 1
+        local_map = self._get_local_mods_map(mods_dir)
+        game_type = self.config.config_data.get("Core", {}).get(
+            "GameType", GameType.KOIKATSU.value)
+        # include_modpack is intentionally non-configurable here — never touch modpack mods
+        modpack_index = load_modpack_index(game_type=game_type) or {}
 
-            logger.info("DELETE",
-                f"  Zipmods found: {len(guid_map)}  "
-                f"missing: {len(all_guids - set(guid_map.keys()) - (guids_in_use_elsewhere or set()) - set(modpack_index))}"
-                + (f"  kept (shared): {kept_shared}" if kept_shared else ""))
-            files.extend(guid_map.values())
+        guid_map: dict[str, Path] = {}
+        for guid in all_guids:
+            if guid in modpack_index:
+                continue  # modpack-provided — never touched by DeleteCards
+            p = local_map.get(guid)
+            if p is not None and p.exists():
+                guid_map[guid] = p
 
-            # Reflect the deletions in the in-memory map so later cards in
-            # this same run don't need to re-scan the mods folder to see
-            # that these are now gone.
-            for guid in guid_map:
-                local_map.pop(guid, None)
-        elif not mods_dir:
-            logger.info("DELETE", "  Mods directory not available — skipping mod lookup")
+        kept_shared = 0
+        if guids_in_use_elsewhere is not None:
+            for guid in list(guid_map.keys()):
+                if guid in guids_in_use_elsewhere:
+                    logger.info("DELETE",
+                        f"    Keeping {guid_map[guid].name} — still used by another "
+                        "installed character/scene")
+                    del guid_map[guid]
+                    kept_shared += 1
 
-        return files
+        logger.info("DELETE",
+            f"  Zipmods found: {len(guid_map)}  "
+            f"missing: {len(all_guids - set(guid_map.keys()) - (guids_in_use_elsewhere or set()) - set(modpack_index))}"
+            + (f"  kept (shared): {kept_shared}" if kept_shared else ""))
+
+        # Reflect the deletions in the in-memory map so later cards in
+        # this same run don't need to re-scan the mods folder to see
+        # that these are now gone.
+        for guid in guid_map:
+            local_map.pop(guid, None)
+
+        return list(guid_map.values())
 
     def run(self) -> None:
         content_paths = [Path(p) for p in self.content_paths if p]
@@ -207,6 +231,20 @@ class DeleteCards(BaseTask):
         game_base = Path(self.config.config_data["Core"]["GamePath"])
         mods_ov   = Path(self.mods_dir_str)  if self.mods_dir_str  else None
         coord_ov  = Path(self.coord_dir_str) if self.coord_dir_str else None
+
+        # Phase 1 — plan every card (which coordinate files go with it, which
+        # GUIDs it needs) before touching mods, so the shared-mod check can
+        # exclude the *complete* set of files about to be deleted.
+        plans: list[dict] = []
+        for content_path in content_paths:
+            if not content_path.is_file():
+                logger.error("DELETE", f"Not found: {content_path}")
+                continue
+            self.log_start("DELETE")
+            plans.append(self._plan_card(content_path, game_base, mods_ov, coord_ov))
+
+        if not plans:
+            return
 
         guids_in_use_elsewhere: set[str] | None = None
         if self.check_shared_mods:
@@ -223,8 +261,11 @@ class DeleteCards(BaseTask):
                 coord_dirs = [Path(self.coord_dir_str)]
             else:
                 coord_dirs = [game_path["coordinate"]] if "coordinate" in game_path else []
-            exclude    = {p.resolve() for p in content_paths}
+            # Every card AND bundled coordinate about to be deleted — their own
+            # GUIDs must not count as "still in use elsewhere".
+            exclude = {f for plan in plans for f in plan["files"]}
 
+            logger.line()
             logger.info("DELETE",
                 "Checking for shared mods across chara/scene/coordinate folders before deleting...")
             guids_in_use_elsewhere = _collect_guids_in_use(chara_dirs, scene_dirs, coord_dirs,
@@ -232,20 +273,20 @@ class DeleteCards(BaseTask):
             logger.info("DELETE",
                 f"Found {len(guids_in_use_elsewhere)} GUID(s) still referenced elsewhere")
 
-        for content_path in content_paths:
-            if not content_path.is_file():
-                logger.error("DELETE", f"Not found: {content_path}")
-                continue
-
+        # Phase 2 — resolve mods and delete.
+        handled: set[str] = set()   # a coordinate can be bundled by several cards
+        for plan in plans:
             self.log_start("DELETE")
-            files   = self._collect_files(content_path, game_base, mods_ov, coord_ov,
-                                          guids_in_use_elsewhere)
+            logger.info("DELETE", f"Deleting: {plan['content_path'].name}")
+            files = plan["files"] + self._resolve_mods(plan, guids_in_use_elsewhere)
+            files = [f for f in files if _path_key(f) not in handled]
             deleted = 0
 
             logger.info("DELETE", f"  Sending {len(files)} file(s) to bin:")
             for f in files:
                 try:
                     send2trash(str(f))
+                    handled.add(_path_key(f))
                     logger.removed("DELETE", f.name)
                     deleted += 1
                 except Exception as e:

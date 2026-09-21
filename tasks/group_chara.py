@@ -164,8 +164,13 @@ def _safe_folder_name(name: str) -> str:
     return name.strip()
 
 
-def process(folder_path: Path, json_str: str) -> None:
-    """Move chara PNGs into series subfolders based on the LLM JSON response."""
+def process(folder_path: Path, json_str: str, include_subfolders: bool = False) -> None:
+    """Move chara PNGs into series subfolders based on the LLM JSON response.
+
+    include_subfolders must match what export() was given: when True, cards
+    already sitting in subfolders are regrouped too (moved into
+    <folder_path>/<series>/); when False only top-level cards are touched.
+    """
     folder_path = Path(folder_path)
     validate_input_path("GROUP", folder_path)
 
@@ -196,14 +201,14 @@ def process(folder_path: Path, json_str: str) -> None:
     logger.info("GROUP",
         f"Processing {len(dest_map)} assignment(s) in {folder_path}")
 
-    png_files = list(folder_path.rglob("*.png"))
+    if include_subfolders:
+        png_files = list(folder_path.rglob("*.png"))
+    else:
+        png_files = list(folder_path.glob("*.png"))
     moved = 0
     skipped = 0
 
     for png in png_files:
-        # Skip files already inside a series subfolder
-        if png.parent != folder_path:
-            continue
         # Pre-filter: skip non-KK/KKSP files before passing to kkloader
         try:
             raw = png.read_bytes()
@@ -229,6 +234,9 @@ def process(folder_path: Path, json_str: str) -> None:
             continue
 
         dest_dir = folder_path / series_folder
+        if png.parent == dest_dir:
+            skipped += 1          # already in the right series folder
+            continue
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / png.name
 
@@ -282,4 +290,4 @@ class GroupChara(BaseTask):
             logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
             return
 
-        process(folder, response)
+        process(folder, response, include_subfolders=self.include_subfolders)

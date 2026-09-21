@@ -113,10 +113,14 @@ def _load_history() -> dict[str, str]:
 
 
 def _save_history(history: dict[str, str]) -> None:
+    """Write the history atomically (temp file + rename) so a crash or Stop
+    in the middle of a save can't leave a truncated/corrupt history file."""
     HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    HISTORY_FILE.write_text(
+    tmp = HISTORY_FILE.with_name(HISTORY_FILE.name + ".tmp")
+    tmp.write_text(
         json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+    os.replace(tmp, HISTORY_FILE)
 
 
 # ---------------------------------------------------------------------------
@@ -172,20 +176,36 @@ async def _download_file(
     if skip_downloaded and url in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
         return url, None
+    # Stream into "<name>.part" and only rename to the real name once the whole
+    # body has arrived. A failed/cancelled transfer therefore never leaves a
+    # truncated card behind under its final name (where Install Contents
+    # would happily pick it up).
+    part: Path | None = None
+    completed = False
     try:
         import aiofiles
         async with client.stream("GET", url) as response:
             response.raise_for_status()
             filename = _resolve_filename(response, url, default_name)
             dest = directory / filename
+            part = dest.with_name(dest.name + ".part")
             logger.info("DLOAD", f"Downloading: {filename}")
-            async with aiofiles.open(dest, "wb") as f:
+            async with aiofiles.open(part, "wb") as f:
                 async for chunk in response.aiter_bytes(chunk_size=65536):
                     await f.write(chunk)
+        os.replace(part, dest)
+        completed = True
         history[url] = str(dest)
         return url, None
     except Exception as exc:
         return url, exc
+    finally:
+        if part is not None and not completed:
+            # Covers errors and cancellation (Stop / Ctrl+C) alike.
+            try:
+                part.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 async def _download_files(
@@ -243,6 +263,7 @@ async def _download_pages(
             client, file_urls, directory, default_name_fn, history, skip)
         total_ok   += ok
         total_fail += fail
+        _save_history(history)   # checkpoint after every page
 
     return total_ok, total_fail
 
@@ -486,9 +507,19 @@ class DownloadContents(BaseTask):
                         ok   = 0
                     total_ok   += ok
                     total_fail += fail
+                    # Persist after every URL so an interrupted run keeps
+                    # everything downloaded so far.
+                    _save_history(history)
 
-        asyncio.run(_run_all())
-        _save_history(history)
+        try:
+            asyncio.run(_run_all())
+        finally:
+            # Also runs on Stop / Ctrl+C (KeyboardInterrupt) and on errors, so
+            # "Skip already downloaded" still works on the next run.
+            try:
+                _save_history(history)
+            except Exception as e:
+                logger.error("DLOAD", f"Could not save download history: {e}")
 
         self.log_done("DLOAD", moved=total_ok, skipped=total_fail,
                       extra=f"{total_ok + total_fail} total")
