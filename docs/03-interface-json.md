@@ -114,6 +114,33 @@ isn't reaching the task that uses it, the bug is almost always a mismatch
 between the option's ID and the string literal passed to `_extract_opt()`
 in `utils/config.py` — check there, not `pipeline_override`.
 
+`_TASK_KEY`, `_TASK_DEFAULTS`, `_build_task_config()`, `_DEFAULT_TASK_PATHS`,
+and the `self.<task> = self.config_data["Task"]` accessor properties at the
+end of `validate_tasks()` don't have to be hand-kept in sync with
+`interface.json` though — `tools/generate_config.py` regenerates all five,
+using exactly this "`pipeline_override` doubles as documentation" signal
+(plus each option's own `"default"`) as its source of truth. It resolves
+the config key an option's value goes into from its `pipeline_override`
+(top-level, or the union of its cases'), which matches the hand-written
+mapping for every option in this file except one (`ContentTypes`, called
+out in the script itself), and reports anything else it can't resolve as a
+warning rather than guessing. The accessor property names come from
+converting each task's PascalCase name to snake_case.
+
+```sh
+python tools/generate_config.py            # regenerate utils/config.py
+python tools/generate_config.py --dry-run  # print the generated file, don't write it
+python tools/generate_config.py --diff     # unified diff against the current file
+python tools/generate_config.py --check    # exit 1 if utils/config.py is stale (CI)
+```
+
+Run it (without `--check`) after adding, renaming, or removing a task or
+option, and address any warnings it prints before committing — they mean an
+option's config-key mapping couldn't be resolved automatically and was
+skipped rather than guessed at. The rest of `utils/config.py` (the `Config`
+class, path validation, `GameType`, etc.) has no `interface.json` equivalent
+and is untouched by the generator.
+
 ## `task` entries
 
 ```jsonc
@@ -135,9 +162,10 @@ under the top-level `"option"` dict).
 
 `"name"` must exactly match a key in `_TASK_KEY` / `_TASK_DEFAULTS` in
 `utils/config.py`, and the `elif task_name == "...":` string in
-`_build_task_config()`. Nothing enforces this at schema level — a typo here
-means the task silently never runs (Python only reads task names it
-recognizes; see step 5 in [02 — How It Works](02-how-it-works.md)).
+`_build_task_config()` — run `tools/generate_config.py` after renaming a
+task here so those stay matched. Nothing enforces this at schema level — a
+typo here means the task silently never runs (Python only reads task names
+it recognizes; see step 5 in [02 — How It Works](02-how-it-works.md)).
 
 ## `group` entries
 

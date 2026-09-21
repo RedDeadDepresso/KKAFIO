@@ -25,6 +25,12 @@ MXU JSON structure:
       }
     ]
   }
+
+NOTE: _TASK_KEY, _TASK_DEFAULTS, _build_task_config() and
+_DEFAULT_TASK_PATHS below are generated from interface.json by
+tools/generate_config.py — re-run that script instead of hand-editing them
+after changing a task or option. Everything else in this file is
+hand-written and untouched by the generator.
 """
 
 import sys
@@ -112,41 +118,41 @@ def _extract_special_task_params(opt_values: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Task-name → config key mapping
+# Task-name -> config key mapping
 # ---------------------------------------------------------------------------
 
 _TASK_KEY = {
-    "InstallContents":     "InstallContents",
-    "UninstallContents":      "UninstallContents",
+    "CreateBackup": "CreateBackup",
+    "DownloadContents": "DownloadContents",
     "FilterConvertKKS": "FilterConvertKKS",
-    "DeleteCards":      "DeleteCards",
-    "ArchiveCards":     "ArchiveCards",
-    "GroupChara":       "GroupChara",
-    "RenameChara":      "RenameChara",
-    "UngroupChara":     "UngroupChara",
     "FilterDuplicateContents": "FilterDuplicateContents",
-    "CreateBackup":     "CreateBackup",
-    "DownloadContents":    "DownloadContents",
     "DownloadMissingMods": "DownloadMissingMods",
-    "ExportMods":       "ExportMods",
     "CompressCardsTextures": "CompressCardsTextures",
+    "InstallContents": "InstallContents",
+    "UninstallContents": "UninstallContents",
+    "GroupChara": "GroupChara",
+    "UngroupChara": "UngroupChara",
+    "RenameChara": "RenameChara",
+    "ArchiveCards": "ArchiveCards",
+    "DeleteCards": "DeleteCards",
+    "ExportMods": "ExportMods",
 }
 
 _TASK_DEFAULTS = {
-    "InstallContents":     {"Enable": False, "InputPath": "", "ExtractArchive": True,  "FileConflicts": "Skip", "Password": "Skip"},
-    "UninstallContents":      {"Enable": False, "InputPath": ""},
-    "FilterConvertKKS": {"Enable": False, "InputPath": "", "Filter": False, "Convert": False, "ExtractArchive": True, "Password": "Skip"},
-    "DeleteCards":      {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "IncludeCoordinates": True},
-    "ArchiveCards":     {"Enable": False, "ContentPaths": [], "Format": "7z", "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": "", "IncludeModpack": False, "CombinedArchive": True, "OutputPath": "", "IncludeCoordinates": True},
-    "GroupChara":       {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": ""},
-    "RenameChara":      {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": ""},
-    "UngroupChara":     {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
-    "FilterDuplicateContents": {"Enable": False, "InputPath": "", "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename", "UseCache": True},
-    "CreateBackup":     {"Enable": False, "OutputPath": "", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
-    "DownloadContents":    {"Enable": False, "Links": "", "OutputDir": "", "SkipDownloaded": True},
-    "DownloadMissingMods": {"Enable": False, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ContentTypes": ["Chara", "Scene", "Coord"], "UseCache": True, "SideloaderModpack": "OnlyUsed", "TelegramSource": "No", "TelegramChatLinks": "https://t.me/c/2549022984/299 # you need to be part of this chat\nhttps://t.me/kknowcc # you need to be part of this chat"},
-    "ExportMods":       {"Enable": False, "OutputPath": "", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
-    "CompressCardsTextures": {"Enable": False, "InputPath": "", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False}
+    "CreateBackup": {"Enable": False, "OutputPath": "C:/KKAFIO/Backups", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
+    "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True},
+    "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Filter": False, "Convert": False, "ExtractArchive": True, "Password": "Skip"},
+    "FilterDuplicateContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "UseCache": True, "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename"},
+    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "Skip", "TelegramSource": "No", "TelegramChatLinks": "# You need to be a member of all these chats if you want to search mods within them\nhttps://t.me/c/2549022984\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False},
+    "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Skip", "ExtractArchive": True, "Password": "Skip"},
+    "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True},
+    "GroupChara": {"Enable": False, "InputPath": "", "IncludeSubfolders": False, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official English title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n"},
+    "UngroupChara": {"Enable": False, "InputPath": "", "DeleteEmptyFolders": True},
+    "RenameChara": {"Enable": False, "InputPath": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's well-known English name.\n\nRules:\n- Use Western name order: firstname = given name, lastname = family name.\n- Use the English name the character is commonly known by, not a literal\n  transliteration (e.g. lastname \"Tohsaka\" firstname \"Rin\", not \"Tosaka Rin\").\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n"},
+    "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CoordDir": ""},
+    "DeleteCards": {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "ExportMods": {"Enable": False, "OutputPath": "C:/KKAFIO/Exported Mods", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
 }
 
 
@@ -159,126 +165,118 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         if v is not None:
             cfg[config_key] = v
 
-    if task_name == "InstallContents":
-        _set("InputPath",      "DownloadsInputPath")
+    if task_name == "CreateBackup":
+        _set("OutputPath", "BackupOutputPath")
+        _set("Filename", "BackupFilename")
+        selected = _extract_opt(opt_values, "BackupFolders")
+        if selected is not None:
+            cfg["mods"] = "Mods" in selected
+            cfg["UserData"] = "UserData" in selected
+            cfg["BepInEx"] = "BepInEx" in selected
+
+    elif task_name == "DownloadContents":
+        _set("OutputDir", "DownloadOutputDir")
+        _set("Links", "DownloadLinks")
+        _set("SkipDownloaded", "SkipDownloaded")
+
+    elif task_name == "FilterConvertKKS":
+        _set("InputPath", "DownloadsInputPath")
+        _set("Filter", "Filter")
+        _set("Convert", "Convert")
         _set("ExtractArchive", "ExtractArchive")
+        _set("Password", "ArchivePassword")
+
+    elif task_name == "FilterDuplicateContents":
+        _set("InputPath", "DownloadsInputPath")
+        _set("UseCache", "UseCache")
+        _set("FuzzyChara", "FuzzyMatching")
+        _set("Keep", "KeepStrategy")
+        _set("DuplicateAction", "DuplicateAction")
+
+    elif task_name == "DownloadMissingMods":
+        _set("ContentTypes", "ContentTypes")
+        _set("SideloaderModpack", "SideloaderModpack")
+        _set("TelegramSource", "TelegramSource")
+        _set("TelegramChatLinks", "TelegramChatLinks")
+        _set("UseCache", "UseCache")
+        _set("ModsDir", "ModsDir")
+        _set("CharaDir", "CharaDir")
+        _set("SceneDir", "SceneDir")
+        _set("CoordDir", "CoordDir")
+
+    elif task_name == "CompressCardsTextures":
+        _set("InputPath", "DownloadsInputPath")
+        _set("KoiCardTexToolPath", "KoiCardTexToolPath")
+        _set("DeleteOriginalCards", "DeleteOriginalCards")
+
+    elif task_name == "InstallContents":
+        _set("InputPath", "DownloadsInputPath")
         selected = _extract_opt(opt_values, "InstallContentTypes")
         if selected is not None:
-            cfg["Chara"]    = "Chara"    in selected
-            cfg["Mods"]     = "Mods"     in selected
-            cfg["Coords"]   = "Coords"   in selected
-            cfg["Scenes"]   = "Scenes"   in selected
+            cfg["Chara"] = "Chara" in selected
+            cfg["Mods"] = "Mods" in selected
+            cfg["Coords"] = "Coords" in selected
+            cfg["Scenes"] = "Scenes" in selected
             cfg["Overlays"] = "Overlays" in selected
-        v = _extract_opt(opt_values, "FileConflicts")
-        if v: cfg["FileConflicts"] = v
-        v = _extract_opt(opt_values, "ArchivePassword")
-        if v: cfg["Password"] = v
+        _set("FileConflicts", "FileConflicts")
+        _set("ExtractArchive", "ExtractArchive")
+        _set("Password", "ArchivePassword")
 
     elif task_name == "UninstallContents":
         _set("InputPath", "DownloadsInputPath")
         selected = _extract_opt(opt_values, "InstallContentTypes")
         if selected is not None:
-            cfg["Chara"]    = "Chara"    in selected
-            cfg["Mods"]     = "Mods"     in selected
-            cfg["Coords"]   = "Coords"   in selected
-            cfg["Scenes"]   = "Scenes"   in selected
+            cfg["Chara"] = "Chara" in selected
+            cfg["Mods"] = "Mods" in selected
+            cfg["Coords"] = "Coords" in selected
+            cfg["Scenes"] = "Scenes" in selected
             cfg["Overlays"] = "Overlays" in selected
-
-    elif task_name == "FilterConvertKKS":
-        _set("InputPath",      "DownloadsInputPath")
-        _set("Filter",         "Filter")
-        _set("Convert",        "Convert")
-        _set("ExtractArchive", "ExtractArchive")
-        v = _extract_opt(opt_values, "ArchivePassword")
-        if v: cfg["Password"] = v
-
-    elif task_name == "DeleteCards":
-        _set("ContentPaths",       "ContentPaths")
-        _set("CheckSharedMods",    "CheckSharedMods")
-        _set("AutoResolve",        "AutoResolve")
-        _set("ModsDir",            "ModsDir")
-        _set("CharaDir",           "CharaDir")
-        _set("SceneDir",           "SceneDir")
-        _set("CoordDir",           "CoordDir")
-        _set("UseCache",           "UseCache")
-        _set("IncludeCoordinates", "IncludeCoordinates")
-
-    elif task_name == "ArchiveCards":
-        _set("ContentPaths",       "ContentPaths")
-        _set("AutoResolve",        "AutoResolve")
-        _set("ModsDir",            "ModsDir")
-        _set("CoordDir",           "CoordDir")
-        _set("UseCache",           "UseCache")
-        _set("IncludeModpack",     "IncludeModpack")
-        _set("CombinedArchive",    "CombinedArchive")
-        _set("OutputPath",         "ArchiveOutputPath")
-        _set("IncludeCoordinates", "IncludeCoordinates")
-        v = _extract_opt(opt_values, "ArchiveFormat")
-        if v: cfg["Format"] = v
 
     elif task_name == "GroupChara":
         _set("InputPath", "InputPath")
         _set("IncludeSubfolders", "GroupCharaIncludeSubfolders")
-        v = _extract_opt(opt_values, "GroupCharaPrompt")
-        if v is not None: cfg["Prompt"] = v
-
-    elif task_name == "RenameChara":
-        _set("InputPath",          "InputPath")
-        _set("SkipAlreadyRenamed", "SkipAlreadyRenamed")
-        _set("UpdateMetadata",     "UpdateMetadata")
-        _set("RenameFiles",        "RenameFiles")
-        v = _extract_opt(opt_values, "RenameCharaPrompt")
-        if v is not None: cfg["Prompt"] = v
+        _set("Prompt", "GroupCharaPrompt")
 
     elif task_name == "UngroupChara":
-        _set("InputPath",          "InputPath")
+        _set("InputPath", "InputPath")
         _set("DeleteEmptyFolders", "DeleteEmptyFolders")
 
-    elif task_name == "FilterDuplicateContents":
-        _set("InputPath",  "DownloadsInputPath")
-        _set("FuzzyChara", "FuzzyMatching")
-        v = _extract_opt(opt_values, "KeepStrategy")
-        if v: cfg["Keep"] = v
-        _set("DuplicateAction", "DuplicateAction")
+    elif task_name == "RenameChara":
+        _set("InputPath", "InputPath")
+        _set("SkipAlreadyRenamed", "SkipAlreadyRenamed")
+        _set("UpdateMetadata", "UpdateMetadata")
+        _set("RenameFiles", "RenameFiles")
+        _set("Prompt", "RenameCharaPrompt")
+
+    elif task_name == "ArchiveCards":
+        _set("OutputPath", "ArchiveOutputPath")
+        _set("ContentPaths", "ContentPaths")
+        _set("CombinedArchive", "CombinedArchive")
+        _set("Format", "ArchiveFormat")
+        _set("IncludeModpack", "IncludeModpack")
+        _set("IncludeCoordinates", "IncludeCoordinates")
         _set("UseCache", "UseCache")
+        _set("AutoResolve", "AutoResolve")
+        _set("ModsDir", "ModsDir")
+        _set("CoordDir", "CoordDir")
 
-    elif task_name == "CreateBackup":
-        _set("OutputPath", "BackupOutputPath")
-        v = _extract_opt(opt_values, "BackupFilename")
-        if v: cfg["Filename"] = v
-        selected = _extract_opt(opt_values, "BackupFolders")
-        if selected is not None:
-            cfg["mods"]     = "Mods"     in selected
-            cfg["UserData"] = "UserData" in selected
-            cfg["BepInEx"]  = "BepInEx"  in selected
-
-    elif task_name == "DownloadContents":
-        _set("Links",           "DownloadLinks")
-        _set("OutputDir",       "DownloadOutputDir")
-        _set("SkipDownloaded",  "SkipDownloaded")
-
-    elif task_name == "DownloadMissingMods":
-        _set("ModsDir",             "ModsDir")
-        _set("CharaDir",            "CharaDir")
-        _set("SceneDir",            "SceneDir")
-        _set("CoordDir",            "CoordDir")
-        _set("ContentTypes",        "ContentTypes")
-        _set("UseCache",            "UseCache")
-        _set("SideloaderModpack",   "SideloaderModpack")
-        _set("TelegramSource",      "TelegramSource")
-        _set("TelegramChatLinks",   "TelegramChatLinks")
+    elif task_name == "DeleteCards":
+        _set("ContentPaths", "ContentPaths")
+        _set("CheckSharedMods", "CheckSharedMods")
+        _set("IncludeCoordinates", "IncludeCoordinates")
+        _set("UseCache", "UseCache")
+        _set("AutoResolve", "AutoResolve")
+        _set("ModsDir", "ModsDir")
+        _set("CharaDir", "CharaDir")
+        _set("SceneDir", "SceneDir")
+        _set("CoordDir", "CoordDir")
 
     elif task_name == "ExportMods":
-        _set("OutputPath",   "ExportOutputPath")
-        _set("Guids",        "Guids")
+        _set("OutputPath", "ExportOutputPath")
+        _set("Guids", "Guids")
         _set("RenameToGuid", "RenameToGuid")
-        _set("UseCache",     "UseCache")
-        _set("ModsDir",      "ModsDir")
-
-    elif task_name == "CompressCardsTextures":
-        _set("InputPath",           "DownloadsInputPath")
-        _set("KoiCardTexToolPath",  "KoiCardTexToolPath")
-        _set("DeleteOriginalCards", "DeleteOriginalCards")
+        _set("UseCache", "UseCache")
+        _set("ModsDir", "ModsDir")
 
     return cfg
 
@@ -452,20 +450,21 @@ class Config:
                 logger.info("SCRIPT", f"Optional path not found (skipping): {path}")
 
     # Per-task (InputPath/OutputPath) defaults shipped in interface.json —
-    # kept in sync manually. If a task's folder is unset by the user (still
-    # exactly this default) and doesn't exist yet, it's created automatically
+    # generated by tools/generate_config.py from each option's own
+    # "default". If a task's folder is unset by the user (still exactly
+    # this default) and doesn't exist yet, it's created automatically
     # instead of failing validation; a folder the user chose themselves is
     # still treated as an error if missing, since that's more likely a typo
     # worth surfacing than something we should silently paper over.
     _DEFAULT_TASK_PATHS = {
-        ("InstallContents", "InputPath"):          "C:/KKAFIO/Downloads",
-        ("UninstallContents", "InputPath"):        "C:/KKAFIO/Downloads",
-        ("FilterConvertKKS", "InputPath"):         "C:/KKAFIO/Downloads",
-        ("FilterDuplicateContents", "InputPath"):  "C:/KKAFIO/Downloads",
-        ("CompressCardsTextures", "InputPath"):    "C:/KKAFIO/Downloads",
-        ("CreateBackup", "OutputPath"):             "C:/KKAFIO/Backups",
-        ("ArchiveCards", "OutputPath"):              "C:/KKAFIO/Archived Cards",
-        ("ExportMods", "OutputPath"):                "C:/KKAFIO/Exported Mods",
+        ("CreateBackup", "OutputPath"): "C:/KKAFIO/Backups",
+        ("FilterConvertKKS", "InputPath"): "C:/KKAFIO/Downloads",
+        ("FilterDuplicateContents", "InputPath"): "C:/KKAFIO/Downloads",
+        ("CompressCardsTextures", "InputPath"): "C:/KKAFIO/Downloads",
+        ("InstallContents", "InputPath"): "C:/KKAFIO/Downloads",
+        ("UninstallContents", "InputPath"): "C:/KKAFIO/Downloads",
+        ("ArchiveCards", "OutputPath"): "C:/KKAFIO/Archived Cards",
+        ("ExportMods", "OutputPath"): "C:/KKAFIO/Exported Mods",
     }
 
     def validate_tasks(self):
@@ -486,17 +485,17 @@ class Config:
                         logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
                         raise Exception(f"Path invalid: {path_obj}")
 
-        self.archive_cards    = self.config_data["ArchiveCards"]
-        self.download_missing_mods  = self.config_data["DownloadMissingMods"]
-        self.export_mods            = self.config_data["ExportMods"]
-        self.compress_cards_textures = self.config_data["CompressCardsTextures"]
-        self.download_contents   = self.config_data["DownloadContents"]
-        self.delete_cards     = self.config_data["DeleteCards"]
-        self.create_backup    = self.config_data["CreateBackup"]
-        self.filter_convert_kks           = self.config_data["FilterConvertKKS"]
-        self.filter_duplicate_contents= self.config_data["FilterDuplicateContents"]
-        self.rename_chara     = self.config_data["RenameChara"]
-        self.group_chara      = self.config_data["GroupChara"]
-        self.install_contents    = self.config_data["InstallContents"]
-        self.ungroup_chara    = self.config_data["UngroupChara"]
-        self.uninstall_contents     = self.config_data["UninstallContents"]
+        self.create_backup             = self.config_data["CreateBackup"]
+        self.download_contents         = self.config_data["DownloadContents"]
+        self.filter_convert_kks        = self.config_data["FilterConvertKKS"]
+        self.filter_duplicate_contents = self.config_data["FilterDuplicateContents"]
+        self.download_missing_mods     = self.config_data["DownloadMissingMods"]
+        self.compress_cards_textures   = self.config_data["CompressCardsTextures"]
+        self.install_contents          = self.config_data["InstallContents"]
+        self.uninstall_contents        = self.config_data["UninstallContents"]
+        self.group_chara               = self.config_data["GroupChara"]
+        self.ungroup_chara             = self.config_data["UngroupChara"]
+        self.rename_chara              = self.config_data["RenameChara"]
+        self.archive_cards             = self.config_data["ArchiveCards"]
+        self.delete_cards              = self.config_data["DeleteCards"]
+        self.export_mods               = self.config_data["ExportMods"]
