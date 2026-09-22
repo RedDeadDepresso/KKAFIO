@@ -136,9 +136,15 @@ async def _download_betterrepack(
 async def _get_telegram_link(client, guid: str) -> str:
     """Scrape koikatsucards.com/mod_library for the Telegram t.me link."""
     from bs4 import BeautifulSoup
-    url = f"{KOIKATSUCARDS_MOD_LIB}?q={guid}&pageSize=50"
+    # Pass q as a query param via httpx instead of interpolating the raw
+    # GUID into the URL string — a GUID containing "&", "#", "%", or spaces
+    # (real GUIDs in the wild do: e.g. "3DPubicHairs by CM12", ".com top_matoi")
+    # would otherwise corrupt the query string (truncating it at "&"/"#", or
+    # sending an already-percent-decoded value that means something
+    # different once re-decoded server-side). httpx encodes `params` values
+    # correctly regardless of what characters they contain.
     try:
-        r = await client.get(url)
+        r = await client.get(KOIKATSUCARDS_MOD_LIB, params={"q": guid, "pageSize": 50})
         r.raise_for_status()
     except Exception as e:
         logger.error("DLMOD", f"koikatsucards.com request failed [{guid}]: {e}")
@@ -414,10 +420,18 @@ async def _ensure_session(tg_data: dict) -> bool:
     Ensure a valid Telethon .session file exists in the session directory.
     If the session file is missing or the user is not authorised, walk them
     through phone + code (+ optional 2FA) dialogs and save the result.
-    Returns True if authorised, False if the user cancelled.
+    Returns True if authorised, False if the user cancelled or sign-in
+    ultimately failed.
     """
     from telethon import TelegramClient
-    from telethon.errors import SessionPasswordNeededError
+    from telethon.errors import (
+        SessionPasswordNeededError,
+        PasswordHashInvalidError,
+        PhoneCodeInvalidError,
+        PhoneCodeExpiredError,
+        PhoneNumberInvalidError,
+        FloodWaitError,
+    )
     from utils.password_dialog import password_dialog
     from utils.constants import CONFIG_DIR
 
@@ -429,48 +443,88 @@ async def _ensure_session(tg_data: dict) -> bool:
     client = TelegramClient(str(session_file), tg_data["api_id"], tg_data["api_hash"])
     await client.connect()
 
-    if await client.is_user_authorized():
-        await client.disconnect()
-        return True
-
-    logger.info("DLMOD", "Telegram session not found or expired — starting sign-in...")
-
-    phone = password_dialog(
-        "Telegram Sign-in",
-        "Enter your Telegram phone number (with country code, e.g. +447911123456):",
-    )
-    if not phone:
-        logger.error("DLMOD", "Phone number not provided.")
-        await client.disconnect()
-        return False
-
-    await client.send_code_request(phone)
-
-    code = password_dialog(
-        "Telegram Verification Code",
-        f"A verification code was sent to {phone}.\nEnter the code:",
-    )
-    if not code:
-        logger.error("DLMOD", "Verification code not provided.")
-        await client.disconnect()
-        return False
-
+    # Every return path below used to call client.disconnect() itself —
+    # meaning any exception NOT explicitly caught (a wrong verification
+    # code, an invalid phone number, a Telegram flood-wait, ...) skipped
+    # disconnecting entirely and crashed the whole DownloadMissingMods task
+    # with an unhandled exception on top of that. A try/finally around
+    # everything after connect() guarantees the connection is always
+    # closed, and every Telethon call below that can plausibly fail on
+    # ordinary user input (wrong code, mistyped phone number, wrong 2FA
+    # password, rate limiting) is now caught and reported as a normal
+    # "sign-in failed" instead of an unhandled crash.
     try:
-        await client.sign_in(phone, code)
-    except SessionPasswordNeededError:
-        pw = password_dialog(
-            "Telegram Two-Factor Password",
-            "Your account has Two-Factor Authentication enabled.\nEnter your 2FA password:",
-        )
-        if not pw:
-            logger.error("DLMOD", "2FA password not provided.")
-            await client.disconnect()
-            return False
-        await client.sign_in(password=pw)
+        if await client.is_user_authorized():
+            return True
 
-    await client.disconnect()
-    logger.success("DLMOD", "Telegram sign-in successful. Session saved.")
-    return True
+        logger.info("DLMOD", "Telegram session not found or expired — starting sign-in...")
+
+        phone = password_dialog(
+            "Telegram Sign-in",
+            "Enter your Telegram phone number (with country code, e.g. +447911123456):",
+        )
+        if not phone:
+            logger.error("DLMOD", "Phone number not provided.")
+            return False
+
+        try:
+            await client.send_code_request(phone)
+        except PhoneNumberInvalidError:
+            logger.error("DLMOD", f"'{phone}' is not a valid phone number.")
+            return False
+        except FloodWaitError as e:
+            logger.error("DLMOD",
+                f"Telegram is rate-limiting sign-in attempts — try again in {e.seconds}s.")
+            return False
+
+        # A verification code is easy to mistype or let expire while
+        # switching to the Telegram app to read it, so this specifically
+        # gets a few retries rather than failing the whole task on the
+        # first mistake.
+        max_code_attempts = 3
+        for attempt in range(1, max_code_attempts + 1):
+            code = password_dialog(
+                "Telegram Verification Code",
+                f"A verification code was sent to {phone}.\nEnter the code:",
+            )
+            if not code:
+                logger.error("DLMOD", "Verification code not provided.")
+                return False
+
+            try:
+                await client.sign_in(phone, code)
+                break
+            except (PhoneCodeInvalidError, PhoneCodeExpiredError) as e:
+                if attempt < max_code_attempts:
+                    logger.warning("DLMOD",
+                        f"Verification code was {'invalid' if isinstance(e, PhoneCodeInvalidError) else 'expired'} "
+                        f"— try again ({attempt}/{max_code_attempts}).")
+                    continue
+                logger.error("DLMOD",
+                    f"Verification code still incorrect after {max_code_attempts} attempts — giving up.")
+                return False
+            except SessionPasswordNeededError:
+                pw = password_dialog(
+                    "Telegram Two-Factor Password",
+                    "Your account has Two-Factor Authentication enabled.\nEnter your 2FA password:",
+                )
+                if not pw:
+                    logger.error("DLMOD", "2FA password not provided.")
+                    return False
+                try:
+                    await client.sign_in(password=pw)
+                except PasswordHashInvalidError:
+                    logger.error("DLMOD", "2FA password was incorrect.")
+                    return False
+                break
+
+        logger.success("DLMOD", "Telegram sign-in successful. Session saved.")
+        return True
+    finally:
+        try:
+            await client.disconnect()
+        except Exception:
+            pass
 
 
 # Hardcoded numeric ID for the KK_archive_modlibrary public channel.
@@ -831,6 +885,31 @@ class DownloadMissingMods(BaseTask):
         guid_str_map = build_mods_cache(mods_dir, include_modpack=False, use_cache=self.use_cache)
         logger.info("DLMOD", f"Local GUIDs: {len(guid_str_map)}")
 
+        # guid_str_map/local_guids above deliberately EXCLUDE the Sideloader
+        # Modpack subtree (include_modpack=False) — that's the set new
+        # downloads get written into and de-duplicated against, and "Local
+        # GUIDs: N" is meant to describe the user's own non-modpack mods.
+        #
+        # But "is this GUID already installed at all" (used below to decide
+        # what's actually missing) needs the FULL picture, including mods
+        # that live inside the user's own Sideloader Modpack folder — which
+        # is exactly where BetterRepack's own installer puts everything by
+        # default. Using the narrower set for that check meant "OnlyUsed"
+        # mode would re-download every single modpack-referenced GUID a
+        # user already had (since it was invisible to `missing_local`), and
+        # "All" mode — which unions in the *entire* modpack index minus
+        # local_guids — would try to re-download essentially the whole
+        # Sideloader Modpack every run for anyone using the standard
+        # BetterRepack layout.
+        #
+        # The mods cache file is shared between include_modpack scopes
+        # (each scope's entries persist independently — see
+        # build_mods_cache's docstring), so this second call only opens
+        # zipmods that weren't already covered by the call above; it does
+        # not re-scan or re-hash anything.
+        all_local_guid_map = build_mods_cache(mods_dir, include_modpack=True, use_cache=self.use_cache)
+        all_local_guids: set[str] = set(all_local_guid_map.keys())
+
         local_guids: set[str] = set(guid_str_map.keys())
 
         # ── Step 2: modpack index ─────────────────────────────────────────
@@ -862,7 +941,12 @@ class DownloadMissingMods(BaseTask):
         referenced_guids = chara_guids | scene_guids | coord_guids
 
         # ── Step 4: decide what to download ──────────────────────────────
-        missing_local: set[str] = referenced_guids - local_guids
+        # Use all_local_guids (includes the Sideloader Modpack subtree) here
+        # — see the comment above where it's built — so a mod the user
+        # already has via their own Sideloader Modpack install isn't
+        # treated as missing just because it's outside the non-modpack
+        # scope that guid_str_map/local_guids tracks.
+        missing_local: set[str] = referenced_guids - all_local_guids
 
         match self.modpack_mode:
             case "Skip":
@@ -870,7 +954,7 @@ class DownloadMissingMods(BaseTask):
             case "OnlyUsed":
                 to_download = missing_local
             case "All":
-                to_download = missing_local | (set(modpack_index.keys()) - local_guids)
+                to_download = missing_local | (set(modpack_index.keys()) - all_local_guids)
             case _:
                 to_download = missing_local
 
@@ -969,8 +1053,20 @@ class DownloadMissingMods(BaseTask):
                         logger.error("DLMOD",
                             "Telegram credentials not provided — "
                             f"skipping {len(telegram_queue)} mod(s).")
-                        fail += len(br_failed)  # br_failed already counted above
+                        # br_failed's `fail += 1` already happened in the
+                        # BetterRepack loop above (this used to double-count
+                        # it here on top of that). from_telegram was never
+                        # counted anywhere yet, so it still needs it. Both
+                        # groups are added to failed_guids here too — the
+                        # BetterRepack loop deliberately leaves a br_failed
+                        # guid out of failed_guids while Telegram is still
+                        # queued to retry it, and neither group was ever
+                        # added to the itemized failure list otherwise, so
+                        # without this the final "failed" count and the
+                        # per-GUID list shown in the report would disagree.
                         fail += len(from_telegram)
+                        failed_guids.update(from_telegram)
+                        failed_guids.update(br_failed)
                     else:
                         # Ensure session file exists before starting downloads
                         authorised = await _ensure_session(tg_data)
@@ -978,8 +1074,9 @@ class DownloadMissingMods(BaseTask):
                             logger.error("DLMOD",
                                 "Telegram sign-in failed — "
                                 f"skipping {len(telegram_queue)} mod(s).")
-                            fail += len(br_failed)
                             fail += len(from_telegram)
+                            failed_guids.update(from_telegram)
+                            failed_guids.update(br_failed)
                         else:
                             teleget_downloader = None
 
@@ -1172,7 +1269,19 @@ class DownloadMissingMods(BaseTask):
                                         if guid not in br_failed:
                                             fail += 1
                                     else:
-                                        # No source found anywhere that was tried
+                                        # No source found anywhere that was tried.
+                                        # A br_failed guid was already counted
+                                        # into `fail` back in the BetterRepack
+                                        # loop (deferred there pending this
+                                        # Telegram retry) — since it's ending up
+                                        # here as unresolved rather than a
+                                        # confirmed failure, undo that count so
+                                        # the final "failed: N, unresolved: M"
+                                        # summary doesn't count the same guid
+                                        # in both buckets.
+                                        if guid in br_failed:
+                                            fail -= 1
+                                            failed_guids.discard(guid)
                                         unresolved.append(guid)
                             finally:
                                 if teleget_downloader is not None:
@@ -1207,7 +1316,12 @@ class DownloadMissingMods(BaseTask):
             chara_guids       = chara_guids,
             scene_guids       = scene_guids,
             coord_guids       = coord_guids,
-            local_guids       = local_guids,
+            # The full "what's actually installed" set (includes the
+            # Sideloader Modpack subtree), same reasoning as missing_local
+            # above — the README's "Already installed / covered" line
+            # should reflect what the user truly has, not just the
+            # non-modpack subset.
+            local_guids       = all_local_guids,
             modpack_index     = modpack_index,
             to_download       = to_download,
             from_betterrepack = from_betterrepack,
