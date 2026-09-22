@@ -86,8 +86,22 @@ def _rq(s: io.BytesIO) -> int:
 
 
 def _rb(s: io.BytesIO) -> bytes:
-    n = struct.unpack("b", s.read(1))[0]
-    return s.read(n)
+    """Read a .NET BinaryWriter-style length-prefixed byte string.
+
+    The prefix is a 7-bit-encoded (LEB128-style) varint, same as _read_str
+    below uses via _read_7bit_int — not a single byte. A plain
+    struct.unpack("b", ...) (signed byte) happens to work for header/version
+    strings, which are always short ASCII tags well under 128 bytes, but
+    breaks for anything longer: a signed byte can't represent 128-255 at
+    all (it reads as negative, and io.BytesIO.read(negative) reads to EOF,
+    silently swallowing the rest of the buffer and corrupting every field
+    parsed after it), and even an unsigned byte would still be wrong for
+    length >= 128, which needs a second continuation byte. A coordinate
+    card's user-entered name is exactly the field most likely to hit this
+    — especially with Japanese/Chinese text, where 40-something characters
+    can already exceed 127 UTF-8 bytes.
+    """
+    return s.read(_read_7bit_int(s))
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +210,13 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
     actually starts or ends.
     """
     guids: list[str] = []
+    # A memoryview slice is a view into the same buffer, not a copy — unlike
+    # bytes slicing, `mv[a:b]` here doesn't allocate. A scene with many
+    # actors/objects can have this needle appear dozens of times, and this
+    # used to bytes-slice up to 20MB fresh on every single occurrence found
+    # (data.find() itself still needs to scan `data` directly since
+    # memoryview doesn't support .find(), so that part is unchanged).
+    mv = memoryview(data)
     for ext_id in UAR_EXT_IDS:
         needle = ext_id.encode("utf-8")
         search_from = 0
@@ -207,7 +228,7 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
             value_start = idx + len(needle)
             try:
                 unpacker = msgpack.Unpacker(raw=False, strict_map_key=False)
-                unpacker.feed(data[value_start:value_start + 20_000_000])
+                unpacker.feed(mv[value_start:value_start + 20_000_000])
                 plugin_data_raw = unpacker.unpack()
             except Exception:
                 continue

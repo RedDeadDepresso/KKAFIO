@@ -148,15 +148,53 @@ class FileManager:
         path_to_7zip = self.find_7zip()
         if not path_to_7zip:
             raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
+
+        output_path = Path(output_path)
+        if output_path.exists():
+            # `7z a` (add) UPDATES an existing archive rather than replacing
+            # it: entries not in `files` this time (e.g. a mod that's no
+            # longer needed, or last run's README) are left behind instead
+            # of being dropped, and if the same content_path bundle name is
+            # reused (single-card mode always reuses "<name>_bundle.7z")
+            # every re-run would silently accumulate stale entries forever.
+            # An explicit archive is meant to be a clean, reproducible
+            # snapshot of exactly `files` — start from nothing.
+            output_path.unlink()
+
         flag = "-t7z" if fmt == "7z" else "-tzip"
         # -sccUTF-8 makes 7-Zip write its console output as UTF-8, so decode it
         # as UTF-8 explicitly instead of relying on the process-wide locale
         # (which is UTF-8 under MXU because kkafio.rs sets PYTHONUTF8=1, but
         # would be the legacy codepage when run from a terminal).
-        cmd = [path_to_7zip, "a", flag, "-sccUTF-8", str(output_path)] + [str(f) for f in files]
-        result = run_text(cmd, capture_output=True, encoding="utf-8")
-        if result.returncode not in (0, 1):
-            raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
+        #
+        # File list is passed via a 7-Zip @listfile instead of directly on
+        # the command line: cmd.exe / CreateProcess have a ~32K character
+        # command-line limit, and a combined archive built from many cards
+        # (each with its own zipmods and matched coordinates) can easily
+        # exceed that with long absolute paths, causing 7-Zip to simply
+        # never be invoked (or invoked with a silently truncated file list).
+        import tempfile
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".txt", prefix="kkafio_7z_list_",
+            delete=False, encoding="utf-8",
+        ) as listfile:
+            listfile.write("\n".join(str(f) for f in files))
+            listfile_path = listfile.name
+
+        try:
+            # -scsUTF-8: the listfile itself was written as UTF-8 — needed so
+            # 7-Zip parses non-ASCII paths in it correctly (Koikatsu mod and
+            # character names are very often Japanese/Chinese).
+            cmd = [path_to_7zip, "a", flag, "-sccUTF-8", "-scsUTF-8",
+                   str(output_path), f"@{listfile_path}"]
+            result = run_text(cmd, capture_output=True, encoding="utf-8")
+            if result.returncode not in (0, 1):
+                raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
+        finally:
+            try:
+                Path(listfile_path).unlink()
+            except OSError:
+                pass
     
     def create_game_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""

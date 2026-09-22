@@ -144,6 +144,8 @@ def _phash(image_bytes: bytes) -> str | None:
 
 
 def _phash_distance(a: str, b: str) -> int:
+    """Kept for any external caller; _fuzzy_group parses each hash once
+    instead of calling this per pair (see below)."""
     try:
         import imagehash
         return imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b)
@@ -270,7 +272,20 @@ def _build_rename_map(to_handle: list[Path], keep_path: Path | None) -> dict[Pat
 def _fuzzy_group(paths: list[Path], phashes: list[str | None]) -> list[list[Path]]:
     """Group paths by perceptual similarity, given precomputed phashes
     (same order/length as paths — a None entry means that file's phash
-    couldn't be computed, so it's never grouped with anything)."""
+    couldn't be computed, so it's never grouped with anything).
+
+    A grouping this permissive can be risky on its own: pHash distance
+    alone doesn't distinguish "same character, re-saved" from "two
+    different characters who happen to be posed the same way", and the
+    default action for a fuzzy group is to move everything but one card
+    into _duplicates_/ — i.e. treat them as the same character. This is
+    a real limitation of pHash-based grouping in general; a caller relying
+    on this for anything beyond "flag likely duplicates for a human to
+    confirm" should treat FUZZY_THRESHOLD as a recall/precision trade-off,
+    not a correctness guarantee, and default DuplicateAction to something
+    reversible (Move, not Delete) when FuzzyChara is on — which
+    FilterDuplicateContents' config already does.
+    """
     if not paths:
         return []
 
@@ -286,13 +301,27 @@ def _fuzzy_group(paths: list[Path], phashes: list[str | None]) -> list[list[Path
     def union(x: int, y: int) -> None:
         parent[find(x)] = find(y)
 
+    # Parse every hex phash into an imagehash.ImageHash object exactly once
+    # up front, instead of re-parsing both operands' hex strings on every
+    # one of the O(n^2) pairwise comparisons below (_phash_distance did
+    # `import imagehash; hex_to_hash(a); hex_to_hash(b)` per call — for n
+    # candidates that's O(n^2) redundant hex-to-bit-array conversions of
+    # the same n distinct strings). The `-` operator between two
+    # already-parsed ImageHash objects is a cheap array comparison.
+    try:
+        import imagehash
+        parsed: list = [imagehash.hex_to_hash(p) if p is not None else None
+                        for p in phashes]
+    except Exception:
+        parsed = [None] * n
+
     for i in range(n):
-        if phashes[i] is None:
+        if parsed[i] is None:
             continue
         for j in range(i + 1, n):
-            if phashes[j] is None:
+            if parsed[j] is None:
                 continue
-            if _phash_distance(phashes[i], phashes[j]) <= _FUZZY_THRESHOLD:
+            if (parsed[i] - parsed[j]) <= _FUZZY_THRESHOLD:
                 union(i, j)
 
     groups: dict[int, list[Path]] = defaultdict(list)
@@ -438,22 +467,15 @@ class FilterDuplicateContents:
         # 4. Fuzzy chara grouping — only cards not already caught exactly
         # ------------------------------------------------------------------
         if self.fuzzy_chara:
-            def _is_chara(path: Path):
-                return path, _classify(path.read_bytes()) == "chara"
-
+            # Every PNG was already classified once in step 2 (new_png_cache
+            # holds each path's category alongside its hash) — re-opening
+            # and re-running _classify() on every non-exact-duplicate file
+            # here was pure repeated I/O for information already in hand.
             non_exact = [p for p in png_files if p not in exact_chara_paths]
-            fuzzy_candidates = []
-            if non_exact:
-                with ThreadPoolExecutor(max_workers=workers) as ex:
-                    fuzz_futures = {ex.submit(_is_chara, p): p for p in non_exact}
-                    for future in as_completed(fuzz_futures):
-                        try:
-                            path, is_chara = future.result()
-                            if is_chara:
-                                fuzzy_candidates.append(path)
-                        except Exception as e:
-                            path = fuzz_futures[future]
-                            logger.error("DUPLIC", f"Could not read {path.name}: {e}")
+            fuzzy_candidates = [
+                p for p in non_exact
+                if new_png_cache.get(str(p), {}).get("category") == "chara"
+            ]
 
             if fuzzy_candidates:
                 logger.info("DUPLIC",

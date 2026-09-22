@@ -145,8 +145,21 @@ def _load_core(config_path: str | None = None, instance_index: int = 0):
     return config, file_manager
 
 
+def _traceback_path():
+    # CONFIG_DIR is a fixed, always-writable, per-platform location (the
+    # same place config.json/7zip.json/telegram.json already live) —
+    # writing "traceback.log" as a bare relative path instead landed
+    # wherever the process happened to be launched from (the game's own
+    # folder if double-clicked there, possibly a read-only location like
+    # Program Files, and a different place every time depending on how
+    # KKAFIO was started), so a user following "see traceback.log" often
+    # couldn't find it or the write silently failed.
+    from utils.constants import CONFIG_DIR
+    return CONFIG_DIR / "traceback.log"
+
+
 def _write_traceback(task: str) -> None:
-    with open("traceback.log", "a", encoding="utf-8") as f:
+    with open(_traceback_path(), "a", encoding="utf-8") as f:
         f.write(f"[{task}]\n")
         traceback.print_exc(None, f, True)
         f.write("\n")
@@ -154,8 +167,7 @@ def _write_traceback(task: str) -> None:
 
 def _clear_traceback() -> None:
     try:
-        from pathlib import Path
-        Path("traceback.log").unlink(missing_ok=True)
+        _traceback_path().unlink(missing_ok=True)
     except Exception:
         pass
 
@@ -529,7 +541,7 @@ def cmd_run(args):
             try:
                 fn()
             except Exception:
-                logger.error("CLI", f"Task error: {task_name}. See traceback.log for details.")
+                logger.error("CLI", f"Task error: {task_name}. See {_traceback_path()} for details.")
                 _write_traceback(task_name)
                 sys.exit(1)
 
@@ -1311,8 +1323,16 @@ except SystemExit:
     raise
 
 except Exception:
-    print("[ERROR] CLI initialisation error. See traceback.log for details.")
-    with open("traceback.log", "w", encoding="utf-8") as f:
+    from pathlib import Path
+    try:
+        from utils.constants import CONFIG_DIR
+        _tb_path = CONFIG_DIR / "traceback.log"
+    except Exception:
+        # utils.constants itself failed to import/initialise — fall back to
+        # the old relative path rather than losing the traceback entirely.
+        _tb_path = Path("traceback.log")
+    print(f"[ERROR] CLI initialisation error. See {_tb_path} for details.")
+    with open(_tb_path, "w", encoding="utf-8") as f:
         f.write("CLI Initialisation Error\n")
         traceback.print_exc(None, f, True)
         f.write("\n")

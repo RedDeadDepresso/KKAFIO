@@ -23,6 +23,12 @@ from utils.classifier import CardType, get_card_type
 from utils.file_manager import FileManager
 from utils.logger import logger
 
+# Output folders this task creates. Excluded from the next run's scan so
+# re-running it (e.g. as a repeating pipeline step) doesn't re-filter cards
+# it already sorted, and doesn't sweep up a KKS2KK_ converted copy (which
+# is itself a valid KK-type card once patched) into _KK_card_.
+_OUTPUT_FOLDER_NAMES = {"_KKS_card_", "_KK_card_", "_KKS_to_KK_"}
+
 
 class FilterConvertKKS:
     def __init__(self, config: Config, file_manager: FileManager):
@@ -37,7 +43,12 @@ class FilterConvertKKS:
     # ------------------------------------------------------------------
 
     def get_list(self, folder_path: Path) -> list[Path]:
-        return [f for f in folder_path.rglob("*.png")]
+        out: list[Path] = []
+        for f in folder_path.rglob("*.png"):
+            if _OUTPUT_FOLDER_NAMES & {p.name for p in f.relative_to(folder_path).parents}:
+                continue
+            out.append(f)
+        return out
 
     def check_png(self, card_path: Path) -> CardType:
         return get_card_type(card_path.read_bytes())
@@ -45,6 +56,25 @@ class FilterConvertKKS:
     # ------------------------------------------------------------------
     # Binary conversion helper
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _safe_move(src: Path, dest_folder: Path) -> Path | None:
+        """Move src into dest_folder, handling name clashes and I/O errors
+        instead of letting shutil.move raise/clobber. Returns the final
+        path, or None if the move failed."""
+        dest = dest_folder / src.name
+        if dest.exists() and not dest.samefile(src):
+            stem, suffix = src.stem, src.suffix
+            n = 1
+            while dest.exists():
+                dest = dest_folder / f"{stem}_{n}{suffix}"
+                n += 1
+        try:
+            shutil.move(str(src), str(dest))
+            return dest
+        except OSError as e:
+            logger.error("SCRIPT", f"Could not move {src.name}: {e}")
+            return None
 
     def _patch_kks_to_kk(self, card_path: Path, destination_path: Path) -> None:
         """Patch a KKS card binary so it loads as a KK card."""
@@ -62,13 +92,23 @@ class FilterConvertKKS:
     # Archive extraction
     # ------------------------------------------------------------------
 
-    def _extract_archives(self, path: Path) -> None:
+    def _extract_archives(self, path: Path) -> list[Path]:
+        """Extract every archive found directly under `path`. Returns the
+        list of extraction folders so the caller can clean them up once
+        their contents have actually been filtered — extracting leaves a
+        `<name>_<timestamp>` copy of every file on disk that nothing else
+        here deletes, so left alone it grows without bound on every run."""
         _, archive_list = self.file_manager.find_all_files(path)
         if not archive_list:
-            return
+            return []
         logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
+        extract_paths: list[Path] = []
         for archive in archive_list:
-            self.file_manager.extract_archive(archive[0], task_config=self.config.filter_convert_kks)
+            extract_path = self.file_manager.extract_archive(
+                archive[0], task_config=self.config.filter_convert_kks)
+            if extract_path is not None:
+                extract_paths.append(extract_path)
+        return extract_paths
 
     # ------------------------------------------------------------------
     # Main
@@ -79,8 +119,7 @@ class FilterConvertKKS:
 
         validate_input_path("FILTER", path, default_path=DEFAULT_DOWNLOADS_PATH)
 
-        if self.extract_archive:
-            self._extract_archives(path)
+        extract_paths = self._extract_archives(path) if self.extract_archive else []
 
         png_list = self.get_list(path)
         if not png_list:
@@ -123,7 +162,7 @@ class FilterConvertKKS:
                     dest = kks_to_kk_folder if self.filter else card.parent
                     self._patch_kks_to_kk(card, dest)
                 if self.filter:
-                    shutil.move(str(card), str(kks_folder / card.name))
+                    self._safe_move(card, kks_folder)
 
             if self.filter:
                 if self.convert:
@@ -150,13 +189,27 @@ class FilterConvertKKS:
                 kk_folder = path / "_KK_card_"
                 kk_folder.mkdir(exist_ok=True)
 
+                moved_ok = 0
                 for card in kk_cards:
-                    shutil.move(str(card), str(kk_folder / card.name))
+                    if self._safe_move(card, kk_folder) is not None:
+                        moved_ok += 1
 
                 logger.success("SCRIPT",
-                    f"[{len(kk_cards)}] KK/KKSP cards -> [{kk_folder.name}]")
+                    f"[{moved_ok}] KK/KKSP card(s) -> [{kk_folder.name}]"
+                    + (f"  ({len(kk_cards) - moved_ok} failed)" if moved_ok < len(kk_cards) else ""))
             else:
                 logger.success("SCRIPT",
                     f"[{len(kk_cards)}] KK/KKSP card(s) found (Filter disabled — not moved)")
         else:
             logger.success("SCRIPT", "No KK/KKSP cards found")
+
+        for extract_path in extract_paths:
+            remaining = any(extract_path.rglob("*"))
+            if remaining:
+                continue
+            try:
+                shutil.rmtree(extract_path)
+                logger.info("SCRIPT", f"Cleaned up extracted folder: {extract_path.name}")
+            except OSError as e:
+                logger.warning("SCRIPT",
+                    f"Could not remove extracted folder {extract_path.name}: {e}")

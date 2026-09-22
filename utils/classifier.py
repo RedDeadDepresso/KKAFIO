@@ -26,12 +26,17 @@ def get_card_type(card: str | Path | bytes):
     if b"KoiKatuChara" in card:
         card_type = CardType.KK
 
-        if b"KoiKatuCharaSP" in card:
+        # A Studio scene embeds one or more full chara blocks (which is why
+        # "KoiKatuCharaSP"/"KoiKatuCharaSun" markers can appear inside a
+        # scene file), so the scene marker must be checked before those,
+        # not after — checking Sun/SP first would misclassify any scene
+        # containing an SP or Sun character as a bare chara/coordinate card.
+        if b"sceneInfo" in card:
+            card_type = CardType.SCENE
+        elif b"KoiKatuCharaSP" in card:
             card_type = CardType.KKSP
         elif b"KoiKatuCharaSun" in card:
             card_type = CardType.KKS
-        elif b"sceneInfo" in card:
-            card_type = CardType.SCENE
 
     return card_type
 

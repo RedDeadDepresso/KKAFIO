@@ -4,6 +4,7 @@ archive_cards.py — Bundle KK character cards, coordinate cards (or Studio
                     matching coordinate cards into a 7z or zip archive.
 """
 
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -44,6 +45,7 @@ class ArchiveCards(BaseTask):
         # scratch for every single card.
         self._local_mods_maps : dict[Path, dict[str, Path]]  = {}
         self._local_coord_maps: dict[Path, dict[str, dict]]  = {}
+        self._modpack_skip_counts: dict[Path, int] = {}
 
     def _get_local_mods_map(self, mods_dir: Path) -> dict[str, Path]:
         mods_dir = mods_dir.resolve()
@@ -55,6 +57,24 @@ class ArchiveCards(BaseTask):
         guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
         self._local_mods_maps[mods_dir] = guid_map
         return guid_map
+
+    def _get_modpack_skip_count(self, mods_dir: Path) -> int:
+        """How many zipmods under mods_dir live in a Sideloader Modpack
+        folder — purely informational, logged once per card when
+        IncludeModpack is off. Previously this did `mods_dir.rglob(...)`
+        on every single card being archived; for a mods folder with
+        thousands of zipmods (the Sideloader Modpack alone easily has
+        several thousand) that's a full directory walk repeated once per
+        card in the batch. Cached per mods_dir instead, computed once.
+        """
+        mods_dir = mods_dir.resolve()
+        cached = self._modpack_skip_counts.get(mods_dir)
+        if cached is not None:
+            return cached
+        count = sum(1 for zp in mods_dir.rglob("*.zipmod")
+                    if in_modpack_folder(zp, mods_dir))
+        self._modpack_skip_counts[mods_dir] = count
+        return count
 
     def _get_coord_map(self, coord_dir: Path) -> dict[str, dict]:
         coord_dir = coord_dir.resolve()
@@ -146,8 +166,7 @@ class ArchiveCards(BaseTask):
                     guid_map[guid] = p
 
             if not self.include_modpack:
-                skipped = sum(1 for zp in mods_dir.rglob("*.zipmod")
-                              if in_modpack_folder(zp, mods_dir))
+                skipped = self._get_modpack_skip_count(mods_dir)
                 if skipped:
                     logger.info("ARCHV",
                         f"  Skipped {skipped} zipmod(s) in Sideloader Modpack folder(s)")
@@ -343,14 +362,22 @@ class ArchiveCards(BaseTask):
             # Write README to a temp file and include it in the archive
             readme_text = self._build_readme(
                 card_infos, archive_name, self.include_modpack, generated)
+            # A README.txt entry named for what it actually is once inside the
+            # archive, written to a fresh temp *directory* per call rather
+            # than a fixed shared filename in the system temp dir — the
+            # previous shared path meant two ArchiveCards runs happening at
+            # the same time (two MXU instances, or a scheduled run
+            # overlapping a manual one) could read/write/delete each
+            # other's README mid-run.
             import tempfile as _tf
-            readme_tmp = Path(_tf.gettempdir()) / "kkafio_README.txt"
+            readme_dir = Path(_tf.mkdtemp(prefix="kkafio_archive_"))
+            readme_tmp = readme_dir / "README.txt"
             readme_tmp.write_text(readme_text, encoding="utf-8")
 
             logger.line()
             logger.info("ARCHV",
                 f"Creating combined {self.format} archive: {archive_name} "
-                f"({len(all_files)} file(s) + README.txt)")
+                f"({len(all_files)} file(s) + {readme_tmp.name})")
             archive_failed = False
             try:
                 self.file_manager.create_archive(
@@ -395,12 +422,13 @@ class ArchiveCards(BaseTask):
                 readme_text = self._build_readme(
                     [card_info], archive_name, self.include_modpack, generated)
                 import tempfile as _tf
-                readme_tmp = Path(_tf.gettempdir()) / "kkafio_README.txt"
+                readme_dir = Path(_tf.mkdtemp(prefix="kkafio_archive_"))
+                readme_tmp = readme_dir / "README.txt"
                 readme_tmp.write_text(readme_text, encoding="utf-8")
 
                 logger.info("ARCHV",
                     f"  Creating {self.format} archive: {archive_name} "
-                    f"({len(all_files)} file(s) + README.txt)")
+                    f"({len(all_files)} file(s) + {readme_tmp.name})")
                 archive_failed = False
                 try:
                     self.file_manager.create_archive(
@@ -410,7 +438,7 @@ class ArchiveCards(BaseTask):
                     logger.error("ARCHV", f"  Archive creation failed: {e}")
                     archive_failed = True
                 finally:
-                    readme_tmp.unlink(missing_ok=True)
+                    shutil.rmtree(readme_dir, ignore_errors=True)
 
                 if archive_failed:
                     # Stop instead of continuing to the next card / to a

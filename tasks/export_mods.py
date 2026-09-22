@@ -9,6 +9,7 @@ optionally renamed to [guid].zipmod so it's immediately obvious which file
 is which.
 """
 
+import filecmp
 import re
 import shutil
 from pathlib import Path
@@ -148,6 +149,19 @@ class ExportMods(BaseTask):
                 continue
 
             if dest.exists() and dest.resolve() != src.resolve():
+                # With RenameToGuid on, dest is always the same
+                # "<guid>.zipmod" path on every run, so re-running this
+                # task on GUIDs it already exported would otherwise always
+                # hit this branch and rename around its own prior output —
+                # guid.zipmod, guid_1.zipmod, guid_2.zipmod, ... forever.
+                # A dest that already holds the exact same file src would
+                # copy isn't a real clash to rename around; only rename
+                # when dest exists and is genuinely different content.
+                if filecmp.cmp(dest, src, shallow=False):
+                    logger.info("EXPORT", f"  {guid} -> {dest.name} (already exported, unchanged)")
+                    written_paths.add(dest)
+                    exported += 1
+                    continue
                 stem, suffix = dest.stem, dest.suffix
                 counter = 1
                 while dest.exists():

@@ -101,6 +101,35 @@ class KafioLogger(logging.LoggerAdapter):
     def line(self) -> None:
         print("--------------------------------------------------------------------", flush=True)
 
+    def error_count_guard(self) -> "_ErrorCountGuard":
+        """Context manager: counts ERROR-level records logged inside the
+        `with` block (via this logger only) and exposes it as `.count`
+        afterward. Used to gate destructive cleanup (e.g. deleting an
+        extracted-archive temp folder) on "everything in it actually got
+        processed without error" rather than assuming success just because
+        no exception propagated — most per-file failures here are caught
+        and only logged, not raised.
+        """
+        return _ErrorCountGuard(self.logger)
+
+
+class _ErrorCountGuard(logging.Handler):
+    def __init__(self, target_logger: logging.Logger):
+        super().__init__(level=logging.ERROR)
+        self._target = target_logger
+        self.count = 0
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.count += 1
+
+    def __enter__(self) -> "_ErrorCountGuard":
+        self.count = 0
+        self._target.addHandler(self)
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._target.removeHandler(self)
+
 
 def _build_logger() -> KafioLogger:
     # When running as script.exe stdout is block-buffered by default, which
