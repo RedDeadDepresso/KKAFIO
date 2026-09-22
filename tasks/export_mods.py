@@ -23,7 +23,10 @@ from utils.logger import logger
 # generic list bullets in case someone hand-writes a list.
 _BULLET_RE = re.compile(r"^\s*[!✗✓+~\-\*>•]\s*")
 
-# A single GUID-shaped token: letters/digits/underscore/dot/hyphen, no spaces.
+# A single simple GUID-shaped token: letters/digits/underscore/dot/hyphen,
+# no spaces. Used only for BARE (no-bullet) lines, as a heuristic to tell a
+# hand-typed comma/semicolon list of simple GUIDs apart from pasted prose
+# (a report's description lines, which always contain ordinary spaces).
 _GUID_SHAPE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]*$")
 
 
@@ -33,14 +36,35 @@ def parse_guids(raw: str) -> list[str]:
     Accepts one GUID per line — optionally prefixed with a report bullet
     ('!', '✗', '+', '~', '-', '*') and/or followed by a "(...)" note like
     Download Missing Mods' report uses — comma/semicolon-separated GUIDs on
-    one line, blank lines, and '#'-comment lines, so a report section can be
-    pasted in directly.
+    a bare (non-bulleted) line, blank lines, and '#'-comment lines, so a
+    report section can be pasted in directly.
 
-    A line with no recognized bullet is only accepted if it consists
-    *entirely* of GUID-shaped token(s) — this is what keeps a report's
-    plain description lines ("These mods could not be downloaded...") and
-    file-path lines from being misread as GUIDs, since those contain
-    ordinary spaces a bare GUID never would.
+    A *bulleted* line is trusted completely: everything after the bullet
+    (and the trailing parenthetical note, if any) is taken as a single
+    GUID verbatim, whatever characters it contains. This matters because
+    real GUIDs are very often not simple identifiers — around 13% of the
+    Sideloader Modpack's own GUIDs contain spaces ("3DPubicHairs by
+    CM12"), start with a character other than a letter/digit
+    (".com top_matoi"), or even contain a literal comma
+    ("MiIlefiore Hime Clothes1-top-b, SIHUKU1TOP" is one single GUID, not
+    two). A report only ever emits exactly one GUID per bulleted line, so
+    there's no ambiguity to resolve for that case — treating the bullet as
+    permission to take the rest of the line as-is is both safe and
+    necessary; running such a line through the strict shape check below
+    silently dropped every one of these GUIDs even though the user had
+    unambiguously marked them as single items.
+
+    A *bare* line with no recognized bullet is a different, inherently
+    ambiguous case (is a comma separating two GUIDs, or part of one GUID's
+    name? is this whole line a GUID, or a plain-English description from a
+    report header?), so it keeps the older, more conservative behavior: it
+    is only accepted if it consists *entirely* of simple GUID-shaped
+    token(s) with no spaces — this is what keeps a report's plain
+    description lines ("These mods could not be downloaded...") from being
+    misread as GUIDs. A bare line for a GUID containing a space or a
+    leading symbol needs a bullet (e.g. "- 3DPubicHairs by CM12") to be
+    recognized; this is exactly what pasting a report section already
+    gives you for free.
     """
     seen: set[str] = set()
     guids: list[str] = []
@@ -56,19 +80,36 @@ def parse_guids(raw: str) -> list[str]:
             continue
 
         # Drop a trailing parenthetical note, e.g. "guid (Sideloader Modpack/x.zipmod)"
-        line = re.split(r"\s*\(", line, maxsplit=1)[0].strip()
+        # — the space before "(" is required and deliberate: it's exactly
+        # what separates a report-appended note (the report always writes
+        # "{guid} ({path})", with a space) from a GUID that has its own
+        # parenthetical baked into the name with no preceding space, e.g.
+        # "MiIlefiore Hime Dress(Ep.5)" or "Kurisus Jacket(Glove)" — both
+        # real Sideloader Modpack GUIDs. Splitting on bare "\(" regardless
+        # of a preceding space, as this used to, truncated those down to
+        # "MiIlefiore Hime Dress" and "Kurisus Jacket", silently mangling
+        # them into the wrong (and likely nonexistent) GUID.
+        line = re.split(r"\s+\(", line, maxsplit=1)[0].strip()
         if not line:
+            continue
+
+        if has_bullet:
+            # One bullet, one GUID — take the whole remainder verbatim,
+            # commas/spaces/leading symbols and all.
+            if line not in seen:
+                seen.add(line)
+                guids.append(line)
             continue
 
         parts = [p.strip() for p in re.split(r"[,;]", line) if p.strip()]
         if not parts:
             continue
 
-        if not has_bullet and any(not _GUID_SHAPE_RE.match(p) for p in parts):
+        if any(not _GUID_SHAPE_RE.match(p) for p in parts):
             continue  # looks like prose, not a GUID (or list of GUIDs) — skip
 
         for guid in parts:
-            if _GUID_SHAPE_RE.match(guid) and guid not in seen:
+            if guid not in seen:
                 seen.add(guid)
                 guids.append(guid)
 
