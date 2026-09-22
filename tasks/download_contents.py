@@ -118,11 +118,17 @@ def _load_history() -> dict[str, str]:
 
 def _save_history(history: dict[str, str]) -> None:
     """Write the history atomically (temp file + rename) so a crash or Stop
-    in the middle of a save can't leave a truncated/corrupt history file."""
+    in the middle of a save can't leave a truncated/corrupt history file.
+
+    Written compactly (no indent) rather than indent=2: this is now
+    checkpointed after every single URL/page (see the callers below), and
+    it only grows over time as more downloads happen, so keeping it small
+    and skipping the pretty-printing overhead actually matters here.
+    """
     HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
     tmp = HISTORY_FILE.with_name(HISTORY_FILE.name + ".tmp")
     tmp.write_text(
-        json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8"
+        json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
     os.replace(tmp, HISTORY_FILE)
 

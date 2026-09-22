@@ -553,9 +553,7 @@ def cmd_install_contents(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["InstallContents"]["Enable"] = True
-        extract = None
-        if args.extract_archive is True:  extract = True
-        elif args.extract_archive is False: extract = False
+        extract = args.extract_archive  # argparse store_true/store_false pair -> already True/False/None
         run_install_contents(config, file_manager, input_path=args.input,
                           extract_archive=extract,
                           chara=args.chara, mods=args.mods,
@@ -589,21 +587,9 @@ def cmd_filter_convert_kks(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["FilterConvertKKS"]["Enable"] = True
-        filter_cards = None
-        if args.filter is True:
-            filter_cards = True
-        elif args.filter is False:
-            filter_cards = False
-        convert = None
-        if args.convert is True:
-            convert = True
-        elif args.convert is False:
-            convert = False
-        extract = None
-        if args.extract_archive is True:
-            extract = True
-        elif args.extract_archive is False:
-            extract = False
+        filter_cards = args.filter  # argparse store_true/store_false pair -> already True/False/None
+        convert = args.convert  # argparse store_true/store_false pair -> already True/False/None
+        extract = args.extract_archive  # argparse store_true/store_false pair -> already True/False/None
         run_filter_convert_kks(config, file_manager, input_path=args.input,
                    filter_cards=filter_cards,
                    convert=convert,
@@ -625,11 +611,7 @@ def cmd_download_contents(args):
             from pathlib import Path as _Path
             p = _Path(args.links)
             links = p.read_text(encoding="utf-8") if p.is_file() else args.links
-        skip = None
-        if args.skip_downloaded is True:
-            skip = True
-        elif args.skip_downloaded is False:
-            skip = False
+        skip = args.skip_downloaded  # argparse store_true/store_false pair -> already True/False/None
         run_download_contents(config, file_manager, links=links,
                            output_dir=args.output_dir,
                            skip_downloaded=skip,
@@ -799,11 +781,7 @@ def cmd_ungroup_chara(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["UngroupChara"]["Enable"] = True
-        delete_empty = None
-        if args.delete_empty is True:
-            delete_empty = True
-        elif args.delete_empty is False:
-            delete_empty = False
+        delete_empty = args.delete_empty  # argparse store_true/store_false pair -> already True/False/None
         run_ungroup_chara(config, file_manager,
                           input_path=args.input, delete_empty=delete_empty)
     except SystemExit:
@@ -853,16 +831,8 @@ def cmd_filter_duplicate_contents(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["FilterDuplicateContents"]["Enable"] = True
-        fuzzy = None
-        if args.fuzzy is True:
-            fuzzy = True
-        elif args.fuzzy is False:
-            fuzzy = False
-        use_cache = None
-        if args.use_cache is True:
-            use_cache = True
-        elif args.use_cache is False:
-            use_cache = False
+        fuzzy = args.fuzzy  # argparse store_true/store_false pair -> already True/False/None
+        use_cache = args.use_cache  # argparse store_true/store_false pair -> already True/False/None
         duplicate_action = {
             "move-rename": "Move & Rename",
             "move":        "Move",

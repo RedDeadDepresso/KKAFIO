@@ -23,7 +23,8 @@ from pathlib import Path
 from kkloader import KoikatuCharaData
 
 from tasks.base_task import BaseTask, validate_input_path
-from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
+from utils.chara_key import make_key
+from utils.classifier import CardType, get_card_type
 from utils.logger import logger
 
 CACHE_FILENAME = "kkafio_rename_cache.json"
@@ -76,33 +77,6 @@ def _stem_for(d: dict) -> str:
     return last or first or ""
 
 
-def _unity_rgb(r, g, b):
-    return (int(r*255), int(g*255), int(b*255))
-
-
-def _hair_color(kc):
-    parts = kc["Custom"]["hair"]["parts"]
-    for i, part in enumerate(parts):
-        if part.get("id", 0) == 0 and i != 1: continue
-        if i == 3: continue
-        base = part.get("baseColor")
-        if not base: continue
-        if isinstance(base, (list, tuple)) and len(base) >= 3:
-            return _unity_rgb(base[0], base[1], base[2])
-        if isinstance(base, dict):
-            v = list(base.values())
-            if len(v) >= 3: return _unity_rgb(v[0], v[1], v[2])
-    return (0, 0, 0)
-
-
-def _make_key(kc) -> str:
-    name  = kc._repr_name()
-    idx   = kc["Parameter"]["personality"]
-    pers  = PERSONALITIES[idx] if idx < len(PERSONALITIES) else str(idx)
-    color = get_simple_color_description(_hair_color(kc))
-    return f"{name} | {pers} | {color} hair"
-
-
 # ---------------------------------------------------------------------------
 # Cache
 # ---------------------------------------------------------------------------
@@ -119,9 +93,14 @@ def _load_cache(folder: Path) -> dict:
 
 def _save_cache(folder: Path, cache: dict) -> None:
     try:
-        (folder / CACHE_FILENAME).write_text(
-            json.dumps(dict(sorted(cache.items())), indent=2, ensure_ascii=False),
-            encoding="utf-8")
+        # Atomic + compact — same reasoning as the other on-disk caches in
+        # this codebase (see utils.chara_ops._atomic_write_json): a plain
+        # write_text() can leave a truncated, unreadable cache behind if
+        # interrupted, and indent=2 is pure size overhead for a file only
+        # ever read back by json.loads(). Kept sorted by key still, since
+        # that (unlike indentation) actually helps a human skim or diff it.
+        from utils.chara_ops import _atomic_write_json
+        _atomic_write_json(folder / CACHE_FILENAME, dict(sorted(cache.items())))
     except Exception as e:
         logger.error("RENAME", f"Could not save cache: {e}")
 
@@ -158,7 +137,7 @@ def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
             raw = png.read_bytes()
             if get_card_type(raw) not in (CardType.KK, CardType.KKSP):
                 return png, None
-            return png, _make_key(KoikatuCharaData.load(str(png)))
+            return png, make_key(KoikatuCharaData.load(str(png)))
         except Exception as e:
             return png, f"__error__{e}"
 
@@ -245,7 +224,7 @@ def process(folder_path: Path, json_str: str,
                 skipped += 1
                 continue
             kc  = KoikatuCharaData.load(str(png))
-            key = _make_key(kc)
+            key = make_key(kc)
         except Exception as e:
             logger.error("RENAME", f"Could not read {png.name}: {e}")
             skipped += 1

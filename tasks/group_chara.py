@@ -20,8 +20,8 @@ from pathlib import Path
 from kkloader import KoikatuCharaData
 
 from tasks.base_task import BaseTask, validate_input_path
-from utils.classifier import CardType, get_card_type, PERSONALITIES, get_simple_color_description
-
+from utils.chara_key import make_key
+from utils.classifier import CardType, get_card_type
 from utils.logger import logger
 
 # ---------------------------------------------------------------------------
@@ -50,43 +50,6 @@ JSON to fill in:
 # ---------------------------------------------------------------------------
 # Colour helper
 # ---------------------------------------------------------------------------
-
-def _unity_to_rgb(r: float, g: float, b: float) -> tuple[int, int, int]:
-    return (int(r * 255), int(g * 255), int(b * 255))
-
-
-def _hair_color(kc: KoikatuCharaData) -> tuple[int, int, int]:
-    parts = kc["Custom"]["hair"]["parts"]
-    for i, part in enumerate(parts):
-        if part.get("id", 0) == 0 and i != 1:
-            continue
-        if i == 3:
-            continue
-        base = part.get("baseColor")
-        if not base:
-            continue
-        # baseColor is a list [r, g, b, a] of 0.0-1.0 floats
-        if isinstance(base, (list, tuple)) and len(base) >= 3:
-            return _unity_to_rgb(base[0], base[1], base[2])
-        # Fallback: dict with r/g/b keys
-        if isinstance(base, dict):
-            vals = list(base.values())
-            if len(vals) >= 3:
-                return _unity_to_rgb(vals[0], vals[1], vals[2])
-    return (0, 0, 0)
-
-
-# ---------------------------------------------------------------------------
-# Key builder — stable, deterministic, used in both export and process
-# ---------------------------------------------------------------------------
-
-def _make_key(kc: KoikatuCharaData) -> str:
-    name            = kc._repr_name()
-    personality_idx = kc["Parameter"]["personality"]
-    personality     = PERSONALITIES[personality_idx] if personality_idx < len(PERSONALITIES) else str(personality_idx)
-    color           = get_simple_color_description(_hair_color(kc))
-    return f"{name} | {personality} | {color} hair"
-
 
 # ---------------------------------------------------------------------------
 # Export — build prompt + JSON, return as string for the clipboard
@@ -122,7 +85,7 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
             if get_card_type(raw) not in (CardType.KK, CardType.KKSP):
                 return png, None  # not a chara card — skip silently
             kc  = KoikatuCharaData.load(str(png))
-            return png, _make_key(kc)
+            return png, make_key(kc)
         except Exception as e:
             return png, f"__error__{e}"
 
@@ -263,7 +226,7 @@ def process(folder_path: Path, json_str: str, include_subfolders: bool = False) 
             continue
         try:
             kc  = KoikatuCharaData.load(str(png))
-            key = _make_key(kc)
+            key = make_key(kc)
         except Exception as e:
             logger.error("GROUP", f"Could not parse {png.name}: {e}")
             skipped += 1

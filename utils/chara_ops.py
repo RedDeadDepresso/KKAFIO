@@ -8,6 +8,7 @@ on its own logic.  Nothing in this file depends on config or file_manager.
 
 
 import io
+import os
 import struct
 import xml.etree.ElementTree as ET
 import zipfile
@@ -156,14 +157,30 @@ def _extract_guids_from_kkex(kkex_bytes: bytes) -> list[str]:
 # Chara and coordinate GUID parsers
 # ---------------------------------------------------------------------------
 
-def parse_chara_guids(path: Path) -> list[str]:
-    """Return sorted unique zipmod GUIDs referenced by a chara card."""
+def _payload_after_png(path: Path) -> bytes | None:
+    """Read `path` and return the raw bytes appended after the PNG's own
+    IEND chunk — the game's custom card/scene/coordinate payload that every
+    parse_*_guids()/parse_coord_outfit() function starts from. This exact
+    read-file + find-IEND-end + slice sequence used to be repeated at the
+    top of each of those functions; factored out here so there's one place
+    that knows how a KKAFIO-relevant PNG is structured, rather than several
+    copies that could individually drift (e.g. one checking `>=` and
+    another `>`) without anyone noticing.
+    """
     data = path.read_bytes()
     png_end = _find_iend_end(data)
     if png_end < 0 or png_end >= len(data):
+        return None
+    return data[png_end:]
+
+
+def parse_chara_guids(path: Path) -> list[str]:
+    """Return sorted unique zipmod GUIDs referenced by a chara card."""
+    payload = _payload_after_png(path)
+    if payload is None:
         return []
 
-    s = io.BytesIO(data[png_end:])
+    s = io.BytesIO(payload)
     _ri(s)                              # product_no
     marker = _read_str(s)
     if marker not in KNOWN_CHARA_MARKERS:
@@ -264,11 +281,10 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
 def parse_scene_guids(path: Path) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a Studio scene file."""
     try:
-        data = path.read_bytes()
-        png_end = _find_iend_end(data)
-        if png_end < 0 or png_end >= len(data):
+        payload = _payload_after_png(path)
+        if payload is None:
             return []
-        return sorted(set(_extract_guids_from_scene_blob(data[png_end:])))
+        return sorted(set(_extract_guids_from_scene_blob(payload)))
     except Exception:
         return []
 
@@ -276,12 +292,11 @@ def parse_scene_guids(path: Path) -> list[str]:
 def parse_coord_guids(path: Path) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a coordinate card."""
     try:
-        data = path.read_bytes()
-        png_end = _find_iend_end(data)
-        if png_end < 0 or png_end >= len(data):
+        payload = _payload_after_png(path)
+        if payload is None:
             return []
 
-        s = io.BytesIO(data[png_end:])
+        s = io.BytesIO(payload)
         if struct.unpack("<i", s.read(4))[0] != 100:
             return []
 
@@ -322,12 +337,11 @@ def parse_coord_guids(path: Path) -> list[str]:
 def _parse_coord_outfit(path: Path) -> dict | None:
     """Parse a coordinate PNG and return its outfit data, or None."""
     try:
-        data = path.read_bytes()
-        png_end = _find_iend_end(data)
-        if png_end < 0 or png_end >= len(data):
+        payload = _payload_after_png(path)
+        if payload is None:
             return None
 
-        s = io.BytesIO(data[png_end:])
+        s = io.BytesIO(payload)
         if struct.unpack("<i", s.read(4))[0] != 100:
             return None
 
@@ -465,6 +479,28 @@ MODS_CACHE_FILE  = "kkafio_mods_cache.json"
 COORD_CACHE_FILE = "kkafio_coord_cache.json"
 MODPACK_INDEX_FILE_KK  = "kkafio_modpack_index_kk.json"
 MODPACK_INDEX_FILE_KKS = "kkafio_modpack_index_kks.json"
+
+
+def _atomic_write_json(path: Path, data) -> None:
+    """Write `data` as JSON to `path` atomically and compactly.
+
+    Atomic: written to a temp file next to `path` first, then moved into
+    place with os.replace — a crash, power loss, or Stop mid-write can
+    never leave a half-written cache file behind (previously a plain
+    write_text() could, and a truncated cache is unreadable JSON, forcing
+    a full rescan next run instead of the incremental one the cache exists
+    to avoid).
+
+    Compact: no indent and no spaces after separators. These cache files
+    (guids-by-file, mods, coordinates) can run to many thousands of
+    entries — indent=2 alone roughly doubles the on-disk size for data
+    that's never meant to be hand-edited, and pretty-printing is pure
+    overhead for something read back by json.loads() alone.
+    """
+    tmp = path.with_name(path.name + f".tmp{os.getpid()}")
+    tmp.write_text(_json.dumps(data, ensure_ascii=False, separators=(",", ":")),
+                    encoding="utf-8")
+    os.replace(tmp, path)
 
 
 @cache
@@ -658,9 +694,7 @@ def collect_png_guids(
             "guids_by_file":  new_guids_by_file,
         }
         try:
-            cache_path.write_text(
-                _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            _atomic_write_json(cache_path, data)
             logger.info("CACHE", f"{label} cache saved: {len(guids)} GUIDs from {len(new_files)} files")
         except Exception:
             pass
@@ -755,9 +789,7 @@ def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
     if files is not None:
         data["files"] = files
     try:
-        cache_path.write_text(
-            _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        _atomic_write_json(cache_path, data)
     except Exception:
         pass
 
@@ -878,9 +910,7 @@ def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict],
     if files is not None:
         data["files"] = files
     try:
-        cache_path.write_text(
-            _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        _atomic_write_json(cache_path, data)
     except Exception:
         pass
 

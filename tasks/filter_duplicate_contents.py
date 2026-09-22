@@ -71,7 +71,13 @@ def _save_duplic_cache(folder_path: Path, cache_file: str, files: dict[str, dict
     cache_path = folder_path / cache_file
     data = {"dir": str(folder_path), "files": files}
     try:
-        cache_path.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        # Atomic (temp file + os.replace) and compact, same as the other
+        # incremental caches in utils/chara_ops.py — see _atomic_write_json
+        # there for why. This cache can hold one entry per PNG scanned, so
+        # pretty-printing it is pure overhead, and a plain write_text() left
+        # a half-written cache readable-but-corrupt if interrupted.
+        from utils.chara_ops import _atomic_write_json
+        _atomic_write_json(cache_path, data)
     except Exception as e:
         logger.warning("DUPLIC", f"Could not save {cache_file}: {e}")
 
@@ -399,6 +405,19 @@ class FilterDuplicateContents:
         png_cache = _load_duplic_cache(folder_path, PNG_CACHE_FILE) if self.use_cache else {}
         new_png_cache: dict[str, dict] = {}
 
+        # Raw bytes for files freshly read in step 2 below, kept only for
+        # ones classified as "chara" and only for the duration of this run
+        # — those are exactly the files fuzzy matching (step 4) may need
+        # image bytes from again, and without this it would open and read
+        # every one of them from disk a second time right after step 2
+        # already read them in full to compute their hash. Bounded to
+        # "new/changed chara files this run" rather than the whole
+        # library: an unchanged file never lands here (it's a cache hit in
+        # _hash_png. below and its bytes are never read at all), and a
+        # non-chara file is dropped immediately since fuzzy matching never
+        # looks at it.
+        fresh_chara_bytes: dict[str, bytes] = {}
+
         def _hash_png(path: Path):
             """Fingerprint one PNG (XXH3 of the character-data payload, or
             the whole file for non-chara PNGs) + classify it. Reuses the
@@ -413,6 +432,8 @@ class FilterDuplicateContents:
             payload = _get_png_payload(data)
             digest  = _xxh(payload) if payload else _xxh(data)
             cat     = _classify(data)
+            if cat == "chara" and self.fuzzy_chara:
+                fresh_chara_bytes[sp] = data
             return path, digest, cat, fp, False
 
         # Use min(32, cpu_count * 2) workers — I/O bound so more threads help
@@ -496,7 +517,15 @@ class FilterDuplicateContents:
                         reused_fuzzy += 1
                     else:
                         try:
-                            data = path.read_bytes()
+                            # Reuse the bytes step 2 already read for this
+                            # file instead of opening and reading it again
+                            # — see fresh_chara_bytes above. Falls back to
+                            # a fresh disk read if it's not there for any
+                            # reason (e.g. this file was a PNG-cache hit
+                            # but somehow missing a valid phash entry).
+                            data = fresh_chara_bytes.pop(sp, None)
+                            if data is None:
+                                data = path.read_bytes()
                             image_bytes = _get_png_image_bytes(data)
                             ph = _phash(image_bytes)
                             if ph is None and not fuzzy_unavailable:

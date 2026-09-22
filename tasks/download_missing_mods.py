@@ -304,6 +304,7 @@ async def _search_chat_links_and_download(
     mods_dir: Path,
     tg_data: dict,
     guid_str_map: dict[str, str],
+    client,
     downloader=None,
     rel_path: str | None = None,
 ) -> tuple[bool, bool | str]:
@@ -312,6 +313,13 @@ async def _search_chat_links_and_download(
     current one has no match (not a member, chat doesn't exist, or nothing
     found); stops at the first chat that does have a match, downloading it
     via teleget9527 (if `downloader` is provided) or plain Telethon.
+
+    `client` is a single already-connected TelegramClient shared across
+    every GUID in this DownloadMissingMods run (see the caller) — this
+    used to open and disconnect a brand new TelegramClient on every single
+    call (i.e. once per GUID that reaches chat-link search), which for a
+    Chat Links list with several entries meant a fresh MTProto
+    connect/auth handshake per chat per GUID.
 
     Returns (found_source, result):
       found_source — True if any chat had a matching .zipmod, regardless of
@@ -322,89 +330,79 @@ async def _search_chat_links_and_download(
     if not chat_links:
         return False, False
 
-    from utils.constants import CONFIG_DIR
-    from telethon import TelegramClient
+    for chat, topic_id in chat_links:
+        where = f"{chat}" + (f" (topic {topic_id})" if topic_id else "")
+        logger.info("DLMOD", f"    Searching {where} for {guid}...")
 
-    session_dir = CONFIG_DIR / "config" / "tg_session"
-    client = TelegramClient(str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"])
-    await client.connect()
+        message = await _search_chat_for_zipmod(client, chat, topic_id, guid)
+        if message is None:
+            continue  # no match here — try the next chat link
 
-    try:
-        for chat, topic_id in chat_links:
-            where = f"{chat}" + (f" (topic {topic_id})" if topic_id else "")
-            logger.info("DLMOD", f"    Searching {where} for {guid}...")
+        file_name = None
+        for attr in message.document.attributes:
+            fn = getattr(attr, "file_name", None)
+            if fn:
+                file_name = fn
+                break
+        if not file_name:
+            file_name = f"{guid}.zipmod"
 
-            message = await _search_chat_for_zipmod(client, chat, topic_id, guid)
-            if message is None:
-                continue  # no match here — try the next chat link
+        dest = (mods_dir / Path(rel_path).parent / file_name) if rel_path else (mods_dir / file_name)
+        dest.parent.mkdir(parents=True, exist_ok=True)
 
-            file_name = None
-            for attr in message.document.attributes:
-                fn = getattr(attr, "file_name", None)
-                if fn:
-                    file_name = fn
-                    break
-            if not file_name:
-                file_name = f"{guid}.zipmod"
+        if dest.exists() and dest.stat().st_size == message.document.size:
+            return True, "skipped"
 
-            dest = (mods_dir / Path(rel_path).parent / file_name) if rel_path else (mods_dir / file_name)
-            dest.parent.mkdir(parents=True, exist_ok=True)
+        logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
+        file_size = message.document.size
 
-            if dest.exists() and dest.stat().st_size == message.document.size:
-                return True, "skipped"
+        # Use teleget9527 if available (reuse the passed-in downloader instance),
+        # matching _download_via_teleget's exact pattern.
+        if downloader is not None:
+            try:
+                entity = await client.get_entity(chat)
+                raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
 
-            logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
-            file_size = message.document.size
+                def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                    if total > 0:
+                        mb_done  = downloaded // 1024 // 1024
+                        mb_total = total      // 1024 // 1024
+                        logger.info("DLMOD",
+                            f"    {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
 
-            # Use teleget9527 if available (reuse the passed-in downloader instance),
-            # matching _download_via_teleget's exact pattern.
-            if downloader is not None:
-                try:
-                    entity = await client.get_entity(chat)
-                    raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
+                await downloader.download(
+                    chat_id=raw_chat_id,
+                    msg_id=message.id,
+                    save_path=str(dest.resolve()),
+                    progress_callback=_on_progress,
+                )
 
-                    def _on_progress(downloaded: int, total: int, pct: float) -> None:
-                        if total > 0:
-                            mb_done  = downloaded // 1024 // 1024
-                            mb_total = total      // 1024 // 1024
-                            logger.info("DLMOD",
-                                f"    {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
-
-                    await downloader.download(
-                        chat_id=raw_chat_id,
-                        msg_id=message.id,
-                        save_path=str(dest.resolve()),
-                        progress_callback=_on_progress,
-                    )
-
-                    # Poll until file reaches expected size (up to 1 hour)
-                    for _ in range(3600):
-                        await asyncio.sleep(1)
-                        if dest.exists() and dest.stat().st_size >= file_size:
-                            break
-                except Exception as e:
-                    logger.error("DLMOD",
-                        f"    teleget9527 download failed [{guid}] from {where}: {e}")
-                    return True, False
-            else:
-                # Fallback: plain Telethon download_media
-                try:
-                    await client.download_media(message, file=str(dest))
-                except Exception as e:
-                    logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
-                    return True, False
-
-            if not dest.exists() or dest.stat().st_size != file_size:
-                logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
+                # Poll until file reaches expected size (up to 1 hour)
+                for _ in range(3600):
+                    await asyncio.sleep(1)
+                    if dest.exists() and dest.stat().st_size >= file_size:
+                        break
+            except Exception as e:
+                logger.error("DLMOD",
+                    f"    teleget9527 download failed [{guid}] from {where}: {e}")
+                return True, False
+        else:
+            # Fallback: plain Telethon download_media
+            try:
+                await client.download_media(message, file=str(dest))
+            except Exception as e:
+                logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
                 return True, False
 
-            logger.success("DLMOD", f"Downloaded: {file_name}")
-            guid_str_map[guid] = str(dest)
-            return True, True
+        if not dest.exists() or dest.stat().st_size != file_size:
+            logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
+            return True, False
 
-        return False, False  # no configured chat had a matching .zipmod
-    finally:
-        await client.disconnect()
+        logger.success("DLMOD", f"Downloaded: {file_name}")
+        guid_str_map[guid] = str(dest)
+        return True, True
+
+    return False, False  # no configured chat had a matching .zipmod
 
 
 # ---------------------------------------------------------------------------
@@ -486,65 +484,62 @@ async def _download_via_teleget(
     mods_dir: Path,
     tg_data: dict,
     guid_str_map: dict[str, str],
+    client,
     downloader=None,
     rel_path: str | None = None,
 ) -> bool:
     """
     Download the file attached to a Telegram message using teleget9527.
 
+    `client` is a single already-connected TelegramClient shared across
+    every GUID in this DownloadMissingMods run (see the caller), used here
+    for the metadata lookup and, if teleget9527 isn't installed, the actual
+    download too. This function does not connect or disconnect it —
+    previously this opened and closed two fresh TelegramClient connections
+    per call (one for metadata, one for the Telethon-fallback download),
+    meaning a batch of, say, 50 missing mods made ~100 separate MTProto
+    connect/auth round trips to Telegram for what only ever needed one.
+
     If rel_path is provided (from the modpack index), the file is saved to
     mods_dir / rel_path preserving the Sideloader Modpack subfolder structure.
     Otherwise the file is saved directly into mods_dir.
     """
-    from utils.constants import CONFIG_DIR
-    from telethon import TelegramClient
-
     parsed = _parse_tme_link(tg_link)
     if not parsed:
         logger.error("DLMOD", f"Cannot parse Telegram link: {tg_link}")
         return False
     chat_identifier, message_id = parsed
 
-    session_dir = CONFIG_DIR / "config" / "tg_session"
-
-    # Fetch message metadata (filename, size) via a lightweight Telethon call
+    # Fetch message metadata (filename, size) via the shared client.
     #
     # [FIX-2026-09-13-ENTITY-RESOLUTION] Previously this called
-    # meta_client.get_messages(KK_ARCHIVE_CHAT_ID, ids=message_id) — using
-    # the hardcoded raw numeric chat ID and silently discarding
-    # chat_identifier (the "@username" / "-100..." value _parse_tme_link
-    # already extracted from the link). Telethon can only resolve a bare
-    # numeric peer ID into a usable InputPeer if it already has that
-    # entity's access_hash cached in the session file; on a cold cache
-    # (e.g. a freshly created session that has never interacted with this
-    # chat before) this raises:
+    # get_messages(KK_ARCHIVE_CHAT_ID, ids=message_id) — using the
+    # hardcoded raw numeric chat ID and silently discarding chat_identifier
+    # (the "@username" / "-100..." value _parse_tme_link already extracted
+    # from the link). Telethon can only resolve a bare numeric peer ID into
+    # a usable InputPeer if it already has that entity's access_hash cached
+    # in the session file; on a cold cache (e.g. a freshly created session
+    # that has never interacted with this chat before) this raises:
     #   ValueError: Could not find the input entity for PeerUser(user_id=...)
     # chat_identifier, by contrast, is the "@KK_archive_modlibrary" username
     # form for links like this one, which Telethon can resolve via a live
     # API call even with no prior cache — so use it instead of the raw ID
     # whenever we have it.
-    meta_client = TelegramClient(
-        str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"]
-    )
-    await meta_client.connect()
-    try:
-        message = await meta_client.get_messages(chat_identifier, ids=message_id)
+    message = await client.get_messages(chat_identifier, ids=message_id)
 
-        # teleget9527 wants the bare numeric chat ID of the chat the link
-        # actually points at. This used to be hardcoded to the
-        # KK_archive_modlibrary channel, so a link into any other chat would
-        # have fetched message N of the wrong chat.
-        raw_chat_id: int | None = None
-        try:
-            raw_chat_id = (await meta_client.get_entity(chat_identifier)).id
-        except Exception as e:
-            if str(chat_identifier).lower() == "@kk_archive_modlibrary":
-                raw_chat_id = KK_ARCHIVE_CHAT_ID   # known channel; safe fallback
-            else:
-                logger.warning("DLMOD",
-                    f"Could not resolve chat {chat_identifier} for teleget9527: {e}")
-    finally:
-        await meta_client.disconnect()
+    # teleget9527 wants the bare numeric chat ID of the chat the link
+    # actually points at. This used to be hardcoded to the
+    # KK_archive_modlibrary channel, so a link into any other chat would
+    # have fetched message N of the wrong chat.
+    raw_chat_id: int | None = None
+    try:
+        raw_chat_id = (await client.get_entity(chat_identifier)).id
+    except Exception as e:
+        if str(chat_identifier).lower() == "@kk_archive_modlibrary":
+            raw_chat_id = KK_ARCHIVE_CHAT_ID   # known channel; safe fallback
+        else:
+            logger.warning("DLMOD",
+                f"Could not resolve chat {chat_identifier} for teleget9527: {e}")
 
     if message is None or message.document is None:
         logger.error("DLMOD", f"No file in message {message_id} [{guid}]")
@@ -601,14 +596,9 @@ async def _download_via_teleget(
             return False
 
     else:
-        # Fallback: Telethon download_media with parallel workers
+        # Fallback: Telethon download_media on the shared client
         try:
-            dl_client = TelegramClient(
-                str(session_dir / "kkafio"), tg_data["api_id"], tg_data["api_hash"]
-            )
-            await dl_client.connect()
-            await dl_client.download_media(message, file=str(dest), workers=4)
-            await dl_client.disconnect()
+            await client.download_media(message, file=str(dest), workers=4)
         except Exception as e:
             logger.error("DLMOD", f"Telethon download failed [{guid}]: {e}")
             return False
@@ -993,6 +983,23 @@ class DownloadMissingMods(BaseTask):
                         else:
                             teleget_downloader = None
 
+                            # One TelegramClient, connected once and reused for
+                            # every GUID in this batch (both the koikatsucards.com
+                            # metadata/fallback-download path and the Telegram
+                            # Chat Links search/download path below) — this used
+                            # to open and close a brand new connection per GUID
+                            # per path, which for a batch of N missing mods meant
+                            # up to ~2N-3N separate MTProto connect/auth round
+                            # trips to Telegram for what only ever needed one.
+                            from telethon import TelegramClient as _TelegramClient
+                            from utils.constants import CONFIG_DIR as _TG_CFG_DIR
+                            _tg_session_dir = _TG_CFG_DIR / "config" / "tg_session"
+                            tg_client = _TelegramClient(
+                                str(_tg_session_dir / "kkafio"),
+                                tg_data["api_id"], tg_data["api_hash"],
+                            )
+                            await tg_client.connect()
+
                             if use_koikatsucards:
                                 # [FIX-2026-09-13-ENTITY-CACHE-WARMUP] Resolve the
                                 # KK_archive_modlibrary channel by username *once*,
@@ -1031,16 +1038,12 @@ class DownloadMissingMods(BaseTask):
                                 # lookup — in this file and inside teleget9527 —
                                 # succeeds on the very first attempt.
                                 try:
-                                    from telethon import TelegramClient as _TelegramClient
-                                    from utils.constants import CONFIG_DIR as _WARM_CFG_DIR
-                                    _warm_session_dir = _WARM_CFG_DIR / "config" / "tg_session"
-                                    _warm_client = _TelegramClient(
-                                        str(_warm_session_dir / "kkafio"),
-                                        tg_data["api_id"], tg_data["api_hash"],
-                                    )
-                                    await _warm_client.connect()
-                                    await _warm_client.get_entity("KK_archive_modlibrary")
-                                    await _warm_client.disconnect()
+                                    # Warm the *shared* client's entity cache — it
+                                    # stays connected for the rest of this batch,
+                                    # so this also directly benefits every
+                                    # koikatsucards.com metadata lookup below, not
+                                    # just the daemon's copied session.
+                                    await tg_client.get_entity("KK_archive_modlibrary")
                                     logger.info("DLMOD",
                                         "Warmed entity cache for KK_archive_modlibrary")
                                 except Exception as warm_err:
@@ -1134,7 +1137,8 @@ class DownloadMissingMods(BaseTask):
                                             # same subfolder as the modpack index
                                             success = await _download_via_teleget(
                                                 guid, tg_link, mods_dir, tg_data,
-                                                guid_str_map, teleget_downloader,
+                                                guid_str_map, tg_client,
+                                                downloader=teleget_downloader,
                                                 rel_path=rel_path,
                                             )
                                         else:
@@ -1147,7 +1151,8 @@ class DownloadMissingMods(BaseTask):
                                                 f"  Trying Telegram Chat Links for {guid}...")
                                         chat_found, success = await _search_chat_links_and_download(
                                             guid, chat_links, mods_dir, tg_data,
-                                            guid_str_map, downloader=teleget_downloader,
+                                            guid_str_map, tg_client,
+                                            downloader=teleget_downloader,
                                             rel_path=rel_path,
                                         )
                                         found_source = found_source or chat_found
@@ -1175,6 +1180,10 @@ class DownloadMissingMods(BaseTask):
                                         await teleget_downloader.shutdown()
                                     except Exception:
                                         pass  # suppress ShutdownRequest bug in teleget9527
+                                try:
+                                    await tg_client.disconnect()
+                                except Exception:
+                                    pass
 
         try:
             asyncio.run(_run_all())
