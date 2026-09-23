@@ -379,18 +379,28 @@ def _extract_opt(opt_values: dict, key: str):
 
 def _extract_special_task_params(opt_values: dict) -> dict:
     """Flatten a special task's optionValues into a custom_action_param dict."""
+    # (kind, param_name, default-if-the-switch-value-is-missing). The default
+    # here MUST match the fallback special_tasks.py itself uses when the
+    # whole param key is missing from `param` (e.g. an older saved pipeline
+    # that predates this option existing) — otherwise "GUI sent the option
+    # but with no explicit value" and "GUI never sent the option at all"
+    # silently resolve to opposite behaviors for what is, from the user's
+    # perspective, the exact same "I never touched this setting" state.
+    # kill_self in particular defaults to True in special_tasks.py, since a
+    # Kill Self task's entire purpose is to stop the running pipeline —
+    # if it's in the pipeline at all, that's almost certainly the intent.
     KEY_MAP: dict[str, Any] = {
-        "__MXU_SLEEP_OPTION__":         ("input",  None),
-        "__MXU_WAITUNTIL_OPTION__":     ("input",  None),
-        "__MXU_NOTIFY_OPTION__":        ("input",  None),
-        "__MXU_WEBHOOK_OPTION__":       ("input",  None),
-        "__MXU_LAUNCH_OPTION__":        ("input",  None),
-        "__MXU_LAUNCH_WAIT_OPTION__":   ("switch", "wait_for_exit"),
-        "__MXU_LAUNCH_SKIP_OPTION__":   ("switch", "skip_if_running"),
-        "__MXU_LAUNCH_CMD_OPTION__":    ("switch", "use_cmd"),
-        "__MXU_KILLPROC_SELF_OPTION__": ("switch", "kill_self"),
-        "__MXU_KILLPROC_NAME_OPTION__": ("input",  None),
-        "__MXU_POWER_OPTION__":         ("select", "power_action"),
+        "__MXU_SLEEP_OPTION__":         ("input",  None, None),
+        "__MXU_WAITUNTIL_OPTION__":     ("input",  None, None),
+        "__MXU_NOTIFY_OPTION__":        ("input",  None, None),
+        "__MXU_WEBHOOK_OPTION__":       ("input",  None, None),
+        "__MXU_LAUNCH_OPTION__":        ("input",  None, None),
+        "__MXU_LAUNCH_WAIT_OPTION__":   ("switch", "wait_for_exit",   False),
+        "__MXU_LAUNCH_SKIP_OPTION__":   ("switch", "skip_if_running", False),
+        "__MXU_LAUNCH_CMD_OPTION__":    ("switch", "use_cmd",         False),
+        "__MXU_KILLPROC_SELF_OPTION__": ("switch", "kill_self",       True),
+        "__MXU_KILLPROC_NAME_OPTION__": ("input",  None, None),
+        "__MXU_POWER_OPTION__":         ("select", "power_action",    ""),
     }
 
     params: dict = {}
@@ -404,13 +414,13 @@ def _extract_special_task_params(opt_values: dict) -> dict:
             if t == "input":
                 params.update(v.get("values", {}))
             continue
-        kind, param_name = mapping
+        kind, param_name, default = mapping
         if kind == "input":
             params.update(v.get("values", {}))
         elif kind == "switch":
-            params[param_name] = v.get("value", False)
+            params[param_name] = v.get("value", default)
         elif kind == "select":
-            params[param_name] = v.get("caseName", "")
+            params[param_name] = v.get("caseName", default)
 
     return params
 
@@ -600,6 +610,29 @@ class Config:
     # worth surfacing than something we should silently paper over.
 {DEFAULT_TASK_PATHS}
 
+    @staticmethod
+    def _platform_default(default: str) -> Path:
+        """Translate a shipped "C:/KKAFIO/..." default (interface.json's
+        defaults are Windows paths, since that's where Koikatsu itself
+        normally runs) into something sensible to actually create on a
+        non-Windows platform.
+
+        Blindly `Path("C:/KKAFIO/Downloads").mkdir()`-ing on Linux/macOS
+        doesn't fail — `Path` there has no concept of a drive, so "C:" is
+        just parsed as an ordinary folder name — but it silently creates a
+        nonsensical "./C:/KKAFIO/Downloads" folder under whatever the
+        current working directory happens to be, which is exactly the kind
+        of confusing side effect auto-creating a default folder is
+        supposed to avoid.
+        """
+        default_path = Path(default)
+        if sys.platform == "win32":
+            return default_path
+        # Everything after "C:/KKAFIO" (e.g. "Downloads", "Archived
+        # Cards"), rooted under this platform's home directory instead.
+        tail = Path(*default_path.parts[2:])
+        return Path.home() / "KKAFIO" / tail
+
     def validate_tasks(self):
         for task in _TASK_KEY:
             task_config = self.config_data.get(task, {})
@@ -612,8 +645,11 @@ class Config:
                     if not path_obj.exists():
                         default = self._DEFAULT_TASK_PATHS.get((task, key))
                         if default is not None and path_obj == Path(default):
-                            logger.info("SCRIPT", f"{key} does not exist yet, creating default folder for {task}: {path_obj}")
-                            path_obj.mkdir(parents=True, exist_ok=True)
+                            create_path = self._platform_default(default)
+                            task_config[key] = create_path
+                            logger.info("SCRIPT",
+                                f"{key} does not exist yet, creating default folder for {task}: {create_path}")
+                            create_path.mkdir(parents=True, exist_ok=True)
                             continue
                         logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
                         raise Exception(f"Path invalid: {path_obj}")
