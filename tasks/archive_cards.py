@@ -44,7 +44,7 @@ class ArchiveCards(BaseTask):
         # card in the run, instead of re-scanning the whole folder from
         # scratch for every single card.
         self._local_mods_maps : dict[Path, dict[str, Path]]  = {}
-        self._local_coord_maps: dict[Path, dict[str, dict]]  = {}
+        self._local_coord_maps: dict[Path, dict[str, str]]  = {}
         self._modpack_skip_counts: dict[Path, int] = {}
 
     def _get_local_mods_map(self, mods_dir: Path) -> dict[str, Path]:
@@ -76,7 +76,7 @@ class ArchiveCards(BaseTask):
         self._modpack_skip_counts[mods_dir] = count
         return count
 
-    def _get_coord_map(self, coord_dir: Path) -> dict[str, dict]:
+    def _get_coord_map(self, coord_dir: Path) -> dict[str, str]:
         coord_dir = coord_dir.resolve()
         cached = self._local_coord_maps.get(coord_dir)
         if cached is not None:
@@ -126,8 +126,7 @@ class ArchiveCards(BaseTask):
                 try:
                     kc = KoikatuCharaData.load(str(content_path))
                     coord_map = self._get_coord_map(coord_dir)
-                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
-                                                        coord_map=coord_map)
+                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_map)
                     logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")
                     for cp in coord_paths:
                         logger.info("ARCHV", f"    {cp.name}")

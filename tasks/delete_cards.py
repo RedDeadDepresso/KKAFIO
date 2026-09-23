@@ -82,9 +82,9 @@ class DeleteCards(BaseTask):
         # later cards in the same run still see an accurate picture without
         # ever touching disk again.
         self._local_mods_maps: dict[Path, dict[str, Path]] = {}
-        # {coord_dir: {path_str: fingerprint}} — same idea as
+        # {coord_dir: {path_str: outfit digest}} — same idea as
         # _local_mods_maps, for the coordinate-matching cache.
-        self._local_coord_maps: dict[Path, dict[str, dict]] = {}
+        self._local_coord_maps: dict[Path, dict[str, str]] = {}
 
     def _get_local_mods_map(self, mods_dir: Path) -> dict[str, Path]:
         mods_dir = mods_dir.resolve()
@@ -98,7 +98,7 @@ class DeleteCards(BaseTask):
         self._local_mods_maps[mods_dir] = guid_map
         return guid_map
 
-    def _get_coord_map(self, coord_dir: Path) -> dict[str, dict]:
+    def _get_coord_map(self, coord_dir: Path) -> dict[str, str]:
         coord_dir = coord_dir.resolve()
         cached = self._local_coord_maps.get(coord_dir)
         if cached is not None:
@@ -145,8 +145,7 @@ class DeleteCards(BaseTask):
                 try:
                     kc = KoikatuCharaData.load(str(content_path))
                     coord_map = self._get_coord_map(coord_dir)
-                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_dir,
-                                                        coord_map=coord_map)
+                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_map)
                     logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")
                     for cp in coord_paths:
                         logger.info("DELETE", f"    {cp.name}")

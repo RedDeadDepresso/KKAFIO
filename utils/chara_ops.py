@@ -86,25 +86,6 @@ def _rq(s: io.BytesIO) -> int:
     return struct.unpack("<q", s.read(8))[0]
 
 
-def _rb(s: io.BytesIO) -> bytes:
-    """Read a .NET BinaryWriter-style length-prefixed byte string.
-
-    The prefix is a 7-bit-encoded (LEB128-style) varint, same as _read_str
-    below uses via _read_7bit_int — not a single byte. A plain
-    struct.unpack("b", ...) (signed byte) happens to work for header/version
-    strings, which are always short ASCII tags well under 128 bytes, but
-    breaks for anything longer: a signed byte can't represent 128-255 at
-    all (it reads as negative, and io.BytesIO.read(negative) reads to EOF,
-    silently swallowing the rest of the buffer and corrupting every field
-    parsed after it), and even an unsigned byte would still be wrong for
-    length >= 128, which needs a second continuation byte. A coordinate
-    card's user-entered name is exactly the field most likely to hit this
-    — especially with Japanese/Chinese text, where 40-something characters
-    can already exceed 127 UTF-8 bytes.
-    """
-    return s.read(_read_7bit_int(s))
-
-
 # ---------------------------------------------------------------------------
 # GUID extraction from KKEx block
 # ---------------------------------------------------------------------------
@@ -328,145 +309,6 @@ def parse_coord_guids(path: Path) -> list[str]:
         return sorted(set(_extract_guids_from_kkex(s.read(ext_len))))
     except Exception:
         return []
-
-
-# ---------------------------------------------------------------------------
-# Coordinate matching (colour fingerprint)
-# ---------------------------------------------------------------------------
-
-def _parse_coord_outfit(path: Path) -> dict | None:
-    """Parse a coordinate PNG and return its outfit data, or None."""
-    try:
-        payload = _payload_after_png(path)
-        if payload is None:
-            return None
-
-        s = io.BytesIO(payload)
-        if struct.unpack("<i", s.read(4))[0] != 100:
-            return None
-
-        header = _rb(s)
-        if b"KoiKatuClothes" not in header:
-            return None
-
-        _rb(s)                          # version
-        name = _rb(s).decode("utf-8", errors="replace")
-        hiroin_no = struct.unpack("<i", s.read(4))[0]
-
-        clothes_len = struct.unpack("<i", s.read(4))[0]
-        clothes     = msgpack.unpackb(s.read(clothes_len), raw=False)
-        acc_len     = struct.unpack("<i", s.read(4))[0]
-        acc         = msgpack.unpackb(s.read(acc_len), raw=False)
-
-        return {"path": path, "name": name, "hiroin_no": hiroin_no,
-                "clothes": clothes, "accessory": acc}
-    except Exception:
-        return None
-
-
-def _clothes_fp(clothes: dict) -> list[tuple]:
-    fp = []
-    for part in clothes.get("parts", []):
-        colors = []
-        for ci in part.get("colorInfo", []):
-            if not isinstance(ci, dict):
-                continue
-            colors.append((
-                tuple(ci["baseColor"])    if ci.get("baseColor")    else None,
-                tuple(ci["patternColor"]) if ci.get("patternColor") else None,
-                ci.get("pattern"),
-                tuple(ci["tiling"])       if ci.get("tiling")       else None,
-            ))
-        fp.append(tuple(colors))
-    return fp
-
-
-def _acc_fp(acc: dict) -> tuple[frozenset, dict]:
-    occupied, colors = [], {}
-    for i, part in enumerate(acc.get("parts", [])):
-        if not isinstance(part, dict) or part.get("id", 0) == 0:
-            continue
-        occupied.append(i)
-        colors[i] = tuple(
-            (tuple(ci["baseColor"])    if ci.get("baseColor")    else None,
-             tuple(ci["patternColor"]) if ci.get("patternColor") else None)
-            for ci in part.get("colorInfo", [])
-            if isinstance(ci, dict)
-        )
-    return frozenset(occupied), colors
-
-
-def _coord_matches_slot(slot: dict, coord: dict, threshold: float = 0.70) -> bool:
-    c_fp  = _clothes_fp(slot["clothes"])
-    co_fp = _clothes_fp(coord["clothes"])
-    n     = max(len(c_fp), len(co_fp), 1)
-    hits  = sum(1 for a, b in zip(c_fp, co_fp) if a == b)
-    if hits / n < threshold:
-        return False
-    c_occ, c_col   = _acc_fp(slot["accessory"])
-    co_occ, co_col = _acc_fp(coord["accessory"])
-    if not co_occ:
-        return True
-    if c_occ != co_occ:
-        return False
-    shared = c_occ & co_occ
-    return all(c_col.get(i) == co_col.get(i) for i in shared)
-
-
-def find_matching_coords(chara_coords: list[dict], coord_dir: Path,
-                         use_cache: bool = False,
-                         coord_map: dict[str, dict] | None = None) -> list[Path]:
-    """Return coord PNGs that match any slot in the chara.
-
-    When use_cache=True (and coord_map isn't already supplied), loads or
-    incrementally rebuilds a JSON cache at coord_dir/kkafio_coord_cache.json.
-    Parsing is parallelised (I/O bound) in both cached and non-cached paths.
-
-    Pass a pre-built `coord_map` (from build_coord_cache()) to skip loading/
-    building it here entirely — useful for callers processing many chara
-    cards against the same coord_dir in one run, so the folder only needs
-    to be scanned once instead of once per card.
-    """
-    if not coord_dir.exists():
-        return []
-
-    if coord_map is not None or use_cache:
-        if coord_map is None:
-            coord_map = build_coord_cache(coord_dir, use_cache=True)
-
-        matched: list[Path] = []
-        for path_str, fp in coord_map.items():
-            p = Path(path_str)
-            if not p.exists():
-                continue
-            cached = _outfit_from_cache(fp, p)
-            for slot in chara_coords:
-                if _coord_matches_slot_cached(slot, cached):
-                    matched.append(p)
-                    break
-        return sorted(matched)
-
-    # No cache — full parallel parse
-    coord_files = sorted(coord_dir.rglob("*.png"))
-    if not coord_files:
-        return []
-
-    import os
-    workers = min(32, (os.cpu_count() or 4) * 2)
-    matched = []
-
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = {ex.submit(_parse_coord_outfit, png): png for png in coord_files}
-        for future in as_completed(futures):
-            outfit = future.result()
-            if outfit is None:
-                continue
-            for slot in chara_coords:
-                if _coord_matches_slot(slot, outfit):
-                    matched.append(outfit["path"])
-                    break
-
-    return sorted(matched)
 
 
 # ---------------------------------------------------------------------------
@@ -895,125 +737,88 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
 
 
 # ---------------------------------------------------------------------------
-# Coord cache  (incremental)
+# Coordinate matching
 # ---------------------------------------------------------------------------
+#
+# A chara card's `Coordinate` block holds the same clothes/accessory data a
+# standalone coordinate card does — both are decoded by kkloader through the
+# same routine — so a coordinate card that was saved from one of the card's
+# outfits carries a bit-for-bit identical copy of that outfit's clothes and
+# accessory data. Matching is therefore an exact comparison, no fuzzy
+# colour heuristics needed.
+#
+# To keep the on-disk cache small and JSON-safe (Unity floats, nested
+# lists), each outfit is reduced to a 128-bit xxh3 digest of its canonical JSON
+# form. The same function digests both sides, so the digest is stable
+# across runs and never depends on floats surviving a JSON round-trip.
 
-def save_coord_cache(coord_dir: Path, coord_map: dict[str, dict],
-                     files: dict | None = None) -> None:
-    """Persist coordinate fingerprints (and file fingerprints) to cache."""
-    cache_path = coord_dir / COORD_CACHE_FILE
-    data: dict = {
-        "coord_dir":  str(coord_dir),
-        "file_count": len(files) if files is not None else len(coord_map),
-        "coords":     coord_map,
-    }
-    if files is not None:
-        data["files"] = files
+COORD_CACHE_VERSION = 2
+
+
+def _json_default(o):
+    if isinstance(o, (bytes, bytearray)):
+        return o.hex()
+    raise TypeError(f"Unserialisable type in coordinate data: {type(o).__name__}")
+
+
+def outfit_digest(outfit: dict) -> str:
+    """128-bit xxh3 digest of an outfit's clothes + accessory data (a `Coordinate` block
+    element from a chara card, or `CoordinateEntry.data`)."""
+    import xxhash
+
+    canonical = _json.dumps(
+        [outfit["clothes"], outfit["accessory"]],
+        sort_keys=True, separators=(",", ":"), default=_json_default)
+    return xxhash.xxh3_128_hexdigest(canonical.encode("utf-8"))
+
+
+def _coord_file_digest(path: Path) -> str | None:
+    """Digest of a coordinate card file, or None if it isn't a readable
+    Koikatu coordinate card (e.g. a chara card or stray PNG in the folder)."""
+    from kkloader.KoikatuCharaData import CoordinateEntry
+
     try:
-        _atomic_write_json(cache_path, data)
-    except Exception:
-        pass
-
-
-def _outfit_to_cache(outfit: dict) -> dict:
-    """Convert an outfit dict to a JSON-serialisable fingerprint."""
-    def _conv(v):
-        if isinstance(v, (list, tuple)):
-            return [_conv(i) for i in v]
-        if v is None:
+        entry = CoordinateEntry.load(str(path), contains_png=True)
+        if entry.header != CoordinateEntry.default_header:
             return None
-        return v
-
-    return {
-        "clothes_fp":   _conv(_clothes_fp(outfit["clothes"])),
-        "acc_occupied": sorted(list(_acc_fp(outfit["accessory"])[0])),
-        "acc_colors":   {str(k): _conv(v)
-                         for k, v in _acc_fp(outfit["accessory"])[1].items()},
-    }
+        return outfit_digest(entry.data)
+    except Exception:
+        return None
 
 
-def _norm(v):
-    """Recursively convert lists/tuples to tuples so a fingerprint compares
-    equal whether it came straight from msgpack (tuples/lists mixed) or
-    round-tripped through JSON (lists only)."""
-    if isinstance(v, (list, tuple)):
-        return tuple(_norm(i) for i in v)
-    return v
+def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, str]:
+    """Return {str(path): outfit digest} for every PNG under coord_dir
+    (digest is "" for PNGs that aren't coordinate cards).
 
-
-def _outfit_from_cache(fp: dict, path: Path) -> dict:
-    """Reconstruct a fake outfit dict from a cached fingerprint for matching.
-
-    Everything is normalised with _norm() so it can be compared against a
-    live slot fingerprint built by _clothes_fp()/_acc_fp() (which use tuples).
+    With `use_cache`, digests are persisted in coord_dir/kkafio_coord_cache.json
+    and only new or changed files (by mtime + size) are re-parsed; deleted
+    files are pruned since only files present on disk are scanned. Without
+    it, every file is parsed and the cache file is neither read nor written.
     """
-    return {
-        "_cached_fp":        _norm(fp["clothes_fp"]),
-        "_cached_acc_occ":   frozenset(fp["acc_occupied"]),
-        "_cached_acc_col":   {int(k): _norm(v) for k, v in fp["acc_colors"].items()},
-        "path": path,
-    }
-
-
-def _coord_matches_slot_cached(slot: dict, cached: dict,
-                               threshold: float = 0.70) -> bool:
-    """Match a chara slot against a cached coord fingerprint."""
-    c_fp   = _norm(_clothes_fp(slot["clothes"]))
-    co_fp  = cached["_cached_fp"]
-    n      = max(len(c_fp), len(co_fp), 1)
-    hits   = sum(1 for a, b in zip(c_fp, co_fp) if a == b)
-    if hits / n < threshold:
-        return False
-
-    c_occ, c_col   = _acc_fp(slot["accessory"])
-    co_occ = cached["_cached_acc_occ"]
-    co_col = cached["_cached_acc_col"]
-    if not co_occ:
-        return True
-    if c_occ != co_occ:
-        return False
-    shared = c_occ & co_occ
-    return all(_norm(c_col.get(i, ())) == co_col.get(i, ()) for i in shared)
-
-
-def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, dict]:
-    """Incrementally parse coord PNGs and return {str(path): fingerprint}.
-
-    Unchanged files (same mtime + size) are reused from the previous cache.
-    Only new or changed PNGs are fully parsed. Deleted files are pruned
-    automatically, since only files actually present on disk are scanned —
-    callers never need a separate staleness check before calling this.
-
-    When `use_cache` is False, does a full scan every time and does not
-    read or write the cache file.
-    """
-    import os
-
     cache_path = coord_dir / COORD_CACHE_FILE
     old_files:  dict = {}
     old_coords: dict = {}
     if use_cache:
         try:
             prev = _json.loads(cache_path.read_text(encoding="utf-8"))
-            if prev.get("coord_dir") == str(coord_dir):
-                old_files  = {sp: fp for sp, fp in prev.get("files",  {}).items()
-                              if isinstance(fp, list) and len(fp) == 2}
+            if (prev.get("version") == COORD_CACHE_VERSION
+                    and prev.get("coord_dir") == str(coord_dir)):
+                old_files  = prev.get("files", {})
                 old_coords = prev.get("coords", {})
         except Exception:
             pass
 
-    all_pngs  = sorted(coord_dir.rglob("*.png"))
-    coord_map: dict[str, dict] = {}
-    new_files: dict            = {}
-    to_parse:  list[Path]      = []
+    all_pngs = sorted(coord_dir.rglob("*.png"))
+    coord_map: dict[str, str] = {}
+    new_files: dict[str, list[int]] = {}
+    to_parse: list[Path] = []
 
     for png in all_pngs:
         sp = str(png)
-        fp = _file_fp(png)
-        old = old_files.get(sp)
-        if old is not None and (old[0], old[1]) == fp and sp in old_coords:
+        fp = list(_file_fp(png))
+        if old_files.get(sp) == fp and sp in old_coords:
             coord_map[sp] = old_coords[sp]
-            new_files[sp] = old
+            new_files[sp] = fp
         else:
             to_parse.append(png)
 
@@ -1023,23 +828,37 @@ def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, dict
     elif to_parse:
         logger.info("CACHE", f"Parsing {len(to_parse)} coordinate PNG(s)...")
 
-    workers = min(32, (os.cpu_count() or 4) * 2)
     if to_parse:
+        workers = min(32, (os.cpu_count() or 4) * 2)
         with ThreadPoolExecutor(max_workers=workers) as ex:
-            futures = {ex.submit(_parse_coord_outfit, png): png for png in to_parse}
+            futures = {ex.submit(_coord_file_digest, png): png for png in to_parse}
             for future in as_completed(futures):
-                outfit = future.result()
-                if outfit is None:
-                    continue
-                png = outfit["path"]
-                sp  = str(png)
-                fp  = _file_fp(png)
-                new_files[sp] = [fp[0], fp[1]]
-                coord_map[sp] = _outfit_to_cache(outfit)
+                sp = str(futures[future])
+                # "" marks a PNG that isn't a coordinate card, so it is
+                # remembered as such instead of being re-parsed every run.
+                coord_map[sp] = future.result() or ""
+                new_files[sp] = list(_file_fp(futures[future]))
 
     if use_cache:
-        save_coord_cache(coord_dir, coord_map, new_files)
+        try:
+            _atomic_write_json(cache_path, {
+                "version":   COORD_CACHE_VERSION,
+                "coord_dir": str(coord_dir),
+                "files":     new_files,
+                "coords":    coord_map,
+            })
+        except Exception:
+            pass
     return coord_map
+
+
+def find_matching_coords(chara_coords: list[dict], coord_map: dict[str, str]) -> list[Path]:
+    """Return the coordinate cards in `coord_map` (from build_coord_cache())
+    that are an exact copy of any outfit in `chara_coords` (a chara card's
+    `kc["Coordinate"].data`)."""
+    wanted = {outfit_digest(outfit) for outfit in chara_coords}
+    return sorted(Path(sp) for sp, digest in coord_map.items()
+                  if digest in wanted and Path(sp).exists())
 
 
 # ---------------------------------------------------------------------------
