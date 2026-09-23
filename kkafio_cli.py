@@ -6,8 +6,8 @@ Task commands (arguments override config; omit to use config value):
     kkafio_cli run
     kkafio_cli install-contents [--input DIR]
     kkafio_cli uninstall-contents  [--input DIR]
-    kkafio_cli filter-convert-kks        [--input DIR] [--filter | --no-filter]
-                             [--convert | --no-convert]
+    kkafio_cli filter-convert-kks        [--input DIR] [--convert | --no-convert]
+                             [--kk-action {Keep,Move,Delete}] [--kks-action {Keep,Move,Delete}]
     kkafio_cli create-backup [--output DIR] [--filename NAME]
                              [--mods | --no-mods]
                              [--userdata | --no-userdata]
@@ -213,17 +213,20 @@ def run_uninstall_contents(config, file_manager, input_path: str | None = None,
 
 
 def run_filter_convert_kks(config, file_manager, input_path: str | None = None,
-               filter_cards: bool | None = None,
                convert: bool | None = None,
+               kk_action: str | None = None,
+               kks_action: str | None = None,
                extract_archive: bool | None = None):
     from tasks.filter_convert_kks import FilterConvertKKS
     from pathlib import Path
     if input_path is not None:
         config.filter_convert_kks["InputPath"] = Path(input_path)
-    if filter_cards is not None:
-        config.filter_convert_kks["Filter"] = filter_cards
     if convert is not None:
         config.filter_convert_kks["Convert"] = convert
+    if kk_action is not None:
+        config.filter_convert_kks["KKAction"] = kk_action
+    if kks_action is not None:
+        config.filter_convert_kks["KKSAction"] = kks_action
     module = FilterConvertKKS(config, file_manager)
     if extract_archive is not None:
         module.extract_archive = extract_archive
@@ -587,12 +590,12 @@ def cmd_filter_convert_kks(args):
     try:
         config, file_manager = _load_core(args.config, instance_index=args.instance)
         config.config_data["FilterConvertKKS"]["Enable"] = True
-        filter_cards = args.filter  # argparse store_true/store_false pair -> already True/False/None
         convert = args.convert  # argparse store_true/store_false pair -> already True/False/None
         extract = args.extract_archive  # argparse store_true/store_false pair -> already True/False/None
         run_filter_convert_kks(config, file_manager, input_path=args.input,
-                   filter_cards=filter_cards,
                    convert=convert,
+                   kk_action=args.kk_action,
+                   kks_action=args.kks_action,
                    extract_archive=extract)
     except SystemExit:
         raise
@@ -922,17 +925,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_uninstall_contents)
 
     # filter-convert-kks
-    p = sub.add_parser("filter-convert-kks", help="Filter and optionally convert KKS cards")
+    p = sub.add_parser("filter-convert-kks", help="Convert KKS cards to KK and/or sort each type into its own folder")
     p.add_argument("--input", "-i", metavar="DIR", default=None)
-    g0 = p.add_mutually_exclusive_group()
-    g0.add_argument("--filter",    dest="filter", action="store_true",  default=None,
-                   help="Move KK/KKSP cards to _KK_card_/ and KKS cards to _KKS_card_/")
-    g0.add_argument("--no-filter", dest="filter", action="store_false",
-                   help="Leave cards in place (default) — recommended when staging for Install/Uninstall Contents")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--convert",    dest="convert", action="store_true",  default=None,
-                   help="Produce a KK-compatible copy of each KKS card (see --filter for where copies are saved)")
+                   help="Produce a KK-compatible copy of each KKS card, saved next to its original "
+                        "(then sorted/kept by --kk-action, not --kks-action)")
     g.add_argument("--no-convert", dest="convert", action="store_false")
+    p.add_argument("--kk-action", dest="kk_action", choices=["Keep", "Move", "Delete"], default=None,
+                   help="What to do with KK/KKSP cards found (including converted KKS copies). Default: Keep")
+    p.add_argument("--kks-action", dest="kks_action", choices=["Keep", "Move", "Delete"], default=None,
+                   help="What to do with the original KKS cards found. Default: Keep")
     g2 = p.add_mutually_exclusive_group()
     g2.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None)
     g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false")

@@ -193,28 +193,6 @@
         }
       ]
     },
-    "Filter": {
-      "type": "switch",
-      "label": "$option.Filter.label",
-      "description": "$option.Filter.description",
-      "default_case": "No",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "$option.Filter.case.Yes.label",
-          "pipeline_override": {
-            "Filter": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "$option.Filter.case.No.label",
-          "pipeline_override": {
-            "Filter": false
-          }
-        }
-      ]
-    },
     "Convert": {
       "type": "switch",
       "label": "$option.Convert.label",
@@ -236,6 +214,52 @@
           }
         }
       ]
+    },
+    "KKAction": {
+      "type": "select",
+      "label": "$option.KKAction.label",
+      "description": "$option.KKAction.description",
+      "default_case": "Keep",
+      "cases": [
+        {
+          "name": "Keep",
+          "label": "$option.KKAction.case.Keep.label"
+        },
+        {
+          "name": "Move",
+          "label": "$option.KKAction.case.Move.label"
+        },
+        {
+          "name": "Delete",
+          "label": "$option.KKAction.case.Delete.label"
+        }
+      ],
+      "pipeline_override": {
+        "KKAction": "{case.name}"
+      }
+    },
+    "KKSAction": {
+      "type": "select",
+      "label": "$option.KKSAction.label",
+      "description": "$option.KKSAction.description",
+      "default_case": "Keep",
+      "cases": [
+        {
+          "name": "Keep",
+          "label": "$option.KKSAction.case.Keep.label"
+        },
+        {
+          "name": "Move",
+          "label": "$option.KKSAction.case.Move.label"
+        },
+        {
+          "name": "Delete",
+          "label": "$option.KKSAction.case.Delete.label"
+        }
+      ],
+      "pipeline_override": {
+        "KKSAction": "{case.name}"
+      }
     },
     "ExtractArchive": {
       "type": "switch",
@@ -1008,8 +1032,9 @@
       "group": ["chara-management"],
       "option": [
         "DownloadsInputPath",
-        "Filter",
         "Convert",
+        "KKAction",
+        "KKSAction",
         "ExtractArchive",
         "ArchivePassword"
       ]

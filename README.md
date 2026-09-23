@@ -37,9 +37,10 @@
 
 - Functions similarly to [FlYiNGPoTAToChiP's KK_SunshineCardFilter](https://github.com/FlYiNGPoTAToChiP/KK_SunshineCardFilter).
 - Given a folder, the task:
-  - **Filter** *(off by default)*: finds all **KKS** (Koikatsu Sunshine) cards and moves them into `_KKS_card_/`, and all **KK / KKSP** cards into `_KK_card_/`. When off, cards are left where they are — no folders are created and nothing is moved.
-  - **Convert KKS → KK**: produces KK-compatible copies of KKS cards. If **Filter** is on, copies go to `_KKS_to_KK_/` alongside the moved cards. If **Filter** is off, each copy is saved next to its original KKS card instead.
-- **Optional:** Extracts ZIP / RAR / 7z archives before filtering — this still works with **Filter** off, so the task is also useful purely as an archive-extraction step.
+  - **Convert KKS → KK** *(off by default)*: produces a KK-compatible copy of each **KKS** (Koikatsu Sunshine) card, saved next to its original. The copy is then treated as a KK card by **KK/KKSP Cards** below (not by **KKS Cards**).
+  - **KK/KKSP Cards** *(Keep by default)*: what to do with every **KK / KKSP** card found — including any KKS card just converted above. **Keep** leaves them where they are; **Move** moves them into `_KK_card_/`; **Delete** sends them to the Recycle Bin.
+  - **KKS Cards** *(Keep by default)*: the same three choices, applied to the original **KKS** cards (never to their converted copies — those are covered by **KK/KKSP Cards**).
+- **Optional:** Extracts ZIP / RAR / 7z archives before filtering — this still works with both actions left at **Keep**, so the task is also useful purely as an archive-extraction step.
 - Has a separate archive password setting from Install Contents.
 
 **4. Filter Duplicate Contents**
@@ -56,9 +57,9 @@
   - `mods/` — zipmod files
 - **Keep strategy** controls which copy of a duplicate set is kept in place: Newest, Oldest, Biggest file size (default), Smallest file size, Last alphabetically, First alphabetically, or None (move all copies).
 - **Use Cache** (on by default) — remembers each file's content hash (and perceptual hash, for fuzzy chara matching) keyed by its mtime + size, so a repeat scan only re-hashes files that are new or have changed. Uses three separate cache files in the scanned folder:
-  - `kkafio_duplicate_png_cache.json` — content hash (XXH3) + category for every PNG
-  - `kkafio_duplicate_fuzzy_cache.json` — perceptual hash for chara cards only (kept separate since it's only computed when **Fuzzy Matching** is on, and is much more expensive than the plain content hash)
-  - `kkafio_duplicate_mods_cache.json` — content hash (XXH3) for every zipmod
+  - `kkafio_duplicate_png_cache.json` — MD5 + category for every PNG
+  - `kkafio_duplicate_fuzzy_cache.json` — perceptual hash for chara cards only (kept separate since it's only computed when **Fuzzy Matching** is on, and is much more expensive than the plain MD5 hash)
+  - `kkafio_duplicate_mods_cache.json` — MD5 for every zipmod
 - **Duplicate Action** controls what happens to the copies that aren't kept:
   - **Move & Rename** *(default)*: moves duplicates into `_duplicates_/<category>/` and renames them so it's obvious which card they're a copy of.
     - If **Keep strategy** is **None** (all copies moved, none kept in place), the first duplicate found in each set keeps its own name, and every other duplicate in that set is renamed after it with a number — e.g. `bar.png`, `bar_1.png`, `bar_2.png`.
@@ -218,9 +219,9 @@ Use **Download Contents** to download cards from db.bepis.moe or koikatsucards.c
 
 Enable **Filter & Convert KKS Characters** with the staging folder as input.
 - Set **Extract Archives** on — this unpacks any ZIP/RAR/7z files in the staging folder before the rest of the pipeline runs.
-- **Leave Filter off** (its default). Filter moves cards into `_KK_card_/`/`_KKS_card_/` subfolders, which breaks **Uninstall Contents**' ability to accurately find and remove a character's files later — Uninstall Contents matches by the file's location in your input folder, and cards buried in a filter subfolder won't line up with what actually got installed. Since it's off by default, you don't need to change anything here unless you specifically want the sorted subfolders for another reason.
+- **Leave KK/KKSP Cards and KKS Cards set to Keep** (their default). **Move** sorts cards into `_KK_card_/`/`_KKS_card_/` subfolders, which breaks **Uninstall Contents**' ability to accurately find and remove a character's files later — Uninstall Contents matches by the file's location in your input folder, and cards buried in a subfolder won't line up with what actually got installed. Since Keep is the default, you don't need to change anything here unless you specifically want the sorted subfolders (or deletion) for another reason.
 - **If you're on Koikatsu Sunshine, leave Convert KKS → KK off too.** Sunshine already loads KK, KKSP, and KKS cards natively (see [Game Type](#game-type)), so converting KKS cards to KK-compatible copies just creates redundant duplicate cards you'll then have to deduplicate again in the next step. Convert KKS → KK is only useful if you're preparing cards for a non-Sunshine Koikatsu/Koikatsu Party install.
-- You can still use this task purely for its archive-extraction step even with both Filter and Convert KKS off.
+- You can still use this task purely for its archive-extraction step even with Convert and both actions left at their defaults.
 
 **Step 3 — Deduplicate**
 
@@ -440,6 +441,5 @@ Everything else — CLI output, log files, and error messages — is English-onl
 - [great-majority](https://github.com/great-majority) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
 - [xwc9527](https://github.com/xwc9527/telebackup) for [TeleBackup](https://github.com/xwc9527/telebackup), High-Speed Telegram Download Engine.
 - [galact-byte](https://github.com/galact-byte) for caching logic taken from [KKTools](https://github.com/galact-byte/KKTools).
-- [EeEeX4](github.com/EeEeX4/koikatsu-card-texture-tool) for [KoiCardTexTool](github.com/EeEeX4/koikatsu-card-texture-tool), the program used to compress cards textures.
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).

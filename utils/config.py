@@ -151,7 +151,7 @@ _TASK_KEY = {
 _TASK_DEFAULTS = {
     "CreateBackup": {"Enable": False, "OutputPath": "C:/KKAFIO/Backups", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True},
-    "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Filter": False, "Convert": False, "ExtractArchive": True, "Password": "Skip"},
+    "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Skip"},
     "FilterDuplicateContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "UseCache": True, "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename"},
     "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "Skip", "TelegramSource": "No", "TelegramChatLinks": "# You need to be a member of all these chats if you want to search mods within them\nhttps://t.me/c/2549022984\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False},
@@ -191,8 +191,9 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "FilterConvertKKS":
         _set("InputPath", "DownloadsInputPath")
-        _set("Filter", "Filter")
         _set("Convert", "Convert")
+        _set("KKAction", "KKAction")
+        _set("KKSAction", "KKSAction")
         _set("ExtractArchive", "ExtractArchive")
         _set("Password", "ArchivePassword")
 
