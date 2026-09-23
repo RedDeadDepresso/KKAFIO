@@ -36,7 +36,7 @@ KOIKATSU_URL  = "https://koikatsucards.com"
 MAX_CONNECTIONS = 10
 
 # Use the same per-platform config directory as everything else (config.json,
-# 7zip.json, telegram.json) instead of a separate, Windows-only APPDATA
+# telegram.json) instead of a separate, Windows-only APPDATA
 # lookup — the old fallback (`Path.home() / "AppData" / "Roaming"`) doesn't
 # make sense on Linux/macOS at all, so history silently ended up somewhere
 # that isn't even where the rest of KKAFIO's own data lives.

@@ -147,7 +147,7 @@ def _load_core(config_path: str | None = None, instance_index: int = 0):
 
 def _traceback_path():
     # CONFIG_DIR is a fixed, always-writable, per-platform location (the
-    # same place config.json/7zip.json/telegram.json already live) —
+    # same place config.json/telegram.json already live) —
     # writing "traceback.log" as a bare relative path instead landed
     # wherever the process happened to be launched from (the game's own
     # folder if double-clicked there, possibly a read-only location like

@@ -1,14 +1,12 @@
 import shutil
 import subprocess
 import time
-import json
 
 from datetime import datetime
 from pathlib import Path
 from utils.logger import logger
 from typing import Union, Literal
 
-from utils.constants import SEVEN_ZIP_PATH
 from utils.subprocess_utils import popen_text, run_text
 
 
@@ -20,7 +18,6 @@ class FileManager:
 
     def __init__(self, config):
         self.config = config
-        self.backup_info_path = SEVEN_ZIP_PATH
 
     def find_all_files(self, directory: Path | str) -> tuple[list[FileEntry], list[FileEntry]]:
         """Find all files and archive files in the given directory.
@@ -232,7 +229,6 @@ class FileManager:
             cwd=self.config.game_path['base'], encoding="utf-8",
         )
 
-        self.write_backup_info(archive_path, process.pid)
         while True:
             line = process.stdout.readline()
             if not line:
@@ -242,18 +238,11 @@ class FileManager:
 
         process.wait()
 
-        self.backup_info_path.unlink(missing_ok=True)
-
         # Check the return code
         if process.returncode not in [0, 1]:
             logger.error("7-Zip", f"Exited with return code: {process.returncode}")
             raise Exception(f"7-zip exited with return code: {process.returncode}")
         
-    def write_backup_info(self, archive_path: Path, pid: int):
-        with open(self.backup_info_path, "w") as f:
-            data = {"ArchivePath": str(archive_path), "PID": pid}
-            json.dump(data, f)
-
     def _run_7zip_extract(self, archive_path: Path, extract_path: Path,
                           password: str | None = None) -> bool:
         """Run 7-Zip to extract archive_path into extract_path.

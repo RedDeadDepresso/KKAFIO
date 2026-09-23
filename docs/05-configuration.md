@@ -116,19 +116,6 @@ same `"kkafio"` base name.
 > ⚠️ This file (and the API credentials above) grant full access to
 > whatever Telegram account authorized them. Never share this directory.
 
-### `7zip.json` — cached 7-Zip path (transient)
-
-```json
-{ "ArchivePath": "D:/backups/koikatsu_backup.7z", "PID": 12345 }
-```
-
-Written by `FileManager.write_backup_info()` right before starting a 7-Zip
-archive process, and deleted again as soon as that process finishes
-(`self.backup_info_path.unlink(missing_ok=True)` in
-`create_game_archive()`). In normal operation this file exists only for the
-duration of a single Create Backup run — if you find it lingering, it means
-a previous backup was killed mid-archive rather than finishing cleanly.
-
 ### `download_history.json` — Download Contents dedup
 
 Lives directly under `CONFIG_DIR` (not inside `config/`):

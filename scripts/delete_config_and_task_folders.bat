@@ -3,8 +3,8 @@
 :: folders. This is DESTRUCTIVE and cannot be undone.
 ::
 :: Deletes:
-::   %APPDATA%\KKAFIO   - saved MXU config, 7-Zip location cache, Telegram
-::                        session/config, download history
+::   %APPDATA%\KKAFIO   - saved MXU config, Telegram session/config,
+::                        download history
 ::   C:\KKAFIO          - the default task folders: Backups, Downloads,
 ::                        Archived Cards, Exported Mods
 ::
