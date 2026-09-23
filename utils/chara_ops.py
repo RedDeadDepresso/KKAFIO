@@ -7,8 +7,10 @@ on its own logic.  Nothing in this file depends on config or file_manager.
 
 
 
+import copy
 import io
 import os
+import re
 import struct
 import xml.etree.ElementTree as ET
 import zipfile
@@ -90,17 +92,21 @@ def _rq(s: io.BytesIO) -> int:
 # GUID extraction from KKEx block
 # ---------------------------------------------------------------------------
 
-def _extract_guids_from_kkex(kkex_bytes: bytes) -> list[str]:
-    guids: list[str] = []
+def _unpack_kkex(kkex_bytes: bytes) -> dict:
+    """Decode a raw KKEx block into {plugin id: plugin data}, or {}."""
     try:
         outer = msgpack.unpackb(kkex_bytes, raw=False, strict_map_key=False)
     except Exception:
-        return guids
+        return {}
+    return outer if isinstance(outer, dict) else {}
 
-    if not isinstance(outer, dict):
-        return guids
 
-    for plugin_key, plugin_data_raw in outer.items():
+def uar_resolve_infos(kkex: dict | None) -> list[dict]:
+    """Decoded Sideloader UniversalAutoResolver ResolveInfo entries (ModID,
+    Slot, LocalSlot, Property, ...) from a decoded KKEx dict — either
+    kkloader's `kc["KKEx"].data` or `_unpack_kkex()` output."""
+    infos: list[dict] = []
+    for plugin_key, plugin_data_raw in (kkex or {}).items():
         key_str = plugin_key if isinstance(plugin_key, str) \
                   else plugin_key.decode("utf-8", errors="replace")
         if key_str not in UAR_EXT_IDS:
@@ -124,14 +130,16 @@ def _extract_guids_from_kkex(kkex_bytes: bytes) -> list[str]:
                 continue
             try:
                 resolve_info = msgpack.unpackb(bytes(item), raw=False)
-                if isinstance(resolve_info, dict):
-                    guid = resolve_info.get("ModID")
-                    if guid:
-                        guids.append(str(guid))
             except Exception:
-                pass
+                continue
+            if isinstance(resolve_info, dict):
+                infos.append(resolve_info)
+    return infos
 
-    return guids
+
+def _extract_guids_from_kkex(kkex_bytes: bytes) -> list[str]:
+    return [str(i["ModID"]) for i in uar_resolve_infos(_unpack_kkex(kkex_bytes))
+            if i.get("ModID")]
 
 
 # ---------------------------------------------------------------------------
@@ -270,43 +278,45 @@ def parse_scene_guids(path: Path) -> list[str]:
         return []
 
 
+def _coord_kkex_bytes(payload: bytes) -> bytes | None:
+    """Raw KKEx block of a coordinate card, given the bytes after its PNG.
+    None if the payload isn't a coordinate card or carries no KKEx."""
+    s = io.BytesIO(payload)
+    if struct.unpack("<i", s.read(4))[0] != 100:
+        return None
+
+    marker = _read_str(s)
+    if marker not in KNOWN_COORD_MARKERS:
+        return None
+
+    _read_str(s)
+    if "AIS" in marker:
+        s.read(4)
+    _read_str(s)
+
+    blob_len = _ri(s)
+    s.seek(blob_len, io.SEEK_CUR)
+
+    try:
+        kkex_marker = _read_str(s)
+    except Exception:
+        return None
+    if kkex_marker != "KKEx":
+        return None
+
+    s.read(4)
+    ext_len = _ri(s)
+    if ext_len <= 0:
+        return None
+    return s.read(ext_len)
+
+
 def parse_coord_guids(path: Path) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a coordinate card."""
     try:
         payload = _payload_after_png(path)
-        if payload is None:
-            return []
-
-        s = io.BytesIO(payload)
-        if struct.unpack("<i", s.read(4))[0] != 100:
-            return []
-
-        marker = _read_str(s)
-        if marker not in KNOWN_COORD_MARKERS:
-            return []
-
-        _read_str(s)
-        if "AIS" in marker:
-            s.read(4)
-        _read_str(s)
-
-        blob_len = _ri(s)
-        s.seek(blob_len, io.SEEK_CUR)
-
-        try:
-            kkex_marker = _read_str(s)
-        except Exception:
-            return []
-
-        if kkex_marker != "KKEx":
-            return []
-
-        s.read(4)
-        ext_len = _ri(s)
-        if ext_len <= 0:
-            return []
-
-        return sorted(set(_extract_guids_from_kkex(s.read(ext_len))))
+        kkex = _coord_kkex_bytes(payload) if payload is not None else None
+        return sorted(set(_extract_guids_from_kkex(kkex))) if kkex else []
     except Exception:
         return []
 
@@ -741,18 +751,98 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
 # ---------------------------------------------------------------------------
 #
 # A chara card's `Coordinate` block holds the same clothes/accessory data a
-# standalone coordinate card does — both are decoded by kkloader through the
-# same routine — so a coordinate card that was saved from one of the card's
-# outfits carries a bit-for-bit identical copy of that outfit's clothes and
-# accessory data. Matching is therefore an exact comparison, no fuzzy
-# colour heuristics needed.
+# standalone coordinate card does (kkloader decodes both with the same
+# routine), so a coordinate saved from one of the card's outfits is a copy
+# of that outfit — but not a byte-for-byte one. Two things differ:
 #
-# To keep the on-disk cache small and JSON-safe (Unity floats, nested
-# lists), each outfit is reduced to a 128-bit xxh3 digest of its canonical JSON
-# form. The same function digests both sides, so the digest is stable
-# across runs and never depends on floats surviving a JSON round-trip.
+#  * Modded item IDs. The IDs stored in a file's clothes/accessory data are
+#    only meaningful together with that file's own Sideloader
+#    UniversalAutoResolver (UAR) info in KKEx. That info maps each
+#    modded field to (ModID, Slot, LocalSlot), and depending on who saved
+#    the file the body holds either the mod's Slot or an install-specific
+#    LocalSlot (e.g. 5856141 in a card vs 100011542 in a coordinate for the
+#    same accessory). Every modded ID is therefore replaced by
+#    "ModID:Slot" before comparing.
+#  * Format additions. Newer coordinate files (clothes version 0.0.2) carry
+#    per-colour `offset`/`rotate` fields older cards lack. When those hold
+#    their default values they're dropped, so the outfit still matches.
+#
+# Each normalised outfit is reduced to an xxh3-128 digest of its canonical
+# JSON, which is what the on-disk cache stores (small, and independent of
+# floats surviving a JSON round-trip).
 
 COORD_CACHE_VERSION = 2
+
+_CLOTHES_KINDS = ("Top", "Bot", "Bra", "Shorts", "Gloves", "Pants", "Socks",
+                  "ShoesInner", "ShoesOuter")   # indexes of ClothesKind
+_SUB_PARTS = "ABC"
+_OUTFIT_PREFIX = re.compile(r"^outfit(\d+)\.")
+_DEFAULT_COLOR_OFFSET = [0.5, 0.5]
+_DEFAULT_COLOR_ROTATE = 0.5
+
+
+def _resolve_lookup(infos: list[dict], outfit: int | None) -> dict[str, dict]:
+    """{Property: ResolveInfo} for one outfit. Cards prefix properties with
+    "outfitN."; coordinate cards don't, so pass outfit=None for those."""
+    lookup: dict[str, dict] = {}
+    for info in infos:
+        prop = str(info.get("Property", ""))
+        m = _OUTFIT_PREFIX.match(prop)
+        if m:
+            if outfit is None or int(m.group(1)) != outfit:
+                continue
+            prop = prop[m.end():]
+        elif outfit is not None:
+            continue
+        lookup[prop] = info
+    return lookup
+
+
+def _resolved(lookup: dict[str, dict], prop: str, value):
+    info = lookup.get(prop)
+    if info is not None and value in (info.get("Slot"), info.get("LocalSlot")):
+        return f"{info.get('ModID')}:{info.get('Slot')}"
+    return value
+
+
+def _normalize_outfit(outfit: dict, lookup: dict[str, dict]) -> list:
+    clothes = copy.deepcopy(outfit["clothes"])
+    accessory = copy.deepcopy(outfit["accessory"])
+    clothes.pop("version", None)
+    accessory.pop("version", None)
+
+    for i, part in enumerate(clothes.get("parts", [])):
+        if i >= len(_CLOTHES_KINDS):
+            break
+        base = "ChaFileClothes.Clothes" + _CLOTHES_KINDS[i]
+        part["id"] = _resolved(lookup, base, part.get("id"))
+        for key, suffix in (("emblemeId", "Emblem"), ("emblemeId2", "Emblem2")):
+            if key in part:
+                part[key] = _resolved(lookup, base + suffix, part[key])
+        for j, color in enumerate(part.get("colorInfo", [])):
+            if not isinstance(color, dict):
+                continue
+            if "pattern" in color:
+                color["pattern"] = _resolved(lookup, f"{base}Pattern{j}", color["pattern"])
+            if color.get("offset") == _DEFAULT_COLOR_OFFSET:
+                del color["offset"]
+            if color.get("rotate") == _DEFAULT_COLOR_ROTATE:
+                del color["rotate"]
+
+    sub_ids = clothes.get("subPartsId", [])
+    for j, value in enumerate(sub_ids[:len(_SUB_PARTS)]):
+        # Jacket and sailor sub-parts share the same slots.
+        for kind in ("Jacket", "Sailor"):
+            resolved = _resolved(lookup, f"ChaFileClothes.Clothes{kind}Sub{_SUB_PARTS[j]}", value)
+            if resolved != value:
+                sub_ids[j] = resolved
+                break
+
+    for i, part in enumerate(accessory.get("parts", [])):
+        if isinstance(part, dict) and "id" in part:
+            part["id"] = _resolved(lookup, f"accessory{i}.ChaFileAccessory.PartsInfo.id", part["id"])
+
+    return [clothes, accessory]
 
 
 def _json_default(o):
@@ -761,15 +851,29 @@ def _json_default(o):
     raise TypeError(f"Unserialisable type in coordinate data: {type(o).__name__}")
 
 
-def outfit_digest(outfit: dict) -> str:
-    """128-bit xxh3 digest of an outfit's clothes + accessory data (a `Coordinate` block
-    element from a chara card, or `CoordinateEntry.data`)."""
+def outfit_digest(outfit: dict, infos: list[dict], outfit_index: int | None = None) -> str:
+    """128-bit xxh3 digest of an outfit's normalised clothes + accessory data.
+
+    `infos` are the UAR ResolveInfo entries of the file the outfit came from
+    (see uar_resolve_infos()); `outfit_index` is the outfit's slot in a chara
+    card, or None for a standalone coordinate card.
+    """
     import xxhash
 
     canonical = _json.dumps(
-        [outfit["clothes"], outfit["accessory"]],
+        _normalize_outfit(outfit, _resolve_lookup(infos, outfit_index)),
         sort_keys=True, separators=(",", ":"), default=_json_default)
     return xxhash.xxh3_128_hexdigest(canonical.encode("utf-8"))
+
+
+def chara_outfit_digests(kc) -> set[str]:
+    """Digests of every outfit in a loaded chara card (KoikatuCharaData)."""
+    try:
+        infos = uar_resolve_infos(kc["KKEx"].data)
+    except (KeyError, ValueError):   # kkloader raises ValueError for a missing block
+        infos = []
+    return {outfit_digest(outfit, infos, n)
+            for n, outfit in enumerate(kc["Coordinate"].data)}
 
 
 def _coord_file_digest(path: Path) -> str | None:
@@ -778,10 +882,14 @@ def _coord_file_digest(path: Path) -> str | None:
     from kkloader.KoikatuCharaData import CoordinateEntry
 
     try:
-        entry = CoordinateEntry.load(str(path), contains_png=True)
+        raw = path.read_bytes()
+        entry = CoordinateEntry.load(raw, contains_png=True)
         if entry.header != CoordinateEntry.default_header:
             return None
-        return outfit_digest(entry.data)
+        png_end = _find_iend_end(raw)
+        kkex = _coord_kkex_bytes(raw[png_end:]) if 0 <= png_end < len(raw) else None
+        infos = uar_resolve_infos(_unpack_kkex(kkex)) if kkex else []
+        return outfit_digest(entry.data, infos)
     except Exception:
         return None
 
@@ -852,11 +960,10 @@ def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, str]
     return coord_map
 
 
-def find_matching_coords(chara_coords: list[dict], coord_map: dict[str, str]) -> list[Path]:
+def find_matching_coords(kc, coord_map: dict[str, str]) -> list[Path]:
     """Return the coordinate cards in `coord_map` (from build_coord_cache())
-    that are an exact copy of any outfit in `chara_coords` (a chara card's
-    `kc["Coordinate"].data`)."""
-    wanted = {outfit_digest(outfit) for outfit in chara_coords}
+    that are a copy of any outfit of the loaded chara card `kc`."""
+    wanted = chara_outfit_digests(kc)
     return sorted(Path(sp) for sp, digest in coord_map.items()
                   if digest in wanted and Path(sp).exists())
 

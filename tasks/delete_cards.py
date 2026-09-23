@@ -145,7 +145,7 @@ class DeleteCards(BaseTask):
                 try:
                     kc = KoikatuCharaData.load(str(content_path))
                     coord_map = self._get_coord_map(coord_dir)
-                    coord_paths = find_matching_coords(kc["Coordinate"].data, coord_map)
+                    coord_paths = find_matching_coords(kc, coord_map)
                     logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")
                     for cp in coord_paths:
                         logger.info("DELETE", f"    {cp.name}")
