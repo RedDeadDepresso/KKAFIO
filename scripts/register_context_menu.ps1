@@ -336,7 +336,11 @@ function New-MenuItem {
 function Build-Command {
     param([string]$TargetExe, [string]$Cli, [string]$ArgsTemplate, [string]$Placeholder, [string]$CmdSwitch = '/k')
     $argsStr = $ArgsTemplate -replace '\{P\}', $Placeholder
-    return 'cmd.exe ' + $CmdSwitch + ' ""' + $TargetExe + '" ' + $Cli + ' ' + $argsStr + '"'
+    # "--instance context-menu" makes kkafio_cli use the config tab marked
+    # "Use in Explorer Context Menu" in MXU (first tab if none is marked). It is
+    # resolved each time the entry is clicked, so changing the marked tab in MXU
+    # takes effect immediately - no need to re-register.
+    return 'cmd.exe ' + $CmdSwitch + ' ""' + $TargetExe + '" --instance context-menu ' + $Cli + ' ' + $argsStr + '"'
 }
 
 # ---------------------------------------------------------------------------

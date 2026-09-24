@@ -550,3 +550,21 @@ def list_instances(config_file: str) -> list[tuple[int, str]]:
         return []
     return [(i, inst.get("name", f"Instance {i}"))
             for i, inst in enumerate(mxu.get("instances", []))]
+
+
+def find_context_menu_instance(config_file: str) -> int | None:
+    """Index of the instance marked "use in Explorer context menu" in MXU
+    (its `useInContextMenu` flag), or None if no instance is marked.
+
+    MXU only ever lets one tab hold the flag; if a hand-edited config has
+    several, the first one wins.
+    """
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            mxu = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    for i, inst in enumerate(mxu.get("instances", [])):
+        if isinstance(inst, dict) and inst.get("useInContextMenu") is True:
+            return i
+    return None

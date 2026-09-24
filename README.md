@@ -297,7 +297,7 @@ Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to the re
 
 ## Context Menu Integration
 
-Run `kkafio_setup.bat` (in the KKAFIO install root) and choose **Register context menu** to add a **KKAFIO** submenu to the Windows Explorer right-click menu. Under the hood this runs `scripts\register_context_menu.bat`, a thin wrapper around `scripts\register_context_menu.ps1` — using the `.bat` avoids Windows' default PowerShell execution policy, which otherwise blocks `.ps1` scripts from running at all. It uses the selected file/folder as an argument; remaining settings are taken from the first configuration instance.
+Run `kkafio_setup.bat` (in the KKAFIO install root) and choose **Register context menu** to add a **KKAFIO** submenu to the Windows Explorer right-click menu. Under the hood this runs `scripts\register_context_menu.bat`, a thin wrapper around `scripts\register_context_menu.ps1` — using the `.bat` avoids Windows' default PowerShell execution policy, which otherwise blocks `.ps1` scripts from running at all. It uses the selected file/folder as an argument; remaining settings are taken from the configuration tab you marked in MXU (see below), or from the first tab if none is marked.
 
 It first removes any existing KKAFIO menu entries, then asks you to pick a language (used for the menu labels and the script's own prompts) and which folder tasks to include and in what order (enter the numbers shown, e.g. `3 1 4 6`; leave blank for all tasks in the default order). "Run GUI" and the PNG entries below are always included. Re-run it any time to change your language or task selection — no need to run an "unregister" step first.
 
@@ -321,6 +321,8 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | -------------- | ------------------------------------------------------ |
 | Archive Cards | `archive-cards <selected files> --context-menu` |
 | Delete Cards  | `delete-cards <selected files> --context-menu`  |
+
+**Choosing which config the context menu uses:** in MXU, right-click a tab and choose **Use in Explorer Context Menu**. That tab shows a small pointer icon, and every context-menu entry now runs with its settings. Right-click it again and choose **Remove from Explorer Context Menu** to clear it. Only one tab can be marked at a time (marking another moves the mark), and if no tab is marked the first tab is used, as before. The choice is read every time you click an entry, so changing it in MXU takes effect immediately with no re-registering. (Entries registered by an older version don't know about this yet — run **Register context menu** once more to update them.) Each entry runs `kkafio_cli --instance context-menu <command> ...`.
 
 Run `kkafio_setup.bat` and choose **Unregister context menu** to remove all entries without registering new ones.
 
@@ -397,7 +399,7 @@ kkafio_cli delete-cards  [CONTENT ...]
                            [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
 
 # Global options (all commands):
-kkafio_cli --config PATH --instance N <command>
+kkafio_cli --config PATH --instance N|context-menu <command>
 ```
 
 ## Requirements

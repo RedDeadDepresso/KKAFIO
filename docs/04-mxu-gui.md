@@ -65,6 +65,16 @@ the currently *active* (displayed) instance in the UI — see the scheduler's
 trigger callback in `Toolbar.tsx` for the exact gating logic. A scheduled
 run on a background instance is silently skipped, not queued.
 
+**Explorer context menu.** Right-clicking a tab offers *Use in Explorer
+Context Menu* / *Remove from Explorer Context Menu*, which sets or clears an
+optional `useInContextMenu: true` flag on that instance in
+`mxu-KKAFIO.json` (exclusive — at most one instance holds it; duplicating a
+tab never copies it, and tab export/import ignores it). The registered
+shell entries run `kkafio_cli.exe --instance context-menu <command> ...`;
+`kkafio_cli` then picks the flagged instance at click time
+(`find_context_menu_instance()` in `utils/config.py`), falling back to
+instance 0 when none is flagged.
+
 ## Logs: three different places, one source
 
 A single line of task output ends up in up to three places, all originating

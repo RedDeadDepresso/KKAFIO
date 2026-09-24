@@ -21,7 +21,11 @@ Shell context menu:
 
 Global options:
     --config PATH   use a custom config.json instead of %APPDATA%/KKAFIO/config/mxu-KKAFIO.json
-    --instance N    use instance N from the config (0-based, default: 0)
+    --instance N    use instance N from the config (0-based, default: 0).
+                    Use "--instance context-menu" to pick the instance that is
+                    marked "Use in Explorer Context Menu" in MXU (right-click a
+                    tab); falls back to instance 0 if none is marked. The
+                    registered Explorer context-menu entries pass this.
 """
 
 import sys
@@ -134,12 +138,37 @@ def suppress_teleget_console_logs() -> None:
 # Core loader
 # ---------------------------------------------------------------------------
 
-def _load_core(config_path: str | None = None, instance_index: int = 0):
-    from utils.config import Config
+# Value for the global --instance option that means "whichever instance is
+# marked for the Explorer context menu in MXU" (see find_context_menu_instance).
+CONTEXT_MENU_INSTANCE = "context-menu"
+
+
+def _instance_arg(value: str):
+    """argparse type for --instance: a 0-based index, or "context-menu"."""
+    if value.strip().lower() == CONTEXT_MENU_INSTANCE:
+        return CONTEXT_MENU_INSTANCE
+    try:
+        return int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"invalid instance '{value}' (expected a number or '{CONTEXT_MENU_INSTANCE}')")
+
+
+def _load_core(config_path: str | None = None, instance_index: int | str = 0):
+    from utils.config import Config, find_context_menu_instance
     from utils.constants import CONFIG_PATH
     from utils.file_manager import FileManager
+    from utils.logger import logger
 
     path = config_path if config_path else str(CONFIG_PATH)
+    if instance_index == CONTEXT_MENU_INSTANCE:
+        marked = find_context_menu_instance(path)
+        if marked is None:
+            logger.info("CLI", "No instance is marked for the Explorer context menu "
+                               "— using the first instance")
+            instance_index = 0
+        else:
+            instance_index = marked
     config = Config(path, instance_index=instance_index)
     file_manager = FileManager(config)
     return config, file_manager
@@ -465,16 +494,22 @@ def run_create_backup(config, file_manager, output_path: str | None = None,
 
 def cmd_list_instances(args):
     """Print all instance names with their indices."""
-    from utils.config import list_instances
+    from utils.config import list_instances, find_context_menu_instance
     from utils.constants import CONFIG_PATH
     config_path = args.config if args.config else str(CONFIG_PATH)
     instances = list_instances(config_path)
     if not instances:
         print(f"No instances found in '{config_path}'")
         return
+    marked = find_context_menu_instance(config_path)
     for idx, name in instances:
-        marker = " (default)" if idx == 0 else ""
-        print(f"  [{idx}] {name}{marker}")
+        tags = []
+        if idx == 0:
+            tags.append("default")
+        if idx == marked:
+            tags.append("context menu")
+        suffix = f" ({', '.join(tags)})" if tags else ""
+        print(f"  [{idx}] {name}{suffix}")
 
 
 def cmd_run(args):
@@ -885,9 +920,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to a config.json file (default: %%APPDATA%%/KKAFIO/config/mxu-KKAFIO.json)",
     )
     parser.add_argument(
-        "--instance", "-n", metavar="N", type=int, default=0,
-        help="Zero-based index of the instance to use (default: 0). "
-             "Run 'list-instances' to see all available instances.",
+        "--instance", "-n", metavar="N|context-menu", type=_instance_arg, default=0,
+        help="Zero-based index of the instance to use (default: 0), or 'context-menu' for "
+             "the instance marked \"Use in Explorer Context Menu\" in MXU (first instance if "
+             "none is marked). Run 'list-instances' to see all available instances.",
     )
 
     sub = parser.add_subparsers(dest="command", metavar="COMMAND")
