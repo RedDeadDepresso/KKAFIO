@@ -117,11 +117,9 @@ class FilterConvertKKS:
         folder this run scanned — not each card's own parent folder — so
         every KK/KKSP (or KKS) card ends up in exactly one shared
         `base_path/_KK_card_` (or `_KKS_card_`), including cards found
-        inside an extracted archive's temp subfolder. Anchoring on a
-        card's own parent instead would scatter cards into a different
-        destination folder per source subfolder, and — worse — would
-        create that destination *inside* an extracted temp folder,
-        permanently preventing it from ever being cleaned up as empty."""
+        inside an extracted archive's subfolder. Anchoring on a card's own
+        parent instead would scatter cards into a different destination
+        folder per source subfolder."""
         if not cards:
             logger.success("SCRIPT", f"No {label} cards found")
             return
@@ -158,22 +156,17 @@ class FilterConvertKKS:
     # Archive extraction
     # ------------------------------------------------------------------
 
-    def _extract_archives(self, path: Path) -> list[Path]:
+    def _extract_archives(self, path: Path) -> None:
         """Extract every archive found under `path` into a folder named after
-        it, skipping archives whose folder already exists. Returns the newly
-        created extraction folders so the caller can remove them once their
-        contents have been processed and nothing is left inside."""
+        it, skipping archives whose folder already exists. The extracted
+        folders are left in place."""
         _, archive_list = self.file_manager.find_all_files(path)
         if not archive_list:
-            return []
+            return
         logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
-        extract_paths: list[Path] = []
         for archive in archive_list:
-            extract_path = self.file_manager.extract_archive(
+            self.file_manager.extract_archive(
                 archive[0], task_config=self.config.filter_convert_kks)
-            if extract_path is not None:
-                extract_paths.append(extract_path)
-        return extract_paths
 
     # ------------------------------------------------------------------
     # Main
@@ -185,7 +178,8 @@ class FilterConvertKKS:
         validate_input_path("FILTER", path, default_path=DEFAULT_DOWNLOADS_PATH)
 
         # 1. Extract archives, if enabled.
-        extract_paths = self._extract_archives(path) if self.extract_archive else []
+        if self.extract_archive:
+            self._extract_archives(path)
 
         png_list = self.get_list(path)
         if not png_list:
@@ -228,15 +222,3 @@ class FilterConvertKKS:
         # 3. Run KKSAction / KKAction, unless left at Keep.
         self._apply_action(kks_cards, self.kks_action, path, "_KKS_card_", "KKS")
         self._apply_action(kk_cards,  self.kk_action,  path, "_KK_card_",  "KK/KKSP")
-
-        for extract_path in extract_paths:
-            remaining = any(extract_path.rglob("*"))
-            if remaining:
-                continue
-            try:
-                import shutil
-                shutil.rmtree(extract_path)
-                logger.info("SCRIPT", f"Cleaned up extracted folder: {extract_path.name}")
-            except OSError as e:
-                logger.warning("SCRIPT",
-                    f"Could not remove extracted folder {extract_path.name}: {e}")
