@@ -23,7 +23,6 @@ Strategy
         topic) via Telegram's server-side document search, and download
         the first result whose filename ends in .zipmod
      d) Otherwise → log as unresolved
-6. Each successful download immediately updates and saves the mods cache.
 """
 
 from __future__ import annotations
@@ -1294,19 +1293,7 @@ class DownloadMissingMods(BaseTask):
                                 except Exception:
                                     pass
 
-        try:
-            asyncio.run(_run_all())
-        finally:
-            # Refresh the shared mods cache once, incrementally: only the
-            # zipmods that are new since the last scan get opened. (Writing
-            # {guid: path} on every download, as this used to, dropped the
-            # per-file fingerprints and forced a full rescan next time.)
-            # Runs on Stop / Ctrl+C too.
-            if self.use_cache:
-                try:
-                    build_mods_cache(mods_dir, include_modpack=False, use_cache=True)
-                except Exception as e:
-                    logger.warning("DLMOD", f"Could not refresh mods cache: {e}")
+        asyncio.run(_run_all())
 
         logger.line()
 
