@@ -461,7 +461,8 @@ async def _ensure_session(tg_data: dict) -> bool:
         phone = password_dialog(
             "Telegram Sign-in",
             "Enter your Telegram phone number (with country code, e.g. +447911123456):",
-        )
+            mask=False,
+        ).strip()
         if not phone:
             logger.error("DLMOD", "Phone number not provided.")
             return False
@@ -485,7 +486,8 @@ async def _ensure_session(tg_data: dict) -> bool:
             code = password_dialog(
                 "Telegram Verification Code",
                 f"A verification code was sent to {phone}.\nEnter the code:",
-            )
+                mask=False,
+            ).strip()
             if not code:
                 logger.error("DLMOD", "Verification code not provided.")
                 return False

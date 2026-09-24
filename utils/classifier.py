@@ -100,8 +100,10 @@ PERSONALITIES = [
 # (https://xkcd.com/color/rgb/), matched in perceptually-uniform CIELAB space
 # via a k-d tree.
 #
-# numpy, scipy and scikit-image are imported lazily so importing this module
-# does not require loading those relatively heavy dependencies immediately.
+# numpy and scipy are imported lazily so importing this module does not
+# require loading those relatively heavy dependencies immediately. The
+# sRGB -> CIELAB conversion is implemented directly in numpy (see
+# _rgb_to_lab) rather than pulling in scikit-image for a single function.
 
 
 _COLOR_DATA_FILE = "xkcd_colors.json"
@@ -117,7 +119,6 @@ def _get_color_matcher() -> tuple[list[str], "cKDTree"]:
     """
     import numpy as np
     from scipy.spatial import cKDTree
-    from skimage.color import rgb2lab
 
     if getattr(__import__("sys"), "frozen", False):
         exe_dir = Path(__import__("sys").executable).parent
@@ -142,25 +143,53 @@ def _get_color_matcher() -> tuple[list[str], "cKDTree"]:
             for h in hex_values
         ],
         dtype=np.float64,
-    ) / 255.0
+    )
 
-    lab_arr = rgb2lab(rgb_arr.reshape(-1, 1, 3)).reshape(-1, 3)
+    lab_arr = _rgb_to_lab(rgb_arr)
 
     tree = cKDTree(lab_arr)
 
     return names, tree
 
 
+# sRGB (D65) -> CIE XYZ matrix, and the D65 / 2-degree reference white.
+# Same constants scikit-image's rgb2lab uses, so results match it.
+_XYZ_FROM_RGB = (
+    (0.412453, 0.357580, 0.180423),
+    (0.212671, 0.715160, 0.072169),
+    (0.019334, 0.119193, 0.950227),
+)
+_D65_WHITE = (0.95047, 1.0, 1.08883)
+
+
 def _rgb_to_lab(rgb_values: "np.ndarray") -> "np.ndarray":
-    """Convert an (N, 3) array of 0-255 RGB values to Lab values."""
+    """Convert an (N, 3) array of 0-255 sRGB values to CIELAB (N, 3)."""
     import numpy as np
-    from skimage.color import rgb2lab
 
-    normalized = rgb_values.astype(np.float64) / 255.0
+    rgb = np.asarray(rgb_values, dtype=np.float64).reshape(-1, 3) / 255.0
 
-    return rgb2lab(
-        normalized.reshape(-1, 1, 3)
-    ).reshape(-1, 3)
+    # Undo the sRGB gamma curve.
+    linear = np.where(
+        rgb > 0.04045,
+        ((rgb + 0.055) / 1.055) ** 2.4,
+        rgb / 12.92,
+    )
+
+    # Linear RGB -> XYZ, normalised by the reference white.
+    xyz = linear @ np.array(_XYZ_FROM_RGB).T / np.array(_D65_WHITE)
+
+    # XYZ -> Lab non-linearity.
+    f = np.where(
+        xyz > 0.008856,
+        np.cbrt(xyz),
+        7.787 * xyz + 16.0 / 116.0,
+    )
+
+    fx, fy, fz = f[:, 0], f[:, 1], f[:, 2]
+    return np.stack(
+        (116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)),
+        axis=1,
+    )
 
 
 def get_simple_color_description(

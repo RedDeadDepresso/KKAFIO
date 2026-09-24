@@ -131,7 +131,7 @@ jobs:
           --hidden-import "utils.subprocess_utils"
           --hidden-import "utils.telegram_config"
           --hidden-import "tasks.archive_cards"
-          --hidden-import "tasks.compress_cards_textures.py"
+          --hidden-import "tasks.compress_cards_textures"
           --hidden-import "tasks.base_task"
           --hidden-import "tasks.create_backup"
           --hidden-import "tasks.delete_cards"

@@ -1,5 +1,5 @@
 """
-password_dialog.py — Show a native password prompt.
+password_dialog.py — Show a native input prompt (masked by default).
 
 On Windows uses a PowerShell WinForms dialog (same approach as
 llm_dialog.py) so no extra runtime or Tcl/Tk dependency is needed. The
@@ -17,19 +17,27 @@ import tempfile
 from utils.job_object import die_with_parent
 
 
-def password_dialog(title: str, content: str) -> str:
-    if sys.platform == "win32":
-        return _powershell_dialog(title, content)
-    return _terminal_prompt(title, content)
+def password_dialog(title: str, content: str, mask: bool = True) -> str:
+    """Prompt for a string. Returns '' if cancelled.
 
-
-def _powershell_dialog(title: str, content: str) -> str:
+    Pass ``mask=False`` for values that aren't secret (phone numbers,
+    verification codes, API IDs) so the user can see what they typed.
     """
-    Show a WinForms window with a masked password TextBox plus OK / Cancel
-    buttons. Returns the entered password, or '' if cancelled.
+    if sys.platform == "win32":
+        return _powershell_dialog(title, content, mask)
+    return _terminal_prompt(title, content, mask)
+
+
+def _powershell_dialog(title: str, content: str, mask: bool = True) -> str:
+    """
+    Show a WinForms window with a TextBox (masked unless ``mask`` is False)
+    plus OK / Cancel buttons. The label grows to fit its text and the
+    form/controls are laid out below it. Returns the entered text, or ''
+    if cancelled.
     """
     t = title.replace("'", "''")
     c = content.replace("'", "''")
+    password_char_line = "$box.PasswordChar = '*'" if mask else ""
 
     # Route the result through a UTF-8 temp file instead of stdout — Windows
     # PowerShell's console pipe encoding isn't guaranteed to be UTF-8, so
@@ -57,34 +65,39 @@ public class KKAFIOWin32 {{
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = '{t}'
-$form.Width = 420
-$form.Height = 200
+$form.ClientSize = New-Object System.Drawing.Size(420, 160)
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
 $form.MinimizeBox = $true
 $form.StartPosition = 'CenterScreen'
 $form.Topmost = $true
 
+# The label is sized to its text (word-wrapped at the box width) instead of
+# a fixed height, so multi-line instructions aren't clipped. Everything
+# below it is positioned relative to the measured height.
 $label = New-Object System.Windows.Forms.Label
 $label.Text = '{c}'
 $label.AutoSize = $false
 $label.Left = 10
 $label.Top = 15
 $label.Width = 384
-$label.Height = 40
+$measured = $label.GetPreferredSize((New-Object System.Drawing.Size(384, 0)))
+$label.Height = [Math]::Max(20, $measured.Height + 4)
 $form.Controls.Add($label)
 
+$boxTop = $label.Top + $label.Height + 8
 $box = New-Object System.Windows.Forms.TextBox
-$box.PasswordChar = '*'
+{password_char_line}
 $box.Left = 10
-$box.Top = 60
+$box.Top = $boxTop
 $box.Width = 384
 $form.Controls.Add($box)
 
+$btnTop = $boxTop + 40
 $okBtn = New-Object System.Windows.Forms.Button
 $okBtn.Text = 'OK'
 $okBtn.Left = 214
-$okBtn.Top = 100
+$okBtn.Top = $btnTop
 $okBtn.Width = 90
 $okBtn.DialogResult = [System.Windows.Forms.DialogResult]::OK
 $form.Controls.Add($okBtn)
@@ -92,10 +105,12 @@ $form.Controls.Add($okBtn)
 $cancelBtn = New-Object System.Windows.Forms.Button
 $cancelBtn.Text = 'Cancel'
 $cancelBtn.Left = 314
-$cancelBtn.Top = 100
+$cancelBtn.Top = $btnTop
 $cancelBtn.Width = 90
 $cancelBtn.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
 $form.Controls.Add($cancelBtn)
+
+$form.ClientSize = New-Object System.Drawing.Size(420, ($btnTop + 40))
 
 $form.AcceptButton = $okBtn
 $form.CancelButton = $cancelBtn
@@ -131,7 +146,7 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
                     return f.read()
             return ""  # dialog was cancelled — no response file was written
         except Exception:
-            return _terminal_prompt(title, content)
+            return _terminal_prompt(title, content, mask)
     finally:
         try:
             os.unlink(response_path)
@@ -139,10 +154,12 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
             pass
 
 
-def _terminal_prompt(title: str, content: str) -> str:
-    import getpass
+def _terminal_prompt(title: str, content: str, mask: bool = True) -> str:
     print(f"\n{title}\n{content}")
-    return getpass.getpass("Password: ")
+    if mask:
+        import getpass
+        return getpass.getpass("Password: ")
+    return input("> ")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ Tasks implemented:
   __MXU_POWER__      — shutdown / restart / screen-off / sleep
 """
 
+import os
 import sys
 import time
 import subprocess
@@ -111,6 +112,58 @@ def _split_args(args_str: str) -> list[str]:
             for t in tokens]
 
 
+def _is_process_running_windows(exe_name: str) -> bool:
+    """Return True if a process whose image name equals `exe_name` is running.
+
+    `tasklist` truncates the image-name column to 25 characters, so a
+    substring check against its output never matches a longer name. Walk
+    the process snapshot through the Win32 API instead, which returns the
+    full image name (szExeFile holds up to MAX_PATH characters).
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    TH32CS_SNAPPROCESS = 0x2
+    INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+
+    class PROCESSENTRY32W(ctypes.Structure):
+        _fields_ = [
+            ("dwSize", wintypes.DWORD),
+            ("cntUsage", wintypes.DWORD),
+            ("th32ProcessID", wintypes.DWORD),
+            ("th32DefaultHeapID", ctypes.c_size_t),
+            ("th32ModuleID", wintypes.DWORD),
+            ("cntThreads", wintypes.DWORD),
+            ("th32ParentProcessID", wintypes.DWORD),
+            ("pcPriClassBase", wintypes.LONG),
+            ("dwFlags", wintypes.DWORD),
+            ("szExeFile", wintypes.WCHAR * 260),
+        ]
+
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    k32.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    k32.Process32FirstW.argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32W)]
+    k32.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32W)]
+    k32.CloseHandle.argtypes = [wintypes.HANDLE]
+
+    snap = k32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+    if snap is None or snap == INVALID_HANDLE_VALUE:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        entry = PROCESSENTRY32W()
+        entry.dwSize = ctypes.sizeof(PROCESSENTRY32W)
+        target = exe_name.lower()
+        ok = k32.Process32FirstW(snap, ctypes.byref(entry))
+        while ok:
+            if entry.szExeFile.lower() == target:
+                return True
+            ok = k32.Process32NextW(snap, ctypes.byref(entry))
+        return False
+    finally:
+        k32.CloseHandle(snap)
+
+
 def run_launch(param: dict, stop: threading.Event) -> bool:
     from pathlib import Path
 
@@ -128,11 +181,7 @@ def run_launch(param: dict, stop: threading.Event) -> bool:
         exe_name = Path(program).name.lower()
         try:
             if sys.platform == "win32":
-                out = subprocess.check_output(
-                    ["tasklist", "/FI", f"IMAGENAME eq {exe_name}"],
-                    text=True, creationflags=0x0800_0000,
-                )
-                if exe_name.lower() in out.lower():
+                if _is_process_running_windows(exe_name):
                     _log().info("MXU_LAUNCH", f"'{program}' already running, skipping")
                     return True
             else:
@@ -141,7 +190,10 @@ def run_launch(param: dict, stop: threading.Event) -> bool:
                     _log().info("MXU_LAUNCH", f"'{program}' already running, skipping")
                     return True
         except subprocess.CalledProcessError:
-            pass  # not running
+            pass  # not running (pgrep exits 1 when nothing matches)
+        except Exception as e:
+            # Couldn't tell — launch anyway rather than silently skipping.
+            _log().warning("MXU_LAUNCH", f"Could not check for a running '{exe_name}': {e}")
 
     args_list = _split_args(args_str)
     cwd = str(Path(program).parent) if Path(program).parent.exists() else None
@@ -192,30 +244,49 @@ def run_notify(param: dict, stop: threading.Event) -> bool:
     _log().info("MXU_NOTIFY", f"title={title!r} body={body!r}")
     try:
         if sys.platform == "win32":
-            # Use PowerShell toast — no extra deps needed
+            # Use PowerShell toast — no extra deps needed.
+            #
+            # The text is handed to PowerShell through environment variables
+            # rather than interpolated into the script, so apostrophes and
+            # other quoting characters can't break the PowerShell string. It
+            # is then XML-escaped inside PowerShell (& < > " ') because it
+            # goes into the toast's XML payload; unescaped, an "&" or "<"
+            # makes LoadXml throw.
             ps = (
-                f"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, "
-                f"ContentType = WindowsRuntime] | Out-Null; "
-                f"$t = [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom, ContentType=WindowsRuntime]::new(); "
-                f"$t.LoadXml('<toast><visual><binding template=\"ToastText02\">"
-                f"<text id=\"1\">{title}</text><text id=\"2\">{body}</text>"
-                f"</binding></visual></toast>'); "
-                f"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('MXU')"
-                f".Show([Windows.UI.Notifications.ToastNotification]::new($t))"
+                "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, "
+                "ContentType = WindowsRuntime] | Out-Null; "
+                "$t = [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom, "
+                "ContentType=WindowsRuntime]::new(); "
+                "$title = [System.Security.SecurityElement]::Escape($env:KKAFIO_TOAST_TITLE); "
+                "$body = [System.Security.SecurityElement]::Escape($env:KKAFIO_TOAST_BODY); "
+                "$t.LoadXml('<toast><visual><binding template=\"ToastText02\">"
+                "<text id=\"1\">' + $title + '</text><text id=\"2\">' + $body + '</text>"
+                "</binding></visual></toast>'); "
+                "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('MXU')"
+                ".Show([Windows.UI.Notifications.ToastNotification]::new($t))"
             )
+            env = {**os.environ,
+                   "KKAFIO_TOAST_TITLE": title,
+                   "KKAFIO_TOAST_BODY": body}
             subprocess.run(
                 ["powershell", "-NoProfile", "-Command", ps],
-                creationflags=0x0800_0000, timeout=5,
+                creationflags=0x0800_0000, timeout=5, env=env,
             )
         elif sys.platform == "darwin":
+            # Pass the text as argv items to the AppleScript instead of
+            # splicing it into the script source, so quotes/backslashes
+            # can't break out of the string literal.
             subprocess.run(
-                ["osascript", "-e",
-                 f'display notification "{body}" with title "{title}"'],
+                ["osascript",
+                 "-e", "on run argv",
+                 "-e", "display notification (item 2 of argv) with title (item 1 of argv)",
+                 "-e", "end run",
+                 title, body],
                 timeout=5,
             )
         else:
             subprocess.run(
-                ["notify-send", title, body], timeout=5,
+                ["notify-send", "--", title, body], timeout=5,
             )
         _log().success("MXU_NOTIFY", "Sent")
         return True

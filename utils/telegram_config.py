@@ -68,6 +68,7 @@ def prompt_for_credentials() -> dict:
         "Telegram API ID",
         "Enter your Telegram API ID\n"
         "(found on https://my.telegram.org → API development tools):",
+        mask=False,
     ).strip()
 
     if not api_id_str or not api_id_str.isdigit():
