@@ -23,7 +23,7 @@ from utils.subprocess_utils import popen_text
 
 KOICARDTEXTOOL_URL = (
     "https://github.com/EeEeX4/koikatsu-card-texture-tool/"
-    "releases/download/v1.0/KoiCardTexTool-1.0.zip"
+    "releases/download/v1.0.1/KoiCardTexTool-1.0.1.zip"
 )
 KOICARDTEXTOOL_EXE = "KoiCardTexTool.exe"
 
@@ -32,7 +32,7 @@ KOICARDTEXTOOL_EXE = "KoiCardTexTool.exe"
 # executed. Recomputed with `sha256sum` against the current v1.0 asset;
 # update this whenever KOICARDTEXTOOL_URL is bumped to a new release.
 KOICARDTEXTOOL_SHA256 = (
-    "c4fb2ce878cded545cc4f1302b69898f4e1d26ea539670c457cb4f2e49376abc"
+    "ba6f4480b7fc0c9a0797b2d0752ebaa8abb2e45db68cad849b5d5448b8762a2a"
 )
 
 
