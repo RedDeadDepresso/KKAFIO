@@ -2,6 +2,23 @@
 
 <img width="1280" height="764" alt="KKAFIO preview" src="assets/preview.png" />
 
+## Table of Contents
+
+- [Features](#features)
+- [Presets](#presets)
+- [Download Missing Mods Workflows](#download-missing-mods-workflows)
+  - [Method 1 — Check installed cards (simple)](#method-1--check-installed-cards-simple)
+  - [Method 2 — Staging folder workflow ⭐ Recommended](#method-2--staging-folder-workflow--recommended)
+- [Game Type](#game-type)
+- [Modpack Index](#modpack-index)
+- [Context Menu Integration](#context-menu-integration)
+- [CLI Usage](#cli-usage)
+- [Requirements](#requirements)
+- [Installation and Usage](#installation-and-usage)
+- [Languages](#languages)
+- [Known Issues](#known-issues)
+- [Acknowledgements](#acknowledgements)
+
 ## Features
 
 **1. Create Backup**
@@ -187,6 +204,28 @@ https://t.me/kknowcc # you need to be part of this chat
 - Searches both the regular mods folder and any Sideloader Modpack subfolder inside it — unlike Archive/Delete Cards, exporting a copy doesn't touch or remove anything, so modpack-covered mods are fair game too.
 - **Custom Mods Directory** — leave blank to use the game's default mods folder.
 - **Use Cache** (on by default) — reuses the same incremental mods cache as the other tasks.
+
+---
+
+## Presets
+
+Presets are one-click bundles that check a fixed set of tasks for you — pick one from the preset dropdown instead of ticking tasks individually. You can still enable or disable individual tasks afterward; a preset only sets the initial selection.
+
+**⚡ All Tasks**
+
+Checks every task (1–14 above) in order. Mostly useful for testing, or if you genuinely want to run the entire pipeline back to back — most workflows below are a better fit for everyday use.
+
+**📥 Download, Filter & Install**
+
+Checks Download Contents → Filter & Convert KKS Characters → Filter Duplicate Contents → Download Missing Mods → Compress Cards Textures → Install Contents. The full download-to-install pipeline: pull down new cards, convert any KKS ones and remove duplicates, grab whatever mods they need, shrink their textures, then install everything into the game.
+
+**🗂️ Organize Installed Contents**
+
+Checks Filter Duplicate Contents → Group Chara → Rename Chara → Delete Cards → Download Missing Mods. For tidying up cards you already have installed: clear out duplicates, sort characters into folders, rename them, remove any you don't want, and pull down mods for anything still missing.
+
+**📤 Export Installed Contents**
+
+Checks Archive Cards → Export Mods. For packaging up your installed content to share with someone else: Archive Cards bundles selected cards together with their required mods, and Export Mods pulls any additional mods out by GUID.
 
 ---
 
@@ -444,5 +483,6 @@ Everything else — CLI output, log files, and error messages — is English-onl
 - [great-majority](https://github.com/great-majority) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
 - [xwc9527](https://github.com/xwc9527/telebackup) for [TeleBackup](https://github.com/xwc9527/telebackup), High-Speed Telegram Download Engine.
 - [galact-byte](https://github.com/galact-byte) for caching logic taken from [KKTools](https://github.com/galact-byte/KKTools).
+- [EeEeX4](github.com/EeEeX4/koikatsu-card-texture-tool) for [KoiCardTexTool](github.com/EeEeX4/koikatsu-card-texture-tool), the program used to compress cards textures.
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).
