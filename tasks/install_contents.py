@@ -63,31 +63,7 @@ class InstallContents(ContentTypeResolver):
                 extract_path = self.file_manager.extract_archive(archive[0], self.config.install_contents)
                 if extract_path is None:
                     continue
-                # Every file under extract_path is copied out to its
-                # destination by copy_and_paste (a *copy*, not a move), so
-                # the extracted temp folder is otherwise left on disk
-                # forever, growing without bound every run. Only delete it
-                # once everything inside processed with zero errors —
-                # per-file failures (permission errors, unclassifiable
-                # files, etc.) are caught and only logged inside
-                # copy_and_paste/resolve_png rather than raised, so an
-                # error count is the only reliable signal that something
-                # in this subtree didn't actually make it to its
-                # destination and must not be thrown away.
-                with logger.error_count_guard() as errors:
-                    self.run(extract_path)
-                if errors.count == 0:
-                    import shutil as _shutil
-                    try:
-                        _shutil.rmtree(extract_path)
-                        logger.info("ARCHIVE", f"Cleaned up extracted folder: {extract_path.name}")
-                    except OSError as e:
-                        logger.warning("ARCHIVE",
-                            f"Could not remove extracted folder {extract_path.name}: {e}")
-                else:
-                    logger.warning("ARCHIVE",
-                        f"Leaving extracted folder in place — {errors.count} error(s) while "
-                        f"processing its contents: {extract_path.name}")
+                self.run(extract_path)
         elif archive_list:
             names = ", ".join(Path(a[0]).name for a in archive_list)
             logger.info("SKIP", f"Archive extraction skipped: {names}")

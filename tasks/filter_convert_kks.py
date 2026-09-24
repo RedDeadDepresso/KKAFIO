@@ -159,11 +159,10 @@ class FilterConvertKKS:
     # ------------------------------------------------------------------
 
     def _extract_archives(self, path: Path) -> list[Path]:
-        """Extract every archive found directly under `path`. Returns the
-        list of extraction folders so the caller can clean them up once
-        their contents have actually been processed — extracting leaves a
-        `<name>_<timestamp>` copy of every file on disk that nothing else
-        here deletes, so left alone it grows without bound on every run."""
+        """Extract every archive found under `path` into a folder named after
+        it, skipping archives whose folder already exists. Returns the newly
+        created extraction folders so the caller can remove them once their
+        contents have been processed and nothing is left inside."""
         _, archive_list = self.file_manager.find_all_files(path)
         if not archive_list:
             return []

@@ -41,6 +41,7 @@
   - **KK/KKSP Cards** *(Keep by default)*: what to do with every **KK / KKSP** card found — including any KKS card just converted above. **Keep** leaves them where they are; **Move** moves them into `_KK_card_/`; **Delete** sends them to the Recycle Bin.
   - **KKS Cards** *(Keep by default)*: the same three choices, applied to the original **KKS** cards (never to their converted copies — those are covered by **KK/KKSP Cards**).
 - **Optional:** Extracts ZIP / RAR / 7z archives before filtering — this still works with both actions left at **Keep**, so the task is also useful purely as an archive-extraction step.
+- An archive whose extraction folder (named after the archive, next to it) already exists is not extracted again.
 - Has a separate archive password setting from Install Contents.
 
 **4. Filter Duplicate Contents**
@@ -116,7 +117,7 @@ https://t.me/kknowcc # you need to be part of this chat
 - Given a folder containing chara cards, coordinate cards, scenes, overlays, and zipmod files, copies them into their respective game directories.
 - Respects the configured **Game Type**: Koikatsu Sunshine installs KK, KKSP, and KKS cards. Koikatsu / Koikatsu Party installs KK and KKSP cards only — KKS cards are skipped with a log message.
 - Scene cards (Studio) are installed only if the Studio `scene` folder is present.
-- Extracts ZIP / RAR / 7z archives automatically (configurable).
+- Extracts ZIP / RAR / 7z archives automatically (configurable). Each archive is extracted next to itself into a folder named after it and that folder is left in place; an archive whose folder already exists is not extracted again.
 - If both Filter & Convert KKS Characters and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
 **8. Uninstall Contents**

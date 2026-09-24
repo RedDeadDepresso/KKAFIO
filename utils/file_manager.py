@@ -284,16 +284,26 @@ class FileManager:
         return False
 
     def extract_archive(self, archive_path: Union[Path, str], task_config: dict = None):
-        """Extract the archive using 7-Zip."""
+        """Extract the archive using 7-Zip into a folder named after it.
+
+        Returns the extraction folder, or None if the archive was skipped
+        (folder already exists) or could not be extracted.
+        """
         if task_config is None:
             task_config = self.config.install_contents
 
         archive_path = Path(archive_path)
         archive_name = archive_path.name
-        logger.info("ARCHIVE", f"Extracting {archive_name}")
 
-        extract_path = archive_path.with_name(
-            f"{archive_path.stem}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+        # Extract next to the archive into a folder named after it. If that
+        # folder is already there the archive was extracted before, so leave
+        # it alone instead of extracting it again.
+        extract_path = archive_path.with_name(archive_path.stem)
+        if extract_path.exists():
+            logger.skipped("ARCHIVE", f"{archive_name} (folder '{extract_path.name}' already exists)")
+            return None
+
+        logger.info("ARCHIVE", f"Extracting {archive_name}")
 
         # First attempt — no password
         if self._run_7zip_extract(archive_path, extract_path):
