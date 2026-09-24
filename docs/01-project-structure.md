@@ -22,7 +22,7 @@ KKAFIO-dev/
 │   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
 │
 ├── assets/                          # Static data shipped with every release
-│   ├── logo.png                     # App icon source (converted to kkafio.ico during CI build)
+│   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
 │   ├── kkafio_modpack_index_kk.json  # Pre-built Sideloader Modpack index for Koikatsu/Party
 │   ├── kkafio_modpack_index_kks.json # Pre-built Sideloader Modpack index for Koikatsu Sunshine
 │   ├── xkcd_colors.json             # Named colour list used by the coordinate colour-fingerprint matcher

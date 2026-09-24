@@ -162,7 +162,7 @@ jobs:
             $iface | ConvertTo-Json -Depth 10 | Set-Content "$dst\interface.json" -Encoding UTF8
           }
 
-          # assets/ (logo, modpack indexes, colour data, i18n)
+          # assets/ (icon, modpack indexes, colour data, i18n)
           if (Test-Path "assets") { Copy-Item "assets" "$dst\assets" -Recurse -Force }
 
           # scripts/ (helper scripts added under scripts/)
@@ -203,18 +203,18 @@ jobs:
           }
 
       # ── Convert icon ────────────────────────────────────────────────────
-      - name: Convert logo.png to kkafio.ico
+      - name: Convert icon.png to kkafio.ico
         shell: bash
         run: |
-          # Check if logo exists before running
-          if [ ! -f "assets/logo.png" ]; then
-            echo "ERROR: assets/logo.png not found!"
+          # Check if icon exists before running
+          if [ ! -f "assets/icon.png" ]; then
+            echo "ERROR: assets/icon.png not found!"
             exit 1
           fi
 
-          # Use the correct path to the logo
+          # Use the correct path to the icon
           for size in 512 256 128 64 48 32 24 16; do
-            magick "assets/logo.png" -resize ${size}x${size} "icon-${size}.png"
+            magick "assets/icon.png" -resize ${size}x${size} "icon-${size}.png"
           done
 
           magick icon-512.png icon-256.png icon-128.png icon-64.png icon-48.png \

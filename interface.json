@@ -7,7 +7,7 @@
   "github": "https://github.com/RedDeadDepresso/KKAFIO",
   "mirrorchyan_rid": "",
   "description": "$root.description",
-  "icon": "assets/logo.png",
+  "icon": "assets/icon.png",
   "agent": {
     "child_exec": "python",
     "child_args": ["kkafio_cli.exe", "run"]
@@ -1189,7 +1189,13 @@
       "default_check": false,
       "description": "$task.ExportMods.description",
       "group": ["mod-management"],
-      "option": ["ExportOutputPath", "Guids", "RenameToGuid", "UseCache", "ModsDir"]
+      "option": [
+        "ExportOutputPath",
+        "Guids",
+        "RenameToGuid",
+        "UseCache",
+        "ModsDir"
+      ]
     }
   ],
   "preset": [
