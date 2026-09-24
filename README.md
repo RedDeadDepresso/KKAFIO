@@ -182,7 +182,7 @@ https://t.me/kknowcc # you need to be part of this chat
 **14. Export Mods**
 
 - Find specific mods by GUID and copy them out into a folder:
-- **GUIDs** — paste GUIDs one per line, comma-separated, or straight out of a Download Missing Mods report section (e.g. the "Unresolvable mods" list). Report bullets (`!`, `✗`, `+`, `~`) and trailing `(...)` notes are stripped automatically; plain description/path lines from the report are ignored rather than misread as GUIDs.
+- **GUIDs** — paste one GUID per line, or a section straight out of a Download Missing Mods report (e.g. the "Unresolvable mods" list). A leading report bullet (`!`, `✗`, `+`, `~`) is removed; everything from a `#` onward is a comment and is ignored, and every other line is used as the GUID exactly as written, so delete any description or `(...)` note lines first.
 - **Rename to GUID** *(on by default)*: renames each exported file to `<guid>.zipmod`, so it's obvious which file is which. Turn off to keep each file's original filename.
 - Searches both the regular mods folder and any Sideloader Modpack subfolder inside it — unlike Archive/Delete Cards, exporting a copy doesn't touch or remove anything, so modpack-covered mods are fair game too.
 - **Custom Mods Directory** — leave blank to use the game's default mods folder.

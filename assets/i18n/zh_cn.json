@@ -147,7 +147,7 @@
   "option.TelegramChatLinks.label": "Telegram 群组链接",
   "option.TelegramChatLinks.description": "每行一个 Telegram 频道/群组/聊天链接，当 Telegram 来源为“Telegram 群组链接”或组合选项时使用。你必须已经是每个群组的成员。添加话题 ID（例如 .../299）可仅搜索该论坛话题；末尾的“# 注释”会被忽略。会按顺序依次尝试各个聊天，若某个聊天没有匹配项则转到下一个。",
   "option.Guids.label": "GUID",
-  "option.Guids.description": "要查找并导出的模组 GUID，每行一个（或用逗号分隔）。你可以直接粘贴“下载缺失模组”报告中的一段——像“!”“✗”“+”“~”这样的项目符号以及末尾的“(...)”备注会被自动去除，报告中的普通说明/路径行也会被忽略。以“#”开头的注释行同样会被忽略。",
+  "option.Guids.description": "要查找并导出的模组 GUID，每行一个。你可以直接粘贴“下载缺失模组”报告中的一段——行首的“!”“✗”“+”“~”符号会被去除，“#”之后的内容视为注释并被忽略，其余内容将原样作为 GUID 使用。",
   "option.RenameToGuid.label": "重命名为 GUID",
   "option.RenameToGuid.description": "将每个导出的 zipmod 重命名为 [guid].zipmod，以便清楚分辨每个文件。关闭此项则保留各文件的原始文件名。",
   "option.RenameToGuid.case.Yes.label": "重命名",

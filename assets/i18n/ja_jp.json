@@ -147,7 +147,7 @@
   "option.TelegramChatLinks.label": "Telegramチャットリンク",
   "option.TelegramChatLinks.description": "1行に1つのTelegramチャンネル／グループ／チャットのリンクを入力します。Telegramのソースが「Telegramチャットリンク」または組み合わせオプションの場合に使用されます。あらかじめ各チャットのメンバーになっている必要があります。トピックID（例: .../299）を追加すると、そのフォーラムトピックのみを検索します。末尾の「# コメント」は無視されます。チャットは順番に試行され、一致がなければ次のチャットに進みます。",
   "option.Guids.label": "GUID",
-  "option.Guids.description": "検索してエクスポートするMODのGUIDを1行に1つずつ（またはカンマ区切りで）入力します。「不足しているMODをダウンロード」レポートの一部をそのまま貼り付けることもできます——「!」「✗」「+」「~」のような箇条書き記号や末尾の「(...)」注記は自動的に取り除かれ、レポート内の通常の説明／パス行は無視されます。「#」で始まるコメント行も無視されます。",
+  "option.Guids.description": "検索してエクスポートするMODのGUIDを1行に1つずつ入力します。「不足しているMODをダウンロード」レポートの一部をそのまま貼り付けることもできます——行頭の「!」「✗」「+」「~」は取り除かれ、「#」以降はコメントとして無視され、それ以外の内容は書かれたとおりGUIDとして使用されます。",
   "option.RenameToGuid.label": "GUIDにリネーム",
   "option.RenameToGuid.description": "エクスポートした各zipmodを [guid].zipmod にリネームし、どのファイルか分かりやすくします。オフにすると各ファイルの元のファイル名を保持します。",
   "option.RenameToGuid.case.Yes.label": "リネームする",

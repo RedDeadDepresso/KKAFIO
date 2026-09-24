@@ -147,7 +147,7 @@
   "option.TelegramChatLinks.label": "Telegram Chat Links",
   "option.TelegramChatLinks.description": "One Telegram channel/group/chat link per line, used when Telegram Source is 'Telegram Chat Links' or the combined option. You must already be a member of each one. Add a topic ID (e.g. .../299) to search only that forum topic; a trailing '# comment' is ignored. Chats are tried in order, moving to the next one if a chat has no match.",
   "option.Guids.label": "GUIDs",
-  "option.Guids.description": "One mod GUID per line (or comma-separated) to find and export. You can paste a section straight out of a Download Missing Mods report — bullets like '!', '✗', '+', '~' and trailing '(...)' notes are stripped automatically, and plain description/path lines from the report are ignored. '#'-comment lines are ignored too.",
+  "option.Guids.description": "One mod GUID per line to find and export. You can paste a section straight out of a Download Missing Mods report — a leading '!', '✗', '+' or '~' bullet is removed, everything from a '#' onward is treated as a comment and ignored, and every other line is used as the GUID exactly as written.",
   "option.RenameToGuid.label": "Rename to GUID",
   "option.RenameToGuid.description": "Rename each exported zipmod to [guid].zipmod so it's obvious which file is which. Turn off to keep each file's original filename.",
   "option.RenameToGuid.case.Yes.label": "Rename",
