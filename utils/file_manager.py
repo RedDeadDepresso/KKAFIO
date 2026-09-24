@@ -109,37 +109,77 @@ class FileManager:
                 logger.error(file_type, f"Could not remove {base_name}: {e}")
 
     @staticmethod
-    def _get_nt_7z_dir() -> str:
-        """Return 7-Zip directory from registry, or an empty string."""
-        import winreg  # noqa: PLC0415
+    def _get_nt_7z_dirs() -> list[str]:
+        """Return 7-Zip install directories from the registry (HKLM, then
+        HKCU for per-user installs), or an empty list."""
+        try:
+            import winreg  # noqa: PLC0415
+        except ImportError:
+            return []  # not Windows
         import platform  # noqa: PLC0415
 
-        python_bits = platform.architecture()[0]
         keyname = r"SOFTWARE\7-Zip"
-        try:
-            if python_bits == '32bit' and platform.machine().endswith('64'):
-                # get 64-bit registry key from 32-bit Python
-                key = winreg.OpenKey(
-                    winreg.HKEY_LOCAL_MACHINE,
-                    keyname,
-                    0,
-                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
-                )
-            else:
-                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, keyname)
-            try:
-                return winreg.QueryValueEx(key, "Path")[0]
-            finally:
-                winreg.CloseKey(key)
-        except OSError:
-            return ""
+        wow64 = 0
+        if platform.architecture()[0] == "32bit" and platform.machine().endswith("64"):
+            wow64 = winreg.KEY_WOW64_64KEY  # read the 64-bit key from 32-bit Python
+
+        dirs: list[str] = []
+        for hive in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+            for view in ({wow64, winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY}
+                         if wow64 == 0 else {wow64}):
+                try:
+                    key = winreg.OpenKey(hive, keyname, 0, winreg.KEY_READ | view)
+                except OSError:
+                    continue
+                try:
+                    for value_name in ("Path64", "Path"):
+                        try:
+                            value = winreg.QueryValueEx(key, value_name)[0]
+                        except OSError:
+                            continue
+                        if value and value not in dirs:
+                            dirs.append(value)
+                finally:
+                    winreg.CloseKey(key)
+        return dirs
 
     @classmethod
     def find_7zip(cls) -> str | None:
-        """Return the path to 7z.exe, or None if not found."""
-        if cls._path_to_7zip is None:
-            cls._path_to_7zip = shutil.which("7z", path=cls._get_nt_7z_dir())
-        return cls._path_to_7zip
+        """Return the path to the 7-Zip executable, or None if not found.
+
+        Search order: registry install dirs (HKLM, HKCU), then PATH (7z,
+        7zz, 7za), then the usual Program Files locations.
+        """
+        if cls._path_to_7zip is not None:
+            return cls._path_to_7zip
+
+        import os  # noqa: PLC0415
+
+        found: str | None = None
+        for d in cls._get_nt_7z_dirs():
+            found = shutil.which("7z", path=d)
+            if found:
+                break
+
+        if not found:
+            for name in ("7z", "7zz", "7za"):
+                found = shutil.which(name)  # default PATH lookup
+                if found:
+                    break
+
+        if not found:
+            candidates = [
+                os.path.join(os.environ.get(var, ""), "7-Zip")
+                for var in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA")
+                if os.environ.get(var)
+            ]
+            for d in candidates:
+                found = shutil.which("7z", path=d)
+                if found:
+                    break
+
+        cls._path_to_7zip = found
+        return found
 
     def create_archive(self, files: list[Path], output_path: Path, fmt: str) -> None:
         path_to_7zip = self.find_7zip()
@@ -200,27 +240,26 @@ class FileManager:
             logger.error("SCRIPT", "7zip not found. Unable to create backup")
             raise Exception()
         
+        if not folders:
+            logger.error("SCRIPT", "No folders selected for the backup")
+            raise Exception("No folders selected for the backup")
+
         archive_path = Path(archive_path)
-        archive_path = archive_path.with_suffix(".7z")
+        # Append rather than with_suffix(): a filename such as
+        # "backup_2026.09.24" would otherwise lose its ".24" part.
+        if archive_path.suffix.lower() != ".7z":
+            archive_path = archive_path.with_name(archive_path.name + ".7z")
 
         if archive_path.exists():
             archive_path.unlink()
 
-        exclude_folders = [
-            "Sideloader Modpack",
-            "Sideloader Modpack - Studio",
-            "Sideloader Modpack - KK_UncensorSelector",
-            "Sideloader Modpack - Maps",
-            "Sideloader Modpack - KK_MaterialEditor",
-            "Sideloader Modpack - Fixes",
-            "Sideloader Modpack - Exclusive KK KKS",
-            "Sideloader Modpack - Exclusive KK",
-            "Sideloader Modpack - Animations",
-        ]
+        # Wildcard so every Sideloader Modpack folder ("Sideloader Modpack",
+        # "Sideloader Modpack - Studio", and any added in future) is skipped.
+        exclude_patterns = ["Sideloader Modpack*"]
 
         cmd = [path_to_7zip, "a", "-t7z", "-bsp1", "-sccUTF-8", str(archive_path)]
         cmd += [str(f) for f in folders]
-        cmd += [f"-xr!{folder}" for folder in exclude_folders]
+        cmd += [f"-xr!{pattern}" for pattern in exclude_patterns]
 
         # -sccUTF-8 (above) makes 7-Zip emit UTF-8, so decode it as UTF-8
         # regardless of the process locale.

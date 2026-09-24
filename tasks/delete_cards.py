@@ -136,7 +136,15 @@ class DeleteCards(BaseTask):
             own_guids = parse_coord_guids(content_path)
             logger.info("DELETE", "  Coordinate card — bundling its own mods only")
         elif is_chara:
-            own_guids = parse_chara_guids(content_path)
+            try:
+                own_guids = parse_chara_guids(content_path)
+            except Exception as e:
+                # A corrupt/truncated/unusual card must not abort the whole
+                # batch. Its mods are simply left alone (the safe direction).
+                own_guids = []
+                logger.warning("DELETE",
+                    f"  Could not read mod GUIDs from {content_path.name}: {e} "
+                    "— card will be deleted but its mods will be left in place")
 
             if not self.include_coordinates:
                 logger.info("DELETE", "  IncludeCoordinates disabled — skipping coordinate matching")
@@ -240,7 +248,10 @@ class DeleteCards(BaseTask):
                 logger.error("DELETE", f"Not found: {content_path}")
                 continue
             self.log_start("DELETE")
-            plans.append(self._plan_card(content_path, game_base, mods_ov, coord_ov))
+            try:
+                plans.append(self._plan_card(content_path, game_base, mods_ov, coord_ov))
+            except Exception as e:
+                logger.error("DELETE", f"Skipping {content_path.name}: could not plan deletion: {e}")
 
         if not plans:
             return

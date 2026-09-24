@@ -104,18 +104,24 @@ class CompressCardsTextures(BaseTask):
 
     @staticmethod
     def _is_valid_card(path: Path) -> bool:
-        """True if `path` starts with a PNG signature and ends with a
-        readable KKAFIO card marker — enough to be confident it's a real,
-        complete card and not a truncated/corrupt output from a tool run
-        that failed partway through."""
+        """True only if `path` is a complete PNG (signature + IEND chunk) that
+        carries a recognisable KK payload after IEND: a chara card, scene, or
+        coordinate card. A truncated or corrupt output from a failed tool run
+        fails at least one of these checks."""
+        from utils.chara_ops import _find_iend_end
+        from utils.classifier import CardType, get_card_type, is_coordinate
+
         try:
             data = path.read_bytes()
         except OSError:
             return False
         if not data.startswith(b"\x89PNG\r\n\x1a\n"):
             return False
-        from utils.classifier import get_card_type, CardType
-        return get_card_type(data) != CardType.UNKNOWN or len(data) > 0
+        png_end = _find_iend_end(data)
+        if png_end < 0 or png_end >= len(data):
+            return False  # no IEND (truncated) or no card payload after it
+        payload = data[png_end:]
+        return get_card_type(payload) != CardType.UNKNOWN or is_coordinate(payload)
 
     def _delete_originals(self, input_path: Path) -> None:
         logger.line()
