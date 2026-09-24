@@ -1205,22 +1205,27 @@
       "description": "$preset.AllTasks.description",
       "task": [
         {
-          "name": "CreateBackup"
+          "name": "CreateBackup",
+          "enabled": false
         },
         {
-          "name": "DownloadContents"
+          "name": "DownloadContents",
+          "enabled": false
         },
         {
-          "name": "FilterConvertKKS"
+          "name": "FilterConvertKKS",
+          "enabled": false
         },
         {
           "name": "FilterDuplicateContents",
+          "enabled": false,
           "option": {
             "DuplicateAction": "Delete"
           }
         },
         {
           "name": "DownloadMissingMods",
+          "enabled": false,
           "option": {
             "TelegramSource": "Both",
             "ModsDir": "C:/KKAFIO/Downloads",
@@ -1231,33 +1236,42 @@
         },
         {
           "name": "CompressCardsTextures",
+          "enabled": false,
           "option": {
             "DeleteOriginalCards": "Yes"
           }
         },
         {
-          "name": "InstallContents"
+          "name": "InstallContents",
+          "enabled": false
         },
         {
-          "name": "UninstallContents"
+          "name": "UninstallContents",
+          "enabled": false
         },
         {
-          "name": "GroupChara"
+          "name": "GroupChara",
+          "enabled": false
         },
         {
-          "name": "UngroupChara"
+          "name": "UngroupChara",
+          "enabled": false
         },
         {
-          "name": "RenameChara"
+          "name": "RenameChara",
+          "enabled": false
         },
         {
-          "name": "ArchiveCards"
+          "name": "ArchiveCards",
+          "enabled": false
         },
         {
-          "name": "DeleteCards"
+          "name": "DeleteCards",
+          "enabled": false
         },
         {
-          "name": "ExportMods"
+          "name": "ExportMods",
+          "enabled": false
         }
       ]
     },
@@ -1318,10 +1332,12 @@
           "name": "RenameChara"
         },
         {
-          "name": "DeleteCards"
+          "name": "DeleteCards",
+          "enabled": false
         },
         {
           "name": "DownloadMissingMods",
+          "enabled": false,
           "option": {
             "SideloaderModpack": "OnlyUsed",
             "TelegramSource": "Both"
@@ -1335,10 +1351,12 @@
       "description": "$preset.ExportInstalledContents.description",
       "task": [
         {
-          "name": "ArchiveCards"
+          "name": "ArchiveCards",
+          "enabled": false
         },
         {
-          "name": "ExportMods"
+          "name": "ExportMods",
+          "enabled": false
         }
       ]
     }
