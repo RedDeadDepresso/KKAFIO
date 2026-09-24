@@ -272,69 +272,84 @@ def _build_rename_map(to_handle: list[Path], keep_path: Path | None) -> dict[Pat
 
 
 # ---------------------------------------------------------------------------
-# Fuzzy grouping — union-find, same pattern as reference script
+# Fuzzy grouping — leader clustering over 64-bit pHashes (numpy-vectorised)
 # ---------------------------------------------------------------------------
 
-def _fuzzy_group(paths: list[Path], phashes: list[str | None]) -> list[list[Path]]:
-    """Group paths by perceptual similarity, given precomputed phashes
-    (same order/length as paths — a None entry means that file's phash
-    couldn't be computed, so it's never grouped with anything).
+_POPCOUNT8 = None  # lazily-built byte popcount table (numpy < 2.0 fallback)
 
-    A grouping this permissive can be risky on its own: pHash distance
-    alone doesn't distinguish "same character, re-saved" from "two
-    different characters who happen to be posed the same way", and the
-    default action for a fuzzy group is to move everything but one card
-    into _duplicates_/ — i.e. treat them as the same character. This is
-    a real limitation of pHash-based grouping in general; a caller relying
-    on this for anything beyond "flag likely duplicates for a human to
-    confirm" should treat FUZZY_THRESHOLD as a recall/precision trade-off,
-    not a correctness guarantee, and default DuplicateAction to something
-    reversible (Move, not Delete) when FuzzyChara is on — which
-    FilterDuplicateContents' config already does.
-    """
-    if not paths:
-        return []
 
-    n = len(paths)
-    parent = list(range(n))
-
-    def find(x: int) -> int:
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(x: int, y: int) -> None:
-        parent[find(x)] = find(y)
-
-    # Parse every hex phash into an imagehash.ImageHash object exactly once
-    # up front, instead of re-parsing both operands' hex strings on every
-    # one of the O(n^2) pairwise comparisons below (_phash_distance did
-    # `import imagehash; hex_to_hash(a); hex_to_hash(b)` per call — for n
-    # candidates that's O(n^2) redundant hex-to-bit-array conversions of
-    # the same n distinct strings). The `-` operator between two
-    # already-parsed ImageHash objects is a cheap array comparison.
+def _hash_to_int(ph: str | None) -> int | None:
+    """Parse a 64-bit imagehash hex string into an int (None if unusable)."""
+    if not ph or len(ph) != 16:
+        return None
     try:
-        import imagehash
-        parsed: list = [imagehash.hex_to_hash(p) if p is not None else None
-                        for p in phashes]
-    except Exception:
-        parsed = [None] * n
+        return int(ph, 16)
+    except ValueError:
+        return None
 
-    for i in range(n):
-        if parsed[i] is None:
+
+def _hamming_to_many(hashes, value):
+    """Hamming distance between `value` and every element of a uint64 array."""
+    import numpy as np
+    x = np.bitwise_xor(hashes, np.uint64(value))
+    if hasattr(np, "bitwise_count"):           # numpy >= 2.0
+        return np.bitwise_count(x)
+    global _POPCOUNT8
+    if _POPCOUNT8 is None:
+        _POPCOUNT8 = np.array([bin(i).count("1") for i in range(256)], dtype=np.uint8)
+    return _POPCOUNT8[x.view(np.uint8)].reshape(-1, 8).sum(axis=1)
+
+
+def _fuzzy_group(paths: list[Path], phashes: list[str | None],
+                 threshold: int = _FUZZY_THRESHOLD) -> list[list[Path]]:
+    """Group paths by perceptual similarity (paths/phashes are parallel lists;
+    a None phash means "couldn't be computed" and is never grouped).
+
+    Leader clustering: each group is defined by its FIRST member (the
+    "leader"). A path joins the group of the nearest leader within
+    `threshold` bits, otherwise it starts a new group of its own. Every
+    member of a group is therefore within `threshold` of the group's first
+    member.
+
+    This replaces the earlier union-find grouping, which was transitive:
+    A~B and B~C put A and C in one group even when A and C were far apart,
+    so a chain of gradually different cards could merge into one huge
+    "duplicate" set. Here a card can never be pulled in by another member,
+    only by the leader.
+
+    Results depend on input order (the first card of a cluster is its
+    leader), so callers should pass a stable, sorted order. Comparisons
+    against all leaders are done in one numpy operation, so the cost is
+    O(n * leaders) but with a tiny constant instead of pure-Python loops.
+
+    Singletons are returned too (callers filter on len > 1).
+
+    pHash distance alone still can't tell "same character, re-saved" from
+    "different characters in the same pose", so the default action for a
+    fuzzy group should stay reversible (Move, not Delete).
+    """
+    import numpy as np
+
+    groups: list[list[Path]] = []
+    leaders = np.zeros(len(paths), dtype=np.uint64)
+    leader_group: list[int] = []   # leader index -> index into `groups`
+
+    for path, ph in zip(paths, phashes):
+        value = _hash_to_int(ph)
+        if value is None:
+            groups.append([path])
             continue
-        for j in range(i + 1, n):
-            if parsed[j] is None:
+        if leader_group:
+            dist = _hamming_to_many(leaders[:len(leader_group)], value)
+            best = int(dist.argmin())            # ties -> earliest leader
+            if int(dist[best]) <= threshold:
+                groups[leader_group[best]].append(path)
                 continue
-            if (parsed[i] - parsed[j]) <= _FUZZY_THRESHOLD:
-                union(i, j)
+        leaders[len(leader_group)] = value
+        leader_group.append(len(groups))
+        groups.append([path])
 
-    groups: dict[int, list[Path]] = defaultdict(list)
-    for i, path in enumerate(paths):
-        groups[find(i)].append(path)
-
-    return list(groups.values())
+    return groups
 
 
 # ---------------------------------------------------------------------------
@@ -405,36 +420,60 @@ class FilterDuplicateContents:
         png_cache = _load_duplic_cache(folder_path, PNG_CACHE_FILE) if self.use_cache else {}
         new_png_cache: dict[str, dict] = {}
 
-        # Raw bytes for files freshly read in step 2 below, kept only for
-        # ones classified as "chara" and only for the duration of this run
-        # — those are exactly the files fuzzy matching (step 4) may need
-        # image bytes from again, and without this it would open and read
-        # every one of them from disk a second time right after step 2
-        # already read them in full to compute their hash. Bounded to
-        # "new/changed chara files this run" rather than the whole
-        # library: an unchanged file never lands here (it's a cache hit in
-        # _hash_png. below and its bytes are never read at all), and a
-        # non-chara file is dropped immediately since fuzzy matching never
-        # looks at it.
-        fresh_chara_bytes: dict[str, bytes] = {}
+        # Fuzzy matching needs pillow + imagehash; check once up front rather
+        # than failing per file.
+        do_fuzzy = self.fuzzy_chara
+        if do_fuzzy:
+            try:
+                import imagehash  # noqa: F401
+                from PIL import Image  # noqa: F401
+            except Exception:
+                logger.error("DUPLIC",
+                    "pillow/imagehash not installed - fuzzy matching disabled. "
+                    "Install with: pip install pillow imagehash")
+                do_fuzzy = False
+
+        fuzzy_cache = (_load_duplic_cache(folder_path, FUZZY_CACHE_FILE)
+                       if (self.use_cache and do_fuzzy) else {})
+        new_fuzzy_cache: dict[str, dict] = {}
+        phash_map: dict[Path, str | None] = {}
 
         def _hash_png(path: Path):
             """Fingerprint one PNG (XXH3 of the character-data payload, or
-            the whole file for non-chara PNGs) + classify it. Reuses the
-            cached result if the file's mtime/size haven't changed since
-            the last run. Runs in a thread pool worker."""
+            the whole file for non-chara PNGs), classify it, and - for chara
+            cards when fuzzy matching is on - compute its perceptual hash.
+            Reuses cached results if the file's mtime/size haven't changed.
+            Runs in a thread pool worker.
+
+            The perceptual hash is computed here, while the bytes are already
+            in hand, so only a short hash string leaves the worker. (The
+            previous version kept every new chara card's full bytes in RAM
+            until the fuzzy step, i.e. the whole library on a first run.)
+            """
             sp = str(path)
             fp = _file_fp(path)
+            data: bytes | None = None
             cached = png_cache.get(sp)
             if cached and cached.get("fp") == fp and "xxh" in cached:
-                return path, cached["xxh"], cached.get("category"), fp, True
-            data    = path.read_bytes()
-            payload = _get_png_payload(data)
-            digest  = _xxh(payload) if payload else _xxh(data)
-            cat     = _classify(data)
-            if cat == "chara" and self.fuzzy_chara:
-                fresh_chara_bytes[sp] = data
-            return path, digest, cat, fp, False
+                digest, cat, was_cached = cached["xxh"], cached.get("category"), True
+            else:
+                data    = path.read_bytes()
+                payload = _get_png_payload(data)
+                digest  = _xxh(payload) if payload else _xxh(data)
+                cat     = _classify(data)
+                was_cached = False
+
+            ph: str | None = None
+            ph_cached = False
+            if do_fuzzy and cat == "chara":
+                fc = fuzzy_cache.get(sp)
+                if fc and fc.get("fp") == fp and fc.get("phash"):
+                    ph, ph_cached = fc["phash"], True
+                else:
+                    if data is None:
+                        data = path.read_bytes()
+                    ph = _phash(_get_png_image_bytes(data))
+            return path, digest, cat, fp, was_cached, ph, ph_cached
 
         # Use min(32, cpu_count * 2) workers — I/O bound so more threads help
         workers = min(32, (os.cpu_count() or 4) * 2)
@@ -442,6 +481,7 @@ class FilterDuplicateContents:
 
         completed = 0
         reused_png = 0
+        reused_fuzzy = 0
         futures = {}
         with ThreadPoolExecutor(max_workers=workers) as ex:
             futures = {ex.submit(_hash_png, p): p for p in png_files}
@@ -450,107 +490,93 @@ class FilterDuplicateContents:
                 if completed % 100 == 0:
                     logger.info("DUPLIC", f"Processed {completed}/{len(png_files)}...")
                 try:
-                    path, digest, cat, fp, was_cached = future.result()
+                    path, digest, cat, fp, was_cached, ph, ph_cached = future.result()
                     hash_dict[digest].append(path)
                     if digest not in category_map:
                         category_map[digest] = cat
                     new_png_cache[str(path)] = {"fp": fp, "xxh": digest, "category": cat}
                     if was_cached:
                         reused_png += 1
+                    if do_fuzzy and cat == "chara":
+                        phash_map[path] = ph
+                        if ph:
+                            # Never cache a failed (None) hash: it would be
+                            # reused forever, even after the cause is fixed.
+                            new_fuzzy_cache[str(path)] = {"fp": fp, "phash": ph}
+                            if ph_cached:
+                                reused_fuzzy += 1
                 except Exception as e:
                     path = futures[future]
                     logger.error("DUPLIC", f"Could not read {path.name}: {e}")
 
         if self.use_cache:
             _save_duplic_cache(folder_path, PNG_CACHE_FILE, new_png_cache)
+            if do_fuzzy:
+                _save_duplic_cache(folder_path, FUZZY_CACHE_FILE, new_fuzzy_cache)
         if reused_png:
             logger.info("DUPLIC",
                 f"PNG cache: {reused_png} unchanged, {len(png_files) - reused_png} new/changed")
+        if reused_fuzzy:
+            logger.info("DUPLIC", f"Fuzzy cache: {reused_fuzzy} perceptual hash(es) reused")
 
         # ------------------------------------------------------------------
         # 3. Exact duplicate groups — any hash with 2+ files
         # ------------------------------------------------------------------
         duplicate_groups: list[tuple[list[Path], Category | None]] = []
-        exact_chara_paths: set[Path] = set()
+        # With fuzzy matching on, exact chara groups are held back until step 4
+        # decides whether a group is absorbed into a larger fuzzy set.
+        exact_chara_groups: dict[str, list[Path]] = {}
 
-        for fp, files in hash_dict.items():
+        for digest, files in hash_dict.items():
             if len(files) < 2:
                 continue
-            category = category_map.get(fp)
-            duplicate_groups.append((files, category))
-            if category == "chara":
-                exact_chara_paths.update(files)
+            category = category_map.get(digest)
+            if category == "chara" and do_fuzzy:
+                exact_chara_groups[digest] = files
+            else:
+                duplicate_groups.append((files, category))
             logger.info("DUPLIC",
                 f"Exact {category} set ({len(files)}): "
                 + ", ".join(p.name for p in files))
 
         # ------------------------------------------------------------------
-        # 4. Fuzzy chara grouping — only cards not already caught exactly
+        # 4. Fuzzy chara grouping.
+        #    Every distinct chara card takes part, including one representative
+        #    of each exact-duplicate set - previously exact sets were left out
+        #    entirely, so a kept copy was never compared with similar cards.
+        #    If a representative matches other cards, its whole exact set is
+        #    merged into the fuzzy set (and not handled a second time).
         # ------------------------------------------------------------------
-        if self.fuzzy_chara:
-            # Every PNG was already classified once in step 2 (new_png_cache
-            # holds each path's category alongside its hash) — re-opening
-            # and re-running _classify() on every non-exact-duplicate file
-            # here was pure repeated I/O for information already in hand.
-            non_exact = [p for p in png_files if p not in exact_chara_paths]
-            fuzzy_candidates = [
-                p for p in non_exact
-                if new_png_cache.get(str(p), {}).get("category") == "chara"
-            ]
+        if do_fuzzy:
+            rep_digest: dict[Path, str] = {}
+            for digest, files in hash_dict.items():
+                if category_map.get(digest) == "chara":
+                    rep_digest[min(files, key=str)] = digest
 
-            if fuzzy_candidates:
-                logger.info("DUPLIC",
-                    f"Fuzzy matching {len(fuzzy_candidates)} chara cards...")
+            candidates = sorted(rep_digest, key=str)   # stable order -> stable leaders
+            no_hash = sum(1 for p in candidates if not phash_map.get(p))
+            if no_hash:
+                logger.warning("DUPLIC",
+                    f"{no_hash} chara card(s) had no usable perceptual hash and were not compared")
 
-                fuzzy_cache = _load_duplic_cache(folder_path, FUZZY_CACHE_FILE) if self.use_cache else {}
-                new_fuzzy_cache: dict[str, dict] = {}
-                phashes: list[str | None] = []
-                fuzzy_unavailable = False
-                reused_fuzzy = 0
-
-                for path in fuzzy_candidates:
-                    sp = str(path)
-                    fp = _file_fp(path)
-                    cached = fuzzy_cache.get(sp)
-                    if cached and cached.get("fp") == fp:
-                        ph = cached.get("phash")
-                        reused_fuzzy += 1
-                    else:
-                        try:
-                            # Reuse the bytes step 2 already read for this
-                            # file instead of opening and reading it again
-                            # — see fresh_chara_bytes above. Falls back to
-                            # a fresh disk read if it's not there for any
-                            # reason (e.g. this file was a PNG-cache hit
-                            # but somehow missing a valid phash entry).
-                            data = fresh_chara_bytes.pop(sp, None)
-                            if data is None:
-                                data = path.read_bytes()
-                            image_bytes = _get_png_image_bytes(data)
-                            ph = _phash(image_bytes)
-                            if ph is None and not fuzzy_unavailable:
-                                logger.error("DUPLIC",
-                                    "pillow/imagehash not installed. Install with: pip install pillow imagehash")
-                                fuzzy_unavailable = True
-                        except Exception as e:
-                            logger.error("DUPLIC", f"Could not hash {path.name}: {e}")
-                            ph = None
-                    phashes.append(ph)
-                    new_fuzzy_cache[sp] = {"fp": fp, "phash": ph}
-
-                if self.use_cache:
-                    _save_duplic_cache(folder_path, FUZZY_CACHE_FILE, new_fuzzy_cache)
-                if reused_fuzzy:
+            absorbed: set[str] = set()
+            if len(candidates) > 1:
+                logger.info("DUPLIC", f"Fuzzy matching {len(candidates)} chara cards...")
+                phashes = [phash_map.get(p) for p in candidates]
+                for group in _fuzzy_group(candidates, phashes):
+                    if len(group) < 2:
+                        continue
+                    digests = [rep_digest[p] for p in group]
+                    absorbed.update(digests)
+                    members = sorted((f for d in digests for f in hash_dict[d]), key=str)
+                    duplicate_groups.append((members, "chara"))
                     logger.info("DUPLIC",
-                        f"Fuzzy cache: {reused_fuzzy} unchanged, "
-                        f"{len(fuzzy_candidates) - reused_fuzzy} new/changed")
+                        f"Fuzzy chara set ({len(members)}): "
+                        + ", ".join(f.name for f in members))
 
-                for group in _fuzzy_group(fuzzy_candidates, phashes):
-                    if len(group) > 1:
-                        duplicate_groups.append((group, "chara"))
-                        logger.info("DUPLIC",
-                            f"Fuzzy chara set ({len(group)}): "
-                            + ", ".join(p.name for p in group))
+            for digest, files in exact_chara_groups.items():
+                if digest not in absorbed:
+                    duplicate_groups.append((files, "chara"))
 
         # ------------------------------------------------------------------
         # 5. Zipmod grouping
