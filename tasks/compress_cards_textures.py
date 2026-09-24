@@ -205,7 +205,8 @@ class CompressCardsTextures(BaseTask):
 
         process.wait()
 
-        if process.returncode != 0:
+        # Exit code 1 means at least one card failed as it may not be possible to compress it
+        if process.returncode not in [0, 1]:
             logger.error("KOITEX", f"KoiCardTexTool exited with code {process.returncode}")
             if self.delete_original:
                 logger.warning("KOITEX",
