@@ -40,6 +40,7 @@ from utils.chara_ops import (
     collect_chara_guids,
     collect_coord_guids,
     collect_scene_guids,
+    guid_from_zipmod,
     load_modpack_index,
 )
 from utils.config import GameType
@@ -249,15 +250,22 @@ def _parse_chat_links(raw: str) -> list[tuple[str | int, int | None]]:
     return links
 
 
-async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None, guid: str):
-    """Search a Telegram chat (channel, group, or forum topic) for a
-    document matching `guid`, using Telegram's server-side search — this is
+async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None, guid: str) -> list:
+    """Search a Telegram chat (channel, group, or forum topic) for
+    documents matching `guid`, using Telegram's server-side search — this is
     the same raw API call Telegram Desktop itself sends, so it works
     instantly without downloading/scanning message history client-side.
 
-    Returns the first matching Telethon Message whose attached document's
-    filename ends with '.zipmod', or None if nothing matched (including if
-    the chat can't be resolved / searched at all, e.g. not a member).
+    Returns every matching Telethon Message (in the order Telegram's search
+    returned them) whose attached document's filename ends with
+    '.zipmod', or an empty list if nothing matched (including if the chat
+    can't be resolved / searched at all, e.g. not a member).
+
+    A text search for a GUID can turn up several results in the same chat
+    (re-uploads, unrelated files that happen to mention the GUID in a
+    caption, etc.), so the caller tries them in order — downloading one,
+    checking its actual in-zip GUID, and moving on to the next candidate if
+    it turns out to be a mismatch — rather than trusting the first hit.
     """
     from telethon.tl.functions.messages import SearchRequest
     from telethon.tl.types import InputMessagesFilterDocument
@@ -266,7 +274,7 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
         peer = await client.get_input_entity(chat)
     except Exception as e:
         logger.warning("DLMOD", f"    Could not resolve chat {chat}: {e}")
-        return None
+        return []
 
     try:
         result = await client(SearchRequest(
@@ -285,8 +293,9 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
         ))
     except Exception as e:
         logger.warning("DLMOD", f"    Search failed in {chat}: {e}")
-        return None
+        return []
 
+    matches = []
     for message in getattr(result, "messages", []):
         doc = getattr(message, "document", None)
         if not doc:
@@ -298,9 +307,9 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
                 file_name = fn
                 break
         if file_name and file_name.lower().endswith(".zipmod"):
-            return message
+            matches.append(message)
 
-    return None
+    return matches
 
 
 async def _search_chat_links_and_download(
@@ -316,8 +325,18 @@ async def _search_chat_links_and_download(
     """Search each configured Telegram Chat Links entry, in order, for a
     .zipmod attachment matching `guid`. Moves on to the next chat if the
     current one has no match (not a member, chat doesn't exist, or nothing
-    found); stops at the first chat that does have a match, downloading it
-    via teleget9527 (if `downloader` is provided) or plain Telethon.
+    found).
+
+    A chat's server-side text search can return several .zipmod candidates
+    for one GUID (re-uploads, unrelated files whose caption happens to
+    mention the GUID, GUID collisions in filenames, etc). Every candidate
+    is downloaded and its *actual* in-zip GUID (from manifest.xml) is
+    checked against the one we're looking for — the search result's
+    filename/caption match is not trusted on its own. A mismatch is
+    deleted immediately and the next candidate is tried, first within the
+    same chat, then in the next configured chat link, until a verified
+    match is downloaded or every candidate in every chat has been
+    exhausted.
 
     `client` is a single already-connected TelegramClient shared across
     every GUID in this DownloadMissingMods run (see the caller) — this
@@ -327,87 +346,125 @@ async def _search_chat_links_and_download(
     connect/auth handshake per chat per GUID.
 
     Returns (found_source, result):
-      found_source — True if any chat had a matching .zipmod, regardless of
-                     whether the download itself then succeeded
-      result       — True (downloaded), "skipped" (already present), or
-                     False (no chat had a match, or the download failed)
+      found_source — True if any chat had at least one candidate .zipmod
+                     (matching by filename search), regardless of whether
+                     any of them turned out to have the right GUID or
+                     downloaded successfully
+      result       — True (downloaded and GUID-verified), "skipped"
+                     (already present with the correct GUID), or False (no
+                     chat had a verified match, or every download failed)
     """
     if not chat_links:
         return False, False
+
+    found_source = False
 
     for chat, topic_id in chat_links:
         where = f"{chat}" + (f" (topic {topic_id})" if topic_id else "")
         logger.info("DLMOD", f"    Searching {where} for {guid}...")
 
-        message = await _search_chat_for_zipmod(client, chat, topic_id, guid)
-        if message is None:
-            continue  # no match here — try the next chat link
+        messages = await _search_chat_for_zipmod(client, chat, topic_id, guid)
+        if not messages:
+            continue  # no candidates here — try the next chat link
 
-        file_name = None
-        for attr in message.document.attributes:
-            fn = getattr(attr, "file_name", None)
-            if fn:
-                file_name = fn
-                break
-        if not file_name:
-            file_name = f"{guid}.zipmod"
+        found_source = True
 
-        dest = (mods_dir / Path(rel_path).parent / file_name) if rel_path else (mods_dir / file_name)
-        dest.parent.mkdir(parents=True, exist_ok=True)
+        for message in messages:
+            file_name = None
+            for attr in message.document.attributes:
+                fn = getattr(attr, "file_name", None)
+                if fn:
+                    file_name = fn
+                    break
+            if not file_name:
+                file_name = f"{guid}.zipmod"
 
-        if dest.exists() and dest.stat().st_size == message.document.size:
-            return True, "skipped"
+            dest = (mods_dir / Path(rel_path).parent / file_name) if rel_path else (mods_dir / file_name)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            file_size = message.document.size
 
-        logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
-        file_size = message.document.size
+            if dest.exists() and dest.stat().st_size == file_size:
+                # A same-size file is already here (e.g. from a previous
+                # run) — still verify its GUID rather than trusting the
+                # size match, since a wrong file the same size as this
+                # candidate would otherwise be "skipped" forever.
+                existing_guid = await asyncio.to_thread(guid_from_zipmod, dest)
+                if existing_guid == guid:
+                    return True, "skipped"
+                logger.warning("DLMOD",
+                    f"    Existing file has wrong GUID ({existing_guid!r} != {guid!r}), "
+                    f"deleting and re-downloading: {dest.name}")
+                dest.unlink(missing_ok=True)
 
-        # Use teleget9527 if available (reuse the passed-in downloader instance),
-        # matching _download_via_teleget's exact pattern.
-        if downloader is not None:
-            try:
-                entity = await client.get_entity(chat)
-                raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
+            logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
 
-                def _on_progress(downloaded: int, total: int, pct: float) -> None:
-                    if total > 0:
-                        mb_done  = downloaded // 1024 // 1024
-                        mb_total = total      // 1024 // 1024
-                        logger.info("DLMOD",
-                            f"    {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
+            # Use teleget9527 if available (reuse the passed-in downloader instance),
+            # matching _download_via_teleget's exact pattern.
+            if downloader is not None:
+                try:
+                    entity = await client.get_entity(chat)
+                    raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
 
-                await downloader.download(
-                    chat_id=raw_chat_id,
-                    msg_id=message.id,
-                    save_path=str(dest.resolve()),
-                    progress_callback=_on_progress,
-                )
+                    def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                        if total > 0:
+                            mb_done  = downloaded // 1024 // 1024
+                            mb_total = total      // 1024 // 1024
+                            logger.info("DLMOD",
+                                f"    {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
 
-                # Poll until file reaches expected size (up to 1 hour)
-                for _ in range(3600):
-                    await asyncio.sleep(1)
-                    if dest.exists() and dest.stat().st_size >= file_size:
-                        break
-            except Exception as e:
-                logger.error("DLMOD",
-                    f"    teleget9527 download failed [{guid}] from {where}: {e}")
-                return True, False
-        else:
-            # Fallback: plain Telethon download_media
-            try:
-                await client.download_media(message, file=str(dest))
-            except Exception as e:
-                logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
-                return True, False
+                    await downloader.download(
+                        chat_id=raw_chat_id,
+                        msg_id=message.id,
+                        save_path=str(dest.resolve()),
+                        progress_callback=_on_progress,
+                    )
 
-        if not dest.exists() or dest.stat().st_size != file_size:
-            logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
-            return True, False
+                    # Poll until file reaches expected size (up to 1 hour)
+                    for _ in range(3600):
+                        await asyncio.sleep(1)
+                        if dest.exists() and dest.stat().st_size >= file_size:
+                            break
+                except Exception as e:
+                    logger.error("DLMOD",
+                        f"    teleget9527 download failed [{guid}] from {where}: {e}")
+                    dest.unlink(missing_ok=True)
+                    continue  # try the next candidate
 
-        logger.success("DLMOD", f"Downloaded: {file_name}")
-        guid_str_map[guid] = str(dest)
-        return True, True
+            else:
+                # Fallback: plain Telethon download_media
+                try:
+                    await client.download_media(message, file=str(dest))
+                except Exception as e:
+                    logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
+                    dest.unlink(missing_ok=True)
+                    continue  # try the next candidate
 
-    return False, False  # no configured chat had a matching .zipmod
+            if not dest.exists() or dest.stat().st_size != file_size:
+                logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
+                dest.unlink(missing_ok=True)
+                continue  # try the next candidate
+
+            # Verify the downloaded zipmod's actual GUID (from manifest.xml)
+            # matches the one we asked for. Telegram search is text-based —
+            # a filename or caption can mention a GUID without the archive
+            # actually containing that mod — so don't trust the match until
+            # this checks out.
+            downloaded_guid = await asyncio.to_thread(guid_from_zipmod, dest)
+            if downloaded_guid != guid:
+                logger.warning("DLMOD",
+                    f"    GUID mismatch for {file_name} — expected {guid}, "
+                    f"got {downloaded_guid!r}. Deleting and trying the next result...")
+                dest.unlink(missing_ok=True)
+                continue  # try the next candidate, same chat
+
+            logger.success("DLMOD", f"Downloaded: {file_name}")
+            guid_str_map[guid] = str(dest)
+            return True, True
+
+        # No candidate in this chat had the right GUID — move on to the
+        # next configured chat link.
+
+    return found_source, False  # nothing verified in any chat/candidate
 
 
 # ---------------------------------------------------------------------------
