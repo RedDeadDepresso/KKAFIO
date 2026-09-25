@@ -163,8 +163,49 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](../wiki/Modpack-Index.md). Read by `utils/chara_ops.py`'s `load_modpack_index()`. |
+| `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `utils/chara_ops.py`'s `load_modpack_index()`. |
 | `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `utils/chara_ops.py`. Never modified at runtime. |
+
+---
+
+## Modpack Index
+
+KKAFIO ships with two pre-built modpack index files:
+
+| File | Game |
+|---|---|
+| `assets/data/kkafio_modpack_index_kk.json` | Koikatsu / Koikatsu Party |
+| `assets/data/kkafio_modpack_index_kks.json` | Koikatsu Sunshine |
+
+Archive Cards, Delete Cards, and Download Missing Mods use the index for
+the configured game type to instantly identify which required mods are
+covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO
+falls back to scanning the local mods folder automatically.
+
+To regenerate the index after updating the Sideloader Modpack, run:
+
+```
+# Koikatsu / Koikatsu Party
+python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/kkafio_modpack_index_kk.json
+
+# Koikatsu Sunshine
+python tools/build_modpack_index.py "C:/KKS/mods" --game-type kks --output assets/data/kkafio_modpack_index_kks.json
+```
+
+**Incremental updates** — if the index file already exists,
+`tools/build_modpack_index.py` reuses entries for zipmods whose path,
+size, and modification time are unchanged. Only new or changed zipmods
+are opened and scanned. Adding a handful of mods to a large Sideloader
+Modpack takes seconds rather than minutes.
+
+Use `--full` to force a complete rescan and ignore the previous index:
+
+```
+python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/kkafio_modpack_index_kk.json --full
+```
+
+Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to
+the repository to ship them with the next release.
 
 ---
 
