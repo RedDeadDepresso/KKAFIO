@@ -114,6 +114,7 @@
   "option.ArchiveFormat.description": "出力するアーカイブの形式",
   "option.ArchiveFormat.case.7z.label": "7-Zip",
   "option.ArchiveFormat.case.zip.label": "ZIP",
+  "option.ArchiveFormat.case.copy.label": "コピー",
   "option.CombinedArchive.label": "アーカイブをまとめる",
   "option.CombinedArchive.description": "すべてのカードを1つのアーカイブにまとめる（オフの場合はカードごとに1つ）",
   "option.CombinedArchive.case.Yes.label": "1つにまとめる",

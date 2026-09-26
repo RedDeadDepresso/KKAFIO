@@ -114,6 +114,7 @@
   "option.ArchiveFormat.description": "输出压缩包的格式",
   "option.ArchiveFormat.case.7z.label": "7-Zip",
   "option.ArchiveFormat.case.zip.label": "ZIP",
+  "option.ArchiveFormat.case.copy.label": "复制",
   "option.CombinedArchive.label": "合并压缩包",
   "option.CombinedArchive.description": "将所有卡片放入一个压缩包（否则每张卡片一个）",
   "option.CombinedArchive.case.Yes.label": "单个压缩包",

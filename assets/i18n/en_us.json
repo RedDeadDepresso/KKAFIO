@@ -114,6 +114,7 @@
   "option.ArchiveFormat.description": "Output archive format",
   "option.ArchiveFormat.case.7z.label": "7-Zip",
   "option.ArchiveFormat.case.zip.label": "ZIP",
+  "option.ArchiveFormat.case.copy.label": "Copy",
   "option.CombinedArchive.label": "Combined Archive",
   "option.CombinedArchive.description": "Put all cards in one archive (otherwise one per card)",
   "option.CombinedArchive.case.Yes.label": "Single archive",

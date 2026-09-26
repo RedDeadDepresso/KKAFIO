@@ -605,6 +605,10 @@
         {
           "name": "zip",
           "label": "$option.ArchiveFormat.case.zip.label"
+        },
+        {
+          "name": "copy",
+          "label": "$option.ArchiveFormat.case.copy.label"
         }
       ],
       "pipeline_override": {

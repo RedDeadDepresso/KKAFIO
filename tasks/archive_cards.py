@@ -1,7 +1,8 @@
 """
 archive_cards.py — Bundle KK character cards, coordinate cards (or Studio
                     scenes) with their used zipmods and, for character cards,
-                    matching coordinate cards into a 7z or zip archive.
+                    matching coordinate cards into a 7z or zip archive, or
+                    copy them all flat into a destination folder instead.
 """
 
 import shutil
@@ -19,7 +20,7 @@ from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import GameType
 from utils.logger import logger
 
-ArchiveFormat = Literal["7z", "zip"]
+ArchiveFormat = Literal["7z", "zip", "copy"]
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +209,32 @@ class ArchiveCards(BaseTask):
         except Exception:
             return content_path.stem
 
+    _INVALID_FS_CHARS = r'\/:*?"<>|'
+
+    @classmethod
+    def _sanitize_folder_name(cls, name: str) -> str:
+        for ch in cls._INVALID_FS_CHARS:
+            name = name.replace(ch, "")
+        return name.strip().rstrip(".")
+
+    @classmethod
+    def _unique_folder_name(cls, display_name: str, content_path: Path,
+                            used: set[str]) -> str:
+        """Turn a card's display name into a filesystem-safe, collision-free
+        subfolder name for a nested bundle — falling back to the file's own
+        stem if the display name is empty/unsafe, and appending " (2)",
+        " (3)", etc. if two cards would otherwise land on the same name
+        (matched case-insensitively, since the bundle may end up on a
+        case-insensitive filesystem)."""
+        base = cls._sanitize_folder_name(display_name) or content_path.stem or "card"
+        name = base
+        n = 2
+        while name.casefold() in used:
+            name = f"{base} ({n})"
+            n += 1
+        used.add(name.casefold())
+        return name
+
     @staticmethod
     def _build_readme(
         cards: list[dict],
@@ -317,14 +344,18 @@ class ArchiveCards(BaseTask):
         mods_ov    = Path(self.mods_dir_str)   if self.mods_dir_str   else None
         coord_ov   = Path(self.coord_dir_str)  if self.coord_dir_str  else None
         output_dir = Path(self.output_dir_str) if self.output_dir_str else None
-        ext        = ".7z" if self.format == "7z" else ".zip"
+        # "copy" has no archive extension — the bundle name is a plain
+        # folder name instead of a .7z/.zip filename.
+        ext        = {"7z": ".7z", "zip": ".zip"}.get(self.format, "")
+        is_copy    = self.format == "copy"
+        # Used only in log messages, e.g. "Creating combined 7z archive" vs
+        # "Copying combined bundle" — "copy" isn't an archive at all.
+        kind_label = "bundle" if is_copy else f"{self.format} archive"
         generated  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self.log_start("ARCHV")
 
         if self.combined_archive:
-            all_files:  list[Path] = []
-            seen:       set[Path]  = set()
             card_infos: list[dict] = []
 
             for content_path in content_paths:
@@ -333,10 +364,6 @@ class ArchiveCards(BaseTask):
                     continue
                 coord_paths, zipmod_paths, missing, modpack_missing, all_guids = self._process_one(
                     content_path, game_base, mods_ov, coord_ov)
-                for f in [content_path] + coord_paths + zipmod_paths:
-                    if f not in seen:
-                        seen.add(f)
-                        all_files.append(f)
                 card_infos.append({
                     "path":            content_path,
                     "display_name":    self._display_name(content_path),
@@ -347,15 +374,18 @@ class ArchiveCards(BaseTask):
                     "all_guids":       all_guids,
                 })
 
-            if not all_files:
+            if not card_infos:
                 logger.error("ARCHV", "No files to archive")
                 raise Exception("ArchiveCards: no files to archive")
 
             out_dir = output_dir or content_paths[0].parent
             out_dir.mkdir(parents=True, exist_ok=True)
-            archive_name = (f"{content_paths[0].stem}_bundle{ext}"
-                            if len(content_paths) == 1
-                            else f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}")
+            if len(content_paths) == 1:
+                name_part = (self._sanitize_folder_name(card_infos[0]["display_name"])
+                            or content_paths[0].stem)
+                archive_name = f"{name_part}_bundle{ext}"
+            else:
+                archive_name = f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}"
             archive_path = out_dir / archive_name
 
             # Write README to a temp file and include it in the archive
@@ -373,20 +403,76 @@ class ArchiveCards(BaseTask):
             readme_tmp = readme_dir / "README.txt"
             readme_tmp.write_text(readme_text, encoding="utf-8")
 
+            # More than one card in a combined bundle gets a subfolder per
+            # card (named after it) holding just that card's own files, so
+            # opening the bundle shows "<Character Name>/<their files>"
+            # instead of everything dumped flat at the top level. A single
+            # card has nothing to disambiguate against, so it stays flat,
+            # same as before.
+            nest = len(card_infos) > 1
+
             logger.line()
-            logger.info("ARCHV",
-                f"Creating combined {self.format} archive: {archive_name} "
-                f"({len(all_files)} file(s) + {readme_tmp.name})")
+            action = "Copying" if is_copy else "Creating"
             archive_failed = False
+            staging_dir: Path | None = None
             try:
-                self.file_manager.create_archive(
-                    all_files + [readme_tmp], archive_path, self.format)
+                if nest:
+                    used_names: set[str] = set()
+                    card_files: dict[str, list[Path]] = {}
+                    total_files = 0
+                    for card in card_infos:
+                        folder = self._unique_folder_name(
+                            card["display_name"], card["path"], used_names)
+                        files: list[Path] = []
+                        seen_card: set[Path] = set()
+                        for f in [card["path"]] + card["coords"] + card["mods"]:
+                            if f not in seen_card:
+                                seen_card.add(f)
+                                files.append(f)
+                        card_files[folder] = files
+                        total_files += len(files)
+
+                    logger.info("ARCHV",
+                        f"{action} combined {kind_label}: {archive_name} "
+                        f"({total_files} file(s) across {len(card_files)} "
+                        f"folder(s) + {readme_tmp.name})")
+
+                    staging_dir = self.file_manager.stage_bundle_files(
+                        card_files, [readme_tmp])
+                    if is_copy:
+                        self.file_manager.move_dir_into_place(staging_dir, archive_path)
+                        staging_dir = None  # already moved into place
+                    else:
+                        self.file_manager.create_archive_from_dir(
+                            staging_dir, archive_path, self.format)
+                else:
+                    all_files: list[Path] = []
+                    seen: set[Path] = set()
+                    for card in card_infos:
+                        for f in [card["path"]] + card["coords"] + card["mods"]:
+                            if f not in seen:
+                                seen.add(f)
+                                all_files.append(f)
+
+                    logger.info("ARCHV",
+                        f"{action} combined {kind_label}: {archive_name} "
+                        f"({len(all_files)} file(s) + {readme_tmp.name})")
+
+                    if is_copy:
+                        self.file_manager.copy_files_flat(
+                            all_files + [readme_tmp], archive_path)
+                    else:
+                        self.file_manager.create_archive(
+                            all_files + [readme_tmp], archive_path, self.format)
                 logger.success("ARCHV", f"Done: {archive_path}")
             except Exception as e:
-                logger.error("ARCHV", f"Archive creation failed: {e}")
+                verb = "Copy" if is_copy else "Archive creation"
+                logger.error("ARCHV", f"{verb} failed: {e}")
                 archive_failed = True
             finally:
                 readme_tmp.unlink(missing_ok=True)
+                if staging_dir is not None:
+                    shutil.rmtree(staging_dir, ignore_errors=True)
 
             # Re-raise so a pipeline running DeleteCards right after this
             # step doesn't proceed to delete cards whose archive was never
@@ -425,16 +511,22 @@ class ArchiveCards(BaseTask):
                 readme_tmp = readme_dir / "README.txt"
                 readme_tmp.write_text(readme_text, encoding="utf-8")
 
+                action = "Copying" if is_copy else "Creating"
                 logger.info("ARCHV",
-                    f"  Creating {self.format} archive: {archive_name} "
+                    f"  {action} {kind_label}: {archive_name} "
                     f"({len(all_files)} file(s) + {readme_tmp.name})")
                 archive_failed = False
                 try:
-                    self.file_manager.create_archive(
-                        all_files + [readme_tmp], archive_path, self.format)
+                    if is_copy:
+                        self.file_manager.copy_files_flat(
+                            all_files + [readme_tmp], archive_path)
+                    else:
+                        self.file_manager.create_archive(
+                            all_files + [readme_tmp], archive_path, self.format)
                     logger.success("ARCHV", f"  Done: {archive_path}")
                 except Exception as e:
-                    logger.error("ARCHV", f"  Archive creation failed: {e}")
+                    verb = "Copy" if is_copy else "Archive creation"
+                    logger.error("ARCHV", f"  {verb} failed: {e}")
                     archive_failed = True
                 finally:
                     shutil.rmtree(readme_dir, ignore_errors=True)

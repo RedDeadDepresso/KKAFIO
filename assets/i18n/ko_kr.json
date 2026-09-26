@@ -114,6 +114,7 @@
   "option.ArchiveFormat.description": "출력할 압축 파일 형식",
   "option.ArchiveFormat.case.7z.label": "7-Zip",
   "option.ArchiveFormat.case.zip.label": "ZIP",
+  "option.ArchiveFormat.case.copy.label": "복사",
   "option.CombinedArchive.label": "압축 파일 통합",
   "option.CombinedArchive.description": "모든 카드를 하나의 압축 파일에 넣습니다(끄면 카드마다 하나씩)",
   "option.CombinedArchive.case.Yes.label": "단일 압축 파일",

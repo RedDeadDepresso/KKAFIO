@@ -276,8 +276,8 @@ https://t.me/kknowcc
 - Zipmods are found by GUID.
 - **Auto-resolve** _(on by default)_: if the card/scene lives inside the game folder, mods and coordinate directories are inferred automatically. Override with **Custom Mods Directory** and **Custom Coordinate Directory** if needed (both blank by default).
 - **Output Directory** defaults to `C:/KKAFIO/Archived Cards`.
-- **Output format** _(`7z` by default)_: `7z` or `zip`.
-- **Combined archive** _(on by default)_: puts all selected files into one archive. Turn off to create one archive per file.
+- **Output format** _(`7z` by default)_: `7z`, `zip`, or `Copy`. `Copy` doesn't create an archive at all — it copies the card, its coordinates, its mods, and the generated `README.txt` straight into a destination folder (named the same way an archive would be), flattened to a single level exactly like the contents of a 7z/zip archive. If that folder already exists, it's deleted and recreated from scratch first.
+- **Combined archive** _(on by default)_: puts all selected files into one archive (or, with `Copy`, one folder). Turn off to create one archive (or folder) per file. When more than one card ends up combined together (any output format), each card gets its own subfolder inside the bundle named after it, containing just that card's own card file, coordinates, and mods — so opening the bundle shows `<Character Name>/<their files>` for each card rather than everything dumped flat at the top level. A mod shared by several cards is duplicated into each of their subfolders. `README.txt` stays at the top level of the bundle. A combined bundle of a single card stays flat, same as before.
 - **Use Cache** _(on by default)_: reuses the same incremental GUID caches as Download Missing Mods and Delete Cards.
 
 **13. Delete Cards**
@@ -480,7 +480,7 @@ kkafio_cli ungroup-chara   [--input DIR]
                            [--delete-empty | --no-delete-empty]
 
 kkafio_cli archive-cards  [CONTENT ...] [--output-dir DIR]
-                           [--format 7z|zip]
+                           [--format 7z|zip|copy]
                            [--combined | --no-combined]
                            [--include-modpack | --no-include-modpack]
                            [--include-coordinates | --no-include-coordinates]

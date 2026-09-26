@@ -1136,8 +1136,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("content", nargs="*", metavar="CONTENT",
                    help="Character/coordinate/scene PNG paths (default: ArchiveCards.ContentPaths from config)")
-    p.add_argument("--format", choices=["7z", "zip"], default=None,
-                   help="Archive format (default: ArchiveCards.Format from config)")
+    p.add_argument("--format", choices=["7z", "zip", "copy"], default=None,
+                   help="Archive format, or 'copy' to copy the files flat into "
+                        "a destination folder instead of archiving them "
+                        "(default: ArchiveCards.Format from config)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--auto-resolve",    dest="auto_resolve", action="store_true",  default=None,
                    help="Auto-resolve mods and coord dirs (overrides config)")

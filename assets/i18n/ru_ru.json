@@ -114,6 +114,7 @@
   "option.ArchiveFormat.description": "Формат выходного архива",
   "option.ArchiveFormat.case.7z.label": "7-Zip",
   "option.ArchiveFormat.case.zip.label": "ZIP",
+  "option.ArchiveFormat.case.copy.label": "Копирование",
   "option.CombinedArchive.label": "Общий архив",
   "option.CombinedArchive.description": "Поместить все карточки в один архив (иначе — по одному архиву на карточку)",
   "option.CombinedArchive.case.Yes.label": "Один архив",

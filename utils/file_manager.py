@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import tempfile
 import time
 
 from datetime import datetime
@@ -239,6 +240,120 @@ class FileManager:
             except OSError:
                 pass
     
+    def copy_files_flat(self, files: list[Path], output_dir: Path) -> None:
+        """Copy every file in `files` directly into `output_dir`, flattened
+        to a single level exactly the way create_archive's 7-Zip call lays
+        them out (each file added by its own absolute path ends up at the
+        archive root, named just by its filename — there's no per-file
+        destination sub-folder to replicate).
+
+        If `output_dir` already exists (as a folder or, defensively, a
+        stray file) it's removed first and rebuilt from nothing, matching
+        create_archive's "start a clean, reproducible snapshot" behaviour
+        for a reused output name rather than layering onto whatever was
+        left over from a previous run.
+        """
+        output_dir = Path(output_dir)
+        if output_dir.is_dir():
+            shutil.rmtree(output_dir)
+        elif output_dir.exists():
+            output_dir.unlink()
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Same collision 7-Zip itself would hit ("Duplicate filename on
+        # disk") when two source files share a basename — fail loudly
+        # instead of silently overwriting one with the other.
+        seen: dict[str, Path] = {}
+        for f in files:
+            f = Path(f)
+            name = f.name
+            prior = seen.get(name)
+            if prior is not None and prior != f:
+                raise RuntimeError(
+                    f"Duplicate filename among files to copy: {name!r} "
+                    f"({prior} and {f})")
+            seen[name] = f
+            shutil.copy2(f, output_dir / name)
+
+    def stage_bundle_files(self, card_files: dict[str, list[Path]],
+                           loose_files: list[Path]) -> Path:
+        """Build a fresh staging folder for a per-card bundle layout: one
+        subfolder per key of `card_files` holding that card's own files,
+        plus `loose_files` (e.g. the bundle README) copied straight into
+        the staging root. Used so a combined archive/copy of several cards
+        can be laid out as `<Character Name>/<their files>` instead of
+        everything dumped flat at the top level.
+
+        Raises the same way 7-Zip itself would ("Duplicate filename on
+        disk") if two files that would land in the same folder share a
+        basename, instead of silently overwriting one with the other.
+
+        The caller owns the returned folder: remove it once an archive has
+        been built from it, or move it straight into place for a plain
+        folder-copy bundle.
+        """
+        staging = Path(tempfile.mkdtemp(prefix="kkafio_stage_"))
+
+        def _copy_into(dest_dir: Path, files: list[Path], scope: str) -> None:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            seen: dict[str, Path] = {}
+            for f in files:
+                f = Path(f)
+                name = f.name
+                prior = seen.get(name)
+                if prior is not None and prior != f:
+                    raise RuntimeError(
+                        f"Duplicate filename in {scope}: {name!r} "
+                        f"({prior} and {f})")
+                seen[name] = f
+                shutil.copy2(f, dest_dir / name)
+
+        for folder_name, files in card_files.items():
+            _copy_into(staging / folder_name, files, repr(folder_name))
+        _copy_into(staging, loose_files, "bundle root")
+
+        return staging
+
+    def create_archive_from_dir(self, source_dir: Path, output_path: Path, fmt: str) -> None:
+        """Archive the *contents* of `source_dir` (not `source_dir` itself)
+        into `output_path`, preserving whatever subfolder structure it has.
+        Unlike create_archive — which adds each file by its own absolute
+        path and so always collapses to a flat archive root — this is for
+        a combined bundle built with stage_bundle_files, where the
+        per-card subfolder layout needs to survive into the archive.
+        """
+        path_to_7zip = self.find_7zip()
+        if not path_to_7zip:
+            raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
+
+        output_path = Path(output_path).resolve()
+        if output_path.exists():
+            output_path.unlink()
+
+        flag = "-t7z" if fmt == "7z" else "-tzip"
+        # cwd=source_dir + "." (rather than an absolute path) is what makes
+        # 7-Zip store paths relative to source_dir, keeping the per-card
+        # subfolders intact instead of flattening everything to basenames.
+        cmd = [path_to_7zip, "a", flag, "-sccUTF-8", "-scsUTF-8", str(output_path), "."]
+        result = run_text(cmd, capture_output=True, encoding="utf-8", cwd=str(source_dir))
+        if result.returncode not in (0, 1):
+            raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
+
+    def move_dir_into_place(self, source_dir: Path, output_dir: Path) -> None:
+        """Move `source_dir` so it becomes `output_dir`, deleting whatever
+        already exists at `output_dir` first (folder or, defensively, a
+        stray file) — the folder-copy equivalent of create_archive's
+        "start a clean, reproducible snapshot" behaviour for a reused
+        output name.
+        """
+        output_dir = Path(output_dir)
+        if output_dir.is_dir():
+            shutil.rmtree(output_dir)
+        elif output_dir.exists():
+            output_dir.unlink()
+        output_dir.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(source_dir), str(output_dir))
+
     def create_game_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""
         path_to_7zip = self.find_7zip()
