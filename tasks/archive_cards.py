@@ -209,24 +209,14 @@ class ArchiveCards(BaseTask):
         except Exception:
             return content_path.stem
 
-    _INVALID_FS_CHARS = r'\/:*?"<>|'
-
     @classmethod
-    def _sanitize_folder_name(cls, name: str) -> str:
-        for ch in cls._INVALID_FS_CHARS:
-            name = name.replace(ch, "")
-        return name.strip().rstrip(".")
-
-    @classmethod
-    def _unique_folder_name(cls, display_name: str, content_path: Path,
-                            used: set[str]) -> str:
-        """Turn a card's display name into a filesystem-safe, collision-free
-        subfolder name for a nested bundle — falling back to the file's own
-        stem if the display name is empty/unsafe, and appending " (2)",
-        " (3)", etc. if two cards would otherwise land on the same name
-        (matched case-insensitively, since the bundle may end up on a
+    def _unique_folder_name(cls, content_path: Path, used: set[str]) -> str:
+        """Turn a card's own filename stem into a collision-free subfolder
+        name for a nested bundle, appending " (2)", " (3)", etc. if two
+        cards would otherwise land on the same name (matched
+        case-insensitively, since the bundle may end up on a
         case-insensitive filesystem)."""
-        base = cls._sanitize_folder_name(display_name) or content_path.stem or "card"
+        base = content_path.stem or "card"
         name = base
         n = 2
         while name.casefold() in used:
@@ -380,12 +370,9 @@ class ArchiveCards(BaseTask):
 
             out_dir = output_dir or content_paths[0].parent
             out_dir.mkdir(parents=True, exist_ok=True)
-            if len(content_paths) == 1:
-                name_part = (self._sanitize_folder_name(card_infos[0]["display_name"])
-                            or content_paths[0].stem)
-                archive_name = f"{name_part}_bundle{ext}"
-            else:
-                archive_name = f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}"
+            archive_name = (f"{content_paths[0].stem}_bundle{ext}"
+                            if len(content_paths) == 1
+                            else f"bundle__{datetime.now().strftime('%Y%m%d%H%M%S%f')}{ext}")
             archive_path = out_dir / archive_name
 
             # Write README to a temp file and include it in the archive
@@ -421,8 +408,7 @@ class ArchiveCards(BaseTask):
                     card_files: dict[str, list[Path]] = {}
                     total_files = 0
                     for card in card_infos:
-                        folder = self._unique_folder_name(
-                            card["display_name"], card["path"], used_names)
+                        folder = self._unique_folder_name(card["path"], used_names)
                         files: list[Path] = []
                         seen_card: set[Path] = set()
                         for f in [card["path"]] + card["coords"] + card["mods"]:
@@ -440,8 +426,7 @@ class ArchiveCards(BaseTask):
                     staging_dir = self.file_manager.stage_bundle_files(
                         card_files, [readme_tmp])
                     if is_copy:
-                        self.file_manager.move_dir_into_place(staging_dir, archive_path)
-                        staging_dir = None  # already moved into place
+                        self.file_manager.copy_dir_into_place(staging_dir, archive_path)
                     else:
                         self.file_manager.create_archive_from_dir(
                             staging_dir, archive_path, self.format)

@@ -339,12 +339,21 @@ class FileManager:
         if result.returncode not in (0, 1):
             raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
 
-    def move_dir_into_place(self, source_dir: Path, output_dir: Path) -> None:
-        """Move `source_dir` so it becomes `output_dir`, deleting whatever
-        already exists at `output_dir` first (folder or, defensively, a
-        stray file) — the folder-copy equivalent of create_archive's
-        "start a clean, reproducible snapshot" behaviour for a reused
-        output name.
+    def copy_dir_into_place(self, source_dir: Path, output_dir: Path) -> None:
+        """Copy `source_dir`'s contents so they become `output_dir`, deleting
+        whatever already exists at `output_dir` first (folder or,
+        defensively, a stray file) — the folder-copy equivalent of
+        create_archive's "start a clean, reproducible snapshot" behaviour
+        for a reused output name.
+
+        Deliberately a copy (shutil.copytree), not a move/rename:
+        `source_dir` is a temp staging folder under the OS temp directory,
+        which can carry different NTFS permissions than wherever the user
+        actually wants the bundle. A same-volume move/rename keeps the
+        folder's original security descriptor from %TEMP%, which can leave
+        Explorer unable to open it without an elevation prompt. Copying
+        creates every folder and file fresh at the destination, so they
+        inherit normal permissions from their real parent instead.
         """
         output_dir = Path(output_dir)
         if output_dir.is_dir():
@@ -352,7 +361,7 @@ class FileManager:
         elif output_dir.exists():
             output_dir.unlink()
         output_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(source_dir), str(output_dir))
+        shutil.copytree(source_dir, output_dir)
 
     def create_game_archive(self, folders: list[Literal["mods", "UserData", "BepInEx"]], archive_path: Union[str, Path]):
         """Create an archive of the given folders using 7zip."""
