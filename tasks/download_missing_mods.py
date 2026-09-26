@@ -309,7 +309,7 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
             if fn:
                 file_name = fn
                 break
-        if file_name and file_name.lower().endswith((".zipmod", ".zip")):
+        if file_name and file_name.lower().endswith(".zipmod"):
             matches.append(message)
 
     return matches

@@ -25,6 +25,7 @@ Usage:
 """
 
 import argparse
+import fnmatch
 import json
 import sys
 import xml.etree.ElementTree as ET
@@ -33,17 +34,22 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
-_SIDELOADER_MODPACK = "Sideloader Modpack"
+_SIDELOADER_MODPACK_PATTERN = "sideloader modpack*"
 
 
 def is_modpack_folder(zp: Path, mods_dir: Path) -> bool:
-    """Return True if zp lives inside a folder whose name contains
-    'Sideloader Modpack' (case-insensitive, any nesting depth)."""
+    """Return True if zp lives inside a folder whose name matches
+    'Sideloader Modpack*' (case-insensitive, '*' a wildcard, any nesting
+    depth) — e.g. 'Sideloader Modpack', 'Sideloader Modpack Extra',
+    'Sideloader Modpack (2024)', but not 'My Sideloader Modpack'."""
     try:
         rel = zp.relative_to(mods_dir)
     except ValueError:
         return False
-    return any(_SIDELOADER_MODPACK.lower() in part.lower() for part in rel.parts[:-1])
+    return any(
+        fnmatch.fnmatch(part.lower(), _SIDELOADER_MODPACK_PATTERN)
+        for part in rel.parts[:-1]
+    )
 
 
 def guid_from_zipmod(path: Path) -> str | None:
