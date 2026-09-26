@@ -799,7 +799,7 @@
       "name": "guids",
       "label": "$option.Guids.label",
       "description": "$option.Guids.description",
-      "placeholder": "GaryuX.Chloe\nAnotherAuthor.SomeMod",
+      "placeholder": "Anna.Scarf\n  ! GaryuX.Chloe\n  ✗ Evaan.OldMan.Mod\n  + [Makise]Yvonne\n  ~ NightOwlZzz.RemielleWeapon",
       "default": "",
       "pipeline_override": {
         "Guids": "{guids}"
