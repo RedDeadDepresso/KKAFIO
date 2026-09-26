@@ -37,9 +37,10 @@ Your task: for every key fill in "lastname", "firstname", and "nickname" with th
 character's well-known English name.
 
 Rules:
-- Use Western name order: firstname = given name, lastname = family name.
-- Use the English name the character is commonly known by, not a literal
-  transliteration (e.g. lastname "Tohsaka" firstname "Rin", not "Tosaka Rin").
+- firstname = given name, lastname = family name, regardless of the order the
+  name is written in the source material.
+- Use the name the character is commonly known by, not a literal
+  transliteration.
 - "nickname" can be a common short form or the same as firstname.
 - Use the personality and hair colour as additional hints to identify the character.
 - All values must be valid Windows filenames

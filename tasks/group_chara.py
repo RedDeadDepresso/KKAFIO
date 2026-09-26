@@ -32,12 +32,12 @@ PROMPT_TEMPLATE = """\
 You will receive a JSON object whose keys identify Koikatsu character card files.
 Each key has the format:  name | personality | hair_color
 
-Your task: for every key, write the name of the anime/game series the character \
+Your task: for every key, write the English name of the anime/game series the character \
 is from as the value.
 
 Rules:
 - Values must be valid Windows folder names (no  \\ / : * ? " < > |  characters).
-- Use the official English title of the series.
+- Use the official title of the series.
 - If a character appears in multiple series, use the one they are most associated with.
 - Use the personality and hair colour as additional hints to identify the character.
 - If you are not sure or the character is an original creation, leave the value as an empty string "".
