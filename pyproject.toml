@@ -11,6 +11,7 @@ dependencies = [
     "httpx[http2]>=0.28.1",
     "imagehash>=4.3.2",
     "kkloader>=0.1.20",
+    "msgpack>=1.2.2",
     "numpy>=2.5.3",
     "packaging>=26.0",
     "scipy>=1.18.1",
