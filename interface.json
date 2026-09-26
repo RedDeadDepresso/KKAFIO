@@ -1204,82 +1204,6 @@
   ],
   "preset": [
     {
-      "name": "AllTasks",
-      "label": "$preset.AllTasks.label",
-      "description": "$preset.AllTasks.description",
-      "task": [
-        {
-          "name": "CreateBackup",
-          "enabled": false
-        },
-        {
-          "name": "DownloadContents",
-          "enabled": false
-        },
-        {
-          "name": "FilterConvertKKS",
-          "enabled": false
-        },
-        {
-          "name": "FilterDuplicateContents",
-          "enabled": false,
-          "option": {
-            "DuplicateAction": "Delete"
-          }
-        },
-        {
-          "name": "DownloadMissingMods",
-          "enabled": false,
-          "option": {
-            "TelegramSource": "Both",
-            "ModsDir": "C:/KKAFIO/Downloads",
-            "CharaDir": "C:/KKAFIO/Downloads",
-            "SceneDir": "C:/KKAFIO/Downloads",
-            "CoordDir": "C:/KKAFIO/Downloads"
-          }
-        },
-        {
-          "name": "CompressCardsTextures",
-          "enabled": false,
-          "option": {
-            "DeleteOriginalCards": "Yes"
-          }
-        },
-        {
-          "name": "InstallContents",
-          "enabled": false
-        },
-        {
-          "name": "UninstallContents",
-          "enabled": false
-        },
-        {
-          "name": "GroupChara",
-          "enabled": false
-        },
-        {
-          "name": "UngroupChara",
-          "enabled": false
-        },
-        {
-          "name": "RenameChara",
-          "enabled": false
-        },
-        {
-          "name": "ArchiveCards",
-          "enabled": false
-        },
-        {
-          "name": "DeleteCards",
-          "enabled": false
-        },
-        {
-          "name": "ExportMods",
-          "enabled": false
-        }
-      ]
-    },
-    {
       "name": "DownloadFilterAndInstall",
       "label": "$preset.DownloadFilterAndInstall.label",
       "description": "$preset.DownloadFilterAndInstall.description",
@@ -1356,6 +1280,82 @@
       "task": [
         {
           "name": "ArchiveCards",
+          "enabled": false
+        },
+        {
+          "name": "ExportMods",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "name": "AllTasks",
+      "label": "$preset.AllTasks.label",
+      "description": "$preset.AllTasks.description",
+      "task": [
+        {
+          "name": "CreateBackup",
+          "enabled": false
+        },
+        {
+          "name": "DownloadContents",
+          "enabled": false
+        },
+        {
+          "name": "FilterConvertKKS",
+          "enabled": false
+        },
+        {
+          "name": "FilterDuplicateContents",
+          "enabled": false,
+          "option": {
+            "DuplicateAction": "Delete"
+          }
+        },
+        {
+          "name": "DownloadMissingMods",
+          "enabled": false,
+          "option": {
+            "TelegramSource": "Both",
+            "ModsDir": "C:/KKAFIO/Downloads",
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "SceneDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads"
+          }
+        },
+        {
+          "name": "CompressCardsTextures",
+          "enabled": false,
+          "option": {
+            "DeleteOriginalCards": "Yes"
+          }
+        },
+        {
+          "name": "InstallContents",
+          "enabled": false
+        },
+        {
+          "name": "UninstallContents",
+          "enabled": false
+        },
+        {
+          "name": "GroupChara",
+          "enabled": false
+        },
+        {
+          "name": "UngroupChara",
+          "enabled": false
+        },
+        {
+          "name": "RenameChara",
+          "enabled": false
+        },
+        {
+          "name": "ArchiveCards",
+          "enabled": false
+        },
+        {
+          "name": "DeleteCards",
           "enabled": false
         },
         {
