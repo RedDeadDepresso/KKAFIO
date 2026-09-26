@@ -1,6 +1,8 @@
 """
 build_modpack_index.py — Build (or incrementally update) a GUID index of all
-zipmods inside Sideloader Modpack folders.
+zipmods inside Sideloader Modpack folders. Plain ".zip" files are also
+included as long as they contain a manifest.xml — some mods are distributed
+without ever being renamed to ".zipmod".
 
 Incremental updates: on rebuild, files whose path, mtime, and size are
 unchanged are reused from the previous index without being opened. Only new
@@ -61,6 +63,25 @@ def guid_from_zipmod(path: Path) -> str | None:
         return None
 
 
+def has_manifest(path: Path) -> bool:
+    """Return True if the zip archive at `path` contains a manifest.xml."""
+    try:
+        with zipfile.ZipFile(path, "r") as zf:
+            return any(n.lower().endswith("manifest.xml") for n in zf.namelist())
+    except Exception:
+        return False
+
+
+def find_mod_files(mods_dir: Path):
+    """Yield every mod archive under mods_dir: every ".zipmod" file, plus
+    every plain ".zip" file that actually contains a manifest.xml — some
+    mods are distributed without ever being renamed to ".zipmod"."""
+    yield from mods_dir.rglob("*.zipmod")
+    for zp in mods_dir.rglob("*.zip"):
+        if has_manifest(zp):
+            yield zp
+
+
 def build_index(mods_dir: Path, previous: dict) -> tuple[dict[str, str], dict]:
     """Scan Sideloader Modpack folders, return (guid_map, file_fingerprints).
 
@@ -69,11 +90,11 @@ def build_index(mods_dir: Path, previous: dict) -> tuple[dict[str, str], dict]:
     Only new or changed files are read via ThreadPoolExecutor.
     """
     modpack_zips = [
-        zp for zp in mods_dir.rglob("*.zipmod")
+        zp for zp in find_mod_files(mods_dir)
         if is_modpack_folder(zp, mods_dir)
     ]
 
-    print(f"Found {len(modpack_zips)} zipmods in Sideloader Modpack folders")
+    print(f"Found {len(modpack_zips)} mod(s) in Sideloader Modpack folders")
 
     old_files: dict = previous  # {str_path: [mtime, size, guid|None]}
 

@@ -12,8 +12,8 @@ from typing import Literal
 from tasks.base_task import BaseTask
 from utils.chara_ops import (
     build_coord_cache, build_mods_cache, find_matching_coords, in_modpack_folder,
-    load_modpack_index, parse_chara_guids, parse_coord_guids, parse_scene_guids,
-    resolve_paths,
+    iter_mod_files, load_modpack_index, parse_chara_guids, parse_coord_guids,
+    parse_scene_guids, resolve_paths,
 )
 from utils.classifier import CardType, get_card_type, is_coordinate
 from utils.config import GameType
@@ -71,7 +71,7 @@ class ArchiveCards(BaseTask):
         cached = self._modpack_skip_counts.get(mods_dir)
         if cached is not None:
             return cached
-        count = sum(1 for zp in mods_dir.rglob("*.zipmod")
+        count = sum(1 for zp in iter_mod_files(mods_dir)
                     if in_modpack_folder(zp, mods_dir))
         self._modpack_skip_counts[mods_dir] = count
         return count

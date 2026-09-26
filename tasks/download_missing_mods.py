@@ -21,7 +21,7 @@ Strategy
         failed), Telegram Source is ChatLinks/Both → search each
         configured Telegram Chat Links entry (channel, group, or forum
         topic) via Telegram's server-side document search, and download
-        the first result whose filename ends in .zipmod
+        the first result whose filename ends in .zipmod or .zip
      d) Otherwise → log as unresolved
 """
 
@@ -258,8 +258,11 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
 
     Returns every matching Telethon Message (in the order Telegram's search
     returned them) whose attached document's filename ends with
-    '.zipmod', or an empty list if nothing matched (including if the chat
-    can't be resolved / searched at all, e.g. not a member).
+    '.zipmod' or '.zip' (some mods are shared without ever being renamed
+    to '.zipmod' — the downloaded file's manifest.xml is what actually
+    gets verified afterward, this filter just narrows the candidates), or
+    an empty list if nothing matched (including if the chat can't be
+    resolved / searched at all, e.g. not a member).
 
     A text search for a GUID can turn up several results in the same chat
     (re-uploads, unrelated files that happen to mention the GUID in a
@@ -306,7 +309,7 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
             if fn:
                 file_name = fn
                 break
-        if file_name and file_name.lower().endswith(".zipmod"):
+        if file_name and file_name.lower().endswith((".zipmod", ".zip")):
             matches.append(message)
 
     return matches

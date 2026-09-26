@@ -20,6 +20,7 @@ from pathlib import Path
 
 import msgpack
 
+from utils.classifier import is_mod_archive
 from utils.config import GameType
 from utils.logger import logger
 
@@ -681,7 +682,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
 
     # Only iterate files actually present on disk — deleted files are implicitly pruned
     all_zips = [
-        zp for zp in mods_dir.rglob("*.zipmod")
+        zp for zp in iter_mod_files(mods_dir)
         if include_modpack or not in_modpack_folder(zp, mods_dir)
     ]
     all_zip_strs = {str(zp) for zp in all_zips}
@@ -723,7 +724,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
     if reused:
         logger.info("CACHE", f"Mods cache: {reused} unchanged, {len(to_read)} new/changed")
     elif to_read:
-        logger.info("CACHE", f"Scanning {len(to_read)} zipmod(s) for GUIDs...")
+        logger.info("CACHE", f"Scanning {len(to_read)} mod file(s) for GUIDs...")
 
     import os
     workers = min(32, (os.cpu_count() or 4) * 2)
@@ -988,6 +989,18 @@ def guid_from_zipmod(path: Path) -> str | None:
         return None
 
 
+def iter_mod_files(mods_dir: Path):
+    """Yield every mod archive under mods_dir: every ".zipmod" file, plus
+    every plain ".zip" file that actually contains a manifest.xml (some
+    mods are distributed without ever being renamed to ".zipmod"). Callers
+    that used to do `mods_dir.rglob("*.zipmod")` should use this instead so
+    plain-.zip mods aren't silently skipped."""
+    yield from mods_dir.rglob("*.zipmod")
+    for zp in mods_dir.rglob("*.zip"):
+        if is_mod_archive(zp):
+            yield zp
+
+
 def in_modpack_folder(zp: Path, mods_dir: Path) -> bool:
     """Return True if zp lives inside a first-level Sideloader Modpack subfolder."""
     try:
@@ -1053,7 +1066,7 @@ def scan_mods(mods_dir: Path, required: set[str],
     # No cache — scan local folders only (skip modpack folders when index
     # is present since those GUIDs were already handled above)
     skip_modpack = modpack_index is not None and not include_modpack
-    for zp in mods_dir.rglob("*.zipmod"):
+    for zp in iter_mod_files(mods_dir):
         if not remaining:
             break
         if in_modpack_folder(zp, mods_dir):

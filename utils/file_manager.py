@@ -4,6 +4,7 @@ import time
 
 from datetime import datetime
 from pathlib import Path
+from utils.classifier import is_mod_archive
 from utils.logger import logger
 from typing import Union, Literal
 
@@ -39,7 +40,12 @@ class FileManager:
 
                 file_entry: FileEntry = (file_path, file_size, file_extension)
 
-                if file_extension in archive_extensions:
+                if file_extension.lower() == ".zip" and is_mod_archive(file_path):
+                    # A plain .zip containing a manifest.xml is a mod, not a
+                    # generic archive to extract — route it alongside
+                    # .zipmod files instead of into archive_list.
+                    file_list.append(file_entry)
+                elif file_extension in archive_extensions:
                     archive_list.append(file_entry)
                 else:
                     file_list.append(file_entry)

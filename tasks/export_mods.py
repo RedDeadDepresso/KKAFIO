@@ -1,12 +1,15 @@
 """
-export_mods.py — Find zipmods by GUID and copy them into an output folder.
+export_mods.py — Find mods by GUID and copy them into an output folder.
 
 Typical use: paste the "Unresolvable mods" (or any other) section straight
 out of a Download Missing Mods report — lines like "  ! GaryuX.Chloe" — into
 the GUIDs field (the bullet is removed), and this task will locate each one (searching both the
 regular mods folder and any Sideloader Modpack subfolder) and copy it out,
 optionally renamed to [guid].zipmod so it's immediately obvious which file
-is which.
+is which. A mod is located by content (a manifest.xml inside the archive),
+not by extension, so mods distributed as a plain .zip rather than .zipmod
+are found too — RenameToGuid still normalizes those to a .zipmod extension
+on export.
 """
 
 import filecmp

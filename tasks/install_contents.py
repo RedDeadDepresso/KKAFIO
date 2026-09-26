@@ -47,7 +47,11 @@ class InstallContents(ContentTypeResolver):
         for file in file_list:
             path, size, extension = file
             match extension:
-                case ".zipmod":
+                case ".zipmod" | ".zip":
+                    # A plain .zip only reaches file_list (as opposed to
+                    # archive_list) when find_all_files has already
+                    # confirmed it contains a manifest.xml, so it's safe to
+                    # treat it exactly like a .zipmod here.
                     if self.do_mods:
                         self.file_manager.copy_and_paste("MODS", path, self.game_path["mods"])
                 case ".png":

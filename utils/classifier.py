@@ -1,4 +1,5 @@
 import json
+import zipfile
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
@@ -7,6 +8,39 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
     from scipy.spatial import cKDTree
+
+
+# Koikatsu mods are conventionally shipped with a ".zipmod" extension, but a
+# mod is really just a plain zip archive containing a manifest.xml — some
+# mods (and re-uploads) are distributed as plain ".zip" instead. Anywhere
+# KKAFIO needs to decide "is this a mod or a generic archive", it should
+# check content (manifest.xml), not just trust the ".zipmod" extension.
+MOD_ARCHIVE_EXTENSIONS = (".zipmod", ".zip")
+
+
+def has_manifest(path: str | Path) -> bool:
+    """Return True if the zip archive at `path` contains a manifest.xml at
+    any depth (case-insensitive match on the filename, matching the same
+    convention used elsewhere to locate it inside a zipmod)."""
+    try:
+        with zipfile.ZipFile(path, "r") as zf:
+            return any(n.lower().endswith("manifest.xml") for n in zf.namelist())
+    except Exception:
+        return False
+
+
+def is_mod_archive(path: str | Path) -> bool:
+    """Return True if `path` should be treated as a Koikatsu mod: a
+    ".zipmod" file, or a plain ".zip" file that actually contains a
+    manifest.xml (as opposed to a generic archive of loose files, e.g. a
+    zipped batch of PNG cards)."""
+    path = Path(path)
+    suffix = path.suffix.lower()
+    if suffix == ".zipmod":
+        return True
+    if suffix == ".zip":
+        return has_manifest(path)
+    return False
 
 
 class CardType(Enum):
