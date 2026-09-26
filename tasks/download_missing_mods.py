@@ -184,8 +184,12 @@ def _parse_tme_link(tg_link: str) -> tuple[str, int] | None:
 # ---------------------------------------------------------------------------
 
 DEFAULT_TELEGRAM_CHAT_LINKS = (
-    "https://t.me/c/2549022984/299 # you need to be part of this chat\n"
-    "https://t.me/kknowcc # you need to be part of this chat"
+    "# You need to be a member of all these chats if you want to search mods within them\n"
+    "https://t.me/c/2549022984\n"
+    "https://t.me/KK_archive_modlibrary\n"
+    "https://t.me/KKDOC\n"
+    "https://t.me/koikatu_card_download\n"
+    "https://t.me/kknowcc"
 )
 
 _TELEGRAM_SOURCE_LABELS = {
