@@ -451,8 +451,11 @@ class Config:
 
         for key, path in required_paths.items():
             if not path.exists():
-                logger.error("SCRIPT", f"Game path not valid: {path}")
-                raise Exception(f"Game path not valid: {path}")
+                if path == required_paths["Overlays"]:
+                    required_paths["Overlays"].mkdir(parents=True, exist_ok=True)
+                else:
+                    logger.error("SCRIPT", f"Game path not valid: {path}")
+                    raise Exception(f"Game path not valid: {path}")
 
         for key, path in optional_paths.items():
             if path.exists():
