@@ -146,7 +146,7 @@
   "option.TelegramSource.case.ChatLinks.label": "텔레그램 채팅 링크",
   "option.TelegramSource.case.Both.label": "koikatsucards.com + 텔레그램 채팅 링크",
   "option.TelegramChatLinks.label": "텔레그램 채팅 링크",
-  "option.TelegramChatLinks.description": "한 줄에 하나의 텔레그램 채널/그룹/채팅 링크를 입력합니다. 텔레그램 출처가 '텔레그램 채팅 링크' 또는 결합 옵션일 때 사용됩니다. 각 채팅에 미리 가입되어 있어야 합니다. 토픽 ID(예: .../299)를 추가하면 해당 포럼 토픽만 검색합니다. 뒤에 붙는 '# 주석'은 무시됩니다. 채팅은 순서대로 시도되며, 일치하는 항목이 없으면 다음 채팅으로 넘어갑니다.",
+  "option.TelegramChatLinks.description": "한 줄에 하나의 텔레그램 채널/그룹/채팅 링크를 입력합니다. 텔레그램 출처가 '텔레그램 채팅 링크' 또는 결합 옵션일 때 사용됩니다. 비공개 채팅/그룹만 미리 가입되어 있어야 하며, 공개 채팅은 가입할 필요가 없습니다. 토픽 ID(예: .../299)를 추가하면 해당 포럼 토픽만 검색합니다. 뒤에 붙는 '# 주석'은 무시됩니다. 채팅은 순서대로 시도되며, 일치하는 항목이 없으면 다음 채팅으로 넘어갑니다.",
   "option.Guids.label": "GUID",
   "option.Guids.description": "찾아서 내보낼 모드 GUID를 한 줄에 하나씩 입력하세요. '누락된 모드 다운로드' 보고서의 일부를 그대로 붙여넣을 수도 있습니다 — 줄 앞의 '!', '✗', '+', '~' 기호는 제거되고, '#' 이후는 주석으로 무시되며, 나머지 내용은 입력한 그대로 GUID로 사용됩니다.",
   "option.RenameToGuid.label": "GUID로 이름 변경",
@@ -206,12 +206,12 @@
   "task.DeleteCards.description": "캐릭터 카드, 코디 카드 또는 스튜디오 씬과 관련 모드/코디를 휴지통으로 보냅니다",
   "task.ExportMods.label": "📤 모드 내보내기",
   "task.ExportMods.description": "GUID로 zipmod를 찾아 출력 폴더로 복사합니다. 필요하면 [guid].zipmod로 이름을 바꿀 수 있습니다",
-  "preset.AllTasks.label": "⚡ 모든 작업",
-  "preset.AllTasks.description": "사용 가능한 모든 작업을 포함합니다. 컨텍스트 메뉴를 설정할 때 유용합니다",
   "preset.DownloadFilterAndInstall.label": "📥 다운로드·필터링·설치",
   "preset.DownloadFilterAndInstall.description": "새 콘텐츠 다운로드, KKS 카드 필터링·변환, 중복 제거, 누락된 모드 가져오기, 텍스처 압축, 설치까지 한 번에 실행합니다",
   "preset.OrganizeInstalledContents.label": "🗂️ 설치된 콘텐츠 정리",
   "preset.OrganizeInstalledContents.description": "중복 콘텐츠를 제거하고, 설치된 캐릭터를 그룹화·이름 변경하고, 불필요한 카드를 삭제하며, 아직 누락된 모드를 다운로드합니다",
   "preset.ExportInstalledContents.label": "📤 설치된 콘텐츠 내보내기",
-  "preset.ExportInstalledContents.description": "모드가 포함된 카드를 압축 보관하고, 추가 모드를 GUID로 내보내어 설치된 콘텐츠를 다른 사용자와 공유할 수 있도록 합니다"
+  "preset.ExportInstalledContents.description": "모드가 포함된 카드를 압축 보관하고, 추가 모드를 GUID로 내보내어 설치된 콘텐츠를 다른 사용자와 공유할 수 있도록 합니다",
+  "preset.AllTasks.label": "⚡ 모든 작업",
+  "preset.AllTasks.description": "사용 가능한 모든 작업을 포함합니다. 컨텍스트 메뉴를 설정할 때 유용합니다"
 }

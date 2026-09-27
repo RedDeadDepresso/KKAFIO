@@ -146,7 +146,7 @@
   "option.TelegramSource.case.ChatLinks.label": "Telegram Chat Links",
   "option.TelegramSource.case.Both.label": "koikatsucards.com + Telegram Chat Links",
   "option.TelegramChatLinks.label": "Telegram Chat Links",
-  "option.TelegramChatLinks.description": "One Telegram channel/group/chat link per line, used when Telegram Source is 'Telegram Chat Links' or the combined option. You must already be a member of each one. Add a topic ID (e.g. .../299) to search only that forum topic; a trailing '# comment' is ignored. Chats are tried in order, moving to the next one if a chat has no match.",
+  "option.TelegramChatLinks.description": "One Telegram channel/group/chat link per line, used when Telegram Source is 'Telegram Chat Links' or the combined option. Only private chats/groups require you to already be a member — public ones don't. Add a topic ID (e.g. .../299) to search only that forum topic; a trailing '# comment' is ignored. Chats are tried in order, moving to the next one if a chat has no match.",
   "option.Guids.label": "GUIDs",
   "option.Guids.description": "One mod GUID per line to find and export. You can paste a section straight out of a Download Missing Mods report — a leading '!', '✗', '+' or '~' bullet is removed, everything from a '#' onward is treated as a comment and ignored, and every other line is used as the GUID exactly as written.",
   "option.RenameToGuid.label": "Rename to GUID",
@@ -206,12 +206,12 @@
   "task.DeleteCards.description": "Send character cards, coordinate cards, or Studio scenes and their associated mods/coords to Recycle Bin",
   "task.ExportMods.label": "📤 Export Mods",
   "task.ExportMods.description": "Find zipmods by GUID and copy them into an output folder, optionally renamed to [guid].zipmod",
-  "preset.AllTasks.label": "⚡ All Tasks",
-  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu",
   "preset.DownloadFilterAndInstall.label": "📥 Download, Filter & Install",
   "preset.DownloadFilterAndInstall.description": "Download new content, filter and convert KKS cards, remove duplicates, grab missing mods, compress textures, and install everything in one pass",
   "preset.OrganizeInstalledContents.label": "🗂️ Organize Installed Contents",
   "preset.OrganizeInstalledContents.description": "Filter out duplicate content, group and rename installed characters, delete unwanted cards, and download any mods they're still missing",
   "preset.ExportInstalledContents.label": "📤 Export Installed Contents",
-  "preset.ExportInstalledContents.description": "Archive cards with their mods bundled in and export additional mods by GUID, ready to share your installed content with other players"
+  "preset.ExportInstalledContents.description": "Archive cards with their mods bundled in and export additional mods by GUID, ready to share your installed content with other players",
+  "preset.AllTasks.label": "⚡ All Tasks",
+  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu"
 }

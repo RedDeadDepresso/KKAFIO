@@ -146,7 +146,7 @@
   "option.TelegramSource.case.ChatLinks.label": "Telegramチャットリンク",
   "option.TelegramSource.case.Both.label": "koikatsucards.com + Telegramチャットリンク",
   "option.TelegramChatLinks.label": "Telegramチャットリンク",
-  "option.TelegramChatLinks.description": "1行に1つのTelegramチャンネル／グループ／チャットのリンクを入力します。Telegramのソースが「Telegramチャットリンク」または組み合わせオプションの場合に使用されます。あらかじめ各チャットのメンバーになっている必要があります。トピックID（例: .../299）を追加すると、そのフォーラムトピックのみを検索します。末尾の「# コメント」は無視されます。チャットは順番に試行され、一致がなければ次のチャットに進みます。",
+  "option.TelegramChatLinks.description": "1行に1つのTelegramチャンネル／グループ／チャットのリンクを入力します。Telegramのソースが「Telegramチャットリンク」または組み合わせオプションの場合に使用されます。非公開のチャット／グループのみ、あらかじめメンバーになっている必要があります。公開のものは不要です。トピックID（例: .../299）を追加すると、そのフォーラムトピックのみを検索します。末尾の「# コメント」は無視されます。チャットは順番に試行され、一致がなければ次のチャットに進みます。",
   "option.Guids.label": "GUID",
   "option.Guids.description": "検索してエクスポートするMODのGUIDを1行に1つずつ入力します。「不足しているMODをダウンロード」レポートの一部をそのまま貼り付けることもできます——行頭の「!」「✗」「+」「~」は取り除かれ、「#」以降はコメントとして無視され、それ以外の内容は書かれたとおりGUIDとして使用されます。",
   "option.RenameToGuid.label": "GUIDにリネーム",
@@ -206,12 +206,12 @@
   "task.DeleteCards.description": "キャラカード、コーディネートカード、またはStudioシーンとその関連MOD／コーディネートをごみ箱に送る",
   "task.ExportMods.label": "📤 MODをエクスポート",
   "task.ExportMods.description": "GUIDでzipmodを検索し、出力フォルダにコピーします。必要に応じて [guid].zipmod にリネームできます",
-  "preset.AllTasks.label": "⚡ すべてのタスク",
-  "preset.AllTasks.description": "利用可能なすべてのタスクを含みます。コンテキストメニューの設定に便利です",
   "preset.DownloadFilterAndInstall.label": "📥 ダウンロード・フィルター・インストール",
   "preset.DownloadFilterAndInstall.description": "新規コンテンツのダウンロード、KKSカードのフィルター・変換、重複の削除、不足MODの取得、テクスチャ圧縮、インストールを一度にまとめて実行する",
   "preset.OrganizeInstalledContents.label": "🗂️ インストール済みコンテンツを整理",
   "preset.OrganizeInstalledContents.description": "重複コンテンツを除外し、インストール済みキャラクターのグループ化・リネームを行い、不要なカードを削除し、不足しているMODをダウンロードする",
   "preset.ExportInstalledContents.label": "📤 インストール済みコンテンツをエクスポート",
-  "preset.ExportInstalledContents.description": "MODを同梱してカードをアーカイブし、さらに追加のMODをGUIDでエクスポートして、インストール済みコンテンツを他のユーザーと共有できるようにする"
+  "preset.ExportInstalledContents.description": "MODを同梱してカードをアーカイブし、さらに追加のMODをGUIDでエクスポートして、インストール済みコンテンツを他のユーザーと共有できるようにする",
+  "preset.AllTasks.label": "⚡ すべてのタスク",
+  "preset.AllTasks.description": "利用可能なすべてのタスクを含みます。コンテキストメニューの設定に便利です"
 }

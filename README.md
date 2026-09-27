@@ -190,11 +190,14 @@ See the **📥 Download, Filter & Install** preset for the staging-folder config
 - **Custom Chara Directory / Custom Scene Directory / Custom Coordinate Directory / Custom Mods Directory** — blank by default (uses the game's default directories). Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped (same for coordinates if no default coordinate folder exists).
 - **Use Cache** _(on by default)_ — caches the mods list and the GUID scan for each selected content type. Each cache is invalidated automatically when its folder changes.
 
-**Telegram Chat Links** — one link per line, used when **Telegram Source** is `Telegram Chat Links` or the combined option. You must already be a member of each chat. Add a topic ID (e.g. `.../299`) to search only that forum topic instead of the whole chat; a trailing `# comment` is ignored. Chats are tried in the order listed, moving to the next one if a chat has no match. Defaults to:
+**Telegram Chat Links** — one link per line, used when **Telegram Source** is `Telegram Chat Links` or the combined option. Only private chats/groups require you to already be a member — public ones don't. Add a topic ID (e.g. `.../299`) to search only that forum topic instead of the whole chat; a trailing `# comment` is ignored. Chats are tried in the order listed, moving to the next one if a chat has no match. Defaults to:
 
 ```
-# You need to be a member of all these chats if you want to search mods within them
+# private - need to join it
+# invite link: https://t.me/+td__jctzxic0NGVi
 https://t.me/c/2549022984
+
+# public - no need to join them
 https://t.me/KK_archive_modlibrary
 https://t.me/KKDOC
 https://t.me/koikatu_card_download

@@ -184,8 +184,11 @@ def _parse_tme_link(tg_link: str) -> tuple[str, int] | None:
 # ---------------------------------------------------------------------------
 
 DEFAULT_TELEGRAM_CHAT_LINKS = (
-    "# You need to be a member of all these chats if you want to search mods within them\n"
+    "# private - need to join it\n"
+    "# invite link: https://t.me/+td__jctzxic0NGVi\n"
     "https://t.me/c/2549022984\n"
+    "\n"
+    "# public - no need to join them\n"
     "https://t.me/KK_archive_modlibrary\n"
     "https://t.me/KKDOC\n"
     "https://t.me/koikatu_card_download\n"
