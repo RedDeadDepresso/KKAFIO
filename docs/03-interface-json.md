@@ -230,3 +230,23 @@ and sets their order in the GUI's state; it's resolved into the same
 `task_order` list described in doc 02 like any other manually-enabled set of
 tasks. Presets are a GUI-side convenience; there's no separate "preset" concept
 on the Python side at all.
+
+### `use_in_context_menu`
+
+Optional boolean on a preset entry. When `true`, the instance/tab that MXU
+auto-creates for that preset the very first time it initializes presets
+(fresh install, or an existing config upgrading to an `interface.json` that
+adds presets for the first time) is automatically marked as the instance used
+by the Explorer right-click "Run KKAFIO" context menu — i.e. its config entry
+gets `"useInContextMenu": true`, the same flag a user could otherwise only set
+by hand from MXU's tab context menu.
+
+At most one preset in `interface.json` should set `use_in_context_menu: true`.
+MXU only ever lets a single instance hold the flag (`find_context_menu_instance`
+in `utils/config.py` picks the first match and assumes there's only one), so
+if several presets set it, only the last one MXU processes ends up marked —
+the others are silently overridden.
+
+In this project, `AllTasks` is the preset marked this way, so a first-time
+user who registers the Explorer context menu (`kkafio_setup.bat`) gets sensible
+behavior out of the box without having to open MXU and mark a tab manually.

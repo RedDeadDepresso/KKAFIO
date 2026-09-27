@@ -1292,6 +1292,7 @@
       "name": "AllTasks",
       "label": "$preset.AllTasks.label",
       "description": "$preset.AllTasks.description",
+      "use_in_context_menu": true,
       "task": [
         {
           "name": "CreateBackup",
