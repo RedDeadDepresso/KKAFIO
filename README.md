@@ -212,6 +212,14 @@ https://t.me/kknowcc
 
 > ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
 
+> ⚠️ **Ban/restriction risk:** Download Missing Mods logs in as your real Telegram account (via [Telethon](https://github.com/LonamiWebs/Telethon)) and uses it to run automated server-side searches (`messages.search`) and downloads — not the Bot API. This is inherently more sensitive than a bot account:
+> - Every missing GUID is searched across every entry in **Telegram Chat Links**, in sequence, so a large batch of missing mods can generate a lot of search requests in a short time.
+> - If Telegram responds with a rate limit (`FloodWaitError`), KKAFIO now waits out the exact time Telegram requests before retrying (instead of retrying immediately, which used to risk compounding into a longer restriction) — but this only makes each individual rate limit safer to run into, it doesn't stop one from happening if you run large batches often.
+> - Downloads per chat are capped at 5 candidates per GUID (a chat search can return up to 100 hits; only the first few are ever actually downloaded and GUID-checked) to reduce unnecessary traffic, but the search step itself isn't batched or throttled beyond that.
+> - Being a member of large numbers of chats/channels and running frequent automated searches/downloads from one account is a pattern Telegram's abuse detection can flag independently of any single rate limit — this is a general property of using a userbot for bulk automation, not something this task can fully engineer around.
+>
+> Practically: this is lower-risk as an occasional, moderate-sized cleanup task on an established account, and higher-risk if run repeatedly against very large missing-mods lists, especially on a brand-new number. Using a secondary account (as above) means any restriction lands there instead of your primary Telegram account.
+
 **6. Compress Cards Textures**
 
 - Recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
