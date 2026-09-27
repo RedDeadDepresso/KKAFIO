@@ -257,6 +257,42 @@ def _parse_chat_links(raw: str) -> list[tuple[str | int, int | None]]:
     return links
 
 
+async def _retry_flood_wait(coro_fn, *args, context: str, max_wait: int = 300, **kwargs):
+    """Call `coro_fn(*args, **kwargs)`, retrying once (after actually waiting)
+    if Telegram responds with a FloodWaitError.
+
+    `FloodWaitError.seconds` is the exact time this account must wait before
+    the *same kind* of request will succeed again — retrying immediately, or
+    waiting less than that, tends to trip another (often longer) flood-wait
+    rather than clearing it, which is how a single rate-limit turns into a
+    much longer restriction over the course of a run with many GUIDs/chats.
+
+    If the required wait exceeds `max_wait`, we give up and re-raise instead
+    of blocking the whole DownloadMissingMods run for an unbounded amount of
+    time; callers already treat a raised/caught exception here as "try the
+    next candidate/chat", which is the right behavior in that case too.
+
+    Only used for the plain Telethon calls in this module (chat search,
+    entity resolution, the no-teleget9527 download fallback) — teleget9527
+    already handles FloodWaitError internally for its own `.download()` calls.
+    """
+    from telethon.errors import FloodWaitError
+
+    try:
+        return await coro_fn(*args, **kwargs)
+    except FloodWaitError as e:
+        wait_s = e.seconds + 1  # small margin, same convention Telethon itself uses
+        if wait_s > max_wait:
+            logger.warning("DLMOD",
+                f"    Telegram flood-wait on {context}: {wait_s}s required, "
+                f"exceeds the {max_wait}s cap — skipping instead of blocking the run.")
+            raise
+        logger.warning("DLMOD",
+            f"    Telegram is rate-limiting {context} — waiting {wait_s}s before retrying...")
+        await asyncio.sleep(wait_s)
+        return await coro_fn(*args, **kwargs)
+
+
 async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None, guid: str) -> list:
     """Search a Telegram chat (channel, group, or forum topic) for
     documents matching `guid`, using Telegram's server-side search — this is
@@ -281,26 +317,29 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
     from telethon.tl.types import InputMessagesFilterDocument
 
     try:
-        peer = await client.get_input_entity(chat)
+        peer = await _retry_flood_wait(
+            client.get_input_entity, chat, context=f"resolving chat {chat}")
     except Exception as e:
         logger.warning("DLMOD", f"    Could not resolve chat {chat}: {e}")
         return []
 
     try:
-        result = await client(SearchRequest(
-            peer=peer,
-            q=guid,                                  # Text search term
-            filter=InputMessagesFilterDocument(),     # Server-side DOCUMENT filter
-            top_msg_id=topic_id or 0,                 # Server-side TOPIC filter, 0 if none
-            min_date=None,
-            max_date=None,
-            offset_id=0,
-            add_offset=0,
-            limit=100,
-            max_id=0,
-            min_id=0,
-            hash=0,
-        ))
+        result = await _retry_flood_wait(
+            client, SearchRequest(
+                peer=peer,
+                q=guid,                                  # Text search term
+                filter=InputMessagesFilterDocument(),     # Server-side DOCUMENT filter
+                top_msg_id=topic_id or 0,                 # Server-side TOPIC filter, 0 if none
+                min_date=None,
+                max_date=None,
+                offset_id=0,
+                add_offset=0,
+                limit=100,
+                max_id=0,
+                min_id=0,
+                hash=0,
+            ),
+            context=f"searching {chat} for {guid}")
     except Exception as e:
         logger.warning("DLMOD", f"    Search failed in {chat}: {e}")
         return []
@@ -346,7 +385,14 @@ async def _search_chat_links_and_download(
     deleted immediately and the next candidate is tried, first within the
     same chat, then in the next configured chat link, until a verified
     match is downloaded or every candidate in every chat has been
-    exhausted.
+    exhausted. At most 5 candidates are actually downloaded per chat (per
+    GUID) — a chat search can return up to 100 hits, and downloading every
+    one of them just to check a manifest is unnecessary MTProto traffic
+    once a chat's real match is very unlikely to be candidate #6+; the
+    remaining candidates in that chat are skipped and the next chat link
+    (if any) is tried instead. Files already on disk that verify by GUID
+    (the `dest.exists()` check above) don't count against this cap, since
+    no download happens for those.
 
     `client` is a single already-connected TelegramClient shared across
     every GUID in this DownloadMissingMods run (see the caller) — this
@@ -367,6 +413,7 @@ async def _search_chat_links_and_download(
     if not chat_links:
         return False, False
 
+    MAX_DOWNLOADS_PER_CHAT = 5
     found_source = False
 
     for chat, topic_id in chat_links:
@@ -378,6 +425,7 @@ async def _search_chat_links_and_download(
             continue  # no candidates here — try the next chat link
 
         found_source = True
+        downloads_this_chat = 0
 
         for message in messages:
             file_name = None
@@ -406,13 +454,21 @@ async def _search_chat_links_and_download(
                     f"deleting and re-downloading: {dest.name}")
                 dest.unlink(missing_ok=True)
 
+            if downloads_this_chat >= MAX_DOWNLOADS_PER_CHAT:
+                logger.warning("DLMOD",
+                    f"    Hit the {MAX_DOWNLOADS_PER_CHAT}-download cap for {where} "
+                    f"searching {guid} — skipping remaining candidates in this chat.")
+                break  # move on to the next configured chat link
+
             logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
+            downloads_this_chat += 1
 
             # Use teleget9527 if available (reuse the passed-in downloader instance),
             # matching _download_via_teleget's exact pattern.
             if downloader is not None:
                 try:
-                    entity = await client.get_entity(chat)
+                    entity = await _retry_flood_wait(
+                        client.get_entity, chat, context=f"resolving entity for {chat}")
                     raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
 
                     def _on_progress(downloaded: int, total: int, pct: float) -> None:
@@ -441,9 +497,13 @@ async def _search_chat_links_and_download(
                     continue  # try the next candidate
 
             else:
-                # Fallback: plain Telethon download_media
+                # Fallback: plain Telethon download_media (teleget9527 isn't
+                # involved on this path, so its own flood-wait handling
+                # doesn't apply here — retry it ourselves)
                 try:
-                    await client.download_media(message, file=str(dest))
+                    await _retry_flood_wait(
+                        client.download_media, message, file=str(dest),
+                        context=f"downloading {file_name} from {where}")
                 except Exception as e:
                     logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
                     dest.unlink(missing_ok=True)
@@ -647,7 +707,9 @@ async def _download_via_teleget(
     # form for links like this one, which Telethon can resolve via a live
     # API call even with no prior cache — so use it instead of the raw ID
     # whenever we have it.
-    message = await client.get_messages(chat_identifier, ids=message_id)
+    message = await _retry_flood_wait(
+        client.get_messages, chat_identifier, ids=message_id,
+        context=f"fetching message metadata from {chat_identifier}")
 
     # teleget9527 wants the bare numeric chat ID of the chat the link
     # actually points at. This used to be hardcoded to the
@@ -655,7 +717,9 @@ async def _download_via_teleget(
     # have fetched message N of the wrong chat.
     raw_chat_id: int | None = None
     try:
-        raw_chat_id = (await client.get_entity(chat_identifier)).id
+        entity = await _retry_flood_wait(
+            client.get_entity, chat_identifier, context=f"resolving entity for {chat_identifier}")
+        raw_chat_id = entity.id
     except Exception as e:
         if str(chat_identifier).lower() == "@kk_archive_modlibrary":
             raw_chat_id = KK_ARCHIVE_CHAT_ID   # known channel; safe fallback
@@ -718,9 +782,13 @@ async def _download_via_teleget(
             return False
 
     else:
-        # Fallback: Telethon download_media on the shared client
+        # Fallback: Telethon download_media on the shared client (not
+        # covered by teleget9527's own flood-wait handling, since teleget9527
+        # isn't involved on this path)
         try:
-            await client.download_media(message, file=str(dest), workers=4)
+            await _retry_flood_wait(
+                client.download_media, message, file=str(dest), workers=4,
+                context=f"downloading {file_name} [{guid}]")
         except Exception as e:
             logger.error("DLMOD", f"Telethon download failed [{guid}]: {e}")
             return False
