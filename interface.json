@@ -1222,6 +1222,7 @@
         },
         {
           "name": "DownloadMissingMods",
+          "enabled": false,
           "option": {
             "TelegramSource": "Both",
             "ModsDir": "C:/KKAFIO/Downloads",
