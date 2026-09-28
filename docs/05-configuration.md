@@ -84,7 +84,8 @@ subcommand that needs config, via `--config`/`--instance`).
 ```
 
 Written/read by `utils/kkd_session.py`. Used by **Download Contents** when
-downloading from koikatsucards.com. Validated against
+downloading from koikatsucards.com (not by Download Missing Mods, which
+uses the KKC mod index above). Validated against
 `koikatsucards.com/api/session` before each use; if invalid, the user is
 prompted to paste a fresh cookie via a native dialog
 (`utils/password_dialog.py`) and the file is overwritten.
@@ -96,7 +97,7 @@ prompted to paste a fresh cookie via a native dialog
 ```
 
 Written/read by `utils/telegram_config.py`. Used by **Download Missing
-Mods** when the Telegram fallback is enabled. Only `api_id`/`api_hash` are
+Mods** when a Telegram source is enabled. Only `api_id`/`api_hash` are
 ever actually written by `save()` in current usage — the module's docstring
 also mentions a `"session"` key as part of the intended shape, but nothing
 in the codebase currently populates it there; the real Telegram session
@@ -115,6 +116,33 @@ same `"kkafio"` base name.
 
 > ⚠️ This file (and the API credentials above) grant full access to
 > whatever Telegram account authorized them. Never share this directory.
+
+### `config/kkc_mod_index.json` and `config/kkc_mod_index_last_commit.txt` — KKC mod index cache
+
+```json
+{ "com.AgiShark.Casual_Moves_Part2": "https://t.me/KK_archive_modlibrary/25" }
+```
+
+`kkc_mod_index.json` maps mod GUIDs to Telegram message links. It is
+published by [kkc-mod-scraper](https://github.com/RedDeadDepresso/kkc-mod-scraper)
+at `https://reddeaddepresso.github.io/kkc-mod-scraper/kkc_mod_index.json`.
+`kkc_mod_index_last_commit.txt` holds the SHA of that repo's latest commit
+at the time the index was downloaded.
+
+Used by **Download Missing Mods** when Telegram Source is
+`KoikatsuCards` or `Both`. It replaces the old per-GUID lookup on
+koikatsucards.com. It is only read when at least one mod needs a Telegram
+download (`tasks/download_missing_mods.py`, `_load_kkc_mod_index()`):
+
+1. The latest commit of `RedDeadDepresso/kkc-mod-scraper` is fetched from
+   the GitHub API.
+2. If it matches the SHA in `kkc_mod_index_last_commit.txt` and
+   `kkc_mod_index.json` loads successfully, the cached file is used.
+3. Otherwise the index is downloaded again and both files are rewritten.
+4. If the commit can't be checked (e.g. offline or rate-limited), the cached
+   index is used if one exists.
+
+Both files are safe to delete; the next run downloads a fresh copy.
 
 ### `download_history.json` — Download Contents dedup
 

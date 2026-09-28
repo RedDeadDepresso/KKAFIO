@@ -140,7 +140,7 @@
   "option.SideloaderModpack.case.OnlyUsed.label": "仅已使用",
   "option.SideloaderModpack.case.All.label": "全部",
   "option.TelegramSource.label": "Telegram 来源",
-  "option.TelegramSource.description": "在 BetterRepack 未覆盖的情况下去哪里查找模组：\n• 否 — 完全不使用 Telegram\n• koikatsucards.com — 在该网站查找每个 GUID 并下载对应的 Telegram 消息\n• Telegram 群组链接 — 直接在下方的群组/频道中搜索匹配 GUID 的文件\n• koikatsucards.com + Telegram 群组链接 — 先尝试 koikatsucards.com，找不到的再使用 Telegram 群组链接\n\n使用任意 Telegram 选项都需要 Telegram 账号：首次使用时，KKAFIO 会打开 https://my.telegram.org 以获取你的 API ID/Hash，然后要求输入手机号和验证码。凭据将保存在 %APPDATA%/KKAFIO/config/telegram.json 中。",
+  "option.TelegramSource.description": "在 BetterRepack 未覆盖的情况下去哪里查找模组：\n• 否 — 完全不使用 Telegram\n• koikatsucards.com — 在通过抓取 koikatsucards.com 预先生成的索引中查找每个 GUID（运行时不会访问 koikatsucards.com），并下载对应的 Telegram 消息\n• Telegram 群组链接 — 直接在下方的群组/频道中搜索匹配 GUID 的文件\n• koikatsucards.com + Telegram 群组链接 — 先尝试索引，找不到的再使用 Telegram 群组链接\n\n使用任意 Telegram 选项都需要 Telegram 账号：首次使用时，KKAFIO 会打开 https://my.telegram.org 以获取你的 API ID/Hash，然后要求输入手机号和验证码。凭据将保存在 %APPDATA%/KKAFIO/config/telegram.json 中。",
   "option.TelegramSource.case.No.label": "否",
   "option.TelegramSource.case.KoikatsuCards.label": "koikatsucards.com",
   "option.TelegramSource.case.ChatLinks.label": "Telegram 群组链接",

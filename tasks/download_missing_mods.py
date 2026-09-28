@@ -10,14 +10,15 @@ Strategy
 4. Sideloader Modpack mode:
      Skip     — ignore modpack GUIDs entirely (only download local-only mods)
      OnlyUsed — download missing GUIDs that are in the modpack index or on
-                koikatsucards.com / Telegram Chat Links
+                the KKC mod index / Telegram Chat Links
      All      — also download every GUID in the modpack index not installed
 5. For each GUID to download:
      a) In modpack index → BetterRepack (httpx, no auth)
-     b) Not in index, Telegram Source is KoikatsuCards/Both → look up on
-        koikatsucards.com, parse the t.me link, download the file directly
-        from Telegram
-     c) Not in index (or koikatsucards.com had no link / the download
+     b) Not in index, Telegram Source is KoikatsuCards/Both → look up the
+        GUID in kkc_mod_index.json (kkc-mod-scraper; cached in CONFIG_DIR and
+        refreshed when the repo's latest commit changes), then download the
+        linked t.me message directly from Telegram
+     c) Not in index (or the KKC mod index had no link / the download
         failed), Telegram Source is ChatLinks/Both → search each
         configured Telegram Chat Links entry (channel, group, or forum
         topic) via Telegram's server-side document search, and download
@@ -48,12 +49,13 @@ from utils.logger import logger
 import utils.telegram_config as tg_cfg
 
 BETTERREPACK_BASE     = "https://sideload.betterrepack.com/download/KKEC"
-KOIKATSUCARDS_MOD_LIB = "https://koikatsucards.com/mod_library"
+KKC_INDEX_URL         = "https://reddeaddepresso.github.io/kkc-mod-scraper/kkc_mod_index.json"
+KKC_COMMITS_API       = "https://api.github.com/repos/RedDeadDepresso/kkc-mod-scraper/commits"
 MAX_CONNECTIONS       = 4
 
 
 # ---------------------------------------------------------------------------
-# HTTP client (for BetterRepack + koikatsucards.com scraping)
+# HTTP client (for BetterRepack + kkc-mod-scraper index)
 # ---------------------------------------------------------------------------
 
 def _make_http_client(cookies: dict | None = None):
@@ -130,33 +132,106 @@ async def _download_betterrepack(
 
 
 # ---------------------------------------------------------------------------
-# koikatsucards.com scraping
+# kkc-mod-scraper index (GUID -> Telegram link)
 # ---------------------------------------------------------------------------
 
-async def _get_telegram_link(client, guid: str) -> str:
-    """Scrape koikatsucards.com/mod_library for the Telegram t.me link."""
-    from bs4 import BeautifulSoup
-    # Pass q as a query param via httpx instead of interpolating the raw
-    # GUID into the URL string — a GUID containing "&", "#", "%", or spaces
-    # (real GUIDs in the wild do: e.g. "3DPubicHairs by CM12", ".com top_matoi")
-    # would otherwise corrupt the query string (truncating it at "&"/"#", or
-    # sending an already-percent-decoded value that means something
-    # different once re-decoded server-side). httpx encodes `params` values
-    # correctly regardless of what characters they contain.
+async def _fetch_latest_index_commit(client) -> str | None:
+    """Return the SHA of the latest commit of the kkc-mod-scraper repo, or
+    None if it couldn't be determined."""
     try:
-        r = await client.get(KOIKATSUCARDS_MOD_LIB, params={"q": guid, "pageSize": 50})
+        r = await client.get(
+            KKC_COMMITS_API,
+            params={"per_page": 1},
+            headers={"Accept": "application/vnd.github+json"},
+        )
         r.raise_for_status()
+        data = r.json()
+        return data[0]["sha"].strip() if data else None
     except Exception as e:
-        logger.error("DLMOD", f"koikatsucards.com request failed [{guid}]: {e}")
-        return ""
-    soup = BeautifulSoup(r.text, "html.parser")
-    for anchor in soup.select("a.mod-library-item-link"):
-        code = anchor.select_one("code")
-        if code and code.text.strip() == guid:
-            href = anchor.get("href", "")
-            if href:
-                return href
-    return ""
+        logger.warning("DLMOD", f"Could not fetch latest kkc-mod-scraper commit: {e}")
+        return None
+
+
+def _load_cached_kkc_index(index_path: Path) -> dict[str, str] | None:
+    """Load the cached kkc_mod_index.json. None if missing or unreadable."""
+    import json
+    if not index_path.exists():
+        return None
+    try:
+        with index_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+        logger.warning("DLMOD", "Cached kkc_mod_index.json is not a JSON object.")
+    except Exception as e:
+        logger.warning("DLMOD", f"Could not load cached kkc_mod_index.json: {e}")
+    return None
+
+
+async def _load_kkc_mod_index(client) -> dict[str, str]:
+    """Return the {guid: t.me link} index from kkc-mod-scraper.
+
+    The cached copy (CONFIG_DIR/config/kkc_mod_index.json) is used only if
+    the commit recorded in kkc_mod_index_last_commit.txt matches the repo's
+    latest commit and the cached file loads successfully. Otherwise the
+    index is downloaded again and the commit file is updated.
+
+    Returns an empty dict if the index is unavailable.
+    """
+    import json
+    from utils.constants import CONFIG_DIR
+
+    cfg_dir     = CONFIG_DIR / "config"
+    index_path  = cfg_dir / "kkc_mod_index.json"
+    commit_path = cfg_dir / "kkc_mod_index_last_commit.txt"
+
+    latest_commit = await _fetch_latest_index_commit(client)
+
+    saved_commit = ""
+    try:
+        if commit_path.exists():
+            saved_commit = commit_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        pass
+
+    if latest_commit and saved_commit == latest_commit:
+        cached = _load_cached_kkc_index(index_path)
+        if cached is not None:
+            logger.info("DLMOD", f"kkc mod index up to date: {len(cached)} GUIDs (cached)")
+            return cached
+        logger.info("DLMOD", "kkc mod index cache missing or unreadable — downloading...")
+    elif latest_commit is None:
+        # Can't tell whether the cache is current; use it rather than fail.
+        cached = _load_cached_kkc_index(index_path)
+        if cached is not None:
+            logger.warning("DLMOD",
+                "Could not check for kkc mod index updates — using cached copy.")
+            return cached
+    else:
+        logger.info("DLMOD", "kkc mod index is new or outdated — downloading...")
+
+    try:
+        r = await client.get(KKC_INDEX_URL)
+        r.raise_for_status()
+        index = r.json()
+        if not isinstance(index, dict):
+            raise ValueError("index is not a JSON object")
+    except Exception as e:
+        logger.error("DLMOD", f"Failed to download kkc mod index: {e}")
+        return {}
+
+    try:
+        cfg_dir.mkdir(parents=True, exist_ok=True)
+        tmp = index_path.with_name(index_path.name + ".part")
+        tmp.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, index_path)
+        if latest_commit:
+            commit_path.write_text(latest_commit, encoding="utf-8")
+    except OSError as e:
+        logger.warning("DLMOD", f"Could not save kkc mod index cache: {e}")
+
+    logger.info("DLMOD", f"kkc mod index downloaded: {len(index)} GUIDs")
+    return index
 
 
 # ---------------------------------------------------------------------------
@@ -876,7 +951,7 @@ class DownloadMissingMods(BaseTask):
                 "=" * 60,
                 "Unresolvable mods (not in modpack index, no Telegram source found):",
                 "These mods could not be downloaded automatically.",
-                "Search for them manually on koikatsucards.com or game modding communities.",
+                "Search for them manually on the KKC mod index or game modding communities.",
                 "",
             ]
             for guid in sorted(unresolved):
@@ -1142,8 +1217,7 @@ class DownloadMissingMods(BaseTask):
 
         async def _run_all() -> None:
             nonlocal ok, fail, failed_guids, downloaded_br, downloaded_tg
-            async with _make_http_client() as br_client, \
-                       _make_http_client() as kk_client:
+            async with _make_http_client() as br_client:
 
                 # BetterRepack — concurrent
                 br_failed     = {}   # guid -> rel_path for failed BR downloads
@@ -1183,6 +1257,10 @@ class DownloadMissingMods(BaseTask):
 
                 # Telegram — sequential
                 if telegram_queue:
+                    kkc_index: dict[str, str] = {}
+                    if use_koikatsucards:
+                        kkc_index = await _load_kkc_mod_index(br_client)
+
                     # Load/prompt for credentials once before the loop
                     tg_data = tg_cfg.get_or_prompt()
                     if tg_data is None:
@@ -1217,7 +1295,7 @@ class DownloadMissingMods(BaseTask):
                             teleget_downloader = None
 
                             # One TelegramClient, connected once and reused for
-                            # every GUID in this batch (both the koikatsucards.com
+                            # every GUID in this batch (both the KKC-index
                             # metadata/fallback-download path and the Telegram
                             # Chat Links search/download path below) — this used
                             # to open and close a brand new connection per GUID
@@ -1274,7 +1352,7 @@ class DownloadMissingMods(BaseTask):
                                     # Warm the *shared* client's entity cache — it
                                     # stays connected for the rest of this batch,
                                     # so this also directly benefits every
-                                    # koikatsucards.com metadata lookup below, not
+                                    # Telegram metadata lookup below, not
                                     # just the daemon's copied session.
                                     await tg_client.get_entity("KK_archive_modlibrary")
                                     logger.info("DLMOD",
@@ -1286,7 +1364,7 @@ class DownloadMissingMods(BaseTask):
                                         f"cold cache): {warm_err}")
 
                             # Create TGDownloader once and reuse across all downloads,
-                            # for both the koikatsucards.com path and the Telegram Chat
+                            # for both the KKC-index path and the Telegram Chat
                             # Links path.
                             from utils.constants import CONFIG_DIR as _CFG_DIR
                             _session_dir = _CFG_DIR / "config" / "tg_session"
@@ -1361,8 +1439,7 @@ class DownloadMissingMods(BaseTask):
                                     success: bool | str = False
 
                                     if use_koikatsucards:
-                                        logger.info("DLMOD", f"  Looking up: {guid}")
-                                        tg_link = await _get_telegram_link(kk_client, guid)
+                                        tg_link = kkc_index.get(guid, "")
                                         if tg_link:
                                             found_source = True
                                             logger.info("DLMOD", f"  Link: {tg_link}")
@@ -1376,7 +1453,7 @@ class DownloadMissingMods(BaseTask):
                                             )
                                         else:
                                             logger.warning("DLMOD",
-                                                f"  {guid} — not found on koikatsucards.com")
+                                                f"  {guid} — not in kkc mod index")
 
                                     if success not in (True, "skipped") and use_chat_links and chat_links:
                                         if use_koikatsucards:

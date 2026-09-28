@@ -140,7 +140,7 @@
   "option.SideloaderModpack.case.OnlyUsed.label": "使用済みのみ",
   "option.SideloaderModpack.case.All.label": "すべて",
   "option.TelegramSource.label": "Telegramのソース",
-  "option.TelegramSource.description": "BetterRepackでカバーされていないMODをどこで探すか：\n• いいえ — Telegramを一切使用しません\n• koikatsucards.com — 各GUIDをそこで検索し、リンクされたTelegramメッセージをダウンロードします\n• Telegramチャットリンク — 以下のチャット／チャンネルを直接検索し、GUIDに一致するファイルを探します\n• koikatsucards.com + Telegramチャットリンク — まずkoikatsucards.comを試し、見つからなければTelegramチャットリンクにフォールバックします\n\nいずれのTelegramオプションを使用するにもTelegramアカウントが必要です：初回使用時にKKAFIOがAPI ID/Hash取得のためhttps://my.telegram.org を開き、その後電話番号と確認コードの入力を求めます。認証情報は %APPDATA%/KKAFIO/config/telegram.json に保存されます。",
+  "option.TelegramSource.description": "BetterRepackでカバーされていないMODをどこで探すか：\n• いいえ — Telegramを一切使用しません\n• koikatsucards.com — koikatsucards.comをスクレイピングして作成された構築済みインデックスで各GUIDを検索し（実行時にkoikatsucards.comへはアクセスしません）、リンクされたTelegramメッセージをダウンロードします\n• Telegramチャットリンク — 以下のチャット／チャンネルを直接検索し、GUIDに一致するファイルを探します\n• koikatsucards.com + Telegramチャットリンク — まずインデックスを試し、見つからなければTelegramチャットリンクにフォールバックします\n\nいずれのTelegramオプションを使用するにもTelegramアカウントが必要です：初回使用時にKKAFIOがAPI ID/Hash取得のためhttps://my.telegram.org を開き、その後電話番号と確認コードの入力を求めます。認証情報は %APPDATA%/KKAFIO/config/telegram.json に保存されます。",
   "option.TelegramSource.case.No.label": "いいえ",
   "option.TelegramSource.case.KoikatsuCards.label": "koikatsucards.com",
   "option.TelegramSource.case.ChatLinks.label": "Telegramチャットリンク",
