@@ -78,7 +78,7 @@ reused by most tasks rather than each task declaring its own copy).
 | `input` | `{type: "input", values: {[key]: string}}` | Free-text field(s) |
 
 Every one of these is read on the Python side by `_extract_opt()` in
-`utils/config.py`, which has one `if t == "...":` branch per type. **If you
+`src/kkafio/core/config.py`, which has one `if t == "...":` branch per type. **If you
 add a new option `type`, you must add a matching branch there too**, or
 Python will silently see `None` for every value of that option.
 
@@ -101,7 +101,7 @@ all.** Python reads option values straight out of the raw, unresolved
 not whatever `pipeline_override` says it maps to (`"Prompt"`):
 
 ```python
-# utils/config.py, inside _build_task_config()
+# src/kkafio/core/config.py, inside _build_task_config()
 v = _extract_opt(opt_values, "GroupCharaPrompt")   # the option's ID
 if v is not None: cfg["Prompt"] = v                # KKAFIO's own internal key
 ```
@@ -112,7 +112,7 @@ documentation of "this option ends up as config key X", but changing or
 deleting it has **no effect on Python's behaviour**. If an option's value
 isn't reaching the task that uses it, the bug is almost always a mismatch
 between the option's ID and the string literal passed to `_extract_opt()`
-in `utils/config.py` — check there, not `pipeline_override`.
+in `src/kkafio/core/config.py` — check there, not `pipeline_override`.
 
 `_TASK_KEY`, `_TASK_DEFAULTS`, `_build_task_config()`, `_DEFAULT_TASK_PATHS`,
 and the `self.<task> = self.config_data["Task"]` accessor properties at the
@@ -128,16 +128,16 @@ warning rather than guessing. The accessor property names come from
 converting each task's PascalCase name to snake_case.
 
 ```sh
-python tools/generate_config.py            # regenerate utils/config.py
+python tools/generate_config.py            # regenerate src/kkafio/core/config.py
 python tools/generate_config.py --dry-run  # print the generated file, don't write it
 python tools/generate_config.py --diff     # unified diff against the current file
-python tools/generate_config.py --check    # exit 1 if utils/config.py is stale (CI)
+python tools/generate_config.py --check    # exit 1 if src/kkafio/core/config.py is stale (CI)
 ```
 
 Run it (without `--check`) after adding, renaming, or removing a task or
 option, and address any warnings it prints before committing — they mean an
 option's config-key mapping couldn't be resolved automatically and was
-skipped rather than guessed at. The rest of `utils/config.py` (the `Config`
+skipped rather than guessed at. The rest of `src/kkafio/core/config.py` (the `Config`
 class, path validation, `GameType`, etc.) has no `interface.json` equivalent
 and is untouched by the generator.
 
@@ -145,7 +145,7 @@ and is untouched by the generator.
 
 ```jsonc
 {
-  "name": "GroupChara",                     // must match utils.config._TASK_KEY
+  "name": "GroupChara",                     // must match kkafio.core.config._TASK_KEY
   "label": "🗂️ Group Characters",
   "entry": "GroupChara",
   "default_check": false,
@@ -161,7 +161,7 @@ task (an option not listed here won't show up even though it's declared
 under the top-level `"option"` dict).
 
 `"name"` must exactly match a key in `_TASK_KEY` / `_TASK_DEFAULTS` in
-`utils/config.py`, and the `elif task_name == "...":` string in
+`src/kkafio/core/config.py`, and the `elif task_name == "...":` string in
 `_build_task_config()` — run `tools/generate_config.py` after renaming a
 task here so those stay matched. Nothing enforces this at schema level — a
 typo here means the task silently never runs (Python only reads task names
@@ -243,7 +243,7 @@ by hand from MXU's tab context menu.
 
 At most one preset in `interface.json` should set `use_in_context_menu: true`.
 MXU only ever lets a single instance hold the flag (`find_context_menu_instance`
-in `utils/config.py` picks the first match and assumes there's only one), so
+in `src/kkafio/core/config.py` picks the first match and assumes there's only one), so
 if several presets set it, only the last one MXU processes ends up marked —
 the others are silently overridden.
 

@@ -1,8 +1,8 @@
 """
-generate_config.py — Regenerate utils/config.py's interface.json-driven
+generate_config.py — Regenerate src/kkafio/core/config.py's interface.json-driven
 sections from interface.json.
 
-utils/config.py adapts the GUI's raw MXU JSON config into the flat dict
+src/kkafio/core/config.py adapts the GUI's raw MXU JSON config into the flat dict
 every task module expects. Most of that file is generic scaffolding
 (the Config class, path validation, etc.) that has nothing to do with
 interface.json — but five pieces exist purely to mirror it, and have to be
@@ -28,16 +28,16 @@ authoritative and any option pipeline_override can't resolve is reported as
 a warning rather than guessed at. The accessor property names are derived
 by converting each task's PascalCase name to snake_case.
 
-Everything else in utils/config.py (docstring, imports, GameType enum,
+Everything else in src/kkafio/core/config.py (docstring, imports, GameType enum,
 _extract_opt, _extract_special_task_params, the Config class itself, and
 list_instances()) is genuine hand-written logic with no interface.json
 equivalent, so it's kept as a fixed template and never touched by this
 script.
 
 Usage:
-  python tools/generate_config.py                # write utils/config.py
+  python tools/generate_config.py                # write src/kkafio/core/config.py
   python tools/generate_config.py --dry-run       # print the file, don't write it
-  python tools/generate_config.py --check         # exit 1 if utils/config.py is stale
+  python tools/generate_config.py --check         # exit 1 if src/kkafio/core/config.py is stale
   python tools/generate_config.py --diff          # show a unified diff against the current file
 """
 
@@ -335,7 +335,7 @@ import sys
 import json
 from pathlib import Path
 from typing import Any
-from utils.logger import logger
+from kkafio.core.logger import logger
 from enum import Enum
 
 
@@ -529,7 +529,7 @@ class Config:
         for key, defaults in _TASK_DEFAULTS.items():
             data[key] = dict(defaults)
 
-        from utils.special_tasks import is_special_task
+        from kkafio.system.special_tasks import is_special_task
         task_order: list[dict] = []
         seen_kkafio: set = set()
 
@@ -723,14 +723,14 @@ def main() -> None:
     ap.add_argument("--interface", default=None, metavar="PATH",
                      help="Path to interface.json (default: <repo root>/interface.json)")
     ap.add_argument("--output", default=None, metavar="PATH",
-                     help="Path to write (default: <repo root>/utils/config.py)")
+                     help="Path to write (default: <repo root>/src/kkafio/core/config.py)")
     ap.add_argument("--dry-run", action="store_true", help="Print the generated file, don't write it")
     ap.add_argument("--check", action="store_true", help="Exit 1 if the output file is stale; changes nothing")
     ap.add_argument("--diff", action="store_true", help="Print a unified diff against the current output file")
     args = ap.parse_args()
 
     interface_path = Path(args.interface).resolve() if args.interface else REPO_ROOT / "interface.json"
-    output_path = Path(args.output).resolve() if args.output else REPO_ROOT / "utils" / "config.py"
+    output_path = Path(args.output).resolve() if args.output else REPO_ROOT / "src" / "kkafio" / "core" / "config.py"
 
     if not interface_path.exists():
         print(f"ERROR: interface.json not found: {interface_path}", file=sys.stderr)

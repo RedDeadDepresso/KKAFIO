@@ -9,16 +9,16 @@ on:
     paths:
       - ".github/workflows/build.yml"
       - "*.py"
-      - "tasks/**"
-      - "utils/**"
+      - "src/**"
+      - "pyproject.toml"
   pull_request:
     branches:
       - "**"
     paths:
       - ".github/workflows/build.yml"
       - "*.py"
-      - "tasks/**"
-      - "utils/**"
+      - "src/**"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
@@ -117,34 +117,8 @@ jobs:
           uv run pyinstaller --noconfirm --onedir
           --distpath "dist"
           --name "KKAFIO"
-          --hidden-import "utils.chara_ops"
-          --hidden-import "utils.classifier"
-          --hidden-import "utils.config"
-          --hidden-import "utils.constants"
-          --hidden-import "utils.content_resolver"
-          --hidden-import "utils.file_manager"
-          --hidden-import "utils.kkd_session"
-          --hidden-import "utils.llm_dialog"  
-          --hidden-import "utils.logger"        
-          --hidden-import "utils.password_dialog"
-          --hidden-import "utils.special_tasks"
-          --hidden-import "utils.subprocess_utils"
-          --hidden-import "utils.telegram_config"
-          --hidden-import "tasks.archive_cards"
-          --hidden-import "tasks.compress_cards_textures"
-          --hidden-import "tasks.base_task"
-          --hidden-import "tasks.create_backup"
-          --hidden-import "tasks.delete_cards"
-          --hidden-import "tasks.download_contents"
-          --hidden-import "tasks.download_missing_mods"
-          --hidden-import "tasks.export_mods"
-          --hidden-import "tasks.filter_convert_kks"
-          --hidden-import "tasks.filter_duplicate_contents"
-          --hidden-import "tasks.group_chara"
-          --hidden-import "tasks.install_contents"
-          --hidden-import "tasks.rename_chara"
-          --hidden-import "tasks.ungroup_chara"
-          --hidden-import "tasks.uninstall_contents"
+          --paths "src"
+          --collect-submodules "kkafio"
           kkafio_cli.py
 
       # ── Assemble release folder ─────────────────────────────────────────────

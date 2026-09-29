@@ -56,7 +56,7 @@ fired yet.
 
 ## 5. Python loads and translates the config
 
-`kkafio_cli.py`'s `cmd_run()` constructs a `utils.config.Config` instance
+`src/kkafio/cli.py`'s `cmd_run()` constructs a `kkafio.core.config.Config` instance
 with the config file path and instance index. `Config.__init__` → `.read()`:
 
 1. Parses the JSON, picks `instances[instance_index]`.
@@ -95,7 +95,7 @@ failure.
 `interface.json`'s task list includes a handful of generic automation
 primitives inherited from the MXU/MAA schema — Sleep, Wait Until, Notify,
 Webhook, Launch Program, Kill Process, Power Action — that aren't KKAFIO
-tasks at all. `utils/special_tasks.py`'s `is_special_task()` recognizes
+tasks at all. `src/kkafio/system/special_tasks.py`'s `is_special_task()` recognizes
 these by their `__MXU_..._OPTION__`-prefixed option IDs and handles them
 separately from `_TASK_KEY`, but they still participate in the same
 `task_order` list, so they can be interleaved with real KKAFIO tasks (e.g.
@@ -106,11 +106,11 @@ separately from `_TASK_KEY`, but they still participate in the same
 With `config` built, `cmd_run()` walks `config.task_order` and, for each
 entry, either runs the matching special-task handler or looks up the task
 name in `kkafio_task_map` (a dict of `lambda: run_x(config, file_manager)`
-closures, one per task, defined near the top of `kkafio_cli.py`) and calls
+closures, one per task, defined near the top of `src/kkafio/cli.py`) and calls
 it. Each `run_x()` wrapper just instantiates the task class (or calls the
 module-level function pair) and calls `.run()`.
 
-Every task writes its own log lines via `utils.logger.logger`, in a fixed
+Every task writes its own log lines via `kkafio.core.logger.logger`, in a fixed
 `STATUS | CATEGORY | message` format that both a human reading the console
 and the GUI's log parser can consume. This is the entirety of the "API"
 between a running task and the GUI — there's no structured result object,
@@ -118,11 +118,11 @@ just parsed log text and the process's final exit code.
 
 ## 7. Some tasks pause for human input
 
-`GroupChara`/`RenameChara`'s `.run()` calls `utils.llm_dialog.llm_dialog()`,
+`GroupChara`/`RenameChara`'s `.run()` calls `kkafio.system.llm_dialog.llm_dialog()`,
 which shells out to `powershell.exe` to show a native WinForms
 Copy/Paste dialog and **blocks** until the user closes it or clicks Paste.
 Archive-password and session-cookie prompts work the same way via
-`utils.password_dialog.password_dialog()`. From the GUI's perspective this
+`kkafio.system.password_dialog.password_dialog()`. From the GUI's perspective this
 just looks like the subprocess going quiet for a while — there's no special
 handling on the GUI side for "a task is waiting on a dialog"; the dialog
 itself is a separate OS-level window, not something rendered inside MXU.
@@ -139,8 +139,8 @@ itself is a separate OS-level window, not something rendered inside MXU.
             │ spawns subprocess                                     ▼
             │ kkafio_cli.exe --instance N run          ┌──────────────────────────┐
             └──────────────────────────────────────────▶ kkafio_cli.py            │
-                                                        │  utils/config.py         │
-                                                        │  tasks/*.py              │
-                                                        │  utils/*.py              │
+                                                        │  src/kkafio/cli.py       │
+                                                        │  src/kkafio/tasks/*.py   │
+                                                        │  src/kkafio/{core,...}/  │
                                                         └──────────────────────────┘
 ```

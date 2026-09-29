@@ -14,7 +14,7 @@ This doc lists every file KKAFIO reads or writes, grouped by where it lives.
 
 ## The config root directory
 
-Defined once in `utils/constants.py`, `_get_config_dir()`:
+Defined once in `src/kkafio/core/constants.py`, `_get_config_dir()`:
 
 | OS | Path |
 |---|---|
@@ -38,8 +38,8 @@ Referred to as `CONFIG_DIR` below.
 
 The single most important file — this is the entire bridge between the GUI
 and the Python backend. Written by the GUI's Rust `save_config` command,
-read by Python's `utils.config.Config`. Its structure (this is a Python
-docstring copied verbatim from `utils/config.py`, since it's the clearest
+read by Python's `kkafio.core.config.Config`. Its structure (this is a Python
+docstring copied verbatim from `src/kkafio/core/config.py`, since it's the clearest
 description of the format):
 
 ```jsonc
@@ -83,12 +83,12 @@ subcommand that needs config, via `--config`/`--instance`).
 { "session": "<kkd_session cookie value>" }
 ```
 
-Written/read by `utils/kkd_session.py`. Used by **Download Contents** when
+Written/read by `src/kkafio/services/kkd_session.py`. Used by **Download Contents** when
 downloading from koikatsucards.com (not by Download Missing Mods, which
 uses the KKC mod index above). Validated against
 `koikatsucards.com/api/session` before each use; if invalid, the user is
 prompted to paste a fresh cookie via a native dialog
-(`utils/password_dialog.py`) and the file is overwritten.
+(`src/kkafio/system/password_dialog.py`) and the file is overwritten.
 
 ### `config/telegram.json` — Telegram API credentials
 
@@ -96,7 +96,7 @@ prompted to paste a fresh cookie via a native dialog
 { "api_id": 12345678, "api_hash": "abcdef0123456789..." }
 ```
 
-Written/read by `utils/telegram_config.py`. Used by **Download Missing
+Written/read by `src/kkafio/services/telegram_config.py`. Used by **Download Missing
 Mods** when a Telegram source is enabled. Only `api_id`/`api_hash` are
 ever actually written by `save()` in current usage — the module's docstring
 also mentions a `"session"` key as part of the intended shape, but nothing
@@ -132,7 +132,7 @@ at the time the index was downloaded.
 Used by **Download Missing Mods** when Telegram Source is
 `KoikatsuCards` or `Both`. It replaces the old per-GUID lookup on
 koikatsucards.com. It is only read when at least one mod needs a Telegram
-download (`tasks/download_missing_mods.py`, `_load_kkc_mod_index()`):
+download (`src/kkafio/tasks/download_missing_mods.py`, `_load_kkc_mod_index()`):
 
 1. The latest commit of `RedDeadDepresso/kkc-mod-scraper` is fetched from
    the GitHub API.
@@ -182,8 +182,8 @@ regenerates itself if the folder's contents don't match what's cached.
 
 | File | Written inside | Used by | Caches |
 |---|---|---|---|
-| `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`utils/chara_ops.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
-| `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`utils/chara_ops.py`, used by Archive/Delete Cards) | xxh3-128 digest of each coordinate card's clothes + accessory data, with modded item IDs normalised to `ModID:Slot` via the file's own UAR info (looked up against a chara card's outfits) |
+| `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`src/kkafio/cards/chara_ops.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
+| `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`src/kkafio/cards/chara_ops.py`, used by Archive/Delete Cards) | xxh3-128 digest of each coordinate card's clothes + accessory data, with modded item IDs normalised to `ModID:Slot` via the file's own UAR info (looked up against a chara card's outfits) |
 | `kkafio_chara_guid_cache.json` | each scanned chara directory (one file per folder) | [Download Missing Mods](../wiki/Task-Download-Missing-Mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
 | `kkafio_scene_guid_cache.json` | each scanned scene directory (one file per folder) | Download Missing Mods (scene scan), Delete Cards' shared-mod check | per-scene referenced mod GUIDs |
 | `kkafio_coord_guid_cache.json` | each scanned coordinate directory (one file per folder) | Download Missing Mods (coordinate scan), Delete Cards' shared-mod check | per-coordinate-card referenced mod GUIDs |
@@ -199,8 +199,8 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `utils/chara_ops.py`'s `load_modpack_index()`. |
-| `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `utils/chara_ops.py`. Never modified at runtime. |
+| `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/cards/chara_ops.py`'s `load_modpack_index()`. |
+| `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/chara_ops.py`. Never modified at runtime. |
 
 ---
 

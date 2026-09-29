@@ -4,7 +4,7 @@
 
 ```
 KKAFIO-dev/
-├── kkafio_cli.py                    # CLI entry point — argparse, subcommands, task dispatch
+├── kkafio_cli.py                    # Thin launcher (PyInstaller entry point; also `python kkafio_cli.py`)
 ├── interface.json                   # Schema describing every task/option for the GUI (see doc 03)
 ├── kkafio_setup.bat                 # Menu launcher: create default folders / register / unregister context menu / delete config+folders
 │
@@ -18,7 +18,7 @@ KKAFIO-dev/
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
 │   ├── build_modpack_index.py       # Regenerates assets/kkafio_modpack_index_*.json
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
-│   ├── generate_config.py           # Regenerates utils/config.py's interface.json-driven sections (see doc 03)
+│   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
 │   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
 │
 ├── assets/                          # Static data shipped with every release
@@ -34,35 +34,52 @@ KKAFIO-dev/
 │       ├── zh_cn.json
 │       └── zh_tw.json
 │
-├── tasks/                           # One module per task (see below)
-│   ├── base_task.py                 # BaseTask class + validate_input_path() helper
-│   ├── create_backup.py
-│   ├── download_contents.py
-│   ├── download_missing_mods.py
-│   ├── filter_convert_kks.py
-│   ├── filter_duplicate_contents.py
-│   ├── group_chara.py
-│   ├── install_contents.py
-│   ├── rename_chara.py
-│   ├── ungroup_chara.py
-│   ├── uninstall_contents.py
-│   ├── archive_cards.py
-│   └── delete_cards.py
-│
-├── utils/                           # Shared infrastructure, not task-specific
-│   ├── config.py                    # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
-│   ├── classifier.py                # get_card_type() / is_male() / is_coordinate() — PNG card sniffing
-│   ├── chara_ops.py                 # GUID parsing, mod scanning, coordinate matching + their caches
-│   ├── file_manager.py              # Copy/move/delete/archive/extract file operations, 7-Zip wrapper
-│   ├── subprocess_utils.py          # Windows-console-encoding-safe subprocess.run/Popen wrappers
-│   ├── logger.py                    # Structured logger; the GUI parses its stdout format live
-│   ├── special_tasks.py             # Generic MXU automation primitives (sleep/notify/launch/power/etc.)
-│   ├── kkd_session.py                # koikatsucards.com session cookie management
-│   ├── telegram_config.py           # Telegram API credential storage
-│   ├── password_dialog.py           # Native Windows input dialog (archive passwords, session cookies)
-│   ├── llm_dialog.py                # Native Windows Copy/Paste dialog (Group Chara / Rename Chara)
-│   ├── content_resolver.py          # Shared PNG-dispatch mixin for Install/Uninstall Contents
-│   └── constants.py                 # Config directory / file path constants
+├── src/kkafio/                     # The Python package (src layout; `uv sync` installs it editable)
+│   ├── cli.py                       # CLI implementation — argparse, subcommands, task dispatch, main()
+│   ├── __main__.py                  # `python -m kkafio`
+│   │
+│   ├── tasks/                       # One module per task (see below)
+│   │   ├── base_task.py             # BaseTask class + validate_input_path() helper
+│   │   ├── content_resolver.py      # Shared PNG-dispatch mixin for Install/Uninstall Contents
+│   │   ├── archive_cards.py
+│   │   ├── compress_cards_textures.py
+│   │   ├── create_backup.py
+│   │   ├── delete_cards.py
+│   │   ├── download_contents.py
+│   │   ├── download_missing_mods.py
+│   │   ├── export_mods.py
+│   │   ├── filter_convert_kks.py
+│   │   ├── filter_duplicate_contents.py
+│   │   ├── group_chara.py
+│   │   ├── install_contents.py
+│   │   ├── rename_chara.py
+│   │   ├── ungroup_chara.py
+│   │   └── uninstall_contents.py
+│   │
+│   ├── core/                        # Configuration, logging, paths, file operations
+│   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
+│   │   ├── constants.py             # Per-user config directory / file path constants (%APPDATA%\KKAFIO)
+│   │   ├── paths.py                 # Where shipped files live (APP_DIR / ASSETS_DIR), frozen vs. source
+│   │   ├── logger.py                # Structured logger; the GUI parses its stdout format live
+│   │   └── file_manager.py          # Copy/move/delete/archive/extract file operations, 7-Zip wrapper
+│   │
+│   ├── cards/                       # Card (PNG) domain logic
+│   │   ├── classifier.py            # get_card_type() / is_male() / is_coordinate() — PNG card sniffing
+│   │   ├── chara_ops.py             # GUID parsing, mod scanning, coordinate matching + their caches
+│   │   ├── chara_key.py
+│   │   └── scene_version.py
+│   │
+│   ├── services/                    # External accounts / credentials
+│   │   ├── kkd_session.py           # koikatsucards.com session cookie management
+│   │   └── telegram_config.py       # Telegram API credential storage
+│   │
+│   └── system/                      # OS-facing helpers (mostly Windows)
+│       ├── special_tasks.py         # Generic MXU automation primitives (sleep/notify/launch/power/etc.)
+│       ├── subprocess_utils.py      # Windows-console-encoding-safe subprocess.run/Popen wrappers
+│       ├── job_object.py            # Windows Job Objects: child processes die with the CLI
+│       ├── password_dialog.py       # Native Windows input dialog (archive passwords, session cookies)
+│       ├── llm_dialog.py            # Native Windows Copy/Paste dialog (Group Chara / Rename Chara)
+│       └── context_menu_batch.py    # Coalesces multi-select Explorer context-menu invocations
 │
 ├── docs/                            # You are here
 └── wiki/                            # User-facing task documentation (mirrors GitHub Wiki pages)
@@ -70,8 +87,8 @@ KKAFIO-dev/
 
 ## What is a "task"?
 
-Every entry in the `tasks/` folder maps 1:1 to a task declared in
-`interface.json`, and to a key in `utils.config._TASK_KEY` /
+Every entry in the `src/kkafio/tasks/` folder maps 1:1 to a task declared in
+`interface.json`, and to a key in `kkafio.core.config._TASK_KEY` /
 `_TASK_DEFAULTS`. A task is either:
 
 - **A class subclassing `BaseTask`** (most of them) — instantiated with
@@ -81,19 +98,19 @@ Every entry in the `tasks/` folder maps 1:1 to a task declared in
 - **A pair of module-level functions**, `export()` + `process()` — used by
   `group_chara.py` and `rename_chara.py` in addition to their `GroupChara`/
   `RenameChara` classes, because the LLM round-trip dialog (see
-  [`llm_dialog.py`](../utils/llm_dialog.py)) needs to build a prompt, hand
+  [`llm_dialog.py`](../src/kkafio/system/llm_dialog.py)) needs to build a prompt, hand
   control to the user, and then process whatever they paste back — the
   class's `run()` just calls both in sequence.
 
 Adding a new task means touching **all** of these, since nothing here is
 auto-discovered:
 
-1. `tasks/your_task.py` — the actual implementation.
-2. `utils/config.py` — add to `_TASK_KEY`, `_TASK_DEFAULTS`, and a
+1. `src/kkafio/tasks/your_task.py` — the actual implementation.
+2. `src/kkafio/core/config.py` — add to `_TASK_KEY`, `_TASK_DEFAULTS`, and a
    `elif task_name == "YourTask":` branch in `_build_task_config()`.
 3. `interface.json` — declare the task and its options (see
    [03 — interface.json](03-interface-json.md)).
-4. `kkafio_cli.py` — add a `run_your_task()` wrapper, a `cmd_your_task()`
+4. `src/kkafio/cli.py` — add a `run_your_task()` wrapper, a `cmd_your_task()`
    handler, and an `argparse` subcommand, and register it in the
    `kkafio_task_map` dispatch dict used by `kkafio_cli run`.
 
@@ -101,16 +118,39 @@ There's no plugin system or auto-registration — this is deliberate given the
 small, fixed set of tasks, but it's the reason step 2–4 above are easy to
 forget when adding something new.
 
-## `utils/` vs `tasks/`
+## `tasks/` vs. the rest of the package
 
 The rule of thumb: if a piece of logic is used by more than one task, or
 isn't really "a task" (parsing a PNG's embedded mod GUIDs, matching
-coordinate colours, wrapping subprocess calls), it lives in `utils/`. Task
-modules should mostly be: read config → validate input → call into `utils/`
-→ log results.
+coordinate colours, wrapping subprocess calls), it lives outside `tasks/`,
+in the subpackage that fits it:
 
-`tasks/content_resolver.py` and `tasks/base_task.py` are the two exceptions
-that live under `tasks/` instead of `utils/` — they're not generic utilities
-usable by anything, they're specifically the shared internals of the task
-classes (a mixin and a base class), so keeping them next to the classes that
-use them is clearer than filing them under `utils/`.
+| Subpackage | Put it here when it is… |
+|---|---|
+| `core/` | configuration, logging, paths, or generic file operations |
+| `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
+| `services/` | tied to an external account or credential store |
+| `system/` | an OS-facing helper (dialogs, job objects, subprocess quirks, MXU automation) |
+
+Task modules should mostly be: read config → validate input → call into the
+shared subpackages → log results.
+
+`tasks/content_resolver.py` and `tasks/base_task.py` live under `tasks/`
+rather than elsewhere — they're not generic utilities usable by anything,
+they're specifically the shared internals of the task classes (a mixin and a
+base class), so keeping them next to the classes that use them is clearer.
+
+## Running from source
+
+The package uses a `src/` layout. After `uv sync` it is installed in editable
+mode, so any of these work:
+
+```
+uv run kkafio <command>            # console script (kkafio.cli:main)
+uv run python -m kkafio <command>
+uv run python kkafio_cli.py <command>   # the launcher; also works without installing
+```
+
+Imports are always `kkafio.<subpackage>.<module>` (for example
+`from kkafio.core.logger import logger`). Shipped data files are found through
+`kkafio.core.paths` — never by walking up from `__file__`.

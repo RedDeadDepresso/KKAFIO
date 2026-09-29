@@ -31,7 +31,7 @@ pieces:
 | `src-tauri/src/commands/kkafio.rs` | Spawns/stops the `kkafio_cli.exe` subprocess, streams its output, runs `Run Game`/`Run Studio`. |
 | `src-tauri/src/commands/state.rs` | The in-memory + on-disk runtime log buffer (`push_log`/`get_all_logs`), used for both live log display and `export_logs`. |
 | `src/utils/useKkafioLogger.ts` | Listens for `kkafio-output` events from Rust and feeds parsed log lines into the app state. |
-| `src/utils/llm_dialog` interactions | None on the GUI side — the Group Chara / Rename Chara Copy/Paste dialog is a **native OS dialog spawned by Python** (`utils/llm_dialog.py`), not a React component. The GUI has no code for it at all. |
+| `src/utils/llm_dialog` interactions | None on the GUI side — the Group Chara / Rename Chara Copy/Paste dialog is a **native OS dialog spawned by Python** (`src/kkafio/system/llm_dialog.py`), not a React component. The GUI has no code for it at all. |
 
 Everything else — how an option of type `folder`/`switch`/`checkbox`/etc.
 gets rendered and stored — is generic MXU code, unaware it's editing KKAFIO
@@ -72,7 +72,7 @@ optional `useInContextMenu: true` flag on that instance in
 tab never copies it, and tab export/import ignores it). The registered
 shell entries run `kkafio_cli.exe --instance context-menu <command> ...`;
 `kkafio_cli` then picks the flagged instance at click time
-(`find_context_menu_instance()` in `utils/config.py`), falling back to
+(`find_context_menu_instance()` in `src/kkafio/core/config.py`), falling back to
 instance 0 when none is flagged.
 
 ## Logs: three different places, one source
@@ -94,12 +94,12 @@ from the same `logger.info(...)` call in Python:
 A rule of thumb for "where does this change go":
 
 - **New task, new option, new task behaviour** → Python only
-  (`interface.json` + `tasks/`/`utils/`). The GUI needs zero changes; it
+  (`interface.json` + `src/kkafio/`). The GUI needs zero changes; it
   renders whatever the schema says.
 - **New kind of *option* the schema can't express yet** (a new `"type"`) →
   both sides: the GUI needs a new renderer in `OptionEditor.tsx` /
   `TaskItem.tsx` / a default-value case in `stores/helpers.ts`, and Python
-  needs a matching branch in `_extract_opt()` (`utils/config.py`).
+  needs a matching branch in `_extract_opt()` (`src/kkafio/core/config.py`).
 - **New button/action that isn't "run a task with these options"** (like
   `Run Game`/`Run Studio`, or the Copy/Paste dialog) → usually a dedicated
   Tauri command plus either a small UI addition (Run Game/Studio) or, if it
