@@ -60,10 +60,26 @@ _EMPTY_NAME: dict[str, str] = {"lastname": "", "firstname": "", "nickname": ""}
 # Helpers
 # ---------------------------------------------------------------------------
 
+_WIN_RESERVED = {
+    "CON", "PRN", "AUX", "NUL",
+    *(f"COM{i}" for i in range(1, 10)),
+    *(f"LPT{i}" for i in range(1, 10)),
+}
+
+
 def _safe(s: str) -> str:
-    for ch in r'\/:*?"<>|':
-        s = s.replace(ch, "")
-    return s.strip().rstrip(".")
+    """Make a name safe to use as a Windows file name stem.
+
+    Removes illegal characters and control characters, then strips trailing
+    dots *and* spaces together (Windows silently drops both, so stripping
+    them in one pass avoids e.g. "Name ." -> "Name " surviving), and
+    prefixes reserved device names (CON, NUL, COM1, ...) with an underscore.
+    """
+    s = "".join(ch for ch in s if ch not in '\\/:*?"<>|' and ord(ch) >= 32)
+    s = s.strip().rstrip(". ").lstrip()
+    if s.split(".")[0].upper() in _WIN_RESERVED:
+        s = f"_{s}"
+    return s
 
 
 def _name_known(d: dict) -> bool:

@@ -24,6 +24,20 @@ import tempfile
 from utils.job_object import die_with_parent
 
 
+
+def _ps_quote(text: str) -> str:
+    """Escape `text` for use inside a PowerShell single-quoted string.
+
+    PowerShell treats the typographic quotes U+2018, U+2019, U+201A and
+    U+201B as single-quote delimiters just like ASCII ', so all of them must
+    be doubled. Escaping only ASCII ' lets a name such as "Bob\u2019s card.zip"
+    terminate the string early and run the rest as PowerShell code. NUL is
+    dropped.
+    """
+    text = text.replace("\x00", "")
+    return "".join(ch * 2 if ch in "'\u2018\u2019\u201a\u201b" else ch for ch in text)
+
+
 def llm_dialog(title: str, prompt_text: str) -> str:
     """Show the prompt+JSON to the user and return whatever they paste back.
 
@@ -43,7 +57,7 @@ def _powershell_dialog(title: str, prompt_text: str) -> str:
     - Paste → reads the clipboard and closes the dialog, returning that text.
     - Cancel / closing the window → returns an empty string.
     """
-    t = title.replace("'", "''")
+    t = _ps_quote(title)
 
     # Route prompt in / response out through UTF-8 temp files instead of
     # stdin/stdout. Windows PowerShell's console pipe encoding is NOT
@@ -58,8 +72,8 @@ def _powershell_dialog(title: str, prompt_text: str) -> str:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(prompt_text)
 
-        r = response_path.replace("'", "''")
-        p = prompt_path.replace("'", "''")
+        r = _ps_quote(response_path)
+        p = _ps_quote(prompt_path)
 
         ps = f"""
 Add-Type -AssemblyName System.Windows.Forms

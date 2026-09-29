@@ -17,6 +17,20 @@ import tempfile
 from utils.job_object import die_with_parent
 
 
+
+def _ps_quote(text: str) -> str:
+    """Escape `text` for use inside a PowerShell single-quoted string.
+
+    PowerShell treats the typographic quotes U+2018, U+2019, U+201A and
+    U+201B as single-quote delimiters just like ASCII ', so all of them must
+    be doubled. Escaping only ASCII ' lets a name such as "Bob\u2019s card.zip"
+    terminate the string early and run the rest as PowerShell code. NUL is
+    dropped.
+    """
+    text = text.replace("\x00", "")
+    return "".join(ch * 2 if ch in "'\u2018\u2019\u201a\u201b" else ch for ch in text)
+
+
 def password_dialog(title: str, content: str, mask: bool = True) -> str:
     """Prompt for a string. Returns '' if cancelled.
 
@@ -35,8 +49,8 @@ def _powershell_dialog(title: str, content: str, mask: bool = True) -> str:
     form/controls are laid out below it. Returns the entered text, or ''
     if cancelled.
     """
-    t = title.replace("'", "''")
-    c = content.replace("'", "''")
+    t = _ps_quote(title)
+    c = _ps_quote(content)
     password_char_line = "$box.PasswordChar = '*'" if mask else ""
 
     # Route the result through a UTF-8 temp file instead of stdout — Windows
@@ -47,7 +61,7 @@ def _powershell_dialog(title: str, content: str, mask: bool = True) -> str:
     fd, response_path = tempfile.mkstemp(suffix=".txt")
     os.close(fd)
     try:
-        r = response_path.replace("'", "''")
+        r = _ps_quote(response_path)
 
         ps = f"""
 Add-Type -AssemblyName System.Windows.Forms

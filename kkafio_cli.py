@@ -33,6 +33,7 @@ import argparse
 import multiprocessing
 import signal
 import traceback
+from typing import NoReturn
 
 
 # ---------------------------------------------------------------------------
@@ -188,10 +189,36 @@ def _traceback_path():
 
 
 def _write_traceback(task: str) -> None:
-    with open(_traceback_path(), "a", encoding="utf-8") as f:
+    path = _traceback_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
         f.write(f"[{task}]\n")
         traceback.print_exc(None, f, True)
         f.write("\n")
+
+
+def _report_failure(task: str) -> NoReturn:
+    """Shared handler for an unexpected exception inside a single-task
+    command. Must be called from within an ``except`` block.
+
+    Logs a visible error line (so the GUI/console shows *why* the task
+    failed instead of just a non-zero exit code), saves the full traceback
+    to traceback.log, and exits with status 1. Failing to write the
+    traceback must never mask the original error.
+    """
+    exc = sys.exc_info()[1]
+    detail = f"{type(exc).__name__}: {exc}" if exc is not None else "unknown error"
+    try:
+        from utils.logger import logger
+        logger.error("CLI", f"Task error: {task}: {detail}. "
+                            f"See {_traceback_path()} for details.")
+    except Exception:
+        print(f"[ERROR] Task error: {task}: {detail}", file=sys.stderr)
+    try:
+        _write_traceback(task)
+    except Exception:
+        pass
+    sys.exit(1)
 
 
 def _clear_traceback() -> None:
@@ -523,7 +550,17 @@ def cmd_run(args):
     # filter_convert_kks + InstallContents same-path detection
     fc_cfg = config.config_data["FilterConvertKKS"]
     ic_cfg = config.config_data["InstallContents"]
+    # InstallContents may only skip its own extraction when FilterConvertKKS
+    # is going to run *before* it (and so will already have extracted the
+    # shared folder). If the user ordered InstallContents first, skipping
+    # would leave the archives unextracted at install time.
+    _order = [e["name"] for e in config.task_order]
+    fc_before_ic = (
+        "FilterConvertKKS" in _order and "InstallContents" in _order and
+        _order.index("FilterConvertKKS") < _order.index("InstallContents")
+    )
     same_path = (
+        fc_before_ic and
         fc_cfg.get("Enable", False) and ic_cfg.get("Enable", False) and
         fc_cfg.get("ExtractArchive", True) and ic_cfg.get("ExtractArchive", True) and
         "InputPath" in fc_cfg and "InputPath" in ic_cfg and
@@ -579,9 +616,7 @@ def cmd_run(args):
             try:
                 fn()
             except Exception:
-                logger.error("CLI", f"Task error: {task_name}. See {_traceback_path()} for details.")
-                _write_traceback(task_name)
-                sys.exit(1)
+                _report_failure(task_name)
 
     sys.exit(0)
 
@@ -600,8 +635,7 @@ def cmd_install_contents(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("InstallContents")
-        sys.exit(1)
+        _report_failure("InstallContents")
 
 
 def cmd_uninstall_contents(args):
@@ -616,8 +650,7 @@ def cmd_uninstall_contents(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("UninstallContents")
-        sys.exit(1)
+        _report_failure("UninstallContents")
 
 
 def cmd_filter_convert_kks(args):
@@ -635,8 +668,7 @@ def cmd_filter_convert_kks(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("FilterConvertKKS")
-        sys.exit(1)
+        _report_failure("FilterConvertKKS")
 
 
 def cmd_download_contents(args):
@@ -657,8 +689,7 @@ def cmd_download_contents(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("DownloadContents")
-        sys.exit(1)
+        _report_failure("DownloadContents")
 
 
 def cmd_download_missing_mods(args):
@@ -687,8 +718,7 @@ def cmd_download_missing_mods(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("DownloadMissingMods")
-        sys.exit(1)
+        _report_failure("DownloadMissingMods")
 
 
 def cmd_export_mods(args):
@@ -711,8 +741,7 @@ def cmd_export_mods(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("ExportMods")
-        sys.exit(1)
+        _report_failure("ExportMods")
 
 
 def cmd_compress_cards_textures(args):
@@ -728,8 +757,7 @@ def cmd_compress_cards_textures(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("CompressCardsTextures")
-        sys.exit(1)
+        _report_failure("CompressCardsTextures")
 
 
 def cmd_delete_cards(args):
@@ -764,8 +792,7 @@ def cmd_delete_cards(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("DeleteCards")
-        sys.exit(1)
+        _report_failure("DeleteCards")
 
 
 def cmd_archive_cards(args):
@@ -810,8 +837,7 @@ def cmd_archive_cards(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("ArchiveCards")
-        sys.exit(1)
+        _report_failure("ArchiveCards")
 
 
 def cmd_ungroup_chara(args):
@@ -825,8 +851,7 @@ def cmd_ungroup_chara(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("UngroupChara")
-        sys.exit(1)
+        _report_failure("UngroupChara")
 
 
 def cmd_rename_chara(args):
@@ -845,8 +870,7 @@ def cmd_rename_chara(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("RenameChara")
-        sys.exit(1)
+        _report_failure("RenameChara")
 
 
 def cmd_group_chara(args):
@@ -860,8 +884,7 @@ def cmd_group_chara(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("GroupChara")
-        sys.exit(1)
+        _report_failure("GroupChara")
 
 
 def cmd_filter_duplicate_contents(args):
@@ -882,8 +905,7 @@ def cmd_filter_duplicate_contents(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("FilterDuplicateContents")
-        sys.exit(1)
+        _report_failure("FilterDuplicateContents")
 
 
 def cmd_create_backup(args):
@@ -900,8 +922,7 @@ def cmd_create_backup(args):
     except SystemExit:
         raise
     except Exception:
-        _write_traceback("CreateBackup")
-        sys.exit(1)
+        _report_failure("CreateBackup")
 
 
 # ---------------------------------------------------------------------------
