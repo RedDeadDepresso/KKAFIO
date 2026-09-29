@@ -17,6 +17,7 @@ All notable changes to KKAFIO are documented in this file.
 - Auto-update.
 - Downloading content from koikatsucards.com.
 - Filter & Convert KKS Cards no longer treats a KKS scene that contains characters as a KKS character card, and now also finds scenes with no characters.
+- Re-running Filter & Convert KKS Cards with **Move** on a folder that already holds `KKS2KK_*` copies no longer fails.
 - Studio scenes are now recognised by their `KStudio` marker, and checked before character markers. Previously a scene containing characters could be misclassified as a character card, and the old `sceneInfo` marker did not match scenes at all.
 
 ### Changed
@@ -24,3 +25,5 @@ All notable changes to KKAFIO are documented in this file.
 - Improved cache logic across tasks that scan cards for GUIDs, so repeat runs skip re-parsing files that haven't changed.
 - Renamed **Archive Characters** to **Archive Cards** and **Delete Characters** to **Delete Cards**, and added support for Studio scenes and coordinate cards to both.
 - Replaced the old presets with new ones: **Download, Filter & Install**, **Organize Installed Contents**, and **Export Installed Contents**.
+- Renamed **Filter & Convert KKS Characters** to **Filter & Convert KKS Cards**.
+- **Install Contents** and **Uninstall Contents** now check the scene version before acting on a scene and skip KKS scenes when the game is Koikatsu / Koikatsu Party, the same way KKS character cards are already skipped. Sunshine installs are unaffected.

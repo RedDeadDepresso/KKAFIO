@@ -15,6 +15,7 @@ from pathlib import Path
 from utils.classifier import CardType, get_card_type, is_coordinate, is_male
 from utils.config import GameType
 from utils.logger import logger
+from utils.scene_version import is_kks_scene
 
 
 class ContentTypeResolver:
@@ -25,9 +26,10 @@ class ContentTypeResolver:
     - self._file_action(label: str, image_path: Path, dest_folder) — copy_and_paste
       for InstallContents, find_and_remove for UninstallContents. Both
       FileManager methods share this exact signature.
-    - self._unsupported_chara_message(card_type: CardType, unsupported_game: str) -> str
+    - self._unsupported_chara_reason(unsupported_game: str) -> str
       — the exact wording differs between "not supported by" (install) and
-      "not in ... install" (uninstall), so subclasses provide it.
+      "not in ... install" (uninstall), so subclasses provide it. Used for
+      both KKS character cards and KKS scenes skipped outside Sunshine.
     """
 
     def _file_action(self, label: str, image_path: Path, dest_folder) -> None:
@@ -69,6 +71,16 @@ class ContentTypeResolver:
 
         elif card_type == CardType.SCENE:
             if not self.do_scenes:
+                return
+            # A KKS scene uses a data layout Koikatsu / Koikatsu Party can't
+            # load (and would break Studio if loaded), the same way KKS
+            # character cards are unsupported outside Sunshine. Only the
+            # version header tells the two apart, so check it before acting.
+            # KK scenes load fine in Sunshine, so nothing is skipped there.
+            if not self.is_sunshine and is_kks_scene(image_bytes):
+                reason = self._unsupported_chara_reason(unsupported_game)
+                logger.skipped("SCENE",
+                    f"{image_path.name} is a KKS scene ({reason})")
                 return
             if "scene" in self.game_path:
                 self._file_action("SCENE", image_path, self.game_path["scene"])
