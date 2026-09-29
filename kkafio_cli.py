@@ -305,7 +305,8 @@ def run_download_contents(config, file_manager, links: str | None = None,
 
 
 def run_download_missing_mods(config, file_manager,
-                              mods_dir: str | None = None,
+                              input_mods_dir: str | None = None,
+                              output_mods_dir: str | None = None,
                               chara_dir: str | None = None,
                               scene_dir: str | None = None,
                               coord_dir: str | None = None,
@@ -316,8 +317,10 @@ def run_download_missing_mods(config, file_manager,
                               telegram_chat_links: str | None = None):
     from tasks.download_missing_mods import DownloadMissingMods
     module = DownloadMissingMods(config, file_manager)
-    if mods_dir is not None:
-        module.mods_dir_str = mods_dir
+    if input_mods_dir is not None:
+        module.input_mods_dir_str = input_mods_dir
+    if output_mods_dir is not None:
+        module.output_mods_dir_str = output_mods_dir
     if chara_dir is not None:
         module.chara_dir_str = chara_dir
     if scene_dir is not None:
@@ -705,7 +708,9 @@ def cmd_download_missing_mods(args):
                              if not skip]
         run_download_missing_mods(
             config, file_manager,
-            mods_dir=args.mods_dir or None,
+            # --mods-dir is the legacy single-directory flag (sets both)
+            input_mods_dir=args.input_mods_dir or args.mods_dir or None,
+            output_mods_dir=args.output_mods_dir or args.mods_dir or None,
             chara_dir=args.chara_dir or None,
             scene_dir=args.scene_dir or None,
             coord_dir=args.coord_dir or None,
@@ -1020,8 +1025,13 @@ def build_parser() -> argparse.ArgumentParser:
         "download-missing-mods",
         help="Find mods referenced by chara cards but missing locally, then download them",
     )
+    p.add_argument("--input-mods-dir", default=None, metavar="DIR",
+                   help="Mods directory whose installed mods count as present (default: game mods dir from config)")
+    p.add_argument("--output-mods-dir", default=None, metavar="DIR",
+                   help="Mods directory that missing mods are downloaded into; its installed mods "
+                        "also count as present (default: game mods dir from config)")
     p.add_argument("--mods-dir", default=None, metavar="DIR",
-                   help="Override the mods directory (default: game mods dir from config)")
+                   help="Legacy shorthand: use DIR as both --input-mods-dir and --output-mods-dir")
     p.add_argument("--chara-dir", default=None, metavar="DIR",
                    help="Override the chara directory to scan (default: game chara dirs from config)")
     p.add_argument("--scene-dir", default=None, metavar="DIR",

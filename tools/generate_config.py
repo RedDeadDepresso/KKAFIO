@@ -590,7 +590,7 @@ class Config:
 
         self.game_path = dict(required_paths)
 
-        for key, path in required_paths.items():
+        for path in required_paths.values():
             if not path.exists():
                 if path == required_paths["Overlays"]:
                     required_paths["Overlays"].mkdir(parents=True, exist_ok=True)

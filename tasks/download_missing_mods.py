@@ -1,12 +1,14 @@
 """
 download_missing_mods.py — Find and download mods that characters reference
-but are not present in the local mods directory.
+but are not present in the input / output mods directories.
 
 Strategy
 --------
-1. Build / load the local mods cache (non-modpack zipmods only).
+1. Build / load the mods cache of the input mods directory and of the output
+   mods directory (both default to the game's mods directory when left
+   blank; if they resolve to the same folder it is only scanned once).
 2. Build / load the chara GUID cache (all GUIDs referenced by chara cards).
-3. missing_local = chara_guids - local_mods_guids
+3. missing_local = referenced_guids - input_mods_guids - output_mods_guids
 4. Sideloader Modpack mode:
      Skip     — ignore modpack GUIDs entirely (only download local-only mods)
      OnlyUsed — download missing GUIDs that are in the modpack index or on
@@ -24,6 +26,8 @@ Strategy
         topic) via Telegram's server-side document search, and download
         the first result whose filename ends in .zipmod or .zip
      d) Otherwise → log as unresolved
+6. Everything is downloaded into the OUTPUT mods directory (which also
+   receives the report file).
 """
 
 from __future__ import annotations
@@ -906,7 +910,8 @@ class DownloadMissingMods(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
         cfg = self.config.download_missing_mods
-        self.mods_dir_str        : str  = cfg.get("ModsDir",             "")
+        self.input_mods_dir_str  : str  = cfg.get("InputModsDir",        "")
+        self.output_mods_dir_str : str  = cfg.get("OutputModsDir",       "")
         self.chara_dir_str       : str  = cfg.get("CharaDir",             "")
         self.scene_dir_str       : str  = cfg.get("SceneDir",             "")
         self.coord_dir_str       : str  = cfg.get("CoordDir",             "")
@@ -918,7 +923,8 @@ class DownloadMissingMods(BaseTask):
 
     @staticmethod
     def _write_readme(
-        mods_dir: Path,
+        input_mods_dir: Path,
+        output_mods_dir: Path,
         chara_guids: set[str],
         scene_guids: set[str],
         coord_guids: set[str],
@@ -937,7 +943,7 @@ class DownloadMissingMods(BaseTask):
         telegram_source: str,
         generated: str,
     ) -> None:
-        """Write a README.txt to mods_dir summarising the download run."""
+        """Write a report to output_mods_dir summarising the download run."""
         referenced_guids = chara_guids | scene_guids | coord_guids
         missing_all = referenced_guids - local_guids
 
@@ -950,7 +956,8 @@ class DownloadMissingMods(BaseTask):
         lines: list[str] = [
             "KKAFIO — Download Missing Mods Report",
             f"Generated        : {generated}",
-            f"Mods directory   : {mods_dir}",
+            f"Input mods dir   : {input_mods_dir}",
+            f"Output mods dir  : {output_mods_dir}",
             f"Sideloader mode  : {modpack_mode}",
             f"Telegram source  : {telegram_source}",
             "",
@@ -1027,7 +1034,7 @@ class DownloadMissingMods(BaseTask):
                     lines.append(f"  ~ {guid} ({modpack_index[guid]})")
                 lines.append("")
 
-        readme_path = mods_dir / "kkafio_missing_mods_report.txt"
+        readme_path = output_mods_dir / "kkafio_missing_mods_report.txt"
         try:
             readme_path.write_text("\n".join(lines), encoding="utf-8")
             logger.info("DLMOD", f"Report saved: {readme_path}")
@@ -1038,17 +1045,43 @@ class DownloadMissingMods(BaseTask):
         game_path = self.config.game_path
 
         # ── Resolve directories ───────────────────────────────────────────
-        if self.mods_dir_str:
-            mods_dir = Path(self.mods_dir_str)
-        elif "mods" in game_path:
-            mods_dir = game_path["mods"]
-        else:
-            logger.error("DLMOD", "Mods directory not set and not resolvable from game path.")
+        # Input and output mods dirs each fall back to the game's mods dir
+        # when left blank.
+        default_mods_dir = game_path["mods"] if "mods" in game_path else None
+
+        def _resolve_mods_dir(value: str, label: str) -> Path | None:
+            if value.strip():
+                return Path(value.strip())
+            if default_mods_dir is not None:
+                return Path(default_mods_dir)
+            logger.error("DLMOD",
+                f"{label} mods directory not set and not resolvable from game path.")
+            return None
+
+        input_mods_dir  = _resolve_mods_dir(self.input_mods_dir_str,  "Input")
+        output_mods_dir = _resolve_mods_dir(self.output_mods_dir_str, "Output")
+        if input_mods_dir is None or output_mods_dir is None:
             return
 
-        if not mods_dir.exists():
-            logger.error("DLMOD", f"Mods directory does not exist: {mods_dir}")
+        if not input_mods_dir.exists():
+            logger.error("DLMOD", f"Input mods directory does not exist: {input_mods_dir}")
             return
+
+        # The output dir only receives downloads, so create it if needed.
+        if not output_mods_dir.exists():
+            try:
+                output_mods_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("DLMOD", f"Created output mods directory: {output_mods_dir}")
+            except OSError as e:
+                logger.error("DLMOD",
+                    f"Output mods directory does not exist and could not be created: "
+                    f"{output_mods_dir} ({e})")
+                return
+
+        try:
+            same_mods_dir = input_mods_dir.resolve() == output_mods_dir.resolve()
+        except OSError:
+            same_mods_dir = input_mods_dir == output_mods_dir
 
         if not self.content_types:
             logger.error("DLMOD",
@@ -1093,7 +1126,11 @@ class DownloadMissingMods(BaseTask):
                 ]
 
         self.log_start("DLMOD")
-        logger.info("DLMOD", f"Mods dir  : {mods_dir}")
+        if same_mods_dir:
+            logger.info("DLMOD", f"Mods dir  : {output_mods_dir} (input and output)")
+        else:
+            logger.info("DLMOD", f"Input mods dir  : {input_mods_dir}")
+            logger.info("DLMOD", f"Output mods dir : {output_mods_dir}")
         if scan_chara:
             for d in chara_dirs:
                 logger.info("DLMOD", f"Chara dir : {d}")
@@ -1117,34 +1154,34 @@ class DownloadMissingMods(BaseTask):
             logger.info("DLMOD", "Coord dir : skipped (Coordinates not selected)")
         logger.info("DLMOD", f"Modpack   : {self.modpack_mode}")
 
-        # ── Step 1: mods cache ────────────────────────────────────────────
-        guid_str_map = build_mods_cache(mods_dir, include_modpack=False, use_cache=self.use_cache)
-        logger.info("DLMOD", f"Local GUIDs: {len(guid_str_map)}")
+        # ── Step 1: mods caches (input + output) ──────────────────────────
+        # guid_str_map deliberately EXCLUDES the Sideloader Modpack subtree
+        # (include_modpack=False) and only covers the OUTPUT dir — it is the
+        # set new downloads get written into ("Local GUIDs: N" describes the
+        # user's own non-modpack mods there).
+        guid_str_map = build_mods_cache(output_mods_dir, include_modpack=False, use_cache=self.use_cache)
+        logger.info("DLMOD", f"Output dir GUIDs: {len(guid_str_map)}")
 
-        # guid_str_map/local_guids above deliberately EXCLUDE the Sideloader
-        # Modpack subtree (include_modpack=False) — that's the set new
-        # downloads get written into and de-duplicated against, and "Local
-        # GUIDs: N" is meant to describe the user's own non-modpack mods.
-        #
         # But "is this GUID already installed at all" (used below to decide
-        # what's actually missing) needs the FULL picture, including mods
-        # that live inside the user's own Sideloader Modpack folder — which
-        # is exactly where BetterRepack's own installer puts everything by
-        # default. Using the narrower set for that check meant "OnlyUsed"
-        # mode would re-download every single modpack-referenced GUID a
-        # user already had (since it was invisible to `missing_local`), and
-        # "All" mode — which unions in the *entire* modpack index minus
-        # local_guids — would try to re-download essentially the whole
-        # Sideloader Modpack every run for anyone using the standard
-        # BetterRepack layout.
-        #
-        # The mods cache file is shared between include_modpack scopes
-        # (each scope's entries persist independently — see
-        # build_mods_cache's docstring), so this second call only opens
-        # zipmods that weren't already covered by the call above; it does
-        # not re-scan or re-hash anything.
-        all_local_guid_map = build_mods_cache(mods_dir, include_modpack=True, use_cache=self.use_cache)
-        all_local_guids: set[str] = set(all_local_guid_map.keys())
+        # what's actually missing) needs the FULL picture — including mods
+        # inside a Sideloader Modpack folder, which is where BetterRepack's
+        # own installer puts everything — from BOTH directories:
+        #   missing = referenced - input GUIDs - output GUIDs
+        # Otherwise "OnlyUsed" would re-download every modpack GUID the user
+        # already has, and "All" would try to re-download the whole modpack.
+        # The cache file is shared between include_modpack scopes, so this
+        # doesn't re-hash anything the call above already covered.
+        output_guid_map = build_mods_cache(output_mods_dir, include_modpack=True, use_cache=self.use_cache)
+        output_guids: set[str] = set(output_guid_map.keys())
+
+        if same_mods_dir:
+            input_guids: set[str] = set(output_guids)
+        else:
+            input_guid_map = build_mods_cache(input_mods_dir, include_modpack=True, use_cache=self.use_cache)
+            input_guids = set(input_guid_map.keys())
+            logger.info("DLMOD", f"Input dir GUIDs : {len(input_guids)}")
+
+        all_local_guids: set[str] = input_guids | output_guids
 
         # ── Step 2: modpack index ─────────────────────────────────────────
         game_type     = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
@@ -1175,11 +1212,9 @@ class DownloadMissingMods(BaseTask):
         referenced_guids = chara_guids | scene_guids | coord_guids
 
         # ── Step 4: decide what to download ──────────────────────────────
-        # Use all_local_guids (includes the Sideloader Modpack subtree) here
-        # — see the comment above where it's built — so a mod the user
-        # already has via their own Sideloader Modpack install isn't
-        # treated as missing just because it's outside the non-modpack
-        # scope that guid_str_map/local_guids tracks.
+        # all_local_guids = input dir GUIDs | output dir GUIDs (both including
+        # any Sideloader Modpack subtree) — see Step 1 — so a mod already
+        # present in either directory isn't treated as missing.
         missing_local: set[str] = referenced_guids - all_local_guids
 
         match self.modpack_mode:
@@ -1250,7 +1285,7 @@ class DownloadMissingMods(BaseTask):
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
                     results = await asyncio.gather(*[
-                        _download_betterrepack(br_client, guid, rel, mods_dir, guid_str_map)
+                        _download_betterrepack(br_client, guid, rel, output_mods_dir, guid_str_map)
                         for guid, rel in from_betterrepack.items()
                     ], return_exceptions=True)
                     for guid, result in zip(from_betterrepack, results, strict=True):
@@ -1469,7 +1504,7 @@ class DownloadMissingMods(BaseTask):
                                             # Pass rel_path so the file is saved to the
                                             # same subfolder as the modpack index
                                             success = await _download_via_teleget(
-                                                guid, tg_link, mods_dir, tg_data,
+                                                guid, tg_link, output_mods_dir, tg_data,
                                                 guid_str_map, tg_client,
                                                 downloader=teleget_downloader,
                                                 rel_path=rel_path,
@@ -1483,7 +1518,7 @@ class DownloadMissingMods(BaseTask):
                                             logger.info("DLMOD",
                                                 f"  Trying Telegram Chat Links for {guid}...")
                                         chat_found, success = await _search_chat_links_and_download(
-                                            guid, chat_links, mods_dir, tg_data,
+                                            guid, chat_links, output_mods_dir, tg_data,
                                             guid_str_map, tg_client,
                                             downloader=teleget_downloader,
                                             rel_path=rel_path,
@@ -1535,17 +1570,15 @@ class DownloadMissingMods(BaseTask):
 
         logger.line()
 
-        # Write README.txt to mods_dir summarising what was downloaded
+        # Write the report to the output mods dir summarising what was downloaded
         self._write_readme(
-            mods_dir          = mods_dir,
+            input_mods_dir    = input_mods_dir,
+            output_mods_dir   = output_mods_dir,
             chara_guids       = chara_guids,
             scene_guids       = scene_guids,
             coord_guids       = coord_guids,
-            # The full "what's actually installed" set (includes the
-            # Sideloader Modpack subtree), same reasoning as missing_local
-            # above — the README's "Already installed / covered" line
-            # should reflect what the user truly has, not just the
-            # non-modpack subset.
+            # Union of both directories (incl. any Sideloader Modpack
+            # subtree), same as missing_local above.
             local_guids       = all_local_guids,
             modpack_index     = modpack_index,
             to_download       = to_download,

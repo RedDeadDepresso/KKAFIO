@@ -153,7 +153,7 @@ _TASK_DEFAULTS = {
     "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True},
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Skip"},
     "FilterDuplicateContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "UseCache": True, "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename"},
-    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "Skip", "TelegramSource": "No", "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "Skip", "TelegramSource": "No", "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "UseCache": True, "InputModsDir": "", "OutputModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Skip", "ExtractArchive": True, "Password": "Skip"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True},
@@ -210,7 +210,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("TelegramSource", "TelegramSource")
         _set("TelegramChatLinks", "TelegramChatLinks")
         _set("UseCache", "UseCache")
-        _set("ModsDir", "ModsDir")
+        _set("InputModsDir", "InputModsDir")
+        _set("OutputModsDir", "OutputModsDir")
         _set("CharaDir", "CharaDir")
         _set("SceneDir", "SceneDir")
         _set("CoordDir", "CoordDir")

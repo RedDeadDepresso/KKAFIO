@@ -869,6 +869,26 @@
         "ModsDir": "{mods_dir}"
       }
     },
+    "InputModsDir": {
+      "type": "folder",
+      "name": "input_mods_dir",
+      "label": "$option.InputModsDir.label",
+      "description": "$option.InputModsDir.description",
+      "default": "",
+      "pipeline_override": {
+        "InputModsDir": "{input_mods_dir}"
+      }
+    },
+    "OutputModsDir": {
+      "type": "folder",
+      "name": "output_mods_dir",
+      "label": "$option.OutputModsDir.label",
+      "description": "$option.OutputModsDir.description",
+      "default": "",
+      "pipeline_override": {
+        "OutputModsDir": "{output_mods_dir}"
+      }
+    },
     "UseCache": {
       "type": "switch",
       "label": "$option.UseCache.label",
@@ -1071,7 +1091,8 @@
         "TelegramSource",
         "TelegramChatLinks",
         "UseCache",
-        "ModsDir",
+        "InputModsDir",
+        "OutputModsDir",
         "CharaDir",
         "SceneDir",
         "CoordDir"
@@ -1225,7 +1246,7 @@
           "enabled": false,
           "option": {
             "TelegramSource": "Both",
-            "ModsDir": "C:/KKAFIO/Downloads",
+            "OutputModsDir": "C:/KKAFIO/Downloads",
             "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
             "CoordDir": "C:/KKAFIO/Downloads"
@@ -1319,7 +1340,7 @@
           "enabled": false,
           "option": {
             "TelegramSource": "Both",
-            "ModsDir": "C:/KKAFIO/Downloads",
+            "OutputModsDir": "C:/KKAFIO/Downloads",
             "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
             "CoordDir": "C:/KKAFIO/Downloads"
