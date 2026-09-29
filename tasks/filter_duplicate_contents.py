@@ -62,8 +62,10 @@ def _load_duplic_cache(folder_path: Path, cache_file: str) -> dict[str, dict]:
         data = _json.loads(cache_path.read_text(encoding="utf-8"))
         if data.get("dir") == str(folder_path):
             return data.get("files", {})
-    except Exception:
-        pass
+    except FileNotFoundError:
+        pass                         # first run — nothing cached yet
+    except Exception as e:
+        logger.debug("DUPLIC", f"Ignoring unreadable {cache_path}: {e}")
     return {}
 
 
@@ -334,7 +336,7 @@ def _fuzzy_group(paths: list[Path], phashes: list[str | None],
     leaders = np.zeros(len(paths), dtype=np.uint64)
     leader_group: list[int] = []   # leader index -> index into `groups`
 
-    for path, ph in zip(paths, phashes):
+    for path, ph in zip(paths, phashes, strict=True):
         value = _hash_to_int(ph)
         if value is None:
             groups.append([path])
@@ -615,7 +617,7 @@ class FilterDuplicateContents:
                 logger.info("DUPLIC",
                     f"Mods cache: {reused_mods} unchanged, {len(mod_files) - reused_mods} new/changed")
 
-        for fp, files in mod_hash_dict.items():
+        for files in mod_hash_dict.values():
             if len(files) > 1:
                 duplicate_groups.append((files, "mods"))
                 logger.info("DUPLIC",

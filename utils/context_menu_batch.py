@@ -85,8 +85,9 @@ def coordinate_batch(task_name: str, own_path: Path,
                             entries    = data.get("paths", [])
                             started_at = data.get("started_at", now)
                         # else: stale leftover from an earlier run — start fresh
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        from utils.logger import logger
+                        logger.debug("CLI", f"Ignoring unreadable context-menu batch file {batch_path}: {e}")
 
                 is_leader = not entries
 
@@ -150,8 +151,9 @@ def coordinate_batch(task_name: str, own_path: Path,
                 try:
                     data = json.loads(batch_path.read_text(encoding="utf-8"))
                     final_paths = [Path(p) for p in data.get("paths", [own_path])]
-                except Exception:
-                    pass
+                except Exception as e:
+                    from utils.logger import logger
+                    logger.debug("CLI", f"Could not read context-menu batch file, using own path only: {e}")
                 try:
                     batch_path.unlink()
                 except OSError:

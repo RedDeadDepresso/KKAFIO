@@ -27,7 +27,8 @@ def _safe_text_kwargs() -> dict:
 def run_text(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     """subprocess.run() with safe text decoding. Any text=/encoding=/errors=
     kwarg the caller passes explicitly takes precedence."""
-    return subprocess.run(cmd, **{**_safe_text_kwargs(), **kwargs})
+    check = kwargs.pop("check", False)     # callers inspect returncode themselves
+    return subprocess.run(cmd, check=check, **{**_safe_text_kwargs(), **kwargs})
 
 
 def popen_text(cmd: list[str], **kwargs) -> subprocess.Popen:

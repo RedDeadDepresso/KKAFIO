@@ -541,7 +541,7 @@ async def _get_koikatsu_page_urls(client, base_url: str, page: int) -> tuple[lis
 
     urls: list[str] = []
     failed = 0
-    for sub_page, res in zip(sub_pages, results):
+    for sub_page, res in zip(sub_pages, results, strict=True):
         if isinstance(res, Exception):
             failed += 1
             logger.error("DLOAD", f"  Could not read card page {sub_page}: {res}")

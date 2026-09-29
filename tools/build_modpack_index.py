@@ -143,9 +143,7 @@ def build_index(mods_dir: Path, previous: dict) -> tuple[dict[str, str], dict]:
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = {ex.submit(_proc, zp): zp for zp in to_read}
-        done = 0
-        for future in as_completed(futures):
-            done += 1
+        for done, future in enumerate(as_completed(futures), start=1):
             if done % 500 == 0 or done == len(to_read):
                 print(f"  Scanned {done}/{len(to_read)}...", end="\r")
             try:

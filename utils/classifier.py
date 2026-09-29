@@ -51,6 +51,15 @@ class CardType(Enum):
     SCENE = "SCENE"
 
 
+# Every card type that is a Koikatsu-family *character* card (as opposed to a
+# scene, coordinate, or unknown file). kkloader reads all three the same way —
+# it never checks the "KoiKatuChara[Sun|SP]" marker or the per-block version
+# strings, it just keeps them — so KKS cards can be loaded, edited and saved
+# through KoikatuCharaData without being converted, and keep their KKS
+# marker/versions on the way back out.
+CHARA_CARD_TYPES = (CardType.KK, CardType.KKSP, CardType.KKS)
+
+
 def get_card_type(card: str | Path | bytes):
     if isinstance(card, (str, Path)):
         card = Path(card).read_bytes()

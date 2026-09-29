@@ -28,6 +28,7 @@ Global options:
                     registered Explorer context-menu entries pass this.
 """
 
+import contextlib
 import sys
 import argparse
 import multiprocessing
@@ -152,7 +153,7 @@ def _instance_arg(value: str):
         return int(value)
     except ValueError:
         raise argparse.ArgumentTypeError(
-            f"invalid instance '{value}' (expected a number or '{CONTEXT_MENU_INSTANCE}')")
+            f"invalid instance '{value}' (expected a number or '{CONTEXT_MENU_INSTANCE}')") from None
 
 
 def _load_core(config_path: str | None = None, instance_index: int | str = 0):
@@ -216,16 +217,15 @@ def _report_failure(task: str) -> NoReturn:
         print(f"[ERROR] Task error: {task}: {detail}", file=sys.stderr)
     try:
         _write_traceback(task)
-    except Exception:
-        pass
+    except Exception as tb_err:
+        print(f"[ERROR] Could not write {_traceback_path()}: {tb_err}", file=sys.stderr)
     sys.exit(1)
 
 
 def _clear_traceback() -> None:
-    try:
+    # Best-effort: a stale traceback.log that can't be removed must never stop a run.
+    with contextlib.suppress(Exception):
         _traceback_path().unlink(missing_ok=True)
-    except Exception:
-        pass
 
 
 # ---------------------------------------------------------------------------

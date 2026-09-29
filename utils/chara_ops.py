@@ -131,7 +131,8 @@ def uar_resolve_infos(kkex: dict | None) -> list[dict]:
                 continue
             try:
                 resolve_info = msgpack.unpackb(bytes(item), raw=False)
-            except Exception:
+            except Exception as e:
+                logger.debug("CARD", f"Skipping undecodable UAR ResolveInfo entry: {e}")
                 continue
             if isinstance(resolve_info, dict):
                 infos.append(resolve_info)
@@ -203,6 +204,39 @@ def parse_chara_guids(path: Path) -> list[str]:
     return sorted(set(_extract_guids_from_kkex(s.read(size))))
 
 
+_SCENE_UNPACK_START = 64 * 1024        # first attempt: enough for almost every UAR value
+_SCENE_UNPACK_MAX   = 20_000_000       # never feed more than this per occurrence
+_SCENE_UNPACK_GROW  = 8
+
+
+def _unpack_value_at(mv: memoryview, start: int):
+    """Decode the single msgpack value that begins at `mv[start:]`.
+
+    msgpack values are self-delimiting but `Unpacker.feed()` COPIES what it is
+    given, so feeding a fixed 20 MB window for every occurrence of the needle
+    (a scene with many actors/objects has dozens) copied tens of MB per hit
+    even though the value itself is usually a few KB. Instead, start with a
+    small window and grow it only when the decoder reports the value runs past
+    the end of what it was given (OutOfData).
+
+    Returns the decoded value, or None if nothing decodable starts here.
+    """
+    size = _SCENE_UNPACK_START
+    total = len(mv)
+    while True:
+        end = min(start + size, total, start + _SCENE_UNPACK_MAX)
+        unpacker = msgpack.Unpacker(raw=False, strict_map_key=False)
+        unpacker.feed(mv[start:end])
+        try:
+            return unpacker.unpack()
+        except msgpack.OutOfData:
+            if end >= total or end - start >= _SCENE_UNPACK_MAX:
+                return None                 # value truncated by EOF / too large
+            size *= _SCENE_UNPACK_GROW      # retry with a bigger window
+        except Exception:
+            return None                     # not msgpack at this offset
+
+
 def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
     """Scan a Studio scene payload for Sideloader UAR GUID references.
 
@@ -215,14 +249,12 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
     immediately follows each occurrence. Since msgpack values are
     self-delimiting, this works regardless of where the enclosing dictionary
     actually starts or ends.
+
+    `data.find()` scans the buffer in C. Each hit is decoded through
+    `_unpack_value_at`, which only ever copies as much of the buffer as the
+    value actually needs (see its docstring).
     """
     guids: list[str] = []
-    # A memoryview slice is a view into the same buffer, not a copy — unlike
-    # bytes slicing, `mv[a:b]` here doesn't allocate. A scene with many
-    # actors/objects can have this needle appear dozens of times, and this
-    # used to bytes-slice up to 20MB fresh on every single occurrence found
-    # (data.find() itself still needs to scan `data` directly since
-    # memoryview doesn't support .find(), so that part is unchanged).
     mv = memoryview(data)
     for ext_id in UAR_EXT_IDS:
         needle = ext_id.encode("utf-8")
@@ -231,14 +263,9 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
             idx = data.find(needle, search_from)
             if idx < 0:
                 break
-            search_from = idx + 1
+            search_from = idx + len(needle)
             value_start = idx + len(needle)
-            try:
-                unpacker = msgpack.Unpacker(raw=False, strict_map_key=False)
-                unpacker.feed(mv[value_start:value_start + 20_000_000])
-                plugin_data_raw = unpacker.unpack()
-            except Exception:
-                continue
+            plugin_data_raw = _unpack_value_at(mv, value_start)
 
             data_dict = None
             if isinstance(plugin_data_raw, dict):
@@ -262,8 +289,8 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
                         guid = resolve_info.get("ModID")
                         if guid:
                             guids.append(str(guid))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("CARD", f"Skipping undecodable scene ResolveInfo entry: {e}")
 
     return guids
 
@@ -422,12 +449,45 @@ def _file_fp(p: Path) -> tuple[int, int]:
 # Shared by any task that needs "every mod GUID referenced by every card of a
 # given type in a folder" — e.g. DownloadMissingMods (to find what's missing)
 # and DeleteCards (to find what's still in use elsewhere before deleting a
-# zipmod). One cache file per content type, keyed by the folder set being
-# scanned, so the three tasks can all reuse the same on-disk cache.
+# zipmod). One cache file per content type *per folder*: each scanned folder
+# keeps its own cache file, keyed by that folder alone.
+#
+# It used to be a single file inside dirs[0], keyed by the whole folder set
+# ("charaFemale|charaMale"). Tasks scan different combinations of folders
+# (a user-configured override, female-only, both, ...), and any change in the
+# combination invalidated the file and forced a full rescan — after which the
+# next task with a different combination invalidated it again. Per-folder
+# caches are independent of which combination a task asks for, so they are
+# always reusable.
 
 CHARA_GUID_CACHE_FILE = "kkafio_chara_guid_cache.json"
 SCENE_GUID_CACHE_FILE = "kkafio_scene_guid_cache.json"
 COORD_GUID_CACHE_FILE = "kkafio_coord_guid_cache.json"
+
+
+def _load_png_guid_cache(cache_path: Path, d: Path) -> tuple[dict, dict[str, list[str]]]:
+    """Read one folder's cache. Returns ({path: [mtime, size]}, {path: [guids]}),
+    or two empty dicts if it's missing, unreadable, or belongs to another folder.
+
+    Accepts both the current "dir" key and the old "dirs" key: a cache the
+    previous single-file scheme wrote for a lone folder used exactly
+    str(folder) as its key, so it is still valid here.
+    """
+    try:
+        prev = _json.loads(cache_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}, {}            # first run — nothing cached yet
+    except Exception as e:
+        logger.debug("CACHE", f"Ignoring unreadable {cache_path}: {e}")
+        return {}, {}
+    if not isinstance(prev, dict) or (prev.get("dir") or prev.get("dirs")) != str(d):
+        return {}, {}
+    files = {sp: fp for sp, fp in (prev.get("files") or {}).items()
+             if isinstance(fp, list) and len(fp) == 2}
+    by_file = prev.get("guids_by_file") or {}
+    if not isinstance(by_file, dict):
+        return {}, {}
+    return files, by_file
 
 
 def collect_png_guids(
@@ -446,11 +506,13 @@ def collect_png_guids(
     decides whether a given PNG belongs to this collector's content type,
     and `parse_guids` extracts the GUIDs from files that pass.
 
-    The cache file lives inside `dirs[0]`. When `use_cache` is False, this
-    does a full scan every time and does not read or write the cache — the
-    complete per-file scan still happens either way, so the returned
-    `guids_by_file` is always accurate for every currently-existing file
-    in `dirs`, regardless of the `use_cache` setting.
+    Each folder in `dirs` has its own cache file (`<folder>/<cache_file>`)
+    holding only the files found under that folder, so the cache is reusable
+    no matter which combination of folders a task scans. When `use_cache` is
+    False, this does a full scan every time and does not read or write any
+    cache — the complete per-file scan still happens either way, so the
+    returned `guids_by_file` is always accurate for every currently-existing
+    file in `dirs`, regardless of the `use_cache` setting.
 
     Returns (guids, guids_by_file):
       guids         — the union of every GUID across every file
@@ -462,58 +524,6 @@ def collect_png_guids(
     if not dirs:
         return set(), {}
 
-    key        = "|".join(str(d) for d in dirs)
-    cache_path = dirs[0] / cache_file
-
-    old_files:  dict = {}
-    old_guids_by_file: dict[str, list[str]] = {}
-
-    if use_cache:
-        try:
-            prev = _json.loads(cache_path.read_text(encoding="utf-8"))
-            if prev.get("dirs") == key:
-                prev_files         = {sp: fp for sp, fp in prev.get("files", {}).items()
-                                      if isinstance(fp, list) and len(fp) == 2}
-                prev_guids_by_file = prev.get("guids_by_file", {})
-
-                if prev_files:
-                    old_files         = prev_files
-                    old_guids_by_file = prev_guids_by_file
-                    logger.info("CACHE", f"{label} cache loaded: {len(old_files)} file fingerprints")
-                else:
-                    logger.info("CACHE", f"{label} cache empty — building for the first time")
-        except Exception:
-            pass
-
-    all_pngs: list[Path] = []
-    for d in dirs:
-        if d.exists():
-            all_pngs.extend(d.rglob("*.png"))
-
-    guids:     set[str]        = set()
-    new_files: dict            = {}
-    new_guids_by_file: dict[str, list[str]] = {}
-    to_read:   list[Path]      = []
-
-    for png in all_pngs:
-        sp = str(png)
-        fp = _file_fp(png)
-        old = old_files.get(sp)
-        if old is not None and (old[0], old[1]) == fp and sp in old_guids_by_file:
-            file_guids = old_guids_by_file[sp]
-            guids.update(file_guids)
-            new_files[sp] = old
-            new_guids_by_file[sp] = file_guids
-        else:
-            to_read.append(png)
-
-    reused = len(all_pngs) - len(to_read)
-    if reused:
-        logger.info("CACHE", f"{label} cache: {reused} unchanged, {len(to_read)} new/changed")
-    else:
-        logger.info("CACHE", f"Scanning {len(to_read)} {label.lower()}(s) for mod GUIDs...")
-
-    import os
     workers = min(32, (os.cpu_count() or 4) * 2)
 
     def _proc(png: Path):
@@ -521,40 +531,94 @@ def collect_png_guids(
             raw = png.read_bytes()
             if is_valid(raw):
                 return png, [g for g in parse_guids(png) if g]
-        except Exception:
-            pass
+        except Exception as e:
+            # The file is left out of the results (and the cache), exactly as
+            # before — but say why, so a card whose mods silently aren't
+            # counted can be diagnosed (run with KKAFIO_DEBUG=1).
+            logger.debug("CACHE", f"Could not parse {png}: {type(e).__name__}: {e}")
         return png, None
 
-    if to_read:
-        with ThreadPoolExecutor(max_workers=workers) as ex:
-            for future in as_completed({ex.submit(_proc, png): png for png in to_read}):
-                png, file_guids = future.result()
-                if file_guids is None:
-                    continue
-                sp = str(png)
-                fp = _file_fp(png)
-                guids.update(file_guids)
-                new_files[sp] = [fp[0], fp[1]]
-                new_guids_by_file[sp] = file_guids
+    guids:     set[str]             = set()
+    all_by_file: dict[str, list[str]] = {}
+    # {path: guids | None (not this content type)} for every file resolved so
+    # far in this call. If one folder is nested inside another, a file under
+    # both is parsed once but still recorded in BOTH folders' caches — so the
+    # scan order can never leave a folder's cache missing files it contains.
+    memo: dict[str, list[str] | None] = {}
+    total_reused = total_scanned = 0
+
+    for d in dict.fromkeys(Path(x) for x in dirs):   # de-duplicate, keep order
+        if not d.exists():
+            continue
+
+        cache_path = d / cache_file
+        old_files: dict = {}
+        old_guids_by_file: dict[str, list[str]] = {}
+        if use_cache:
+            old_files, old_guids_by_file = _load_png_guid_cache(cache_path, d)
+
+        new_files: dict = {}
+        dir_by_file: dict[str, list[str]] = {}
+        to_read: list[Path] = []
+
+        for png in d.rglob("*.png"):
+            sp = str(png)
+            fp = _file_fp(png)
+            if sp in memo:                       # already resolved via an overlapping folder
+                if memo[sp] is not None:
+                    dir_by_file[sp] = memo[sp]
+                    new_files[sp]   = [fp[0], fp[1]]
+                continue
+            old = old_files.get(sp)
+            if old is not None and (old[0], old[1]) == fp and sp in old_guids_by_file:
+                dir_by_file[sp] = old_guids_by_file[sp]
+                new_files[sp]   = old
+                memo[sp]        = old_guids_by_file[sp]
+            else:
+                to_read.append(png)
+
+        total_reused  += len(dir_by_file)
+        total_scanned += len(to_read)
+
+        if to_read:
+            with ThreadPoolExecutor(max_workers=workers) as ex:
+                for future in as_completed([ex.submit(_proc, png) for png in to_read]):
+                    png, file_guids = future.result()
+                    sp = str(png)
+                    memo[sp] = file_guids
+                    if file_guids is None:
+                        continue
+                    fp = _file_fp(png)
+                    new_files[sp]   = [fp[0], fp[1]]
+                    dir_by_file[sp] = file_guids
+
+        if use_cache:
+            dir_guids: set[str] = set()
+            for g in dir_by_file.values():
+                dir_guids.update(g)
+            try:
+                _atomic_write_json(cache_path, {
+                    "dir":           str(d),
+                    "file_count":    len(new_files),
+                    "guids":         sorted(dir_guids),
+                    "files":         new_files,
+                    "guids_by_file": dir_by_file,
+                })
+            except Exception as e:
+                logger.debug("CACHE", f"Could not save {cache_path}: {e}")
+
+        for g in dir_by_file.values():
+            guids.update(g)
+        all_by_file.update(dir_by_file)
 
     if use_cache:
-        # Store guids_by_file for per-file incremental reuse next run
-        data = {
-            "dirs":           key,
-            "file_count":     len(new_files),
-            "guids":          sorted(guids),
-            "files":          new_files,
-            "guids_by_file":  new_guids_by_file,
-        }
-        try:
-            _atomic_write_json(cache_path, data)
-            logger.info("CACHE", f"{label} cache saved: {len(guids)} GUIDs from {len(new_files)} files")
-        except Exception:
-            pass
+        logger.info("CACHE",
+            f"{label} cache: {total_reused} unchanged, {total_scanned} new/changed "
+            f"— {len(guids)} GUIDs from {len(all_by_file)} files")
     else:
         logger.info("CACHE", f"{label} scan complete: {len(guids)} GUIDs")
 
-    return guids, new_guids_by_file
+    return guids, all_by_file
 
 
 def collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
@@ -643,8 +707,8 @@ def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
         data["files"] = files
     try:
         _atomic_write_json(cache_path, data)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("CACHE", f"Could not save {cache_path}: {e}")
 
 
 def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
@@ -677,8 +741,10 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
             if prev.get("mods_dir") == str(mods_dir):
                 old_files = {sp: fp for sp, fp in prev.get("files", {}).items()
                              if isinstance(fp, list) and len(fp) == 3}
-        except Exception:
-            pass
+        except FileNotFoundError:
+            pass                     # first run — nothing cached yet
+        except Exception as e:
+            logger.debug("CACHE", f"Ignoring unreadable {cache_path}: {e}")
 
     # Only iterate files actually present on disk — deleted files are implicitly pruned
     all_zips = [
@@ -914,8 +980,10 @@ def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, str]
                     and prev.get("coord_dir") == str(coord_dir)):
                 old_files  = prev.get("files", {})
                 old_coords = prev.get("coords", {})
-        except Exception:
-            pass
+        except FileNotFoundError:
+            pass                     # first run — nothing cached yet
+        except Exception as e:
+            logger.debug("CACHE", f"Ignoring unreadable {cache_path}: {e}")
 
     all_pngs = sorted(coord_dir.rglob("*.png"))
     coord_map: dict[str, str] = {}
@@ -956,8 +1024,8 @@ def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, str]
                 "files":     new_files,
                 "coords":    coord_map,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("CACHE", f"Could not save {cache_path}: {e}")
     return coord_map
 
 

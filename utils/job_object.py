@@ -115,5 +115,8 @@ def die_with_parent(popen_obj) -> None:
         # to reach it — subprocess doesn't expose a public accessor for it.
         handle = int(popen_obj._handle)
         kernel32.AssignProcessToJobObject(job, handle)
-    except Exception:
-        pass
+    except Exception as e:
+        # Best-effort: without the job object the dialog just isn't auto-closed
+        # if this process is killed.
+        from utils.logger import logger
+        logger.debug("SCRIPT", f"Could not assign dialog process to job object: {e}")

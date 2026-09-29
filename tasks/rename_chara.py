@@ -24,7 +24,7 @@ from kkloader import KoikatuCharaData
 
 from tasks.base_task import BaseTask, validate_input_path
 from utils.chara_key import make_key
-from utils.classifier import CardType, get_card_type
+from utils.classifier import CHARA_CARD_TYPES, get_card_type
 from utils.logger import logger
 
 CACHE_FILENAME = "kkafio_rename_cache.json"
@@ -82,6 +82,35 @@ def _safe(s: str) -> str:
     return s
 
 
+def _fold(name: str) -> str:
+    """Key for comparing file names the way a case-insensitive filesystem does."""
+    return name.casefold()
+
+
+def _rename_collides(png: Path, candidate: str, used: dict[str, int]) -> bool:
+    """True if renaming `png` to `<candidate>.png` in its own folder would
+    collide with another file.
+
+    `used` maps the case-folded stem of every file in that folder (kept
+    up to date as this run renames files) to how many files hold it.
+    """
+    target = png.parent / f"{candidate}.png"
+    if target.exists():
+        # On a case-insensitive filesystem "Alice.png" exists when we are
+        # "alice.png" — that's this same file (a case-only rename), not a
+        # collision. Anything else that exists is a real one and must never
+        # be overwritten (a POSIX rename silently replaces the target).
+        try:
+            return not os.path.samefile(target, png)
+        except OSError:
+            return True
+    key = _fold(candidate)
+    # Stems held by other files here (sidecars, or cards renamed earlier this
+    # run), compared case-insensitively. This card's own stem doesn't count
+    # against it.
+    return key != _fold(png.stem) and key in used
+
+
 def _name_known(d: dict) -> bool:
     return any(d.get(k, "").strip() for k in ("lastname", "firstname", "nickname"))
 
@@ -128,9 +157,7 @@ def _merge_cache(cache: dict, response: dict) -> dict:
         if not isinstance(nd, dict):
             continue
         sanitised = {k: _safe(nd.get(k, "")) for k in ("lastname", "firstname", "nickname")}
-        if _name_known(sanitised):
-            merged[key] = sanitised
-        elif key not in merged:
+        if _name_known(sanitised) or key not in merged:
             merged[key] = sanitised
     return merged
 
@@ -152,7 +179,7 @@ def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
             if skip_already_renamed and png.stem in known_stems:
                 return png, "__skip__"
             raw = png.read_bytes()
-            if get_card_type(raw) not in (CardType.KK, CardType.KKSP):
+            if get_card_type(raw) not in CHARA_CARD_TYPES:
                 return png, None
             return png, make_key(KoikatuCharaData.load(str(png)))
         except Exception as e:
@@ -222,12 +249,22 @@ def process(folder_path: Path, json_str: str,
     logger.info("RENAME", f"Processing {len(png_files)} PNG file(s)")
 
     updated = renamed = skipped = 0
-    # Track used stems per directory so rename collision checks are folder-local
-    used_stems_by_dir: dict[Path, set[str]] = {}
+    # Track used stems per directory so rename collision checks are folder-local.
+    # Stems are stored case-folded ("Alice" and "alice" are the same name on
+    # Windows and macOS, and would be on any case-insensitive share the cards
+    # are later copied to), with a count so a card that shares its stem with a
+    # sidecar file (Alice.png / Alice.txt) only frees the stem when nothing
+    # else is still using it.
+    used_stems_by_dir: dict[Path, dict[str, int]] = {}
 
-    def _dir_stems(d: Path) -> set[str]:
+    def _dir_stems(d: Path) -> dict[str, int]:
         if d not in used_stems_by_dir:
-            used_stems_by_dir[d] = {p.stem for p in d.iterdir() if p.is_file()}
+            counts: dict[str, int] = {}
+            for p in d.iterdir():
+                if p.is_file():
+                    key = _fold(p.stem)
+                    counts[key] = counts.get(key, 0) + 1
+            used_stems_by_dir[d] = counts
         return used_stems_by_dir[d]
 
     for png in png_files:
@@ -237,7 +274,8 @@ def process(folder_path: Path, json_str: str,
 
         try:
             raw = png.read_bytes()
-            if get_card_type(raw) not in (CardType.KK, CardType.KKSP):
+            orig_type = get_card_type(raw)
+            if orig_type not in CHARA_CARD_TYPES:
                 skipped += 1
                 continue
             kc  = KoikatuCharaData.load(str(png))
@@ -274,9 +312,15 @@ def process(folder_path: Path, json_str: str,
 
                 # Sanity-check the written file before trusting it enough to
                 # overwrite the original.
+                # The type must come back exactly as it went in — in
+                # particular a KKS card must still carry its KKS marker
+                # (never silently turn into a KK card the game can't tell
+                # apart from a real one).
                 new_raw = tmp_path.read_bytes()
-                if get_card_type(new_raw) not in (CardType.KK, CardType.KKSP):
-                    raise ValueError("saved file does not look like a valid chara card")
+                if get_card_type(new_raw) != orig_type:
+                    raise ValueError(
+                        f"saved file is not the same card type as the original "
+                        f"({orig_type.value} -> {get_card_type(new_raw).value})")
 
                 os.replace(tmp_path, png)
                 logger.info("RENAME",
@@ -296,19 +340,27 @@ def process(folder_path: Path, json_str: str,
         if rename_files:
             stem = _stem_for(nd)
             if stem:
-                subfolder   = png.parent
-                used_stems  = _dir_stems(subfolder)
-                candidate   = stem
-                counter     = 1
-                while candidate in used_stems and (subfolder / f"{candidate}.png") != png:
+                subfolder = png.parent
+                used      = _dir_stems(subfolder)
+
+                candidate = stem
+                counter   = 1
+                while _rename_collides(png, candidate, used):
                     candidate = f"{stem}_{counter}"
                     counter  += 1
                 new_path = subfolder / f"{candidate}.png"
-                if new_path != png:
+                # Compare names exactly (not Path equality, which is
+                # case-insensitive on Windows) so a case-only difference
+                # such as alice.png -> Alice.png is still applied.
+                if new_path.name != png.name:
                     try:
                         png.rename(new_path)
-                        used_stems.discard(png.stem)
-                        used_stems.add(candidate)
+                        old_key = _fold(png.stem)
+                        used[old_key] = used.get(old_key, 1) - 1
+                        if used[old_key] <= 0:
+                            used.pop(old_key, None)
+                        new_key = _fold(candidate)
+                        used[new_key] = used.get(new_key, 0) + 1
                         logger.success("RENAME", f"Renamed: {png.name} → {new_path.name}")
                         renamed += 1
                     except Exception as e:

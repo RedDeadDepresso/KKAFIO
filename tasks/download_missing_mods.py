@@ -553,12 +553,13 @@ async def _search_chat_links_and_download(
                     from telethon.utils import get_peer_id
                     raw_chat_id = get_peer_id(entity)
 
-                    def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                    def _on_progress(downloaded: int, total: int, pct: float,
+                                     _name: str = file_name) -> None:
                         if total > 0:
                             mb_done  = downloaded // 1024 // 1024
                             mb_total = total      // 1024 // 1024
                             logger.info("DLMOD",
-                                f"    {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
+                                f"    {_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
 
                     await downloader.download(
                         chat_id=raw_chat_id,
@@ -733,8 +734,8 @@ async def _ensure_session(tg_data: dict) -> bool:
     finally:
         try:
             await client.disconnect()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("DLMOD", f"Telegram disconnect failed (ignored): {e}")
 
 
 # Hardcoded numeric ID for the KK_archive_modlibrary public channel, in
@@ -1145,8 +1146,6 @@ class DownloadMissingMods(BaseTask):
         all_local_guid_map = build_mods_cache(mods_dir, include_modpack=True, use_cache=self.use_cache)
         all_local_guids: set[str] = set(all_local_guid_map.keys())
 
-        local_guids: set[str] = set(guid_str_map.keys())
-
         # ── Step 2: modpack index ─────────────────────────────────────────
         game_type     = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         modpack_index = load_modpack_index(game_type=game_type) or {}
@@ -1154,7 +1153,7 @@ class DownloadMissingMods(BaseTask):
             logger.info("DLMOD", f"Modpack index loaded: {len(modpack_index)} GUIDs")
         else:
             logger.warning("DLMOD",
-                f"kkafio_modpack_index_kk/kks.json not found — "
+                "kkafio_modpack_index_kk/kks.json not found — "
                 "BetterRepack downloads unavailable.")
 
         # ── Step 3: chara + scene + coord GUIDs ─────────────────────────────
@@ -1254,7 +1253,7 @@ class DownloadMissingMods(BaseTask):
                         _download_betterrepack(br_client, guid, rel, mods_dir, guid_str_map)
                         for guid, rel in from_betterrepack.items()
                     ], return_exceptions=True)
-                    for guid, result in zip(from_betterrepack, results):
+                    for guid, result in zip(from_betterrepack, results, strict=True):
                         if result is True:
                             ok += 1
                             downloaded_br.add(guid)
@@ -1524,12 +1523,13 @@ class DownloadMissingMods(BaseTask):
                                 if teleget_downloader is not None:
                                     try:
                                         await teleget_downloader.shutdown()
-                                    except Exception:
-                                        pass  # suppress ShutdownRequest bug in teleget9527
+                                    except Exception as e:
+                                        # teleget9527's ShutdownRequest bug — harmless, downloads are done
+                                        logger.debug("DLMOD", f"teleget9527 shutdown error (ignored): {e}")
                                 try:
                                     await tg_client.disconnect()
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    logger.debug("DLMOD", f"Telegram disconnect failed (ignored): {e}")
 
         asyncio.run(_run_all())
 

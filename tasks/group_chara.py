@@ -21,7 +21,7 @@ from kkloader import KoikatuCharaData
 
 from tasks.base_task import BaseTask, validate_input_path
 from utils.chara_key import make_key
-from utils.classifier import CardType, get_card_type
+from utils.classifier import CHARA_CARD_TYPES, get_card_type
 from utils.logger import logger
 
 # ---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
         """Read, classify and build the key for one PNG. Runs in a thread pool worker."""
         try:
             raw = png.read_bytes()
-            if get_card_type(raw) not in (CardType.KK, CardType.KKSP):
+            if get_card_type(raw) not in CHARA_CARD_TYPES:
                 return png, None  # not a chara card — skip silently
             kc  = KoikatuCharaData.load(str(png))
             return png, make_key(kc)
@@ -213,11 +213,11 @@ def process(folder_path: Path, json_str: str, include_subfolders: bool = False) 
     skipped = 0
 
     for png in png_files:
-        # Pre-filter: skip non-KK/KKSP files before passing to kkloader
+        # Pre-filter: skip non-chara-card files before passing to kkloader
         try:
             raw = png.read_bytes()
             card_type = get_card_type(raw)
-            if card_type not in (CardType.KK, CardType.KKSP):
+            if card_type not in CHARA_CARD_TYPES:
                 skipped += 1
                 continue
         except Exception as e:

@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 # Custom levels, slotted in around the stdlib ones so filtering still makes
@@ -74,6 +75,12 @@ class KafioLogger(logging.LoggerAdapter):
         # Exceptions get logged as their string form, same as before.
         self.logger.log(level, str(message), extra={"category": category})
 
+    def debug(self, category: str, message) -> None:
+        """Diagnostic detail (swallowed exceptions, best-effort failures).
+        Shown when running from source; hidden in packaged (frozen) builds unless
+        the KKAFIO_DEBUG environment variable is set to 1."""
+        self._log_with_category(logging.DEBUG, category, message)
+
     def info(self, category: str, message: str) -> None:
         self._log_with_category(logging.INFO, category, message)
 
@@ -110,7 +117,17 @@ def _build_logger() -> KafioLogger:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
 
     base_logger = logging.getLogger("KAFIO")
-    base_logger.setLevel(logging.INFO)
+    # DEBUG output is on when running from source and off in packaged
+    # (PyInstaller) builds, so end users don't see diagnostic noise. The
+    # KKAFIO_DEBUG environment variable overrides either default:
+    # 1/true/yes/on forces it on, 0/false/no/off forces it off.
+    debug_on = not getattr(sys, "frozen", False)
+    override = os.environ.get("KKAFIO_DEBUG", "").strip().lower()
+    if override in ("1", "true", "yes", "on"):
+        debug_on = True
+    elif override in ("0", "false", "no", "off"):
+        debug_on = False
+    base_logger.setLevel(logging.DEBUG if debug_on else logging.INFO)
     base_logger.propagate = False  # don't also emit via the root logger
 
     if not base_logger.handlers:  # avoid duplicate handlers if re-imported

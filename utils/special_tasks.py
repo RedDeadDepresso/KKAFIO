@@ -49,7 +49,8 @@ def _run_cmd(args: list[str], **kwargs) -> subprocess.CompletedProcess:
     if sys.platform == "win32":
         # CREATE_NO_WINDOW so no console flashes up
         extra["creationflags"] = 0x0800_0000
-    return subprocess.run(args, **extra, **kwargs)
+    check = kwargs.pop("check", False)     # callers inspect returncode themselves
+    return subprocess.run(args, check=check, **extra, **kwargs)
 
 
 # ── individual action functions ─────────────────────────────────────────────
@@ -211,7 +212,7 @@ def run_launch(param: dict, stop: threading.Event) -> bool:
 
     try:
         if wait_exit:
-            result = subprocess.run(cmd, cwd=cwd, **extra)
+            result = subprocess.run(cmd, cwd=cwd, **extra, check=False)
             _log().success("MXU_LAUNCH", f"Exited with code {result.returncode}")
         else:
             subprocess.Popen(cmd, cwd=cwd, **extra)
@@ -271,6 +272,7 @@ def run_notify(param: dict, stop: threading.Event) -> bool:
             subprocess.run(
                 ["powershell", "-NoProfile", "-Command", ps],
                 creationflags=0x0800_0000, timeout=5, env=env,
+                check=False,
             )
         elif sys.platform == "darwin":
             # Pass the text as argv items to the AppleScript instead of
@@ -283,10 +285,12 @@ def run_notify(param: dict, stop: threading.Event) -> bool:
                  "-e", "end run",
                  title, body],
                 timeout=5,
+                check=False,
             )
         else:
             subprocess.run(
                 ["notify-send", "--", title, body], timeout=5,
+                check=False,
             )
         _log().success("MXU_NOTIFY", "Sent")
         return True
@@ -342,6 +346,7 @@ def _windows_screen_off() -> None:
     subprocess.run(
         ["powershell", "-NoProfile", "-EncodedCommand", encoded],
         creationflags=0x0800_0000,
+        check=False,
     )
 
 
@@ -388,31 +393,31 @@ def run_power(param: dict, stop: threading.Event) -> bool:
                 if delay and stop.wait(delay):
                     _log().info("MXU_POWER", "Shutdown cancelled (Stop requested).")
                     return False
-                subprocess.run(["osascript", "-e", "tell app \"System Events\" to shut down"])
+                subprocess.run(["osascript", "-e", "tell app \"System Events\" to shut down"], check=False)
             elif action == "restart":
                 if delay and stop.wait(delay):
                     _log().info("MXU_POWER", "Restart cancelled (Stop requested).")
                     return False
-                subprocess.run(["osascript", "-e", "tell app \"System Events\" to restart"])
+                subprocess.run(["osascript", "-e", "tell app \"System Events\" to restart"], check=False)
             elif action == "sleep":
-                subprocess.run(["pmset", "sleepnow"])           # whole system
+                subprocess.run(["pmset", "sleepnow"], check=False)           # whole system
             elif action == "screenoff":
-                subprocess.run(["pmset", "displaysleepnow"])    # display only
+                subprocess.run(["pmset", "displaysleepnow"], check=False)    # display only
         else:
             if action == "shutdown":
                 _log().info("MXU_POWER",
                     f"Shutting down in {delay}s — run 'shutdown -c' to cancel.")
                 subprocess.run(["shutdown", "-P", f"+{max(1, delay // 60) if delay else 0}"]
-                               if delay else ["systemctl", "poweroff"])
+                               if delay else ["systemctl", "poweroff"], check=False)
             elif action == "restart":
                 _log().info("MXU_POWER",
                     f"Restarting in {delay}s — run 'shutdown -c' to cancel.")
                 subprocess.run(["shutdown", "-r", f"+{max(1, delay // 60) if delay else 0}"]
-                               if delay else ["systemctl", "reboot"])
+                               if delay else ["systemctl", "reboot"], check=False)
             elif action == "sleep":
-                subprocess.run(["systemctl", "suspend"])
+                subprocess.run(["systemctl", "suspend"], check=False)
             elif action == "screenoff":
-                subprocess.run(["xset", "dpms", "force", "off"])
+                subprocess.run(["xset", "dpms", "force", "off"], check=False)
         _log().success("MXU_POWER", f"Executed {action}")
         return True
     except Exception as e:

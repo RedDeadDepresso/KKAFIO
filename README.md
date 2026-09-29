@@ -252,7 +252,7 @@ https://t.me/kknowcc
 
 **9. Group Characters**
 
-- Groups character cards into subfolders named after their series, using an LLM.
+- Groups character cards into subfolders named after their series, using an LLM. Works on KK, KKSP, and KKS character cards (KKS cards are only moved, never modified).
 - Workflow:
   1. Select an input folder, customise the prompt if desired, and enable **Group Characters**.
   2. Click **Start** — KKAFIO scans the folder, builds a JSON mapping `{character_key: ""}`, and opens a dialog showing the combined prompt + JSON.
@@ -270,7 +270,7 @@ https://t.me/kknowcc
 
 **11. Rename Characters**
 
-- Translates character card names to English using an LLM.
+- Translates character card names to English using an LLM. Works on KK, KKSP, and KKS character cards; a KKS card stays a KKS card when its metadata is updated.
 - Workflow:
   1. Select an input folder and enable **Rename Characters**.
   2. Click **Start** — KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, and opens a dialog showing the combined prompt + JSON.
