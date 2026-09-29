@@ -544,7 +544,14 @@ async def _search_chat_links_and_download(
                 try:
                     entity = await _retry_flood_wait(
                         client.get_entity, chat, context=f"resolving entity for {chat}")
-                    raw_chat_id = entity.id  # bare/raw numeric ID, same form teleget9527 expects
+                    # See the [FIX-2026-09-29-ENTITY-MARK] note in
+                    # _download_via_teleget above — teleget9527 needs
+                    # Telethon's marked peer-ID form, not the bare
+                    # Channel.id, or a bare-int lookup on the daemon's
+                    # copy of the session raises "Could not find the
+                    # input entity for PeerUser(...)".
+                    from telethon.utils import get_peer_id
+                    raw_chat_id = get_peer_id(entity)
 
                     def _on_progress(downloaded: int, total: int, pct: float) -> None:
                         if total > 0:
@@ -730,9 +737,10 @@ async def _ensure_session(tg_data: dict) -> bool:
             pass
 
 
-# Hardcoded numeric ID for the KK_archive_modlibrary public channel.
-# This never changes for a given channel so no runtime resolution is needed.
-KK_ARCHIVE_CHAT_ID = 3881428951
+# Hardcoded numeric ID for the KK_archive_modlibrary public channel, in
+# Telethon's "marked" peer-ID form (see the [FIX-2026-09-29-ENTITY-MARK]
+# note below for why it must be marked, not the bare channel ID).
+KK_ARCHIVE_CHAT_ID = -1003881428951
 
 
 async def _download_via_teleget(
@@ -786,15 +794,31 @@ async def _download_via_teleget(
         client.get_messages, chat_identifier, ids=message_id,
         context=f"fetching message metadata from {chat_identifier}")
 
-    # teleget9527 wants the bare numeric chat ID of the chat the link
-    # actually points at. This used to be hardcoded to the
-    # KK_archive_modlibrary channel, so a link into any other chat would
-    # have fetched message N of the wrong chat.
+    # teleget9527 wants the chat ID of the chat the link actually points at,
+    # in Telethon's "marked" peer-ID form (the same shape as chat_id in
+    # tg_downloader.py's own docstring example, e.g. -1001234567890) — not
+    # the bare Channel.id Telethon exposes on the entity object.
+    #
+    # [FIX-2026-09-29-ENTITY-MARK] Previously this used `entity.id` — for a
+    # Channel/supergroup, `.id` is always the *unmarked* bare numeric ID
+    # (e.g. 3881428951). teleget9527's daemon passes chat_id straight to
+    # Telethon's own get_messages()/get_input_entity() with no resolution of
+    # its own, and Telethon always interprets a bare positive int as a User
+    # ID — it does not consult the entity cache to disambiguate a plain int,
+    # regardless of what's cached there. On a *copy* of the session handed
+    # to a separate daemon subprocess this reliably raised:
+    #   ValueError: Could not find the input entity for PeerUser(user_id=...)
+    # even right after warming the entity cache for exactly this channel,
+    # because the bare ID is inherently ambiguous to Telethon no matter what
+    # is cached — it needs the sign/prefix to know it's a channel at all.
+    # get_peer_id() (add_mark=True by default) converts the entity into
+    # that unambiguous marked form.
     raw_chat_id: int | None = None
     try:
+        from telethon.utils import get_peer_id
         entity = await _retry_flood_wait(
             client.get_entity, chat_identifier, context=f"resolving entity for {chat_identifier}")
-        raw_chat_id = entity.id
+        raw_chat_id = get_peer_id(entity)
     except Exception as e:
         if str(chat_identifier).lower() == "@kk_archive_modlibrary":
             raw_chat_id = KK_ARCHIVE_CHAT_ID   # known channel; safe fallback
