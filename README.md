@@ -64,7 +64,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 
 | Entry                           | Action                                                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Filter & Convert KKS Characters | `filter-convert-kks --input <folder>`                                                                      |
+| Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                      |
 | Filter Duplicate Contents       | `filter-duplicate-contents --input <folder>`                                                               |
 | Download Missing Mods           | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder>` |
 | Compress Cards Textures         | `compress-cards-textures --input <folder>`                                                                 |
@@ -128,13 +128,17 @@ Everything else — CLI output, log files, and error messages — is English-onl
   - The session is validated against `koikatsucards.com/api/session` before use. If it is expired, you are prompted for a new one automatically.
   - The session is stored in `%APPDATA%/KKAFIO/config/kkd_session.json`. It does not need to be entered in the GUI settings.
 
-**3. Filter & Convert KKS Characters**
+**3. Filter & Convert KKS Cards**
 
 - Functions similarly to [FlYiNGPoTAToChiP's KK_SunshineCardFilter](https://github.com/FlYiNGPoTAToChiP/KK_SunshineCardFilter).
-- Given a folder, the task:
-  - **Convert KKS → KK** _(off by default)_: produces a KK-compatible copy of each **KKS** (Koikatsu Sunshine) card, saved next to its original. The copy is then treated as a KK card by **KK/KKSP Cards** below (not by **KKS Cards**).
-  - **KK/KKSP Cards** _(Keep by default)_: what to do with every **KK / KKSP** card found — including any KKS card just converted above. **Keep** leaves them where they are; **Move** moves them into `_KK_card_/`; **Delete** sends them to the Recycle Bin.
-  - **KKS Cards** _(Keep by default)_: the same three choices, applied to the original **KKS** cards (never to their converted copies — those are covered by **KK/KKSP Cards**).
+- Given a folder, the task scans recursively for PNG **character cards** and **Studio scenes**, then:
+  - **Convert KKS → KK** _(off by default)_: produces a KK-compatible copy of each **KKS** (Koikatsu Sunshine) character card **and scene**, saved next to its original as `KKS2KK_<name>.png`. The copy is then treated as a KK file by **KK/KKSP Cards** below (not by **KKS Cards**).
+    - **Character cards** get a header patch so KK accepts them.
+    - **Scenes** are fully transcoded to the KK scene layout (ported from [KoikatsuSceneConverter](https://github.com/maguro-alternative/KoikatsuSceneConverter)): the scene version is rewritten to `1.0.4.2`; KKS-only fields (item `animePattern`, scene `shaderType` / `SkyInfo`) are removed; embedded KKS characters are down-converted; the background path is reduced to a file name; and KKSPE Timeline entries are renamed to KKPE so KK keeps them.
+    - **Text objects are removed** from converted scenes because KK has no equivalent (a warning with the count is logged). Sky and shader settings can't carry over either. Keep your original KKS scenes — loading a converted scene back into KKS can lose data.
+  - **KK/KKSP Cards** _(Keep by default)_: what to do with every **KK / KKSP** card found — including any KKS card or scene just converted above. **Keep** leaves them where they are; **Move** moves them into `_KK_card_/`; **Delete** sends them to the Recycle Bin.
+  - **KKS Cards** _(Keep by default)_: the same three choices, applied to the original **KKS** cards and scenes (never to their converted copies — those are covered by **KK/KKSP Cards**).
+  - Scenes are identified by their scene version (KKS = `1.1.0.0` or newer), not by card markers. Scenes already in KK format are left alone regardless of the actions above.
 - **Optional:** **Extract Archives** _(on by default)_: extracts ZIP / RAR / 7z archives before filtering — this still works with both actions left at **Keep**, so the task is also useful purely as an archive-extraction step.
 - **Archive Password** _(`Skip` by default)_: `Skip` ignores password-protected archives; `Request Password` prompts you for one when an archive needs it.
 - An archive whose extraction folder (named after the archive, next to it) already exists is not extracted again.
@@ -235,8 +239,8 @@ https://t.me/kknowcc
 - Scene cards (Studio) are installed only if the Studio `scene` folder is present.
 - **File Conflicts** _(`Skip` by default)_: `Skip` leaves an existing file in place and doesn't install the new one over it; `Replace` overwrites it; `Rename` installs the new file alongside the existing one under a new name.
 - **Extract Archives** _(on by default)_: extracts ZIP / RAR / 7z archives automatically. Each archive is extracted next to itself into a folder named after it and that folder is left in place; an archive whose folder already exists is not extracted again.
-- **Archive Password** _(`Skip` by default)_: `Skip` ignores password-protected archives; `Request Password` prompts you for one when an archive needs it. Has a separate value from Filter & Convert KKS Characters.
-- If both Filter & Convert KKS Characters and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
+- **Archive Password** _(`Skip` by default)_: `Skip` ignores password-protected archives; `Request Password` prompts you for one when an archive needs it. Has a separate value from Filter & Convert KKS Cards.
+- If both Filter & Convert KKS Cards and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
 **8. Uninstall Contents**
 
@@ -318,7 +322,7 @@ Presets are one-click bundles that check a fixed set of tasks and preconfigure t
 
 **📥 Download, Filter & Install**
 
-Checks Download Contents → Filter & Convert KKS Characters → Filter Duplicate Contents → Download Missing Mods → Compress Cards Textures → Install Contents. The full download-to-install pipeline: pull down new cards, convert any KKS ones and remove duplicates, grab whatever mods they need, shrink their textures, then install everything into the game.
+Checks Download Contents → Filter & Convert KKS Cards → Filter Duplicate Contents → Download Missing Mods → Compress Cards Textures → Install Contents. The full download-to-install pipeline: pull down new cards, convert any KKS ones and remove duplicates, grab whatever mods they need, shrink their textures, then install everything into the game.
 
 This is the fastest end-to-end workflow for adding a large batch of new cards. All work happens in a temporary staging folder; the game directories are only touched at the final Install step.
 
@@ -334,7 +338,7 @@ The preset enables **Download Contents**, which pulls cards from db.bepis.moe or
 
 **Step 2 — Filter & Convert** _(optional)_
 
-The preset enables **Filter & Convert KKS Characters** with the staging folder as input, and:
+The preset enables **Filter & Convert KKS Cards** with the staging folder as input, and:
 
 - **Extract Archives** is on — this unpacks any ZIP/RAR/7z files in the staging folder before the rest of the pipeline runs.
 - **KK/KKSP Cards** and **KKS Cards** are left at their default, **Keep**. **Move** sorts cards into `_KK_card_/`/`_KKS_card_/` subfolders, which breaks **Uninstall Contents**' ability to accurately find and remove a character's files later — Uninstall Contents matches by the file's location in your input folder, and cards buried in a subfolder won't line up with what actually got installed. Leave this at Keep unless you specifically want the sorted subfolders (or deletion) for another reason.
@@ -524,4 +528,5 @@ kkafio_cli --config PATH --instance N|context-menu <command>
 - [galact-byte](https://github.com/galact-byte) for caching logic taken from [KKTools](https://github.com/galact-byte/KKTools).
 - [EeEeX4](github.com/EeEeX4/koikatsu-card-texture-tool) for [KoiCardTexTool](github.com/EeEeX4/koikatsu-card-texture-tool), the program used to compress cards textures.
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
+- [maguro-alternative](https://github.com/maguro-alternative) for [KoikatsuSceneConverter](https://github.com/maguro-alternative/KoikatsuSceneConverter), whose KKS → KK scene conversion logic was ported to Python for Filter & Convert KKS Cards.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).

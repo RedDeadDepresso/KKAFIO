@@ -961,17 +961,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_uninstall_contents)
 
     # filter-convert-kks
-    p = sub.add_parser("filter-convert-kks", help="Convert KKS cards to KK and/or sort each type into its own folder")
+    p = sub.add_parser("filter-convert-kks", help="Convert KKS cards and scenes to KK and/or sort each type into its own folder")
     p.add_argument("--input", "-i", metavar="DIR", default=None)
     g = p.add_mutually_exclusive_group()
     g.add_argument("--convert",    dest="convert", action="store_true",  default=None,
-                   help="Produce a KK-compatible copy of each KKS card, saved next to its original "
+                   help="Produce a KK-compatible copy of each KKS card and scene, saved next to its original "
                         "(then sorted/kept by --kk-action, not --kks-action)")
     g.add_argument("--no-convert", dest="convert", action="store_false")
     p.add_argument("--kk-action", dest="kk_action", choices=["Keep", "Move", "Delete"], default=None,
-                   help="What to do with KK/KKSP cards found (including converted KKS copies). Default: Keep")
+                   help="What to do with KK/KKSP cards found (including converted KKS card/scene copies). Default: Keep")
     p.add_argument("--kks-action", dest="kks_action", choices=["Keep", "Move", "Delete"], default=None,
-                   help="What to do with the original KKS cards found. Default: Keep")
+                   help="What to do with the original KKS cards and scenes found. Default: Keep")
     g2 = p.add_mutually_exclusive_group()
     g2.add_argument("--extract-archive",    dest="extract_archive", action="store_true",  default=None)
     g2.add_argument("--no-extract-archive", dest="extract_archive", action="store_false")

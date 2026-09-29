@@ -68,7 +68,7 @@ $PngTasks = @(
 # ---------------------------------------------------------------------------
 $Labels = @{
     en = @{
-        FilterConvertKKS        = "🔧 Filter & Convert KKS Characters"
+        FilterConvertKKS        = "🔧 Filter & Convert KKS Cards"
         FilterDuplicateContents = "🧹 Filter Duplicate Contents"
         DownloadMissingMods     = "📥 Download Missing Mods"
         CompressCardsTextures   = "🗜️ Compress Cards Textures"
@@ -82,7 +82,7 @@ $Labels = @{
         DeleteCards             = "🗑️ Delete Cards"
     }
     zh_cn = @{
-        FilterConvertKKS        = "🔧 过滤并转换 KKS 角色"
+        FilterConvertKKS        = "🔧 过滤并转换 KKS 卡片"
         FilterDuplicateContents = "🧹 过滤重复内容"
         DownloadMissingMods     = "📥 下载缺失模组"
         CompressCardsTextures   = "🗜️ 压缩卡片纹理"
@@ -96,7 +96,7 @@ $Labels = @{
         DeleteCards             = "🗑️ 删除卡片"
     }
     zh_tw = @{
-        FilterConvertKKS        = "🔧 過濾並轉換 KKS 角色"
+        FilterConvertKKS        = "🔧 過濾並轉換 KKS 卡片"
         FilterDuplicateContents = "🧹 過濾重複內容"
         DownloadMissingMods     = "📥 下載遺失模組"
         CompressCardsTextures   = "🗜️ 壓縮卡片紋理"
@@ -110,7 +110,7 @@ $Labels = @{
         DeleteCards             = "🗑️ 刪除卡片"
     }
     ja = @{
-        FilterConvertKKS        = "🔧 KKSキャラのフィルタと変換"
+        FilterConvertKKS        = "🔧 KKSカードのフィルタと変換"
         FilterDuplicateContents = "🧹 重複コンテンツをフィルタ"
         DownloadMissingMods     = "📥 不足しているMODをダウンロード"
         CompressCardsTextures   = "🗜️ カードテクスチャを圧縮"
@@ -124,7 +124,7 @@ $Labels = @{
         DeleteCards             = "🗑️ カードを削除"
     }
     ko = @{
-        FilterConvertKKS        = "🔧 KKS 캐릭터 필터 및 변환"
+        FilterConvertKKS        = "🔧 KKS 카드 필터 및 변환"
         FilterDuplicateContents = "🧹 중복 콘텐츠 필터"
         DownloadMissingMods     = "📥 누락된 모드 다운로드"
         CompressCardsTextures   = "🗜️ 카드 텍스처 압축"
@@ -138,7 +138,7 @@ $Labels = @{
         DeleteCards             = "🗑️ 카드 삭제"
     }
     ru = @{
-        FilterConvertKKS        = "🔧 Фильтр и конвертация персонажей KKS"
+        FilterConvertKKS        = "🔧 Фильтр и конвертация карточек KKS"
         FilterDuplicateContents = "🧹 Фильтр дублирующегося содержимого"
         DownloadMissingMods     = "📥 Загрузить недостающие моды"
         CompressCardsTextures   = "🗜️ Сжать текстуры карточек"
