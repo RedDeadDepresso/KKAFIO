@@ -40,12 +40,10 @@ from utils.classifier import CardType, get_card_type
 from utils.file_manager import FileManager
 from utils.scene_version import (
     AlreadyKKSceneError,
-    NotASceneError,
     SceneNotKKSError,
     _Reader,
     _png_length,
     _ver,
-    is_kks_scene,
     read_scene_version,
 )
 from utils.logger import logger
