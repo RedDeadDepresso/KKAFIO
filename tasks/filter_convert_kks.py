@@ -990,12 +990,10 @@ class FilterConvertKKS:
 
     @staticmethod
     def _scene_layout(data: bytes) -> str | None:
-        """"KKS" / "KK" if the PNG is a Studio scene in that layout, None if
-        it is not a scene at all. Decided from the scene header (version
-        string right after the picture) rather than from card markers:
-        a scene embeds full chara blocks, so it can contain KoiKatuChara /
-        KoiKatuCharaSun markers, and a scene with no characters contains
-        none at all. Card classification alone gets both cases wrong."""
+        """"KKS" / "KK" for a Studio scene, None if the header can't be read.
+        get_card_type() can tell that a file is a scene but not which game
+        saved it, so this reads the scene version string that follows the
+        picture (KKS = 1.1.0.0 or newer)."""
         try:
             version = read_scene_version(data)
         except (SceneNotKKSError, EOFError, ValueError):
@@ -1163,18 +1161,13 @@ class FilterConvertKKS:
                 logger.error("SCRIPT", f"Could not read {png.name}: {e}")
                 continue
 
-            # Scenes first: see _scene_layout for why this must precede the
-            # card check. KK scenes need no work and are left where they are.
-            layout = self._scene_layout(data)
-            if layout == "KKS":
-                logger.info("KKS SCENE", png.name)
-                kks_scenes.append(png)
-                continue
-            if layout == "KK":
-                continue
-
             card_type = get_card_type(data)
-            if card_type == CardType.KKS:
+            if card_type == CardType.SCENE:
+                # Only KKS scenes need work; KK scenes are left where they are.
+                if self._scene_layout(data) == "KKS":
+                    logger.info("KKS SCENE", png.name)
+                    kks_scenes.append(png)
+            elif card_type == CardType.KKS:
                 logger.info(card_type.value, png.name)
                 kks_cards.append(png)
             elif card_type in (CardType.KK, CardType.KKSP):

@@ -16,6 +16,8 @@ All notable changes to KKAFIO are documented in this file.
 
 - Auto-update.
 - Downloading content from koikatsucards.com.
+- Filter & Convert KKS Cards no longer treats a KKS scene that contains characters as a KKS character card, and now also finds scenes with no characters.
+- Studio scenes are now recognised by their `KStudio` marker, and checked before character markers. Previously a scene containing characters could be misclassified as a character card, and the old `sceneInfo` marker did not match scenes at all.
 
 ### Changed
 

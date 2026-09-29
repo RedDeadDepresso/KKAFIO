@@ -57,14 +57,20 @@ def get_card_type(card: str | Path | bytes):
 
     card_type = CardType.UNKNOWN
 
-    if b"KoiKatuChara" in card:
+    # A Studio scene embeds one or more full chara blocks (which is why
+    # "KoiKatuChara" / "KoiKatuCharaSP" / "KoiKatuCharaSun" markers can
+    # appear inside a scene file), so the scene marker must be checked
+    # first — checking the chara markers first would misclassify any scene
+    # containing a character as a bare chara card. Every scene ends with
+    # the "【KStudio】" tail mark, and no chara/coordinate card has it.
+    if b"KStudio" in card:
+        card_type = CardType.SCENE
+    elif b"KoiKatuChara" in card:
         card_type = CardType.KK
         if b"KoiKatuCharaSP" in card:
             card_type = CardType.KKSP
         elif b"KoiKatuCharaSun" in card:
             card_type = CardType.KKS
-    elif b"KStudio" in card:
-        card_type = CardType.SCENE
 
     return card_type
 
