@@ -104,11 +104,12 @@ separately from `_TASK_KEY`, but they still participate in the same
 ## 6. `cmd_run()` executes tasks in order
 
 With `config` built, `cmd_run()` walks `config.task_order` and, for each
-entry, either runs the matching special-task handler or looks up the task
-name in `kkafio_task_map` (a dict of `lambda: run_x(config, file_manager)`
-closures, one per task, defined near the top of `src/kkafio/cli.py`) and calls
-it. Each `run_x()` wrapper just instantiates the task class (or calls the
-module-level function pair) and calls `.run()`.
+entry, either runs the matching special-task handler or looks the task name up
+in the task registry (`TASKS_BY_NAME` in `src/kkafio/task_specs.py`) and calls
+`run_task()`, which imports the task class, instantiates it with the config and
+file manager, and calls `.run()`. The one cross-task rule lives here too: if
+`FilterConvertKKS` runs before `InstallContents` on the same folder (both with
+archive extraction on), `InstallContents` is told to skip its own extraction.
 
 Every task writes its own log lines via `kkafio.core.logger.logger`, in a fixed
 `STATUS | CATEGORY | message` format that both a human reading the console

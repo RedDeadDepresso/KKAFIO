@@ -102,21 +102,43 @@ Every entry in the `src/kkafio/tasks/` folder maps 1:1 to a task declared in
   control to the user, and then process whatever they paste back — the
   class's `run()` just calls both in sequence.
 
-Adding a new task means touching **all** of these, since nothing here is
-auto-discovered:
+Every task is declared once, as a `TaskSpec` in
+[`task_specs.py`](../src/kkafio/task_specs.py) (machinery in
+[`registry.py`](../src/kkafio/registry.py)). The spec names the task, points at
+its class by `"module:Class"` string, and lists its command-line options; the
+subcommand, its `--help`, its dispatch from `kkafio_cli run` and its config
+overrides all follow from that. Nothing is auto-discovered from the `tasks/`
+folder, so adding a task still means touching a few places — but the CLI is no
+longer one of them:
 
 1. `src/kkafio/tasks/your_task.py` — the actual implementation.
-2. `src/kkafio/core/config.py` — add to `_TASK_KEY`, `_TASK_DEFAULTS`, and a
+2. `src/kkafio/task_specs.py` — add a `TaskSpec` to `TASK_SPECS`.
+3. `src/kkafio/core/config.py` — add to `_TASK_KEY`, `_TASK_DEFAULTS`, and a
    `elif task_name == "YourTask":` branch in `_build_task_config()`.
-3. `interface.json` — declare the task and its options (see
-   [03 — interface.json](03-interface-json.md)).
-4. `src/kkafio/cli.py` — add a `run_your_task()` wrapper, a `cmd_your_task()`
-   handler, and an `argparse` subcommand, and register it in the
-   `kkafio_task_map` dispatch dict used by `kkafio_cli run`.
+4. `interface.json` — declare the task and its options (see
+   [03 — interface.json](03-interface-json.md)), then run
+   `python tools/generate_config.py`.
 
-There's no plugin system or auto-registration — this is deliberate given the
-small, fixed set of tasks, but it's the reason step 2–4 above are easy to
-forget when adding something new.
+`tests/test_registry.py` fails if the task names in these places drift apart,
+and the characterization tests in `tests/` fail if a new subcommand has no
+recorded behaviour — regenerate them deliberately with
+`uv run python tests/generate_goldens.py` and review the diff.
+
+### How CLI options work
+
+Each option in a spec is either a `Value` (takes an argument), a `Toggle` (a
+`--x` / `--no-x` pair) or, for the odd ones, a `Custom`. An option that is
+given replaces the matching key of the task's config section **before the task
+is constructed**, so the task sees it exactly as if the GUI had configured it;
+an option that isn't given changes nothing (the GUI's value, or the default,
+stands). A few options need a small hook for logic that spans several flags —
+e.g. `download-missing-mods --mods-dir` setting both of its directories, or
+the context-menu batching of `delete-cards` / `archive-cards`.
+
+Task classes are imported only when they run (the specs refer to them by
+string), so `--help` and every parse stay cheap. That also means PyInstaller
+can't discover them by scanning imports; the build uses
+`--collect-submodules kkafio` for this reason.
 
 ## `tasks/` vs. the rest of the package
 

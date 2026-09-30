@@ -1,0 +1,889 @@
+{
+ "FC before IC, different folder -> extract": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": true,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<ROOT>/shared"
+      }
+     },
+     "task": "FilterConvertKKS"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<ROOT>/other"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "InstallContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "FC before IC, same folder -> skip extract": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": true,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<ROOT>/shared"
+      }
+     },
+     "task": "FilterConvertKKS"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<ROOT>/shared"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {
+      "skip_extract": true
+     },
+     "task": "InstallContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "FC before IC, same folder, FC no extract": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": false,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<ROOT>/shared"
+      }
+     },
+     "task": "FilterConvertKKS"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<ROOT>/shared"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "InstallContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "FC before IC, same folder, IC no extract": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": true,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<ROOT>/shared"
+      }
+     },
+     "task": "FilterConvertKKS"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<ROOT>/shared"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": false
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "InstallContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "FC disabled, IC enabled, same folder": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<ROOT>/shared"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "InstallContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "IC before FC, same folder -> extract": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<ROOT>/shared"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "InstallContents"
+    },
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": true,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<ROOT>/shared"
+      }
+     },
+     "task": "FilterConvertKKS"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "disabled tasks are skipped": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true
+     },
+     "class": "UngroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "every task, interface order": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "filename": "koikatsu_backup",
+      "folders": [],
+      "output_path": {
+       "__path__": "<HOME>/KKAFIO/Backups"
+      }
+     },
+     "class": "CreateBackup",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "CreateBackup"
+    },
+    {
+     "attrs": {
+      "links": "",
+      "output_dir_str": "C:/KKAFIO/Downloads",
+      "skip_downloaded": true
+     },
+     "class": "DownloadContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadContents"
+    },
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": true,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      }
+     },
+     "task": "FilterConvertKKS"
+    },
+    {
+     "attrs": {
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      }
+     },
+     "task": "FilterDuplicateContents"
+    },
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "input_mods_dir_str": "",
+      "modpack_mode": "Skip",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_source": "No",
+      "use_cache": true
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    },
+    {
+     "attrs": {
+      "delete_original": false,
+      "input_path_str": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      },
+      "tool_path_str": "C:/KoiCardTexTool"
+     },
+     "class": "CompressCardsTextures",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "CompressCardsTextures"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {
+      "skip_extract": true
+     },
+     "task": "InstallContents"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true
+     },
+     "class": "UninstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "UninstallContents"
+    },
+    {
+     "attrs": {
+      "include_subfolders": false,
+      "input_path_str": ""
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    },
+    {
+     "attrs": {
+      "delete_empty": true
+     },
+     "class": "UngroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupChara"
+    },
+    {
+     "attrs": {
+      "input_path_str": "",
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    },
+    {
+     "attrs": {
+      "_local_coord_maps": {},
+      "_local_mods_maps": {},
+      "_modpack_skip_counts": {},
+      "auto_resolve": true,
+      "combined_archive": true,
+      "content_paths": [],
+      "coord_dir_str": "",
+      "format": "7z",
+      "include_coordinates": true,
+      "include_modpack": false,
+      "mods_dir_str": "",
+      "output_dir_str": {
+       "__path__": "<HOME>/KKAFIO/Archived Cards"
+      },
+      "use_cache": true
+     },
+     "class": "ArchiveCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ArchiveCards"
+    },
+    {
+     "attrs": {
+      "_local_coord_maps": {},
+      "_local_mods_maps": {},
+      "auto_resolve": true,
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "content_paths": [],
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteCards"
+    },
+    {
+     "attrs": {
+      "guids_raw": "",
+      "mods_dir_str": "",
+      "output_path_str": {
+       "__path__": "<HOME>/KKAFIO/Exported Mods"
+      },
+      "rename_to_guid": true,
+      "use_cache": true
+     },
+     "class": "ExportMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ExportMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "every task, reversed": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "guids_raw": "",
+      "mods_dir_str": "",
+      "output_path_str": {
+       "__path__": "<HOME>/KKAFIO/Exported Mods"
+      },
+      "rename_to_guid": true,
+      "use_cache": true
+     },
+     "class": "ExportMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ExportMods"
+    },
+    {
+     "attrs": {
+      "_local_coord_maps": {},
+      "_local_mods_maps": {},
+      "auto_resolve": true,
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "content_paths": [],
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteCards"
+    },
+    {
+     "attrs": {
+      "_local_coord_maps": {},
+      "_local_mods_maps": {},
+      "_modpack_skip_counts": {},
+      "auto_resolve": true,
+      "combined_archive": true,
+      "content_paths": [],
+      "coord_dir_str": "",
+      "format": "7z",
+      "include_coordinates": true,
+      "include_modpack": false,
+      "mods_dir_str": "",
+      "output_dir_str": {
+       "__path__": "<HOME>/KKAFIO/Archived Cards"
+      },
+      "use_cache": true
+     },
+     "class": "ArchiveCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ArchiveCards"
+    },
+    {
+     "attrs": {
+      "input_path_str": "",
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    },
+    {
+     "attrs": {
+      "delete_empty": true
+     },
+     "class": "UngroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupChara"
+    },
+    {
+     "attrs": {
+      "include_subfolders": false,
+      "input_path_str": ""
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true
+     },
+     "class": "UninstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "UninstallContents"
+    },
+    {
+     "attrs": {
+      "__effective_input_path__": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      },
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "extract_archive": true
+     },
+     "class": "InstallContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "InstallContents"
+    },
+    {
+     "attrs": {
+      "delete_original": false,
+      "input_path_str": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      },
+      "tool_path_str": "C:/KoiCardTexTool"
+     },
+     "class": "CompressCardsTextures",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "CompressCardsTextures"
+    },
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "input_mods_dir_str": "",
+      "modpack_mode": "Skip",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_source": "No",
+      "use_cache": true
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    },
+    {
+     "attrs": {
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      }
+     },
+     "task": "FilterDuplicateContents"
+    },
+    {
+     "attrs": {
+      "convert": false,
+      "extract_archive": true,
+      "kk_action": "Keep",
+      "kks_action": "Keep"
+     },
+     "class": "FilterConvertKKS",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": {
+       "__path__": "<HOME>/KKAFIO/Downloads"
+      }
+     },
+     "task": "FilterConvertKKS"
+    },
+    {
+     "attrs": {
+      "links": "",
+      "output_dir_str": "C:/KKAFIO/Downloads",
+      "skip_downloaded": true
+     },
+     "class": "DownloadContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadContents"
+    },
+    {
+     "attrs": {
+      "filename": "koikatsu_backup",
+      "folders": [],
+      "output_path": {
+       "__path__": "<HOME>/KKAFIO/Backups"
+      }
+     },
+     "class": "CreateBackup",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "CreateBackup"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "no tasks at all": {
+  "kwargs": {},
+  "result": {
+   "events": [],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "special task fails -> exit 1, rest skipped": {
+  "kwargs": {
+   "special_ok": false
+  },
+  "result": {
+   "events": [
+    {
+     "kind": "special",
+     "params": {
+      "sleep_time": "3"
+     },
+     "task": "__MXU_SLEEP__"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 1
+   }
+  }
+ },
+ "special task then tasks": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "kind": "special",
+     "params": {
+      "sleep_time": "3"
+     },
+     "task": "__MXU_SLEEP__"
+    },
+    {
+     "attrs": {
+      "delete_empty": true
+     },
+     "class": "UngroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ },
+ "task raises -> exit 1, rest skipped": {
+  "kwargs": {
+   "fail_on": "UngroupChara"
+  },
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true
+     },
+     "class": "UngroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 1
+   }
+  }
+ },
+ "unknown task is ignored": {
+  "kwargs": {},
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true
+     },
+     "class": "UngroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": 0
+   }
+  }
+ }
+}
