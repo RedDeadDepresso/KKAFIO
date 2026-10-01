@@ -9,7 +9,6 @@ Review the diff of tests/golden/ before committing it.
 """
 
 import json
-import os
 import sys
 import tempfile
 from pathlib import Path
@@ -65,9 +64,35 @@ def build_pipeline() -> dict:
     return out
 
 
+def build_pure_functions() -> dict:
+    """Recorded outputs of pure helpers. Imports live in test_pure_functions / test_card_code."""
+    import test_card_code as cc
+    import test_pure_functions as pf
+    from pure_corpus import msgpack_corpus
+
+    links = ["https://t.me/c/1234567890/42", "t.me/c/123/9", "https://t.me/somechannel/77",
+             "https://t.me/+InviteHash", "http://t.me/c/5/6/7", "not a link", "", "https://t.me/c/abc/1",
+             "https://t.me/c/1234567890/42?single=1", "  https://t.me/c/12/34  "]
+    search = ["https://t.me/somechannel", "https://t.me/somechannel/299", "https://t.me/c/123456/7",
+              "t.me/somechannel/12", "@somechannel", "https://t.me/+abcDEF", "junk", "", "https://t.me/c/123456"]
+    raws = ["", "https://t.me/a\nhttps://t.me/b/5", "https://t.me/a  # comment\n\n# only comment\nhttps://t.me/c/9/8",
+            "  https://t.me/x/1  \r\nhttps://t.me/y", "garbage\nhttps://t.me/ok"]
+    return {
+        "outfit_digests": cc._digest_cases(),
+        "msgpack_roundtrip": {k: pf.roundtrip(v).hex() for k, v in msgpack_corpus().items()},
+        "tme_links": {x: pf._jsonable(pf.telegram_links._parse_tme_link(x)) for x in links},
+        "chat_link_for_search": {x: pf._jsonable(pf.telegram_links._parse_chat_link_for_search(x)) for x in search},
+        "chat_links": {x: pf._jsonable(pf.telegram_links._parse_chat_links(x)) for x in raws},
+        "default_chat_links": pf._jsonable(pf.telegram_links._parse_chat_links(pf.telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)),
+        "source_labels": {x: pf.telegram_links._telegram_source_label(x)
+                          for x in ("No", "KoikatsuCards", "ChatLinks", "Both", "anything else")},
+    }
+
+
 if __name__ == "__main__":
     GOLDEN.mkdir(exist_ok=True)
     _dump("cli_help.json", build_help())
     _dump("cli_overrides.json", build_overrides())
     _dump("pipeline.json", build_pipeline())
+    _dump("pure_functions.json", build_pure_functions())
     print("goldens written to", GOLDEN)

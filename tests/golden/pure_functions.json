@@ -1,0 +1,166 @@
+{
+ "chat_link_for_search": {
+  "": null,
+  "@somechannel": null,
+  "https://t.me/+abcDEF": null,
+  "https://t.me/c/123456": [
+   -100123456,
+   null
+  ],
+  "https://t.me/c/123456/7": [
+   -100123456,
+   7
+  ],
+  "https://t.me/somechannel": [
+   "@somechannel",
+   null
+  ],
+  "https://t.me/somechannel/299": [
+   "@somechannel",
+   299
+  ],
+  "junk": null,
+  "t.me/somechannel/12": null
+ },
+ "chat_links": {
+  "": [],
+  "  https://t.me/x/1  \r\nhttps://t.me/y": [
+   [
+    "@x",
+    1
+   ],
+   [
+    "@y",
+    null
+   ]
+  ],
+  "garbage\nhttps://t.me/ok": [
+   [
+    "@ok",
+    null
+   ]
+  ],
+  "https://t.me/a\nhttps://t.me/b/5": [
+   [
+    "@a",
+    null
+   ],
+   [
+    "@b",
+    5
+   ]
+  ],
+  "https://t.me/a  # comment\n\n# only comment\nhttps://t.me/c/9/8": [
+   [
+    "@a",
+    null
+   ],
+   [
+    -1009,
+    8
+   ]
+  ]
+ },
+ "default_chat_links": [
+  [
+   -1002549022984,
+   null
+  ],
+  [
+   "@KK_archive_modlibrary",
+   null
+  ],
+  [
+   "@KKDOC",
+   null
+  ],
+  [
+   "@koikatu_card_download",
+   null
+  ],
+  [
+   "@kknowcc",
+   null
+  ]
+ ],
+ "msgpack_roundtrip": {
+  "array_16": "dc0010000102030405060708090a0b0c0d0e0f",
+  "array_65536": "dc012c000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7fcc80cc81cc82cc83cc84cc85cc86cc87cc88cc89cc8acc8bcc8ccc8dcc8ecc8fcc90cc91cc92cc93cc94cc95cc96cc97cc98cc99cc9acc9bcc9ccc9dcc9ecc9fcca0cca1cca2cca3cca4cca5cca6cca7cca8cca9ccaaccabccacccadccaeccafccb0ccb1ccb2ccb3ccb4ccb5ccb6ccb7ccb8ccb9ccbaccbbccbcccbdccbeccbfccc0ccc1ccc2ccc3ccc4ccc5ccc6ccc7ccc8ccc9cccacccbcccccccdcccecccfccd0ccd1ccd2ccd3ccd4ccd5ccd6ccd7ccd8ccd9ccdaccdbccdcccddccdeccdfcce0cce1cce2cce3cce4cce5cce6cce7cce8cce9cceaccebccecccedcceeccefccf0ccf1ccf2ccf3ccf4ccf5ccf6ccf7ccf8ccf9ccfaccfbccfcccfdccfeccffcd0100cd0101cd0102cd0103cd0104cd0105cd0106cd0107cd0108cd0109cd010acd010bcd010ccd010dcd010ecd010fcd0110cd0111cd0112cd0113cd0114cd0115cd0116cd0117cd0118cd0119cd011acd011bcd011ccd011dcd011ecd011fcd0120cd0121cd0122cd0123cd0124cd0125cd0126cd0127cd0128cd0129cd012acd012b",
+  "array_empty": "90",
+  "array_small": "9301a161c0",
+  "bin_300": "c5012d000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff616263616263616263616263616263616263616263616263616263616263616263616263616263616263616263",
+  "bin_empty": "c400",
+  "bin_short": "c403000102",
+  "ext": "c70305616263",
+  "false": "c2",
+  "float32": "ca3fc00000",
+  "float64": "cb3ff8000000000000",
+  "float_neg": "cbbfd0000000000000",
+  "int_-1": "ff",
+  "int_-129": "d1ff7f",
+  "int_-2^31-1": "d3ffffffff7fffffff",
+  "int_-32": "e0",
+  "int_-32769": "d2ffff7fff",
+  "int_-33": "d0df",
+  "map_empty": "80",
+  "map_int_keys": "8201a17802a179",
+  "map_small": "82a16101a162920102",
+  "nested": "81a7636c6f7468657382a570617274739182a2696401a9636f6c6f72496e666f9181a161cb3fe0000000000000a176a5302e302e31",
+  "nil": "c0",
+  "str_255": "d9ff787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+  "str_256": "da010078787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+  "str_31": "bf78787878787878787878787878787878787878787878787878787878787878",
+  "str_32": "d9207878787878787878787878787878787878787878787878787878787878787878",
+  "str_empty": "a0",
+  "str_short": "a3616263",
+  "str_unicode": "b2e697a5e69cace8aa9ee38386e382b9e38388",
+  "true": "c3",
+  "uint_0": "00",
+  "uint_127": "7f",
+  "uint_128": "cc80",
+  "uint_255": "ccff",
+  "uint_256": "cd0100",
+  "uint_2^32": "cf0000000100000000",
+  "uint_2^63": "cf8000000000000000",
+  "uint_65535": "cdffff",
+  "uint_65536": "ce00010000"
+ },
+ "outfit_digests": {
+  "chara_slot_index": "672781617313a67bd181c0bb1283d099",
+  "different_item": "27251f806fc508caba6c8e5ae60971e1",
+  "plain": "672781617313a67bd181c0bb1283d099",
+  "resolved_by_local_slot": "e8e6f17c3282598a79e2d9b7de0096d4",
+  "resolved_by_slot": "e8e6f17c3282598a79e2d9b7de0096d4"
+ },
+ "source_labels": {
+  "Both": "koikatsucards.com + Telegram Chat Links",
+  "ChatLinks": "Telegram Chat Links",
+  "KoikatsuCards": "koikatsucards.com",
+  "No": "No",
+  "anything else": "anything else"
+ },
+ "tme_links": {
+  "": null,
+  "  https://t.me/c/12/34  ": null,
+  "http://t.me/c/5/6/7": [
+   -1005,
+   6
+  ],
+  "https://t.me/+InviteHash": null,
+  "https://t.me/c/1234567890/42": [
+   -1001234567890,
+   42
+  ],
+  "https://t.me/c/1234567890/42?single=1": [
+   -1001234567890,
+   42
+  ],
+  "https://t.me/c/abc/1": null,
+  "https://t.me/somechannel/77": [
+   "@somechannel",
+   77
+  ],
+  "not a link": null,
+  "t.me/c/123/9": null
+ }
+}

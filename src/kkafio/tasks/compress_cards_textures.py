@@ -108,7 +108,7 @@ class CompressCardsTextures(BaseTask):
         carries a recognisable KK payload after IEND: a chara card, scene, or
         coordinate card. A truncated or corrupt output from a failed tool run
         fails at least one of these checks."""
-        from kkafio.cards.chara_ops import _find_iend_end
+        from kkafio.cards.parsing import _find_iend_end
         from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 
         try:

@@ -17,7 +17,7 @@ import shutil
 from pathlib import Path
 
 from kkafio.tasks.base_task import BaseTask
-from kkafio.cards.chara_ops import build_mods_cache
+from kkafio.cards.mods import build_mods_cache
 from kkafio.core.logger import logger
 
 # Leading markers Download Missing Mods' report puts in front of each GUID.

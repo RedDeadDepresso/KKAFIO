@@ -11,11 +11,11 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.tasks.base_task import BaseTask
-from kkafio.cards.chara_ops import (
-    build_coord_cache, build_mods_cache, collect_chara_guids_by_file,
-    collect_coord_guids_by_file, collect_scene_guids_by_file, find_matching_coords,
-    load_modpack_index, parse_chara_guids, parse_coord_guids, parse_scene_guids,
-    resolve_paths,
+from kkafio.cards.mods import build_mods_cache, load_modpack_index, resolve_paths
+from kkafio.cards.outfits import build_coord_cache, find_matching_coords
+from kkafio.cards.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
+from kkafio.cards.png_guids import (
+    collect_chara_guids_by_file, collect_coord_guids_by_file, collect_scene_guids_by_file,
 )
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import GameType

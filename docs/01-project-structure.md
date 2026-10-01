@@ -36,6 +36,8 @@ KKAFIO-dev/
 │
 ├── src/kkafio/                     # The Python package (src layout; `uv sync` installs it editable)
 │   ├── cli.py                       # CLI implementation — argparse, subcommands, task dispatch, main()
+│   ├── registry.py                  # TaskSpec + option types + run_task() (see "How CLI options work")
+│   ├── task_specs.py                # Declaration of every task: name, class, CLI options
 │   ├── __main__.py                  # `python -m kkafio`
 │   │
 │   ├── tasks/                       # One module per task (see below)
@@ -65,13 +67,22 @@ KKAFIO-dev/
 │   │
 │   ├── cards/                       # Card (PNG) domain logic
 │   │   ├── classifier.py            # get_card_type() / is_male() / is_coordinate() — PNG card sniffing
-│   │   ├── chara_ops.py             # GUID parsing, mod scanning, coordinate matching + their caches
+│   │   ├── parsing.py               # Reading mod GUIDs out of card files (chara / scene / coordinate)
+│   │   ├── png_guids.py             # Per-folder GUID collection + its caches
+│   │   ├── mods.py                  # Zipmod scanning, mods cache, Sideloader Modpack index
+│   │   ├── outfits.py               # Coordinate outfit digests + matching a chara's outfits to coordinates
+│   │   ├── cache_io.py              # Atomic JSON writes / file fingerprints shared by the caches
+│   │   ├── kks_scene.py             # Converting a KKS Studio scene to KK
+│   │   ├── msgpack_min.py           # Byte-exact MessagePack codec used by the scene converter
 │   │   ├── chara_key.py
 │   │   └── scene_version.py
 │   │
-│   ├── services/                    # External accounts / credentials
+│   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── kkd_session.py           # koikatsucards.com session cookie management
-│   │   └── telegram_config.py       # Telegram API credential storage
+│   │   ├── telegram_config.py       # Telegram API credential storage
+│   │   ├── telegram_links.py        # Parsing Telegram links / the chat list (pure string handling)
+│   │   ├── telegram_mods.py         # Searching Telegram chats and downloading mods (teleget)
+│   │   └── http_mod_sources.py      # BetterRepack downloads + the koikatsucards.com GUID index
 │   │
 │   └── system/                      # OS-facing helpers (mostly Windows)
 │       ├── special_tasks.py         # Generic MXU automation primitives (sleep/notify/launch/power/etc.)
@@ -151,7 +162,7 @@ in the subpackage that fits it:
 |---|---|
 | `core/` | configuration, logging, paths, or generic file operations |
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
-| `services/` | tied to an external account or credential store |
+| `services/` | tied to an external account, credential store or remote mod source (BetterRepack, Telegram, koikatsucards.com) |
 | `system/` | an OS-facing helper (dialogs, job objects, subprocess quirks, MXU automation) |
 
 Task modules should mostly be: read config → validate input → call into the

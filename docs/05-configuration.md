@@ -182,8 +182,8 @@ regenerates itself if the folder's contents don't match what's cached.
 
 | File | Written inside | Used by | Caches |
 |---|---|---|---|
-| `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`src/kkafio/cards/chara_ops.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
-| `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`src/kkafio/cards/chara_ops.py`, used by Archive/Delete Cards) | xxh3-128 digest of each coordinate card's clothes + accessory data, with modded item IDs normalised to `ModID:Slot` via the file's own UAR info (looked up against a chara card's outfits) |
+| `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`src/kkafio/cards/mods.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
+| `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`src/kkafio/cards/outfits.py`, used by Archive/Delete Cards) | xxh3-128 digest of each coordinate card's clothes + accessory data, with modded item IDs normalised to `ModID:Slot` via the file's own UAR info (looked up against a chara card's outfits) |
 | `kkafio_chara_guid_cache.json` | each scanned chara directory (one file per folder) | [Download Missing Mods](../wiki/Task-Download-Missing-Mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
 | `kkafio_scene_guid_cache.json` | each scanned scene directory (one file per folder) | Download Missing Mods (scene scan), Delete Cards' shared-mod check | per-scene referenced mod GUIDs |
 | `kkafio_coord_guid_cache.json` | each scanned coordinate directory (one file per folder) | Download Missing Mods (coordinate scan), Delete Cards' shared-mod check | per-coordinate-card referenced mod GUIDs |
@@ -199,8 +199,8 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/cards/chara_ops.py`'s `load_modpack_index()`. |
-| `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/chara_ops.py`. Never modified at runtime. |
+| `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/cards/mods.py`'s `load_modpack_index()`. |
+| `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/classifier.py`. Never modified at runtime. |
 
 ---
 

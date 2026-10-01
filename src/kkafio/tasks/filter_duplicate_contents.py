@@ -74,11 +74,11 @@ def _save_duplic_cache(folder_path: Path, cache_file: str, files: dict[str, dict
     data = {"dir": str(folder_path), "files": files}
     try:
         # Atomic (temp file + os.replace) and compact, same as the other
-        # incremental caches in src/kkafio/cards/chara_ops.py — see _atomic_write_json
+        # incremental caches in src/kkafio/cards/ — see _atomic_write_json in cache_io.py
         # there for why. This cache can hold one entry per PNG scanned, so
         # pretty-printing it is pure overhead, and a plain write_text() left
         # a half-written cache readable-but-corrupt if interrupted.
-        from kkafio.cards.chara_ops import _atomic_write_json
+        from kkafio.cards.cache_io import _atomic_write_json
         _atomic_write_json(cache_path, data)
     except Exception as e:
         logger.warning("DUPLIC", f"Could not save {cache_file}: {e}")
