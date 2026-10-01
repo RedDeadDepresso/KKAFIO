@@ -142,7 +142,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
         sp = str(zp)
         fp = file_fp(zp)
         old = old_files.get(sp)
-        if old is not None and (old[0], old[1]) == fp:
+        if old is not None and old[:2] == fp:
             guid = old[2]
             if guid:
                 guid_map[guid] = sp
@@ -183,7 +183,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
                 zp, guid = future.result()
                 sp = str(zp)
                 fp = file_fp(zp)
-                new_files[sp] = [fp[0], fp[1], guid]
+                new_files[sp] = [*fp, guid]
                 if guid:
                     guid_map[guid] = sp
 

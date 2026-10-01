@@ -210,8 +210,8 @@ def testatomic_write_json_is_compact_and_leaves_no_temp_files(tmp_path):
 def test_file_fingerprint_is_int_mtime_and_size(tmp_path):
     f = cf.write(tmp_path / "f.bin", b"12345")
     os.utime(f, (1_700_000_000.75, 1_700_000_000.75))
-    assert cache_io.file_fp(f) == (1_700_000_000, 5)
-    assert cache_io.file_fp(tmp_path / "missing") == (0, 0)
+    assert cache_io.file_fp(f) == [1_700_000_000, 5]
+    assert cache_io.file_fp(tmp_path / "missing") == [0, 0]
 
 
 # --- zipmods -----------------------------------------------------------------------------------

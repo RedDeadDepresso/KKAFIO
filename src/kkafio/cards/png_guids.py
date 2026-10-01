@@ -139,10 +139,10 @@ def collect_png_guids(
             if sp in memo:                       # already resolved via an overlapping folder
                 if memo[sp] is not None:
                     dir_by_file[sp] = memo[sp]
-                    new_files[sp]   = [fp[0], fp[1]]
+                    new_files[sp]   = fp
                 continue
             old = old_files.get(sp)
-            if old is not None and (old[0], old[1]) == fp and sp in old_guids_by_file:
+            if old is not None and old[:2] == fp and sp in old_guids_by_file:
                 dir_by_file[sp] = old_guids_by_file[sp]
                 new_files[sp]   = old
                 memo[sp]        = old_guids_by_file[sp]
@@ -161,7 +161,7 @@ def collect_png_guids(
                     if file_guids is None:
                         continue
                     fp = file_fp(png)
-                    new_files[sp]   = [fp[0], fp[1]]
+                    new_files[sp]   = fp
                     dir_by_file[sp] = file_guids
 
         if use_cache:

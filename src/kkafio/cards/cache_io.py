@@ -31,10 +31,13 @@ def atomic_write_json(path: Path, data) -> None:
 # File fingerprint helpers
 # ---------------------------------------------------------------------------
 
-def file_fp(p: Path) -> tuple[int, int]:
-    """Return (mtime_int, size) for a file — used as a change fingerprint."""
+def file_fp(p: Path) -> list[int]:
+    """Return [mtime_int, size] for a file — used as a change fingerprint.
+
+    A list (not a tuple) so it compares equal to values loaded from the JSON
+    caches and can be stored back without conversion."""
     try:
         st = p.stat()
-        return (int(st.st_mtime), st.st_size)
+        return [int(st.st_mtime), st.st_size]
     except OSError:
-        return (0, 0)
+        return [0, 0]

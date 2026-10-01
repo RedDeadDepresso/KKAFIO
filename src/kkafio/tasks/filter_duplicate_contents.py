@@ -9,6 +9,7 @@ from typing import Literal
 import xxhash
 
 from kkafio.tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
+from kkafio.cards.cache_io import file_fp
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import Config
 from kkafio.core.file_manager import FileManager
@@ -47,11 +48,6 @@ Category = Literal["chara", "coordinate", "mods", "overlays", "scene"]
 PNG_CACHE_FILE   = "kkafio_duplicate_png_cache.json"    # XXH3 + category, all PNGs
 FUZZY_CACHE_FILE = "kkafio_duplicate_fuzzy_cache.json"  # phash, chara cards only
 MODS_CACHE_FILE  = "kkafio_duplicate_mods_cache.json"   # XXH3, zipmods only
-
-
-def _file_fp(p: Path) -> list[int]:
-    st = p.stat()
-    return [int(st.st_mtime), st.st_size]
 
 
 def _load_duplic_cache(folder_path: Path, cache_file: str) -> dict[str, dict]:
@@ -453,7 +449,7 @@ class FilterDuplicateContents:
             until the fuzzy step, i.e. the whole library on a first run.)
             """
             sp = str(path)
-            fp = _file_fp(path)
+            fp = file_fp(path)
             data: bytes | None = None
             cached = png_cache.get(sp)
             if cached and cached.get("fp") == fp and "xxh" in cached:
@@ -588,7 +584,7 @@ class FilterDuplicateContents:
 
         def _hash_mod(path: Path):
             sp = str(path)
-            fp = _file_fp(path)
+            fp = file_fp(path)
             cached = mods_cache.get(sp)
             if cached and cached.get("fp") == fp and "xxh" in cached:
                 return path, cached["xxh"], fp, True
