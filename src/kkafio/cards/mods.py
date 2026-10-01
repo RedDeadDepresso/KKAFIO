@@ -9,7 +9,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from functools import cache
 from pathlib import Path
 
-from kkafio.cards.cache_io import _atomic_write_json, _file_fp
+from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import is_mod_archive
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
@@ -85,7 +85,7 @@ def save_mods_cache(mods_dir: Path, guid_map: dict[str, str],
     if files is not None:
         data["files"] = files
     try:
-        _atomic_write_json(cache_path, data)
+        atomic_write_json(cache_path, data)
     except Exception as e:
         logger.debug("CACHE", f"Could not save {cache_path}: {e}")
 
@@ -140,7 +140,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
 
     for zp in all_zips:
         sp = str(zp)
-        fp = _file_fp(zp)
+        fp = file_fp(zp)
         old = old_files.get(sp)
         if old is not None and (old[0], old[1]) == fp:
             guid = old[2]
@@ -182,7 +182,7 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
             for future in as_completed({ex.submit(_proc, zp): zp for zp in to_read}):
                 zp, guid = future.result()
                 sp = str(zp)
-                fp = _file_fp(zp)
+                fp = file_fp(zp)
                 new_files[sp] = [fp[0], fp[1], guid]
                 if guid:
                     guid_map[guid] = sp

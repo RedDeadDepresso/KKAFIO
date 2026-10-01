@@ -22,7 +22,7 @@ MAX_CONNECTIONS       = 4
 # HTTP client (for BetterRepack + kkc-mod-scraper index)
 # ---------------------------------------------------------------------------
 
-def _make_http_client(cookies: dict | None = None):
+def make_http_client(cookies: dict | None = None):
     import httpx
     return httpx.AsyncClient(
         limits=httpx.Limits(
@@ -47,7 +47,7 @@ def _make_http_client(cookies: dict | None = None):
 # BetterRepack download
 # ---------------------------------------------------------------------------
 
-async def _download_betterrepack(
+async def download_betterrepack(
     client, guid: str, rel_path: str, mods_dir: Path,
     guid_str_map: dict[str, str],
 ) -> bool | str:
@@ -132,7 +132,7 @@ def _load_cached_kkc_index(index_path: Path) -> dict[str, str] | None:
     return None
 
 
-async def _load_kkc_mod_index(client) -> dict[str, str]:
+async def load_kkc_mod_index(client) -> dict[str, str]:
     """Return the {guid: t.me link} index from kkc-mod-scraper.
 
     The cached copy (CONFIG_DIR/config/kkc_mod_index.json) is used only if

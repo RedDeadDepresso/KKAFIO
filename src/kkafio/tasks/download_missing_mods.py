@@ -42,19 +42,19 @@ from kkafio.cards.png_guids import collect_chara_guids, collect_coord_guids, col
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.services.http_mod_sources import (
-    _download_betterrepack,
-    _load_kkc_mod_index,
-    _make_http_client,
+    download_betterrepack,
+    load_kkc_mod_index,
+    make_http_client,
 )
 from kkafio.services.telegram_links import (
-    _parse_chat_links,
-    _telegram_source_label,
+    parse_chat_links,
+    telegram_source_label,
     DEFAULT_TELEGRAM_CHAT_LINKS,
 )
 from kkafio.services.telegram_mods import (
-    _download_via_teleget,
-    _ensure_session,
-    _search_chat_links_and_download,
+    download_via_teleget,
+    ensure_session,
+    search_chat_links_and_download,
 )
 from kkafio.tasks.base_task import BaseTask
 
@@ -428,7 +428,7 @@ class DownloadMissingMods(BaseTask):
 
         async def _run_all() -> None:
             nonlocal ok, fail, failed_guids, downloaded_br, downloaded_tg
-            async with _make_http_client() as br_client:
+            async with make_http_client() as br_client:
 
                 # BetterRepack — concurrent
                 br_failed     = {}   # guid -> rel_path for failed BR downloads
@@ -438,7 +438,7 @@ class DownloadMissingMods(BaseTask):
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
                     results = await asyncio.gather(*[
-                        _download_betterrepack(br_client, guid, rel, output_mods_dir, guid_str_map)
+                        download_betterrepack(br_client, guid, rel, output_mods_dir, guid_str_map)
                         for guid, rel in from_betterrepack.items()
                     ], return_exceptions=True)
                     for guid, result in zip(from_betterrepack, results, strict=True):
@@ -470,7 +470,7 @@ class DownloadMissingMods(BaseTask):
                 if telegram_queue:
                     kkc_index: dict[str, str] = {}
                     if use_koikatsucards:
-                        kkc_index = await _load_kkc_mod_index(br_client)
+                        kkc_index = await load_kkc_mod_index(br_client)
 
                     # Load/prompt for credentials once before the loop
                     tg_data = tg_cfg.get_or_prompt()
@@ -494,7 +494,7 @@ class DownloadMissingMods(BaseTask):
                         failed_guids.update(br_failed)
                     else:
                         # Ensure session file exists before starting downloads
-                        authorised = await _ensure_session(tg_data)
+                        authorised = await ensure_session(tg_data)
                         if not authorised:
                             logger.error("DLMOD",
                                 "Telegram sign-in failed — "
@@ -530,7 +530,7 @@ class DownloadMissingMods(BaseTask):
                                 #
                                 # Why this is needed: every download further down
                                 # this pipeline (both the per-GUID metadata lookup
-                                # in _download_via_teleget, and teleget9527's own
+                                # in download_via_teleget, and teleget9527's own
                                 # daemon-side get_messages(request.chat_id, ...)
                                 # call) references the channel via the raw numeric
                                 # KK_ARCHIVE_CHAT_ID constant, not its username.
@@ -634,13 +634,13 @@ class DownloadMissingMods(BaseTask):
 
                             chat_links: list[tuple[str | int, int | None]] = []
                             if use_chat_links:
-                                chat_links = _parse_chat_links(self.telegram_chat_links_raw)
+                                chat_links = parse_chat_links(self.telegram_chat_links_raw)
                                 if not chat_links:
                                     logger.warning("DLMOD",
                                         "Telegram Chat Links is enabled but no valid "
                                         "chat links are configured — nothing to search.")
 
-                            source_label = _telegram_source_label(self.telegram_source)
+                            source_label = telegram_source_label(self.telegram_source)
                             logger.info("DLMOD",
                                 f"Processing {len(telegram_queue)} mod(s) via {source_label}...")
 
@@ -656,7 +656,7 @@ class DownloadMissingMods(BaseTask):
                                             logger.info("DLMOD", f"  Link: {tg_link}")
                                             # Pass rel_path so the file is saved to the
                                             # same subfolder as the modpack index
-                                            success = await _download_via_teleget(
+                                            success = await download_via_teleget(
                                                 guid, tg_link, output_mods_dir, tg_data,
                                                 guid_str_map, tg_client,
                                                 downloader=teleget_downloader,
@@ -670,7 +670,7 @@ class DownloadMissingMods(BaseTask):
                                         if use_koikatsucards:
                                             logger.info("DLMOD",
                                                 f"  Trying Telegram Chat Links for {guid}...")
-                                        chat_found, success = await _search_chat_links_and_download(
+                                        chat_found, success = await search_chat_links_and_download(
                                             guid, chat_links, output_mods_dir, tg_data,
                                             guid_str_map, tg_client,
                                             downloader=teleget_downloader,
@@ -744,7 +744,7 @@ class DownloadMissingMods(BaseTask):
             ok                = ok,
             fail              = fail,
             modpack_mode      = self.modpack_mode,
-            telegram_source   = _telegram_source_label(self.telegram_source),
+            telegram_source   = telegram_source_label(self.telegram_source),
             generated         = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 

@@ -198,11 +198,11 @@ def test_corrupt_cache_is_ignored(tmp_path):
     assert guids == {G1, G2} and calls == ["a.png", "b.png"]
 
 
-def test_atomic_write_json_is_compact_and_leaves_no_temp_files(tmp_path):
+def testatomic_write_json_is_compact_and_leaves_no_temp_files(tmp_path):
     target = tmp_path / "out.json"
-    cache_io._atomic_write_json(target, {"a": [1, 2], "b": "日本"})
+    cache_io.atomic_write_json(target, {"a": [1, 2], "b": "日本"})
     assert target.read_text(encoding="utf-8") == '{"a":[1,2],"b":"日本"}'       # compact, non-ASCII kept
-    cache_io._atomic_write_json(target, {"a": 2})                               # overwrite in place
+    cache_io.atomic_write_json(target, {"a": 2})                               # overwrite in place
     assert json.loads(target.read_text(encoding="utf-8")) == {"a": 2}
     assert [p.name for p in tmp_path.iterdir()] == ["out.json"]
 
@@ -210,8 +210,8 @@ def test_atomic_write_json_is_compact_and_leaves_no_temp_files(tmp_path):
 def test_file_fingerprint_is_int_mtime_and_size(tmp_path):
     f = cf.write(tmp_path / "f.bin", b"12345")
     os.utime(f, (1_700_000_000.75, 1_700_000_000.75))
-    assert cache_io._file_fp(f) == (1_700_000_000, 5)
-    assert cache_io._file_fp(tmp_path / "missing") == (0, 0)
+    assert cache_io.file_fp(f) == (1_700_000_000, 5)
+    assert cache_io.file_fp(tmp_path / "missing") == (0, 0)
 
 
 # --- zipmods -----------------------------------------------------------------------------------

@@ -140,13 +140,13 @@ def _load_cache(folder: Path) -> dict:
 def _save_cache(folder: Path, cache: dict) -> None:
     try:
         # Atomic + compact — same reasoning as the other on-disk caches in
-        # this codebase (see kkafio.cards.cache_io._atomic_write_json): a plain
+        # this codebase (see kkafio.cards.cache_io.atomic_write_json): a plain
         # write_text() can leave a truncated, unreadable cache behind if
         # interrupted, and indent=2 is pure size overhead for a file only
         # ever read back by json.loads(). Kept sorted by key still, since
         # that (unlike indentation) actually helps a human skim or diff it.
-        from kkafio.cards.cache_io import _atomic_write_json
-        _atomic_write_json(folder / CACHE_FILENAME, dict(sorted(cache.items())))
+        from kkafio.cards.cache_io import atomic_write_json
+        atomic_write_json(folder / CACHE_FILENAME, dict(sorted(cache.items())))
     except Exception as e:
         logger.error("RENAME", f"Could not save cache: {e}")
 

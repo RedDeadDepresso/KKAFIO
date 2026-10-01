@@ -7,7 +7,7 @@ import os
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 
-from kkafio.cards.cache_io import _atomic_write_json, _file_fp
+from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.core.logger import logger
 
@@ -135,7 +135,7 @@ def collect_png_guids(
 
         for png in d.rglob("*.png"):
             sp = str(png)
-            fp = _file_fp(png)
+            fp = file_fp(png)
             if sp in memo:                       # already resolved via an overlapping folder
                 if memo[sp] is not None:
                     dir_by_file[sp] = memo[sp]
@@ -160,7 +160,7 @@ def collect_png_guids(
                     memo[sp] = file_guids
                     if file_guids is None:
                         continue
-                    fp = _file_fp(png)
+                    fp = file_fp(png)
                     new_files[sp]   = [fp[0], fp[1]]
                     dir_by_file[sp] = file_guids
 
@@ -169,7 +169,7 @@ def collect_png_guids(
             for g in dir_by_file.values():
                 dir_guids.update(g)
             try:
-                _atomic_write_json(cache_path, {
+                atomic_write_json(cache_path, {
                     "dir":           str(d),
                     "file_count":    len(new_files),
                     "guids":         sorted(dir_guids),

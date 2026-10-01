@@ -132,7 +132,7 @@ at the time the index was downloaded.
 Used by **Download Missing Mods** when Telegram Source is
 `KoikatsuCards` or `Both`. It replaces the old per-GUID lookup on
 koikatsucards.com. It is only read when at least one mod needs a Telegram
-download (`src/kkafio/tasks/download_missing_mods.py`, `_load_kkc_mod_index()`):
+download (`src/kkafio/tasks/download_missing_mods.py`, `load_kkc_mod_index()`):
 
 1. The latest commit of `RedDeadDepresso/kkc-mod-scraper` is fetched from
    the GitHub API.

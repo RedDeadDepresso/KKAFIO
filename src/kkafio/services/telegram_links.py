@@ -9,7 +9,7 @@ from kkafio.core.logger import logger
 # Telethon download
 # ---------------------------------------------------------------------------
 
-def _parse_tme_link(tg_link: str) -> tuple[str, int] | None:
+def parse_tme_link(tg_link: str) -> tuple[str, int] | None:
     """
     Parse a t.me link and return (chat_identifier, message_id).
 
@@ -41,7 +41,7 @@ DEFAULT_TELEGRAM_CHAT_LINKS = (
     "https://t.me/kknowcc"
 )
 
-_TELEGRAM_SOURCE_LABELS = {
+telegram_source_labelS = {
     "No":            "No",
     "KoikatsuCards": "koikatsucards.com",
     "ChatLinks":     "Telegram Chat Links",
@@ -49,8 +49,8 @@ _TELEGRAM_SOURCE_LABELS = {
 }
 
 
-def _telegram_source_label(source: str) -> str:
-    return _TELEGRAM_SOURCE_LABELS.get(source, source)
+def telegram_source_label(source: str) -> str:
+    return telegram_source_labelS.get(source, source)
 
 
 # A chat/channel/group link, optionally pointing at a specific forum topic:
@@ -81,7 +81,7 @@ def _parse_chat_link_for_search(link: str) -> tuple[str | int, int | None] | Non
     return chat, topic_id
 
 
-def _parse_chat_links(raw: str) -> list[tuple[str | int, int | None]]:
+def parse_chat_links(raw: str) -> list[tuple[str | int, int | None]]:
     """Parse the multi-line Telegram Chat Links textbox into an ordered list
     of (chat, topic_id) tuples.
 

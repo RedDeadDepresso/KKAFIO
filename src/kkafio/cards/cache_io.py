@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 
-def _atomic_write_json(path: Path, data) -> None:
+def atomic_write_json(path: Path, data) -> None:
     """Write `data` as JSON to `path` atomically and compactly.
 
     Atomic: written to a temp file next to `path` first, then moved into
@@ -31,7 +31,7 @@ def _atomic_write_json(path: Path, data) -> None:
 # File fingerprint helpers
 # ---------------------------------------------------------------------------
 
-def _file_fp(p: Path) -> tuple[int, int]:
+def file_fp(p: Path) -> tuple[int, int]:
     """Return (mtime_int, size) for a file — used as a change fingerprint."""
     try:
         st = p.stat()

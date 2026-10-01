@@ -65,8 +65,8 @@ def _plain(v):
 
 
 @pytest.mark.parametrize("link", sorted(GOLDEN["tme_links"]))
-def test_parse_tme_link(link):
-    assert _jsonable(telegram_links._parse_tme_link(link)) == GOLDEN["tme_links"][link]
+def testparse_tme_link(link):
+    assert _jsonable(telegram_links.parse_tme_link(link)) == GOLDEN["tme_links"][link]
 
 
 @pytest.mark.parametrize("link", sorted(GOLDEN["chat_link_for_search"]))
@@ -75,14 +75,14 @@ def test_parse_chat_link_for_search(link):
 
 
 @pytest.mark.parametrize("raw", sorted(GOLDEN["chat_links"]))
-def test_parse_chat_links(raw):
-    assert _jsonable(telegram_links._parse_chat_links(raw)) == GOLDEN["chat_links"][raw]
+def testparse_chat_links(raw):
+    assert _jsonable(telegram_links.parse_chat_links(raw)) == GOLDEN["chat_links"][raw]
 
 
 def test_default_chat_links_and_source_labels():
-    assert _jsonable(telegram_links._parse_chat_links(telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)) == GOLDEN["default_chat_links"]
+    assert _jsonable(telegram_links.parse_chat_links(telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)) == GOLDEN["default_chat_links"]
     for source in ("No", "KoikatsuCards", "ChatLinks", "Both", "anything else"):
-        assert telegram_links._telegram_source_label(source) == GOLDEN["source_labels"][source]
+        assert telegram_links.telegram_source_label(source) == GOLDEN["source_labels"][source]
 
 
 def _jsonable(x):

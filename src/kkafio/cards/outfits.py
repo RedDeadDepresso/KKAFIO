@@ -9,7 +9,7 @@ import re
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 
-from kkafio.cards.cache_io import _atomic_write_json, _file_fp
+from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.parsing import _coord_kkex_bytes, _find_iend_end, _unpack_kkex, uar_resolve_infos
 from kkafio.core.logger import logger
 
@@ -200,7 +200,7 @@ def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, str]
 
     for png in all_pngs:
         sp = str(png)
-        fp = list(_file_fp(png))
+        fp = list(file_fp(png))
         if old_files.get(sp) == fp and sp in old_coords:
             coord_map[sp] = old_coords[sp]
             new_files[sp] = fp
@@ -222,11 +222,11 @@ def build_coord_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, str]
                 # "" marks a PNG that isn't a coordinate card, so it is
                 # remembered as such instead of being re-parsed every run.
                 coord_map[sp] = future.result() or ""
-                new_files[sp] = list(_file_fp(futures[future]))
+                new_files[sp] = list(file_fp(futures[future]))
 
     if use_cache:
         try:
-            _atomic_write_json(cache_path, {
+            atomic_write_json(cache_path, {
                 "version":   COORD_CACHE_VERSION,
                 "coord_dir": str(coord_dir),
                 "files":     new_files,

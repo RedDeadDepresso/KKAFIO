@@ -89,11 +89,11 @@ def build_pure_functions() -> dict:
     return {
         "outfit_digests": cc._digest_cases(),
         "msgpack_roundtrip": {k: pf.roundtrip(v).hex() for k, v in msgpack_corpus().items()},
-        "tme_links": {x: pf._jsonable(pf.telegram_links._parse_tme_link(x)) for x in links},
+        "tme_links": {x: pf._jsonable(pf.telegram_links.parse_tme_link(x)) for x in links},
         "chat_link_for_search": {x: pf._jsonable(pf.telegram_links._parse_chat_link_for_search(x)) for x in search},
-        "chat_links": {x: pf._jsonable(pf.telegram_links._parse_chat_links(x)) for x in raws},
-        "default_chat_links": pf._jsonable(pf.telegram_links._parse_chat_links(pf.telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)),
-        "source_labels": {x: pf.telegram_links._telegram_source_label(x)
+        "chat_links": {x: pf._jsonable(pf.telegram_links.parse_chat_links(x)) for x in raws},
+        "default_chat_links": pf._jsonable(pf.telegram_links.parse_chat_links(pf.telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)),
+        "source_labels": {x: pf.telegram_links.telegram_source_label(x)
                           for x in ("No", "KoikatsuCards", "ChatLinks", "Both", "anything else")},
     }
 

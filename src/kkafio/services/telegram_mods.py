@@ -7,7 +7,7 @@ from pathlib import Path
 
 from kkafio.cards.mods import guid_from_zipmod
 from kkafio.core.logger import logger
-from kkafio.services.telegram_links import _parse_tme_link
+from kkafio.services.telegram_links import parse_tme_link
 
 
 async def _retry_flood_wait(coro_fn, *args, context: str, max_wait: int = 300, **kwargs):
@@ -114,7 +114,7 @@ async def _search_chat_for_zipmod(client, chat: str | int, topic_id: int | None,
     return matches
 
 
-async def _search_chat_links_and_download(
+async def search_chat_links_and_download(
     guid: str,
     chat_links: list[tuple[str | int, int | None]],
     mods_dir: Path,
@@ -217,13 +217,13 @@ async def _search_chat_links_and_download(
             downloads_this_chat += 1
 
             # Use teleget9527 if available (reuse the passed-in downloader instance),
-            # matching _download_via_teleget's exact pattern.
+            # matching download_via_teleget's exact pattern.
             if downloader is not None:
                 try:
                     entity = await _retry_flood_wait(
                         client.get_entity, chat, context=f"resolving entity for {chat}")
                     # See the [FIX-2026-09-29-ENTITY-MARK] note in
-                    # _download_via_teleget above — teleget9527 needs
+                    # download_via_teleget above — teleget9527 needs
                     # Telethon's marked peer-ID form, not the bare
                     # Channel.id, or a bare-int lookup on the daemon's
                     # copy of the session raises "Could not find the
@@ -302,7 +302,7 @@ async def _search_chat_links_and_download(
 # Telethon session management
 # ---------------------------------------------------------------------------
 
-async def _ensure_session(tg_data: dict) -> bool:
+async def ensure_session(tg_data: dict) -> bool:
     """
     Ensure a valid Telethon .session file exists in the session directory.
     If the session file is missing or the user is not authorised, walk them
@@ -422,7 +422,7 @@ async def _ensure_session(tg_data: dict) -> bool:
 KK_ARCHIVE_CHAT_ID = -1003881428951
 
 
-async def _download_via_teleget(
+async def download_via_teleget(
     guid: str,
     tg_link: str,
     mods_dir: Path,
@@ -448,7 +448,7 @@ async def _download_via_teleget(
     mods_dir / rel_path preserving the Sideloader Modpack subfolder structure.
     Otherwise the file is saved directly into mods_dir.
     """
-    parsed = _parse_tme_link(tg_link)
+    parsed = parse_tme_link(tg_link)
     if not parsed:
         logger.error("DLMOD", f"Cannot parse Telegram link: {tg_link}")
         return False
@@ -459,7 +459,7 @@ async def _download_via_teleget(
     # [FIX-2026-09-13-ENTITY-RESOLUTION] Previously this called
     # get_messages(KK_ARCHIVE_CHAT_ID, ids=message_id) — using the
     # hardcoded raw numeric chat ID and silently discarding chat_identifier
-    # (the "@username" / "-100..." value _parse_tme_link already extracted
+    # (the "@username" / "-100..." value parse_tme_link already extracted
     # from the link). Telethon can only resolve a bare numeric peer ID into
     # a usable InputPeer if it already has that entity's access_hash cached
     # in the session file; on a cold cache (e.g. a freshly created session
