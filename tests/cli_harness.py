@@ -123,11 +123,16 @@ def opt_switch(value: bool) -> dict:
 # ---------------------------------------------------------------------------
 
 def _scrub(text: str, root: str) -> str:
-    """Replace machine-specific locations (the world, and the sandbox HOME) with placeholders."""
+    """Make a string machine- and OS-independent: placeholders for the sandbox locations, '/' separators.
+
+    Order matters: the config directory lives under HOME, which lives under the temp area.
+    """
+    from kkafio.core.constants import CONFIG_DIR
+    text = text.replace(str(CONFIG_DIR), "<CONFIG_DIR>")
     home = os.environ.get("HOME", "")
     if home:
         text = text.replace(home, "<HOME>")
-    return text.replace(root, "<ROOT>")
+    return text.replace(root, "<ROOT>").replace("\\", "/")
 
 
 def norm(obj, root: str):
@@ -155,11 +160,12 @@ def norm(obj, root: str):
 # ---------------------------------------------------------------------------
 
 class Recorder:
-    def __init__(self, root: Path, *, fail_on: str | None = None, special_ok: bool = True,
+    def __init__(self, root: Path, *, fail_on: str | None = None, fail_with=None, special_ok: bool = True,
                  batch: str | None = "list"):
         self.root = str(root)
         self.events: list[dict] = []
         self.fail_on = fail_on
+        self.fail_with = fail_with      # callable -> exception to raise (default RuntimeError('boom'))
         self.special_ok = special_ok
         self.batch = batch            # "list" | None (follower) | "raise"
 
@@ -194,7 +200,7 @@ class Recorder:
                 event["section_reads"] = {k: norm(section.get(k), rec.root) for k in reads}
             rec.events.append(event)
             if rec.fail_on == task_name:
-                raise RuntimeError("boom")
+                raise (rec.fail_with() if rec.fail_with else RuntimeError("boom"))
         return fake_run
 
     # ---- other side effects -------------------------------------------------
@@ -432,6 +438,19 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
     same.mkdir(exist_ok=True)
     other.mkdir(exist_ok=True)
     f = opt_folder
+    work = root / "work"
+    work.mkdir(exist_ok=True)
+    # Every task gets explicit, existing folders: otherwise validation would create the platform's
+    # default folders (C:\\KKAFIO\\... on Windows), which would touch the real disk and differ by OS.
+    path_option = {"CreateBackup": "BackupOutputPath", "ArchiveCards": "ArchiveOutputPath",
+                   "ExportMods": "ExportOutputPath", "FilterConvertKKS": "DownloadsInputPath",
+                   "FilterDuplicateContents": "DownloadsInputPath", "CompressCardsTextures": "DownloadsInputPath",
+                   "InstallContents": "DownloadsInputPath", "UninstallContents": "DownloadsInputPath",
+                   "GroupChara": "InputPath", "UngroupChara": "InputPath", "RenameChara": "InputPath"}
+    def _task(name, enabled=True, **opts):                                                  # noqa: E306
+        if name in path_option and path_option[name] not in opts:
+            opts[path_option[name]] = opt_folder(work)
+        return {"taskName": name, "enabled": enabled, "optionValues": opts}
     fc = lambda **kw: _task("FilterConvertKKS", DownloadsInputPath=f(same), **kw)          # noqa: E731
     ic = lambda path=same, **kw: _task("InstallContents", DownloadsInputPath=f(path), **kw)  # noqa: E731
     all_names = list(TASK_CLASSES)

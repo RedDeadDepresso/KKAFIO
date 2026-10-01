@@ -18,6 +18,7 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.tasks.base_task import BaseTask, DEFAULT_DOWNLOADS_PATH, validate_input_path
+from kkafio.core.errors import InputError, TaskFailedError, ToolNotFoundError
 from kkafio.core.logger import logger
 from kkafio.system.subprocess_utils import popen_text
 
@@ -173,8 +174,7 @@ class CompressCardsTextures(BaseTask):
 
     def run(self) -> None:
         if not self.input_path_str:
-            logger.error("KOITEX", "No input folder specified.")
-            raise Exception("CompressCardsTextures: no input folder specified")
+            raise InputError("No input folder specified.", tag="KOITEX")
         input_path = Path(self.input_path_str)
         validate_input_path("KOITEX", input_path, default_path=DEFAULT_DOWNLOADS_PATH)
 
@@ -184,7 +184,7 @@ class CompressCardsTextures(BaseTask):
 
         exe_path = self._ensure_tool(tool_dir)
         if exe_path is None:
-            raise Exception("CompressCardsTextures: KoiCardTexTool is not available")
+            raise ToolNotFoundError("CompressCardsTextures: KoiCardTexTool is not available", tag="KOITEX")
 
         logger.line()
         logger.info("KOITEX", f"Input folder    : {input_path}")
@@ -218,7 +218,7 @@ class CompressCardsTextures(BaseTask):
                 logger.warning("KOITEX",
                     "Skipping original-card deletion — KoiCardTexTool did not exit "
                     "successfully, so its output cannot be trusted.")
-            raise Exception(
+            raise TaskFailedError(
                 f"CompressCardsTextures: KoiCardTexTool exited with code {process.returncode}")
 
         logger.success("KOITEX", "Compression complete")

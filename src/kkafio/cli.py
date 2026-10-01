@@ -37,6 +37,8 @@ import signal
 import traceback
 from typing import NoReturn
 
+from kkafio.core.errors import UserError
+
 
 # ---------------------------------------------------------------------------
 # [FIX-2026-09-14-GRACEFUL-STOP] Graceful stop signal handling
@@ -199,16 +201,32 @@ def _write_traceback(task: str) -> None:
         f.write("\n")
 
 
-def _report_failure(task: str) -> NoReturn:
-    """Shared handler for an unexpected exception inside a single-task
-    command. Must be called from within an ``except`` block.
+def _exit_with_user_error(exc: UserError) -> NoReturn:
+    """Report a problem the user can fix (see kkafio.core.errors): one error
+    line under the error's own log tag, then exit 1. No traceback file — the
+    message already says what to change, and a traceback would only bury it.
+    """
+    try:
+        from kkafio.core.logger import logger
+        logger.error(exc.tag, str(exc))
+    except Exception:
+        print(f"[ERROR] {exc}", file=sys.stderr)
+    sys.exit(1)
 
-    Logs a visible error line (so the GUI/console shows *why* the task
-    failed instead of just a non-zero exit code), saves the full traceback
-    to traceback.log, and exits with status 1. Failing to write the
-    traceback must never mask the original error.
+
+def _report_failure(task: str) -> NoReturn:
+    """Shared handler for an exception inside a single-task command. Must be
+    called from within an ``except`` block.
+
+    A `UserError` is reported as a single clean error line. Anything else is
+    unexpected: log a visible error line (so the GUI/console shows *why* the
+    task failed instead of just a non-zero exit code), save the full traceback
+    to traceback.log, and exit with status 1. Failing to write the traceback
+    must never mask the original error.
     """
     exc = sys.exc_info()[1]
+    if isinstance(exc, UserError):
+        _exit_with_user_error(exc)
     detail = f"{type(exc).__name__}: {exc}" if exc is not None else "unknown error"
     try:
         from kkafio.core.logger import logger
@@ -446,6 +464,9 @@ def main() -> None:
 
     except SystemExit:
         raise
+
+    except UserError as exc:
+        _exit_with_user_error(exc)
 
     except Exception:
         from pathlib import Path

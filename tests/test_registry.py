@@ -63,3 +63,12 @@ def test_building_the_parser_imports_no_task_module():
         "assert not loaded, loaded\n"
     )
     subprocess.run([sys.executable, "-c", code], check=True, cwd=ROOT, capture_output=True, text=True)
+
+
+def test_generated_config_is_in_sync_with_interface_json():
+    """src/kkafio/core/config.py is partly generated (tools/generate_config.py). Editing the
+    generated code by hand — without editing the generator's template too — gets silently
+    reverted by the next regeneration; this catches that."""
+    result = subprocess.run([sys.executable, "tools/generate_config.py", "--check"],
+                            cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr

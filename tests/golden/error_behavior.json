@@ -1,0 +1,123 @@
+{
+ "7-Zip missing (backup)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | 7zip not found. Unable to create backup"
+  ],
+  "traceback": null
+ },
+ "GamePath not set (run)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | GamePath is not set."
+  ],
+  "traceback": null
+ },
+ "GamePath not valid (run)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Game path not valid: <ROOT>/no_such_game"
+  ],
+  "traceback": null
+ },
+ "GamePath not valid (single task)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Game path not valid: <ROOT>/no_such_game"
+  ],
+  "traceback": null
+ },
+ "backup without --output (known bug)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | CLI      | Task error: CreateBackup: AttributeError: 'str' object has no attribute 'mkdir'. See <CONFIG_DIR>/traceback.log for details."
+  ],
+  "traceback": {
+   "first": "[CreateBackup]",
+   "last": "AttributeError: 'str' object has no attribute 'mkdir'"
+  }
+ },
+ "config file missing": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Config file '<ROOT>/does_not_exist.json' not found."
+  ],
+  "traceback": null
+ },
+ "config has no instances": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Config has no instances."
+  ],
+  "traceback": null
+ },
+ "config is not JSON": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Invalid JSON format in '<ROOT>/config_badjson.json'."
+  ],
+  "traceback": null
+ },
+ "enabled task folder missing (run)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Path invalid for task UngroupChara: <ROOT>/missing_dir"
+  ],
+  "traceback": null
+ },
+ "input folder blank (compress)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | KOITEX   | No input folder specified."
+  ],
+  "traceback": null
+ },
+ "input folder missing (install)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | INSTALL  | InputPath does not exist: <ROOT>/missing_dir"
+  ],
+  "traceback": null
+ },
+ "input folder missing (ungroup)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | UNGRP    | InputPath does not exist: <ROOT>/missing_dir"
+  ],
+  "traceback": null
+ },
+ "instance index out of range": {
+  "exit": 1,
+  "output": [
+   "ERROR    | SCRIPT   | Instance index 5 out of range (config has 1 instance(s))."
+  ],
+  "traceback": null
+ },
+ "no content (archive)": {
+  "exit": 1,
+  "output": [
+   "ERROR    | ARCHV    | No character cards, coordinates, or scenes specified"
+  ],
+  "traceback": null
+ },
+ "no content (delete) logs and returns": {
+  "exit": 0,
+  "output": [
+   "ERROR    | DELETE   | No character cards, coordinates, or scenes specified"
+  ],
+  "traceback": null
+ },
+ "nothing found to archive": {
+  "exit": 1,
+  "output": [
+   "ERROR    | ARCHV    | Not found: <ROOT>/x.png",
+   "ERROR    | ARCHV    | No files to archive"
+  ],
+  "traceback": null
+ },
+ "success control (ungroup)": {
+  "exit": 0,
+  "output": [],
+  "traceback": null
+ }
+}

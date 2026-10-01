@@ -18,6 +18,7 @@ from kkafio.cards.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import GameType
+from kkafio.core.errors import InputError, TaskFailedError
 from kkafio.core.logger import logger
 
 ArchiveFormat = Literal["7z", "zip", "copy"]
@@ -327,8 +328,7 @@ class ArchiveCards(BaseTask):
     def run(self) -> None:
         content_paths = [Path(p) for p in self.content_paths if p]
         if not content_paths:
-            logger.error("ARCHV", "No character cards, coordinates, or scenes specified")
-            raise Exception("ArchiveCards: no content paths specified")
+            raise InputError("No character cards, coordinates, or scenes specified", tag="ARCHV")
 
         game_base  = Path(self.config.config_data["Core"]["GamePath"])
         mods_ov    = Path(self.mods_dir_str)   if self.mods_dir_str   else None
@@ -365,8 +365,7 @@ class ArchiveCards(BaseTask):
                 })
 
             if not card_infos:
-                logger.error("ARCHV", "No files to archive")
-                raise Exception("ArchiveCards: no files to archive")
+                raise InputError("No files to archive", tag="ARCHV")
 
             out_dir = output_dir or content_paths[0].parent
             out_dir.mkdir(parents=True, exist_ok=True)
@@ -464,7 +463,7 @@ class ArchiveCards(BaseTask):
             # actually created (Ctrl+C aside, this makes cmd_run's
             # try/except in kkafio_cli.py abort the remaining tasks).
             if archive_failed:
-                raise Exception("ArchiveCards: archive creation failed")
+                raise TaskFailedError("ArchiveCards: archive creation failed")
 
         else:
             for content_path in content_paths:
@@ -520,5 +519,5 @@ class ArchiveCards(BaseTask):
                     # Stop instead of continuing to the next card / to a
                     # later DeleteCards step as if every archive had
                     # succeeded.
-                    raise Exception(
+                    raise TaskFailedError(
                         f"ArchiveCards: archive creation failed for {content_path.name}")

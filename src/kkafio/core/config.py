@@ -37,6 +37,7 @@ import sys
 import json
 from pathlib import Path
 from typing import Any
+from kkafio.core.errors import ConfigError
 from kkafio.core.logger import logger
 from enum import Enum
 
@@ -313,22 +314,18 @@ class Config:
             with open(self.config_file, "r", encoding="utf-8") as f:
                 mxu = json.load(f)
         except FileNotFoundError:
-            logger.error("SCRIPT", f"Config file '{self.config_file}' not found.")
-            sys.exit(1)
+            raise ConfigError(f"Config file '{self.config_file}' not found.", tag="SCRIPT") from None
         except json.JSONDecodeError:
-            logger.error("SCRIPT", f"Invalid JSON format in '{self.config_file}'.")
-            sys.exit(1)
+            raise ConfigError(f"Invalid JSON format in '{self.config_file}'.", tag="SCRIPT") from None
 
         instances = mxu.get("instances", [])
         if not instances:
-            logger.error("SCRIPT", "Config has no instances.")
-            sys.exit(1)
+            raise ConfigError("Config has no instances.", tag="SCRIPT")
 
         if self.instance_index >= len(instances):
-            logger.error("SCRIPT",
+            raise ConfigError(
                 f"Instance index {self.instance_index} out of range "
-                f"(config has {len(instances)} instance(s)).")
-            sys.exit(1)
+                f"(config has {len(instances)} instance(s)).", tag="SCRIPT")
 
         inst = instances[self.instance_index]
         logger.info("SCRIPT", f"Using instance [{self.instance_index}] '{inst.get('name', '?')}'")
@@ -340,8 +337,7 @@ class Config:
             logger.info("SCRIPT", "Starting KKAFIO!")
             self.initialized = True
         elif not self.ok and not self.initialized:
-            logger.error("SCRIPT", "Invalid config. Please check your config file.")
-            sys.exit(1)
+            raise ConfigError("Invalid config. Please check your config file.", tag="SCRIPT")
 
     @staticmethod
     def _translate(inst: dict, mxu: dict) -> tuple[dict, list[dict]]:
@@ -426,8 +422,7 @@ class Config:
         game_path_str = self.config_data.get("Core", {}).get("GamePath", "")
 
         if not game_path_str:
-            logger.error("SCRIPT", "GamePath is not set.")
-            raise Exception("GamePath is not set")
+            raise ConfigError("GamePath is not set.", tag="SCRIPT")
 
         base = Path(game_path_str)
 
@@ -455,8 +450,7 @@ class Config:
                 if path == required_paths["Overlays"]:
                     required_paths["Overlays"].mkdir(parents=True, exist_ok=True)
                 else:
-                    logger.error("SCRIPT", f"Game path not valid: {path}")
-                    raise Exception(f"Game path not valid: {path}")
+                    raise ConfigError(f"Game path not valid: {path}", tag="SCRIPT")
 
         for key, path in optional_paths.items():
             if path.exists():
@@ -523,8 +517,7 @@ class Config:
                                 f"{key} does not exist yet, creating default folder for {task}: {create_path}")
                             create_path.mkdir(parents=True, exist_ok=True)
                             continue
-                        logger.error("SCRIPT", f"Path invalid for task {task}: {path_obj}")
-                        raise Exception(f"Path invalid: {path_obj}")
+                        raise ConfigError(f"Path invalid for task {task}: {path_obj}", tag="SCRIPT")
 
         self.create_backup             = self.config_data["CreateBackup"]
         self.download_contents         = self.config_data["DownloadContents"]

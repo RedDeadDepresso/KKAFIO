@@ -9,6 +9,7 @@ Provides only what is genuinely shared across every task:
 
 from pathlib import Path
 
+from kkafio.core.errors import InputError
 from kkafio.core.logger import logger
 
 # Default folder offered by interface.json for the "downloads" InputPath
@@ -20,7 +21,8 @@ DEFAULT_DOWNLOADS_PATH = Path("C:/KKAFIO/Downloads")
 
 
 def validate_input_path(tag: str, folder_path: Path, default_path: Path | None = None) -> None:
-    """Raise if folder_path is unset or doesn't exist, logging via `tag` first.
+    """Raise `InputError` (logged by the CLI under `tag`) if folder_path is unset
+    or doesn't exist.
 
     Every task validates its InputPath the same way before doing anything
     else; this used to be duplicated almost verbatim across ~10 call sites
@@ -34,15 +36,13 @@ def validate_input_path(tag: str, folder_path: Path, default_path: Path | None =
     themselves, which is more likely to be a typo worth surfacing.
     """
     if not str(folder_path).strip() or str(folder_path) == ".":
-        logger.error(tag, "InputPath is not set. Configure it in MXU.")
-        raise Exception("InputPath is not set")
+        raise InputError("InputPath is not set. Configure it in MXU.", tag=tag)
     if not folder_path.exists():
         if default_path is not None and Path(folder_path) == Path(default_path):
             logger.info(tag, f"InputPath does not exist yet, creating default folder: {folder_path}")
             folder_path.mkdir(parents=True, exist_ok=True)
             return
-        logger.error(tag, f"InputPath does not exist: {folder_path}")
-        raise Exception(f"InputPath does not exist: {folder_path}")
+        raise InputError(f"InputPath does not exist: {folder_path}", tag=tag)
 
 
 class BaseTask:

@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from kkafio.cards.classifier import is_mod_archive
+from kkafio.core.errors import InputError, TaskFailedError, ToolNotFoundError
 from kkafio.core.logger import logger
 from typing import Union, Literal
 
@@ -191,7 +192,7 @@ class FileManager:
     def create_archive(self, files: list[Path], output_path: Path, fmt: str) -> None:
         path_to_7zip = self.find_7zip()
         if not path_to_7zip:
-            raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
+            raise ToolNotFoundError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.", tag="7-Zip")
 
         output_path = Path(output_path)
         if output_path.exists():
@@ -233,7 +234,7 @@ class FileManager:
                    str(output_path), f"@{listfile_path}"]
             result = run_text(cmd, capture_output=True, encoding="utf-8")
             if result.returncode not in (0, 1):
-                raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
+                raise TaskFailedError(f"7-Zip failed:\n{result.stderr}")
         finally:
             try:
                 Path(listfile_path).unlink()
@@ -269,7 +270,7 @@ class FileManager:
             name = f.name
             prior = seen.get(name)
             if prior is not None and prior != f:
-                raise RuntimeError(
+                raise TaskFailedError(
                     f"Duplicate filename among files to copy: {name!r} "
                     f"({prior} and {f})")
             seen[name] = f
@@ -302,7 +303,7 @@ class FileManager:
                 name = f.name
                 prior = seen.get(name)
                 if prior is not None and prior != f:
-                    raise RuntimeError(
+                    raise TaskFailedError(
                         f"Duplicate filename in {scope}: {name!r} "
                         f"({prior} and {f})")
                 seen[name] = f
@@ -324,7 +325,7 @@ class FileManager:
         """
         path_to_7zip = self.find_7zip()
         if not path_to_7zip:
-            raise RuntimeError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.")
+            raise ToolNotFoundError("7-Zip not found. Install 7-Zip and ensure '7z' is on PATH.", tag="7-Zip")
 
         output_path = Path(output_path).resolve()
         if output_path.exists():
@@ -337,7 +338,7 @@ class FileManager:
         cmd = [path_to_7zip, "a", flag, "-sccUTF-8", "-scsUTF-8", str(output_path), "."]
         result = run_text(cmd, capture_output=True, encoding="utf-8", cwd=str(source_dir))
         if result.returncode not in (0, 1):
-            raise RuntimeError(f"7-Zip failed:\n{result.stderr}")
+            raise TaskFailedError(f"7-Zip failed:\n{result.stderr}")
 
     def copy_dir_into_place(self, source_dir: Path, output_dir: Path) -> None:
         """Copy `source_dir`'s contents so they become `output_dir`, deleting
@@ -367,12 +368,10 @@ class FileManager:
         """Create an archive of the given folders using 7zip."""
         path_to_7zip = self.find_7zip()
         if not path_to_7zip:
-            logger.error("SCRIPT", "7zip not found. Unable to create backup")
-            raise Exception()
+            raise ToolNotFoundError("7zip not found. Unable to create backup", tag="SCRIPT")
         
         if not folders:
-            logger.error("SCRIPT", "No folders selected for the backup")
-            raise Exception("No folders selected for the backup")
+            raise InputError("No folders selected for the backup", tag="SCRIPT")
 
         archive_path = Path(archive_path)
         # Append rather than with_suffix(): a filename such as
@@ -410,7 +409,7 @@ class FileManager:
         # Check the return code
         if process.returncode not in [0, 1]:
             logger.error("7-Zip", f"Exited with return code: {process.returncode}")
-            raise Exception(f"7-zip exited with return code: {process.returncode}")
+            raise TaskFailedError(f"7-zip exited with return code: {process.returncode}")
         
     def _run_7zip_extract(self, archive_path: Path, extract_path: Path,
                           password: str | None = None) -> bool:

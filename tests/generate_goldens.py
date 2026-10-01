@@ -64,6 +64,15 @@ def build_pipeline() -> dict:
     return out
 
 
+def build_error_behavior() -> dict:
+    import cli_process as cp
+    out = {}
+    for name in cp.scenarios():
+        with tempfile.TemporaryDirectory() as tmp:
+            out[name] = cp.run_scenario(h.World(Path(tmp)), name)
+    return out
+
+
 def build_pure_functions() -> dict:
     """Recorded outputs of pure helpers. Imports live in test_pure_functions / test_card_code."""
     import test_card_code as cc
@@ -95,4 +104,5 @@ if __name__ == "__main__":
     _dump("cli_overrides.json", build_overrides())
     _dump("pipeline.json", build_pipeline())
     _dump("pure_functions.json", build_pure_functions())
+    _dump("error_behavior.json", build_error_behavior())
     print("goldens written to", GOLDEN)

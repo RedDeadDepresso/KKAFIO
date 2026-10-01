@@ -85,10 +85,9 @@ with the config file path and instance index. `Config.__init__` → `.read()`:
    (`self.install_contents`, `self.group_chara`, ...) via
    `Config.validate_tasks()`.
 
-If anything required is missing or a path doesn't exist, `Config` logs an
-error and the process exits non-zero — the GUI sees this as a failed run via
-the process's exit code and whatever was logged to stdout before the
-failure.
+If anything required is missing or a path doesn't exist, `Config` raises a
+`ConfigError` and the run fails — see [8. When something goes
+wrong](#8-when-something-goes-wrong).
 
 ### Special tasks
 
@@ -127,6 +126,26 @@ Archive-password and session-cookie prompts work the same way via
 just looks like the subprocess going quiet for a while — there's no special
 handling on the GUI side for "a task is waiting on a dialog"; the dialog
 itself is a separate OS-level window, not something rendered inside MXU.
+
+## 8. When something goes wrong
+
+The GUI learns about a failure from two things: the process's **exit code**
+(non-zero = failed) and the `ERROR | TAG | message` lines on stdout. What
+KKAFIO prints depends on what kind of failure it was
+(`src/kkafio/core/errors.py`):
+
+| Failure | Raised as | What the user gets |
+|---|---|---|
+| Something they can fix: bad game path, missing task folder, nothing to process, 7-Zip not installed | `UserError` (`ConfigError`, `InputError`, `ToolNotFoundError`) | **One** `ERROR` line under the failing component's tag, exit code 1. No traceback file. |
+| The work was attempted and failed (7-Zip errored, an archive couldn't be created) | `TaskFailedError` | `Task error: <task>: …` and the full traceback saved to `traceback.log`, exit code 1 |
+| A bug (anything unexpected) | any other exception | the same as above |
+
+`traceback.log` lives in KKAFIO's config folder (`%APPDATA%\KKAFIO` on
+Windows), not the current directory. Each failing task appends a `[TaskName]`
+header followed by the traceback; it is cleared at the start of every run.
+
+Library code never calls `sys.exit()`: it raises, and only `cli.py` decides
+to exit. In a `run`, the first failing task stops the remaining ones.
 
 ## Summary diagram
 

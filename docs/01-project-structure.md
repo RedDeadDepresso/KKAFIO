@@ -61,6 +61,7 @@ KKAFIO-dev/
 │   ├── core/                        # Configuration, logging, paths, file operations
 │   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
 │   │   ├── constants.py             # Per-user config directory / file path constants (%APPDATA%\KKAFIO)
+│   │   ├── errors.py                # KKAFIOError / UserError / ConfigError / InputError / ToolNotFoundError / TaskFailedError
 │   │   ├── paths.py                 # Where shipped files live (APP_DIR / ASSETS_DIR), frozen vs. source
 │   │   ├── logger.py                # Structured logger; the GUI parses its stdout format live
 │   │   └── file_manager.py          # Copy/move/delete/archive/extract file operations, 7-Zip wrapper
@@ -134,6 +135,23 @@ longer one of them:
 and the characterization tests in `tests/` fail if a new subcommand has no
 recorded behaviour — regenerate them deliberately with
 `uv run python tests/generate_goldens.py` and review the diff.
+
+### Raising errors
+
+Raise the exception that says who can fix the problem (all in
+[`core/errors.py`](../src/kkafio/core/errors.py)):
+
+- The **user** can (a wrong setting, a folder that doesn't exist, nothing to
+  process, a missing tool): raise `ConfigError` / `InputError` /
+  `ToolNotFoundError` with `tag=` your log category. **Don't also log it** —
+  the CLI prints the message once, as `ERROR | <tag> | <message>`, and exits 1
+  without writing a traceback.
+- The work **failed** (an external tool errored, a file couldn't be written):
+  raise `TaskFailedError`. It is reported with a traceback.
+- Anything else is a bug and will be reported with a traceback automatically.
+
+Library code never exits the process; only `cli.py` does (a test enforces
+this).
 
 ### How CLI options work
 
