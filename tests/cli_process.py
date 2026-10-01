@@ -73,7 +73,7 @@ def scenarios() -> dict[str, tuple[str, list[str], dict[str, str]]]:
 
 
 def run_scenario(world: World, name: str) -> dict:
-    from kkafio.core.constants import CONFIG_DIR
+    from kkafio.core.paths import CONFIG_DIR
 
     kind, argv, env_extra = scenarios()[name]
     root = str(world.root)

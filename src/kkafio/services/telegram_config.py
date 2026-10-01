@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import webbrowser
 
-from kkafio.core.constants import TELEGRAM_CONFIG
+from kkafio.core.paths import TELEGRAM_CONFIG
 from kkafio.core.logger import logger
 from kkafio.system.password_dialog import password_dialog
 

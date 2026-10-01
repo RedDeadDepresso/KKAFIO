@@ -60,9 +60,8 @@ KKAFIO-dev/
 │   │
 │   ├── core/                        # Configuration, logging, paths, file operations
 │   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
-│   │   ├── constants.py             # Per-user config directory / file path constants (%APPDATA%\KKAFIO)
 │   │   ├── errors.py                # KKAFIOError / UserError / ConfigError / InputError / ToolNotFoundError / TaskFailedError
-│   │   ├── paths.py                 # Where shipped files live (APP_DIR / ASSETS_DIR), frozen vs. source
+│   │   ├── paths.py                 # Shipped-file paths (APP_DIR / ASSETS_DIR, frozen vs. source) and the per-user config dir (CONFIG_DIR)
 │   │   ├── logger.py                # Structured logger; the GUI parses its stdout format live
 │   │   └── file_manager.py          # Copy/move/delete/archive/extract file operations, 7-Zip wrapper
 │   │

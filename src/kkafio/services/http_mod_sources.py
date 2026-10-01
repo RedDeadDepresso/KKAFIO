@@ -143,7 +143,7 @@ async def load_kkc_mod_index(client) -> dict[str, str]:
     Returns an empty dict if the index is unavailable.
     """
     import json
-    from kkafio.core.constants import CONFIG_DIR
+    from kkafio.core.paths import CONFIG_DIR
 
     cfg_dir     = CONFIG_DIR / "config"
     index_path  = cfg_dir / "kkc_mod_index.json"

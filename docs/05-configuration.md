@@ -14,7 +14,7 @@ This doc lists every file KKAFIO reads or writes, grouped by where it lives.
 
 ## The config root directory
 
-Defined once in `src/kkafio/core/constants.py`, `_get_config_dir()`:
+Defined once in `src/kkafio/core/paths.py`, `_get_config_dir()`:
 
 | OS | Path |
 |---|---|

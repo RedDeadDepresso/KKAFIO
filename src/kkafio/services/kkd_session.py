@@ -18,7 +18,7 @@ import webbrowser
 
 import httpx
 
-from kkafio.core.constants import CONFIG_DIR
+from kkafio.core.paths import CONFIG_DIR
 from kkafio.core.logger import logger
 from kkafio.system.password_dialog import password_dialog
 

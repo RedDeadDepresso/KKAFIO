@@ -320,7 +320,7 @@ async def ensure_session(tg_data: dict) -> bool:
         FloodWaitError,
     )
     from kkafio.system.password_dialog import password_dialog
-    from kkafio.core.constants import CONFIG_DIR
+    from kkafio.core.paths import CONFIG_DIR
 
     session_dir  = CONFIG_DIR / "config" / "tg_session"
     session_dir.mkdir(parents=True, exist_ok=True)

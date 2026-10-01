@@ -10,7 +10,7 @@ from kkafio.core.errors import (ConfigError, InputError, KKAFIOError, TaskFailed
 
 
 def _traceback_path():
-    from kkafio.core.constants import CONFIG_DIR
+    from kkafio.core.paths import CONFIG_DIR
     return CONFIG_DIR / "traceback.log"
 
 

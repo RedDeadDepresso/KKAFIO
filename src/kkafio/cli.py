@@ -161,7 +161,7 @@ def _instance_arg(value: str):
 
 def _load_core(config_path: str | None = None, instance_index: int | str = 0):
     from kkafio.core.config import Config, find_context_menu_instance
-    from kkafio.core.constants import CONFIG_PATH
+    from kkafio.core.paths import CONFIG_PATH
     from kkafio.core.file_manager import FileManager
     from kkafio.core.logger import logger
 
@@ -188,7 +188,7 @@ def _traceback_path():
     # Program Files, and a different place every time depending on how
     # KKAFIO was started), so a user following "see traceback.log" often
     # couldn't find it or the write silently failed.
-    from kkafio.core.constants import CONFIG_DIR
+    from kkafio.core.paths import CONFIG_DIR
     return CONFIG_DIR / "traceback.log"
 
 
@@ -277,7 +277,7 @@ def _run_task_command(spec, args):
 def cmd_list_instances(args):
     """Print all instance names with their indices."""
     from kkafio.core.config import list_instances, find_context_menu_instance
-    from kkafio.core.constants import CONFIG_PATH
+    from kkafio.core.paths import CONFIG_PATH
     config_path = args.config if args.config else str(CONFIG_PATH)
     instances = list_instances(config_path)
     if not instances:
@@ -471,10 +471,10 @@ def main() -> None:
     except Exception:
         from pathlib import Path
         try:
-            from kkafio.core.constants import CONFIG_DIR
+            from kkafio.core.paths import CONFIG_DIR
             _tb_path = CONFIG_DIR / "traceback.log"
         except Exception:
-            # kkafio.core.constants itself failed to import/initialise — fall back to
+            # kkafio.core.paths itself failed to import/initialise — fall back to
             # the old relative path rather than losing the traceback entirely.
             _tb_path = Path("traceback.log")
         print(f"[ERROR] CLI initialisation error. See {_tb_path} for details.")

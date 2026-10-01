@@ -514,7 +514,7 @@ class DownloadMissingMods(BaseTask):
                             # up to ~2N-3N separate MTProto connect/auth round
                             # trips to Telegram for what only ever needed one.
                             from telethon import TelegramClient as _TelegramClient
-                            from kkafio.core.constants import CONFIG_DIR as _TG_CFG_DIR
+                            from kkafio.core.paths import CONFIG_DIR as _TG_CFG_DIR
                             _tg_session_dir = _TG_CFG_DIR / "config" / "tg_session"
                             tg_client = _TelegramClient(
                                 str(_tg_session_dir / "kkafio"),
@@ -577,7 +577,7 @@ class DownloadMissingMods(BaseTask):
                             # Create TGDownloader once and reuse across all downloads,
                             # for both the KKC-index path and the Telegram Chat
                             # Links path.
-                            from kkafio.core.constants import CONFIG_DIR as _CFG_DIR
+                            from kkafio.core.paths import CONFIG_DIR as _CFG_DIR
                             _session_dir = _CFG_DIR / "config" / "tg_session"
                             try:
                                 from tg_downloader import TGDownloader

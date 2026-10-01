@@ -127,7 +127,7 @@ def _scrub(text: str, root: str) -> str:
 
     Order matters: the config directory lives under HOME, which lives under the temp area.
     """
-    from kkafio.core.constants import CONFIG_DIR
+    from kkafio.core.paths import CONFIG_DIR
     text = text.replace(str(CONFIG_DIR), "<CONFIG_DIR>")
     home = os.environ.get("HOME", "")
     if home:

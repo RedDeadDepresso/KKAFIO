@@ -44,7 +44,7 @@ _TRANSIENT_STATUS = {408, 425, 429, 500, 502, 503, 504}
 # lookup — the old fallback (`Path.home() / "AppData" / "Roaming"`) doesn't
 # make sense on Linux/macOS at all, so history silently ended up somewhere
 # that isn't even where the rest of KKAFIO's own data lives.
-from kkafio.core.constants import CONFIG_DIR
+from kkafio.core.paths import CONFIG_DIR
 
 HISTORY_FILE = CONFIG_DIR / "download_history.json"
 

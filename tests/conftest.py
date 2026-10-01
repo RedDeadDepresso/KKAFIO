@@ -2,8 +2,8 @@
 
 Everything KKAFIO writes outside the project (its %APPDATA%-style config dir,
 the ~/KKAFIO default task folders) is redirected into a throw-away directory
-*before* any kkafio module is imported — kkafio.core.constants creates the
-config directory at import time.
+*before* any kkafio module is imported — kkafio.core.paths creates the
+config directory on first access of CONFIG_DIR.
 """
 
 import os
