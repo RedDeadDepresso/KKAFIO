@@ -23,7 +23,11 @@ class FileManager:
         self.config = config
 
     def find_all_files(self, directory: Path | str) -> tuple[list[FileEntry], list[FileEntry]]:
-        """Find all files and archive files in the given directory.
+        """Find installable files and archive files in the given directory.
+
+        Only .png, .zipmod, .zip, .rar and .7z files are considered (matched
+        case-insensitively; the returned extension is lower-cased). Everything
+        else is ignored.
 
         Returns:
             Tuple containing:
@@ -34,15 +38,18 @@ class FileManager:
         file_list: list[FileEntry] = []
         archive_list: list[FileEntry] = []
         archive_extensions = {".rar", ".zip", ".7z"}
+        supported_extensions = {".png", ".zipmod"} | archive_extensions
 
         for file_path in directory.glob('**/*'):
             if file_path.is_file():
+                file_extension = file_path.suffix.lower()
+                if file_extension not in supported_extensions:
+                    continue
                 file_size = file_path.stat().st_size
-                file_extension = file_path.suffix
 
                 file_entry: FileEntry = (file_path, file_size, file_extension)
 
-                if file_extension.lower() == ".zip" and is_mod_archive(file_path):
+                if file_extension == ".zip" and is_mod_archive(file_path):
                     # A plain .zip containing a manifest.xml is a mod, not a
                     # generic archive to extract — route it alongside
                     # .zipmod files instead of into archive_list.
