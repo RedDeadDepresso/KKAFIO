@@ -221,5 +221,9 @@
   "preset.ExportInstalledContents.label": "📤 Export Installed Contents",
   "preset.ExportInstalledContents.description": "Archive cards with their mods bundled in and export additional mods by GUID, ready to share your installed content with other players",
   "preset.AllTasks.label": "⚡ All Tasks",
-  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu"
+  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu",
+  "option.OpenReport.label": "Open Report",
+  "option.OpenReport.description": "Automatically open the report (kkafio_missing_mods_report.txt) when mods are still missing or a download failed. Mods skipped on purpose by the Sideloader Modpack setting don't count.",
+  "option.OpenReport.case.Yes.label": "Open if Missing",
+  "option.OpenReport.case.No.label": "Don't Open"
 }

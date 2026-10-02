@@ -31,6 +31,8 @@ Strategy
 """
 
 import asyncio
+import os
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -70,6 +72,7 @@ class DownloadMissingMods(BaseTask):
         self.coord_dir_str       : str  = cfg.get("CoordDir",             "")
         self.content_types       : list[str] = cfg.get("ContentTypes",    ["Chara", "Scene", "Coord"])
         self.use_cache           : bool = cfg.get("UseCache",             True)
+        self.open_report         : bool = cfg.get("OpenReport",           True)
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
         self.telegram_source     : str  = cfg.get("TelegramSource",       "No")  # No | KoikatsuCards | ChatLinks | Both
         self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
@@ -95,8 +98,10 @@ class DownloadMissingMods(BaseTask):
         modpack_mode: str,
         telegram_source: str,
         generated: str,
-    ) -> None:
-        """Write a report to output_mods_dir summarising the download run."""
+    ) -> Path | None:
+        """Write a report to output_mods_dir summarising the download run.
+
+        Returns the report's path, or None if it couldn't be written."""
         referenced_guids = chara_guids | scene_guids | coord_guids
         missing_all = referenced_guids - local_guids
 
@@ -191,8 +196,23 @@ class DownloadMissingMods(BaseTask):
         try:
             readme_path.write_text("\n".join(lines), encoding="utf-8")
             logger.info("DLMOD", f"Report saved: {readme_path}")
+            return readme_path
         except Exception as e:
             logger.warning("DLMOD", f"Could not write report: {e}")
+            return None
+
+    @staticmethod
+    def _open_file(path: Path) -> None:
+        """Open `path` with the system's default program (best effort)."""
+        try:
+            if sys.platform == "win32":
+                os.startfile(str(path))                      # noqa: S606
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(path)])
+            else:
+                subprocess.Popen(["xdg-open", str(path)])
+        except Exception as e:
+            logger.warning("DLMOD", f"Could not open report: {e}")
 
     def run(self) -> None:
         game_path = self.config.game_path
@@ -724,7 +744,7 @@ class DownloadMissingMods(BaseTask):
         logger.line()
 
         # Write the report to the output mods dir summarising what was downloaded
-        self._write_readme(
+        report_path = self._write_readme(
             input_mods_dir    = input_mods_dir,
             output_mods_dir   = output_mods_dir,
             chara_guids       = chara_guids,
@@ -751,3 +771,9 @@ class DownloadMissingMods(BaseTask):
         logger.success("DLMOD",
             f"Done — downloaded: {ok}, failed: {fail}, "
             f"unresolved: {len(unresolved)}")
+
+        # Open the report when anything is still missing or a download failed
+        # (mods skipped on purpose via the Sideloader Modpack mode don't count).
+        if self.open_report and report_path is not None and (unresolved or failed_guids or fail):
+            logger.info("DLMOD", "Mods are still missing — opening the report")
+            self._open_file(report_path)

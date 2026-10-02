@@ -221,5 +221,9 @@
   "preset.ExportInstalledContents.label": "📤 インストール済みコンテンツをエクスポート",
   "preset.ExportInstalledContents.description": "MODを同梱してカードをアーカイブし、さらに追加のMODをGUIDでエクスポートして、インストール済みコンテンツを他のユーザーと共有できるようにする",
   "preset.AllTasks.label": "⚡ すべてのタスク",
-  "preset.AllTasks.description": "利用可能なすべてのタスクを含みます。コンテキストメニューの設定に便利です"
+  "preset.AllTasks.description": "利用可能なすべてのタスクを含みます。コンテキストメニューの設定に便利です",
+  "option.OpenReport.label": "レポートを開く",
+  "option.OpenReport.description": "レポート（kkafio_missing_mods_report.txt）を、MODがまだ不足している場合またはダウンロードに失敗した場合に自動で開きます。Sideloader Modpackの設定で意図的にスキップされたMODは対象外です。",
+  "option.OpenReport.case.Yes.label": "不足時に開く",
+  "option.OpenReport.case.No.label": "開かない"
 }

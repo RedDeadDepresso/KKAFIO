@@ -965,6 +965,28 @@
         }
       ]
     },
+    "OpenReport": {
+      "type": "switch",
+      "label": "$option.OpenReport.label",
+      "description": "$option.OpenReport.description",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.OpenReport.case.Yes.label",
+          "pipeline_override": {
+            "OpenReport": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.OpenReport.case.No.label",
+          "pipeline_override": {
+            "OpenReport": false
+          }
+        }
+      ]
+    },
     "CheckSharedMods": {
       "type": "switch",
       "label": "$option.CheckSharedMods.label",
@@ -1102,6 +1124,7 @@
         "TelegramSource",
         "TelegramChatLinks",
         "UseCache",
+        "OpenReport",
         "InputModsDir",
         "OutputModsDir",
         "CharaDir",

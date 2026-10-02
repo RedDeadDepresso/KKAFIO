@@ -221,5 +221,9 @@
   "preset.ExportInstalledContents.label": "📤 导出已安装内容",
   "preset.ExportInstalledContents.description": "将卡片与其内置的模组一起打包归档，并按 GUID 导出其他模组，方便将已安装内容分享给其他玩家",
   "preset.AllTasks.label": "⚡ 全部任务",
-  "preset.AllTasks.description": "包含所有可用任务，便于设置右键菜单"
+  "preset.AllTasks.description": "包含所有可用任务，便于设置右键菜单",
+  "option.OpenReport.label": "打开报告",
+  "option.OpenReport.description": "当仍有模组缺失或下载失败时，自动打开报告（kkafio_missing_mods_report.txt）。因 Sideloader Modpack 设置而有意跳过的模组不计入。",
+  "option.OpenReport.case.Yes.label": "缺失时打开",
+  "option.OpenReport.case.No.label": "不打开"
 }

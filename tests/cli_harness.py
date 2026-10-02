@@ -397,7 +397,7 @@ def configured_tasks() -> list[dict]:
         t("FilterDuplicateContents", DownloadsInputPath=f("/cfg/in"), UseCache=sw(False),
           FuzzyMatching=sw(True), KeepStrategy=opt_select("Newest"), DuplicateAction=opt_select("Delete")),
         t("DownloadMissingMods", ContentTypes=opt_checkbox("Chara"), SideloaderModpack=opt_select("All"),
-          TelegramSource=opt_select("Both"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False),
+          TelegramSource=opt_select("Both"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OpenReport=sw(False),
           InputModsDir=f("/cfg/in-mods"), OutputModsDir=f("/cfg/out-mods"), CharaDir=f("/cfg/chara"),
           SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coord")),
         t("CompressCardsTextures", DownloadsInputPath=f("/cfg/in"), KoiCardTexToolPath=f("/cfg/tool"),

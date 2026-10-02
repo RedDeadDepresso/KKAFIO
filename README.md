@@ -195,6 +195,7 @@ See the **📥 Download, Filter & Install** preset for the staging-folder config
 - **Output Mods Directory** — blank by default (uses the game's mods folder). Missing mods are downloaded into this folder (created if it doesn't exist), and mods already in it also count as present. Point it at a staging folder to collect just the missing mods while still checking against your installed ones.
 - **Custom Chara Directory / Custom Scene Directory / Custom Coordinate Directory** — blank by default (uses the game's default directories). Set when using a staging folder workflow (see below). The scene directory only applies if Studio is installed; if left blank and no default `scene` folder exists, scene scanning is skipped (same for coordinates if no default coordinate folder exists).
 - **Use Cache** _(on by default)_ — caches the mods list and the GUID scan for each selected content type. Each cache is invalidated automatically when its folder changes.
+- **Open Report** _(on by default)_ — automatically opens `kkafio_missing_mods_report.txt` in your default text editor when mods are still missing or a download failed. Mods skipped on purpose by the **Sideloader Modpack** setting don't count. Turn off to never open it automatically.
 
 **Telegram Chat Links** — one link per line, used when **Telegram Source** is `Telegram Chat Links` or the combined option. Only private chats/groups require you to already be a member — public ones don't. Add a topic ID (e.g. `.../299`) to search only that forum topic instead of the whole chat; a trailing `# comment` is ignored. Chats are tried in the order listed, moving to the next one if a chat has no match. Defaults to:
 
@@ -466,6 +467,7 @@ kkafio_cli download-contents [--links URLS_OR_FILE] [--output-dir DIR]
 kkafio_cli download-missing-mods [--input-mods-dir DIR] [--output-mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
                                  [--no-chara] [--no-scene] [--no-coord]
                                  [--use-cache | --no-use-cache]
+                                 [--open-report | --no-open-report]
                                  [--modpack-mode Skip|OnlyUsed|All]
                                  [--telegram-source No|KoikatsuCards|ChatLinks|Both]
                                  [--telegram-chat-links LINKS]

@@ -221,5 +221,9 @@
   "preset.ExportInstalledContents.label": "📤 Экспорт установленного контента",
   "preset.ExportInstalledContents.description": "Заархивировать карточки вместе с их модами и экспортировать дополнительные моды по GUID — чтобы поделиться установленным контентом с другими игроками",
   "preset.AllTasks.label": "⚡ Все задачи",
-  "preset.AllTasks.description": "Содержит все доступные задачи. Полезно для настройки контекстного меню"
+  "preset.AllTasks.description": "Содержит все доступные задачи. Полезно для настройки контекстного меню",
+  "option.OpenReport.label": "Открыть отчёт",
+  "option.OpenReport.description": "Автоматически открывать отчёт (kkafio_missing_mods_report.txt), если моды всё ещё отсутствуют или загрузка не удалась. Моды, намеренно пропущенные настройкой Sideloader Modpack, не учитываются.",
+  "option.OpenReport.case.Yes.label": "Открыть при нехватке",
+  "option.OpenReport.case.No.label": "Не открывать"
 }

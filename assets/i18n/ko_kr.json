@@ -221,5 +221,9 @@
   "preset.ExportInstalledContents.label": "📤 설치된 콘텐츠 내보내기",
   "preset.ExportInstalledContents.description": "모드가 포함된 카드를 압축 보관하고, 추가 모드를 GUID로 내보내어 설치된 콘텐츠를 다른 사용자와 공유할 수 있도록 합니다",
   "preset.AllTasks.label": "⚡ 모든 작업",
-  "preset.AllTasks.description": "사용 가능한 모든 작업을 포함합니다. 컨텍스트 메뉴를 설정할 때 유용합니다"
+  "preset.AllTasks.description": "사용 가능한 모든 작업을 포함합니다. 컨텍스트 메뉴를 설정할 때 유용합니다",
+  "option.OpenReport.label": "보고서 열기",
+  "option.OpenReport.description": "모드가 아직 부족하거나 다운로드에 실패한 경우 보고서(kkafio_missing_mods_report.txt)를 자동으로 엽니다. Sideloader Modpack 설정에 따라 의도적으로 건너뛴 모드는 포함되지 않습니다.",
+  "option.OpenReport.case.Yes.label": "누락 시 열기",
+  "option.OpenReport.case.No.label": "열지 않음"
 }
