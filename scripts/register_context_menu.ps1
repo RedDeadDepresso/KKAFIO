@@ -48,9 +48,9 @@ $FolderTasks = @(
     [ordered]@{ Id = 'CompressCardsTextures';   Cli = 'compress-cards-textures';   ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'InstallContents';         Cli = 'install-contents';          ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'UninstallContents';       Cli = 'uninstall-contents';        ArgsTemplate = '--input "{P}"' }
-    [ordered]@{ Id = 'GroupChara';              Cli = 'group-chara';               ArgsTemplate = '--input "{P}"' }
+    [ordered]@{ Id = 'GroupChara';              Cli = 'group-chara';               ArgsTemplate = '--chara-dir "{P}"' }
     [ordered]@{ Id = 'UngroupChara';            Cli = 'ungroup-chara';             ArgsTemplate = '--input "{P}"' }
-    [ordered]@{ Id = 'RenameChara';             Cli = 'rename-chara';              ArgsTemplate = '--input "{P}"' }
+    [ordered]@{ Id = 'RenameChara';             Cli = 'rename-chara';              ArgsTemplate = '--chara-dir "{P}"' }
 )
 
 # Always registered, not part of the numbered picker: GUI shortcut, plus the

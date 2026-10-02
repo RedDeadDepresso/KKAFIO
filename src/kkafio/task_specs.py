@@ -432,7 +432,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
              "(shows a native Copy/Paste dialog when it runs)",
         target="kkafio.tasks.rename_chara:RenameChara",
         options=(
-            Value("--input", "-i", key="InputPath", metavar="DIR", default=None),
+            Value("--chara-dir", "--input", "-i", key="CharaDir", ignore_blank=True, metavar="DIR",
+                  default=None,
+                  help="Custom chara directory (default: the game's female and male chara folders; "
+                       "--input is an alias)"),
             Toggle("skip-already-renamed", key="SkipAlreadyRenamed"),
             Toggle("update-metadata", key="UpdateMetadata",
                    help="Write translated names into card metadata (default: on)"),
@@ -447,8 +450,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
              "(shows a native Copy/Paste dialog when it runs)",
         target="kkafio.tasks.group_chara:GroupChara",
         options=(
-            Value("--input", "-i", key="InputPath", metavar="DIR", default=None,
-                  help="Folder containing character PNGs (default: GroupChara.InputPath from config)"),
+            Value("--chara-dir", "--input", "-i", key="CharaDir", ignore_blank=True, metavar="DIR",
+                  default=None,
+                  help="Custom chara directory (default: the game's female and male chara folders; "
+                       "pointing it at the game's chara folder also uses female/ and male/; "
+                       "--input is an alias)"),
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Include character cards from subfolders when scanning (overrides config)"),
         ),

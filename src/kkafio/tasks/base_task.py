@@ -7,6 +7,7 @@ Provides only what is genuinely shared across every task:
   - two logging helpers so task modules don't repeat logger.line() boilerplate
 """
 
+import os
 from pathlib import Path
 
 from kkafio.core.errors import InputError
@@ -43,6 +44,28 @@ def validate_input_path(tag: str, folder_path: Path, default_path: Path | None =
             folder_path.mkdir(parents=True, exist_ok=True)
             return
         raise InputError(f"InputPath does not exist: {folder_path}", tag=tag)
+
+
+def resolve_chara_dirs(game_path: dict, custom: str, tag: str) -> list[Path]:
+    """The chara folder(s) a task works on.
+
+    Blank `custom` -> the game's female and male folders. The game only reads
+    cards that sit inside those two folders, so the game's chara folder
+    (`UserData/chara`) itself is treated as shorthand for the pair: tasks
+    work inside female/ and male/ and never place anything directly in
+    `UserData/chara`. Any other folder is used as-is.
+
+    Raises `InputError` if a custom folder is set but doesn't exist.
+    """
+    female, male = Path(game_path["charaFemale"]), Path(game_path["charaMale"])
+    if not custom or not custom.strip():
+        return [female, male]
+    folder = Path(custom)
+    if not folder.exists():
+        raise InputError(f"Custom chara directory does not exist: {folder}", tag=tag)
+    if os.path.normcase(os.path.realpath(folder)) == os.path.normcase(os.path.realpath(female.parent)):
+        return [female, male]
+    return [folder]
 
 
 class BaseTask:

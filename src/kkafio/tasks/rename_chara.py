@@ -22,7 +22,7 @@ from pathlib import Path
 
 from kkloader import KoikatuCharaData
 
-from kkafio.tasks.base_task import BaseTask, validate_input_path
+from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.logger import logger
@@ -166,13 +166,23 @@ def _merge_cache(cache: dict, response: dict) -> dict:
 # Export
 # ---------------------------------------------------------------------------
 
-def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
-    folder_path = Path(folder_path)
-    cache       = _load_cache(folder_path)
-    validate_input_path("RENAME", folder_path)
+def _as_folder_list(folders) -> list[Path]:
+    if isinstance(folders, (str, Path)):
+        return [Path(folders)]
+    return [Path(f) for f in folders]
+
+
+def export(folders, skip_already_renamed: bool = True) -> str:
+    """Scan one or more chara folders and return the JSON of characters still
+    to translate (names already in any folder's cache are left out)."""
+    folder_list = _as_folder_list(folders)
+    cache: dict = {}
+    for folder in folder_list:
+        cache.update(_load_cache(folder))
     known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
-    png_files   = list(folder_path.rglob("*.png"))
-    logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in {folder_path}")
+    png_files   = [png for folder in folder_list for png in folder.rglob("*.png")]
+    logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in "
+                          + ", ".join(str(f) for f in folder_list))
 
     def _proc(png: Path):
         try:
@@ -221,14 +231,14 @@ def export(folder_path: Path, skip_already_renamed: bool = True) -> str:
 # Process
 # ---------------------------------------------------------------------------
 
-def process(folder_path: Path, json_str: str,
+def process(folders, json_str: str,
             skip_already_renamed: bool = True,
             update_metadata: bool = True,
             rename_files: bool = False) -> None:
-    folder_path = Path(folder_path)
+    """Apply the LLM's JSON response to every card in the given folder(s)."""
+    folder_list = _as_folder_list(folders)
 
     clean = json_str.strip()
-    validate_input_path("RENAME", folder_path)
     if clean.startswith("```"):
         clean = "\n".join(clean.splitlines()[1:])
     if clean.endswith("```"):
@@ -240,6 +250,15 @@ def process(folder_path: Path, json_str: str,
         logger.error("RENAME", f"Could not parse response JSON: {e}")
         return
 
+    for folder_path in folder_list:
+        _process_folder(folder_path, response, skip_already_renamed,
+                        update_metadata, rename_files)
+
+
+def _process_folder(folder_path: Path, response: dict,
+                    skip_already_renamed: bool,
+                    update_metadata: bool,
+                    rename_files: bool) -> None:
     cache = _merge_cache(_load_cache(folder_path), response)
     _save_cache(folder_path, cache)
     logger.info("RENAME", f"Cache updated: {len(cache)} entries")
@@ -382,19 +401,18 @@ class RenameChara(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
         cfg = self.config.rename_chara
-        self.input_path_str       : str  = cfg.get("InputPath", "")
+        self.chara_dir_str        : str  = cfg.get("CharaDir", "")
         self.skip_already_renamed : bool = cfg.get("SkipAlreadyRenamed", True)
         self.update_metadata      : bool = cfg.get("UpdateMetadata", False)
         self.rename_files         : bool = cfg.get("RenameFiles", True)
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
 
     def run(self) -> None:
-        folder = Path(self.input_path_str or ".")
-        validate_input_path("RENAME", folder)
+        folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "RENAME")
 
-        self.log_start("RENAME", str(folder))
+        self.log_start("RENAME", ", ".join(str(f) for f in folders))
 
-        json_str = export(folder, skip_already_renamed=self.skip_already_renamed)
+        json_str = export(folders, skip_already_renamed=self.skip_already_renamed)
         if not json_str:
             return
 
@@ -406,7 +424,7 @@ class RenameChara(BaseTask):
             logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
             return
 
-        process(folder, response,
+        process(folders, response,
                 skip_already_renamed=self.skip_already_renamed,
                 update_metadata=self.update_metadata,
                 rename_files=self.rename_files)

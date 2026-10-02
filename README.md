@@ -70,9 +70,9 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Compress Cards Textures         | `compress-cards-textures --input <folder>`                                                                 |
 | Install Contents                | `install-contents --input <folder>`                                                                        |
 | Uninstall Contents              | `uninstall-contents --input <folder>`                                                                      |
-| Group Characters                | `group-chara --input <folder>`                                                                             |
+| Group Characters                | `group-chara --chara-dir <folder>`                                                                             |
 | Ungroup Characters              | `ungroup-chara --input <folder>`                                                                           |
-| Rename Characters               | `rename-chara --input <folder>`                                                                            |
+| Rename Characters               | `rename-chara --chara-dir <folder>`                                                                            |
 | Run GUI                         | Opens GUI                                                                                                  |
 
 **On PNG files (single or multi-select):**
@@ -260,10 +260,11 @@ https://t.me/kknowcc
 
 - Groups character cards into subfolders named after their series, using an LLM. Works on KK, KKSP, and KKS character cards (KKS cards are only moved, never modified).
 - Workflow:
-  1. Select an input folder, customise the prompt if desired, and enable **Group Characters**.
-  2. Click **Start** — KKAFIO scans the folder, builds a JSON mapping `{character_key: ""}`, and opens a dialog showing the combined prompt + JSON.
+  1. Customise the prompt if desired, optionally set a **Custom Chara Directory**, and enable **Group Characters**.
+  2. Click **Start** — KKAFIO scans the chara folder(s), builds a JSON mapping `{character_key: ""}`, and opens a dialog showing the combined prompt + JSON.
   3. Click **Copy** in the dialog, paste into your LLM of choice. The LLM fills in the series name for each key.
-  4. Copy the LLM's reply, click **Paste** in the same dialog — KKAFIO immediately moves each card into `<input>/<series>/`.
+  4. Copy the LLM's reply, click **Paste** in the same dialog — KKAFIO immediately moves each card into `<chara folder>/<series>/`.
+- **Custom Chara Directory** — blank by default, which means the game's `UserData/chara/female` and `UserData/chara/male` folders, both handled in one run. The game only reads cards inside those two folders, so cards are only ever grouped inside the folder they're already in (`female/<series>/` or `male/<series>/`) — never directly in `UserData/chara`. Pointing the option at the game's `UserData/chara` folder behaves the same as leaving it blank. Any other folder (such as a staging folder) is grouped as a single folder.
 - **Include subfolders** option lets you export already-sorted cards too (off by default to skip them).
 - **Recommended LLMs:**
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
@@ -278,14 +279,14 @@ https://t.me/kknowcc
 
 - Translates character card names to English using an LLM. Works on KK, KKSP, and KKS character cards; a KKS card stays a KKS card when its metadata is updated.
 - Workflow:
-  1. Select an input folder and enable **Rename Characters**.
+  1. Optionally set a **Custom Chara Directory** (blank = the game's female and male chara folders) and enable **Rename Characters**.
   2. Click **Start** — KKAFIO scans all PNG cards (recursively), builds a JSON mapping `{character_key: {lastname, firstname, nickname}}`, and opens a dialog showing the combined prompt + JSON.
   3. Click **Copy** in the dialog, paste into your LLM of choice. The LLM fills in the English name for each key.
   4. Copy the LLM's reply, click **Paste** in the same dialog — KKAFIO immediately writes the translated names into each card's internal metadata and/or renames the file, depending on the options below.
 - **Update card metadata** (off by default): writes the translated names into the card file.
 - **Rename PNG files** (on by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
 - **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
-- Results are cached in `kkafio_rename_cache.json` inside the input folder and reused across runs.
+- Results are cached in `kkafio_rename_cache.json` inside each chara folder and reused across runs.
 - The prompt is fully editable in the settings panel.
 - **Recommended LLMs:** same as Group Characters (see above).
 - **Warning:** Group Characters uses card metadata to extract character names. It is recommended to use **Rename Characters after Group Characters if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
@@ -412,17 +413,17 @@ Checks Filter Duplicate Contents → Group Characters → Rename Characters. Del
 
 **Step 1 — Deduplicate** _(optional)_
 
-The preset enables **Filter Duplicate Contents** with **Input Directory** set to your game's `UserData\chara\female` or `UserData\chara\male` folder, depending on which characters you're organizing.
+The preset enables **Filter Duplicate Contents** with every custom directory left blank, so it checks your game's own chara, scene, coordinate, mods and overlays folders.
 
-**Tip — organizing other content types:** Filter Duplicate Contents isn't limited to chara cards. Right-click the task and choose to duplicate it, then point the copy's **Input Directory** at your game's `mods`, Studio `scene`, or `coordinate` folder instead to deduplicate those too. Right-click the duplicated task again to rename it to something like **Filter Duplicate Mods** so it's easy to tell apart from the original.
+**Tip — limiting what gets checked:** untick any of **Content Types** (Chara / Mods / Coords / Scenes / Overlays) to leave that part of your game alone, or set a custom directory to check somewhere else instead.
 
 **Step 2 — Group characters** _(optional)_
 
-The preset enables **Group Characters**, with **Input Directory** set the same as Step 1, sorting characters into per-character folders.
+The preset enables **Group Characters** with the game's female and male chara folders (the default), sorting characters into per-series folders inside each of them.
 
 **Step 3 — Rename characters** _(optional)_
 
-The preset enables **Rename Characters**, with **Input Directory** set the same as Step 1, giving each card a readable filename.
+The preset enables **Rename Characters** with the game's female and male chara folders (the default), giving each card a readable filename.
 
 **Step 4 — Remove content you don't want** _(optional)_
 
@@ -512,12 +513,12 @@ kkafio_cli install-contents   [--input DIR]
 
 kkafio_cli uninstall-contents [--input DIR]
 
-kkafio_cli rename-chara    [--input DIR]
+kkafio_cli rename-chara    [--chara-dir DIR]
                            [--skip-already-renamed | --no-skip-already-renamed]
                            [--update-metadata | --no-update-metadata]
                            [--rename-files | --no-rename-files]
 
-kkafio_cli group-chara     [--input DIR] [--include-subfolders]
+kkafio_cli group-chara     [--chara-dir DIR] [--include-subfolders]
 
 kkafio_cli ungroup-chara   [--input DIR]
                            [--delete-empty | --no-delete-empty]

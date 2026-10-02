@@ -3920,8 +3920,8 @@
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": "/cfg/in"
+      "chara_dir_str": "/cfg/chara",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -3937,18 +3937,18 @@
   },
   "world": "configured"
  },
- "configured: group-chara --input=<blank>": {
+ "configured: group-chara --chara-dir=<blank>": {
   "argv": [
    "group-chara",
-   "--input",
+   "--chara-dir",
    ""
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": ""
+      "chara_dir_str": "/cfg/chara",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -3967,16 +3967,16 @@
  "configured: group-chara [all-first]": {
   "argv": [
    "group-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--include-subfolders"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": "S_input"
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -3995,16 +3995,16 @@
  "configured: group-chara [all-last]": {
   "argv": [
    "group-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--include-subfolders"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": "S_input"
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -4174,7 +4174,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "/cfg/in",
+      "chara_dir_str": "/cfg/chara",
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": true
@@ -4193,17 +4193,17 @@
   },
   "world": "configured"
  },
- "configured: rename-chara --input=<blank>": {
+ "configured: rename-chara --chara-dir=<blank>": {
   "argv": [
    "rename-chara",
-   "--input",
+   "--chara-dir",
    ""
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "/cfg/chara",
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": true
@@ -4225,8 +4225,8 @@
  "configured: rename-chara [all-first]": {
   "argv": [
    "rename-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--skip-already-renamed",
    "--update-metadata",
    "--rename-files"
@@ -4235,7 +4235,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "S_input",
+      "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": true
@@ -4257,8 +4257,8 @@
  "configured: rename-chara [all-last]": {
   "argv": [
    "rename-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--no-skip-already-renamed",
    "--no-update-metadata",
    "--no-rename-files"
@@ -4267,7 +4267,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "S_input",
+      "chara_dir_str": "S_chara_dir",
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": false
@@ -11181,8 +11181,62 @@
    "events": [
     {
      "attrs": {
-      "include_subfolders": false,
-      "input_path_str": ""
+      "chara_dir_str": "",
+      "include_subfolders": false
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --chara-dir=<blank>": {
+  "argv": [
+   "group-chara",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --chara-dir=S_chara_dir": {
+  "argv": [
+   "group-chara",
+   "--chara-dir",
+   "S_chara_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11207,8 +11261,8 @@
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": ""
+      "chara_dir_str": "",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11224,18 +11278,18 @@
   },
   "world": "default"
  },
- "group-chara --input=<blank>": {
+ "group-chara --input=S_chara_dir": {
   "argv": [
    "group-chara",
    "--input",
-   ""
+   "S_chara_dir"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": false,
-      "input_path_str": ""
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11251,45 +11305,18 @@
   },
   "world": "default"
  },
- "group-chara --input=S_input": {
-  "argv": [
-   "group-chara",
-   "--input",
-   "S_input"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "include_subfolders": false,
-      "input_path_str": "S_input"
-     },
-     "class": "GroupChara",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "GroupChara"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "group-chara -i=S_input": {
+ "group-chara -i=S_chara_dir": {
   "argv": [
    "group-chara",
    "-i",
-   "S_input"
+   "S_chara_dir"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": false,
-      "input_path_str": "S_input"
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11308,16 +11335,16 @@
  "group-chara [all-first]": {
   "argv": [
    "group-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--include-subfolders"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": "S_input"
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11336,16 +11363,16 @@
  "group-chara [all-last]": {
   "argv": [
    "group-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--include-subfolders"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "include_subfolders": true,
-      "input_path_str": "S_input"
+      "chara_dir_str": "S_chara_dir",
+      "include_subfolders": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -12016,7 +12043,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12035,17 +12062,17 @@
   },
   "world": "default"
  },
- "rename-chara --input=<blank>": {
+ "rename-chara --chara-dir=<blank>": {
   "argv": [
    "rename-chara",
-   "--input",
+   "--chara-dir",
    ""
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12064,17 +12091,46 @@
   },
   "world": "default"
  },
- "rename-chara --input=S_input": {
+ "rename-chara --chara-dir=S_chara_dir": {
   "argv": [
    "rename-chara",
-   "--input",
-   "S_input"
+   "--chara-dir",
+   "S_chara_dir"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "input_path_str": "S_input",
+      "chara_dir_str": "S_chara_dir",
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --input=S_chara_dir": {
+  "argv": [
+   "rename-chara",
+   "--input",
+   "S_chara_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12102,7 +12158,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": false,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12130,7 +12186,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": false,
       "update_metadata": false
@@ -12158,7 +12214,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12186,7 +12242,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12214,7 +12270,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12242,7 +12298,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "",
+      "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": true
@@ -12261,17 +12317,17 @@
   },
   "world": "default"
  },
- "rename-chara -i=S_input": {
+ "rename-chara -i=S_chara_dir": {
   "argv": [
    "rename-chara",
    "-i",
-   "S_input"
+   "S_chara_dir"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "input_path_str": "S_input",
+      "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -12293,8 +12349,8 @@
  "rename-chara [all-first]": {
   "argv": [
    "rename-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--skip-already-renamed",
    "--update-metadata",
    "--rename-files"
@@ -12303,7 +12359,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "S_input",
+      "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": true
@@ -12325,8 +12381,8 @@
  "rename-chara [all-last]": {
   "argv": [
    "rename-chara",
-   "--input",
-   "S_input",
+   "--chara-dir",
+   "S_chara_dir",
    "--no-skip-already-renamed",
    "--no-update-metadata",
    "--no-rename-files"
@@ -12335,7 +12391,7 @@
    "events": [
     {
      "attrs": {
-      "input_path_str": "S_input",
+      "chara_dir_str": "S_chara_dir",
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": false

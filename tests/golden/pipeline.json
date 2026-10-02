@@ -439,10 +439,8 @@
     },
     {
      "attrs": {
-      "include_subfolders": false,
-      "input_path_str": {
-       "__path__": "<ROOT>/work"
-      }
+      "chara_dir_str": "<ROOT>/work",
+      "include_subfolders": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -467,9 +465,7 @@
     },
     {
      "attrs": {
-      "input_path_str": {
-       "__path__": "<ROOT>/work"
-      },
+      "chara_dir_str": "<ROOT>/work",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -643,9 +639,7 @@
     },
     {
      "attrs": {
-      "input_path_str": {
-       "__path__": "<ROOT>/work"
-      },
+      "chara_dir_str": "<ROOT>/work",
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false
@@ -673,10 +667,8 @@
     },
     {
      "attrs": {
-      "include_subfolders": false,
-      "input_path_str": {
-       "__path__": "<ROOT>/work"
-      }
+      "chara_dir_str": "<ROOT>/work",
+      "include_subfolders": false
      },
      "class": "GroupChara",
      "enabled": true,

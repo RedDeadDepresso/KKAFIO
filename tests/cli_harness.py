@@ -406,9 +406,9 @@ def configured_tasks() -> list[dict]:
         t("InstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Mods"),
           ExtractArchive=sw(False)),
         t("UninstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Chara")),
-        t("GroupChara", InputPath=f("/cfg/in"), GroupCharaIncludeSubfolders=sw(True)),
+        t("GroupChara", CharaDir=f("/cfg/chara"), GroupCharaIncludeSubfolders=sw(True)),
         t("UngroupChara", InputPath=f("/cfg/in"), DeleteEmptyFolders=sw(False)),
-        t("RenameChara", InputPath=f("/cfg/in"), SkipAlreadyRenamed=sw(False), UpdateMetadata=sw(True),
+        t("RenameChara", CharaDir=f("/cfg/chara"), SkipAlreadyRenamed=sw(False), UpdateMetadata=sw(True),
           RenameFiles=sw(False)),
         t("ArchiveCards", ArchiveOutputPath=f("/cfg/archive"), ContentPaths=opt_files("cfg1.png", "cfg2.png"),
           CombinedArchive=sw(False), ArchiveFormat=opt_select("zip"), IncludeModpack=sw(True),
@@ -451,7 +451,7 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
                    "ExportMods": "ExportOutputPath", "FilterConvertKKS": "DownloadsInputPath",
                    "CompressCardsTextures": "DownloadsInputPath",
                    "InstallContents": "DownloadsInputPath", "UninstallContents": "DownloadsInputPath",
-                   "GroupChara": "InputPath", "UngroupChara": "InputPath", "RenameChara": "InputPath"}
+                   "GroupChara": "CharaDir", "UngroupChara": "InputPath", "RenameChara": "CharaDir"}
     def _task(name, enabled=True, **opts):                                                  # noqa: E306
         if name in path_option and path_option[name] not in opts:
             opts[path_option[name]] = opt_folder(work)

@@ -1191,7 +1191,7 @@
       "default_check": false,
       "description": "$task.GroupChara.description",
       "group": ["chara-management"],
-      "option": ["InputPath", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
+      "option": ["CharaDir", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
     },
     {
       "name": "UngroupChara",
@@ -1210,7 +1210,7 @@
       "description": "$task.RenameChara.description",
       "group": ["chara-management"],
       "option": [
-        "InputPath",
+        "CharaDir",
         "SkipAlreadyRenamed",
         "UpdateMetadata",
         "RenameFiles",

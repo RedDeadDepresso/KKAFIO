@@ -3,23 +3,26 @@ group_chara.py — Group character cards into folders by series using an LLM.
 
 Workflow (all handled inside run()):
 1. export() scans the folder for KK chara PNGs and builds a JSON dict
-   {key: ""} where key encodes name + personality + hair colour.
+   {key: ""} where key encodes name + personality + hair colour. With the
+   default (game) chara folders, both female/ and male/ are scanned.
 2. run() shows a native Copy/Paste dialog (src/kkafio/system/llm_dialog.py) with the
    prompt + JSON. The user copies it into their LLM, pastes the reply back
    into the dialog, and clicks Paste.
 3. process(folder_path, json_str) takes that JSON response (key → series
    folder name), finds all matching chara PNGs, and moves each one into
-   <input_folder>/<series>/<filename>.
+   <chara_folder>/<series>/<filename>, inside the same folder (female/ or
+   male/) the card was found in.
 """
 
 
 import json
 import shutil
 from pathlib import Path
+from typing import Sequence
 
 from kkloader import KoikatuCharaData
 
-from kkafio.tasks.base_task import BaseTask, validate_input_path
+from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.logger import logger
@@ -51,12 +54,25 @@ JSON to fill in:
 # Colour helper
 # ---------------------------------------------------------------------------
 
+def _as_folder_list(folders: Path | Sequence[Path]) -> list[Path]:
+    if isinstance(folders, (str, Path)):
+        return [Path(folders)]
+    return [Path(f) for f in folders]
+
+
+def _list_pngs(folders: Sequence[Path], include_subfolders: bool) -> list[Path]:
+    pngs: list[Path] = []
+    for folder in folders:
+        pngs.extend(folder.rglob("*.png") if include_subfolders else folder.glob("*.png"))
+    return pngs
+
+
 # ---------------------------------------------------------------------------
 # Export — build prompt + JSON, return as string for the clipboard
 # ---------------------------------------------------------------------------
 
-def export(folder_path: Path, include_subfolders: bool = False) -> str:
-    """Scan folder_path for chara PNGs and return the character-key JSON.
+def export(folders: Path | Sequence[Path], include_subfolders: bool = False) -> str:
+    """Scan the given chara folder(s) for chara PNGs and return the character-key JSON.
 
     Args:
         include_subfolders: When False (default) only scans the top-level folder,
@@ -66,16 +82,13 @@ def export(folder_path: Path, include_subfolders: bool = False) -> str:
     Returns only the JSON block (no prompt) — the caller splices its own
     prompt text in front, same pattern as rename_chara.export().
     """
-    folder_path = Path(folder_path)
-    validate_input_path("GROUP", folder_path)
+    folder_list = _as_folder_list(folders)
     characters: dict[str, str] = {}
 
-    if include_subfolders:
-        png_files = list(folder_path.rglob("*.png"))
-    else:
-        png_files = list(folder_path.glob("*.png"))
+    png_files = _list_pngs(folder_list, include_subfolders)
 
-    logger.info("GROUP", f"Scanning {len(png_files)} PNG file(s) in {folder_path}"
+    logger.info("GROUP", f"Scanning {len(png_files)} PNG file(s) in "
+                         + ", ".join(str(f) for f in folder_list)
                          + (" (top-level only)" if not include_subfolders else " (recursive)"))
 
     def _process_png(png: Path) -> tuple[Path, str | None]:
@@ -168,15 +181,17 @@ def _safe_folder_name(name: str) -> str:
     return name[:_MAX_FOLDER_NAME_LEN]
 
 
-def process(folder_path: Path, json_str: str, include_subfolders: bool = False) -> None:
+def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: bool = False) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response.
 
+    Each card is moved into <its own folder>/<series>/ — so with the game's
+    female/ and male/ folders, a card never leaves the one it's in.
+
     include_subfolders must match what export() was given: when True, cards
-    already sitting in subfolders are regrouped too (moved into
-    <folder_path>/<series>/); when False only top-level cards are touched.
+    already sitting in subfolders are regrouped too; when False only
+    top-level cards are touched.
     """
-    folder_path = Path(folder_path)
-    validate_input_path("GROUP", folder_path)
+    folder_list = _as_folder_list(folders)
 
     # Parse the LLM response — strip markdown fences if the user forgot
     clean = json_str.strip()
@@ -203,16 +218,18 @@ def process(folder_path: Path, json_str: str, include_subfolders: bool = False) 
         return
 
     logger.info("GROUP",
-        f"Processing {len(dest_map)} assignment(s) in {folder_path}")
+        f"Processing {len(dest_map)} assignment(s) in "
+        + ", ".join(str(f) for f in folder_list))
 
-    if include_subfolders:
-        png_files = list(folder_path.rglob("*.png"))
-    else:
-        png_files = list(folder_path.glob("*.png"))
+    # Pair every card with the root folder it was found under, so it's
+    # regrouped inside that same root.
+    png_files = [(root, png)
+                 for root in folder_list
+                 for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png"))]
     moved = 0
     skipped = 0
 
-    for png in png_files:
+    for folder_path, png in png_files:
         # Pre-filter: skip non-chara-card files before passing to kkloader
         try:
             raw = png.read_bytes()
@@ -272,17 +289,16 @@ class GroupChara(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
         cfg = self.config.group_chara
-        self.input_path_str     : str  = cfg.get("InputPath", "")
+        self.chara_dir_str      : str  = cfg.get("CharaDir", "")
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
 
     def run(self) -> None:
-        folder = Path(self.input_path_str or ".")
-        validate_input_path("GROUP", folder)
+        folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "GROUP")
 
-        self.log_start("GROUP", str(folder))
+        self.log_start("GROUP", ", ".join(str(f) for f in folders))
 
-        json_str = export(folder, include_subfolders=self.include_subfolders)
+        json_str = export(folders, include_subfolders=self.include_subfolders)
         if not json_str:
             return
 
@@ -294,4 +310,4 @@ class GroupChara(BaseTask):
             logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
             return
 
-        process(folder, response, include_subfolders=self.include_subfolders)
+        process(folders, response, include_subfolders=self.include_subfolders)
