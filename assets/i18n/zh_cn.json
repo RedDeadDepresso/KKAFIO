@@ -225,5 +225,7 @@
   "option.OpenReport.label": "打开报告",
   "option.OpenReport.description": "当仍有模组缺失或下载失败时，自动打开报告（kkafio_missing_mods_report.txt）。因 Sideloader Modpack 设置而有意跳过的模组不计入。",
   "option.OpenReport.case.Yes.label": "缺失时打开",
-  "option.OpenReport.case.No.label": "不打开"
+  "option.OpenReport.case.No.label": "不打开",
+  "option.OverlaysDir.label": "自定义覆盖层目录",
+  "option.OverlaysDir.description": "覆盖要扫描的覆盖层文件夹（用于过滤重复内容）。留空则使用游戏默认的 Overlays 文件夹。"
 }

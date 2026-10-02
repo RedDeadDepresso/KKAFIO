@@ -23,6 +23,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Changed
 
+- **Filter Duplicate Contents** no longer has an input folder. It now has **Content Types** (like Install Contents) and custom chara, scene, coordinate, mods and overlays directories that default to the game's folders. `--input DIR` still works on the command line (and in the context menu) as a shorthand for scanning one folder for every type.
 - Improved cache logic across tasks that scan cards for GUIDs, so repeat runs skip re-parsing files that haven't changed.
 - Renamed **Archive Characters** to **Archive Cards** and **Delete Characters** to **Delete Cards**, and added support for Studio scenes and coordinate cards to both.
 - Replaced the old presets with new ones: **Download, Filter & Install**, **Organize Installed Contents**, and **Export Installed Contents**.

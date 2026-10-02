@@ -60,7 +60,6 @@ _SKIP_ATTRS = {"config", "file_manager", "game_path", "game_type", "is_sunshine"
 _SECTION_READS = {
     "UngroupChara": ["InputPath"],
     "FilterConvertKKS": ["InputPath"],
-    "FilterDuplicateContents": ["InputPath"],
 }
 
 CONFIG_FLAG_SKIP = {"--context-menu"}  # internal flag; exercised by hand-written cases
@@ -394,7 +393,9 @@ def configured_tasks() -> list[dict]:
           SkipDownloaded=sw(False)),
         t("FilterConvertKKS", DownloadsInputPath=f("/cfg/in"), Convert=sw(True), KKAction=opt_select("Move"),
           KKSAction=opt_select("Delete"), ExtractArchive=sw(False)),
-        t("FilterDuplicateContents", DownloadsInputPath=f("/cfg/in"), UseCache=sw(False),
+        t("FilterDuplicateContents", InstallContentTypes=opt_checkbox("Chara"), CharaDir=f("/cfg/chara"),
+          SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coord"), ModsDir=f("/cfg/mods"),
+          OverlaysDir=f("/cfg/overlays"), UseCache=sw(False),
           FuzzyMatching=sw(True), KeepStrategy=opt_select("Newest"), DuplicateAction=opt_select("Delete")),
         t("DownloadMissingMods", ContentTypes=opt_checkbox("Chara"), SideloaderModpack=opt_select("All"),
           TelegramSource=opt_select("Both"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OpenReport=sw(False),
@@ -448,7 +449,7 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
     # default folders (C:\\KKAFIO\\... on Windows), which would touch the real disk and differ by OS.
     path_option = {"CreateBackup": "BackupOutputPath", "ArchiveCards": "ArchiveOutputPath",
                    "ExportMods": "ExportOutputPath", "FilterConvertKKS": "DownloadsInputPath",
-                   "FilterDuplicateContents": "DownloadsInputPath", "CompressCardsTextures": "DownloadsInputPath",
+                   "CompressCardsTextures": "DownloadsInputPath",
                    "InstallContents": "DownloadsInputPath", "UninstallContents": "DownloadsInputPath",
                    "GroupChara": "InputPath", "UngroupChara": "InputPath", "RenameChara": "InputPath"}
     def _task(name, enabled=True, **opts):                                                  # noqa: E306

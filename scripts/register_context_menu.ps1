@@ -43,7 +43,7 @@ if (-not (Test-Path $Gui)) {
 # ---------------------------------------------------------------------------
 $FolderTasks = @(
     [ordered]@{ Id = 'FilterConvertKKS';       Cli = 'filter-convert-kks';       ArgsTemplate = '--input "{P}"' }
-    [ordered]@{ Id = 'FilterDuplicateContents'; Cli = 'filter-duplicate-contents'; ArgsTemplate = '--input "{P}"' }
+    [ordered]@{ Id = 'FilterDuplicateContents'; Cli = 'filter-duplicate-contents'; ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --mods-dir "{P}" --overlays-dir "{P}"' }
     [ordered]@{ Id = 'DownloadMissingMods';     Cli = 'download-missing-mods';     ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --output-mods-dir "{P}"' }
     [ordered]@{ Id = 'CompressCardsTextures';   Cli = 'compress-cards-textures';   ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'InstallContents';         Cli = 'install-contents';          ArgsTemplate = '--input "{P}"' }

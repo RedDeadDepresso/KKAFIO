@@ -341,20 +341,25 @@
     },
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "<ROOT>/work"
-      }
-     },
      "task": "FilterDuplicateContents"
     },
     {
@@ -754,20 +759,25 @@
     },
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "<ROOT>/work"
-      }
-     },
      "task": "FilterDuplicateContents"
     },
     {

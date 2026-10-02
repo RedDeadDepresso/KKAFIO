@@ -98,6 +98,14 @@ def _download_missing_mods_prepare(args: argparse.Namespace, overrides: dict[str
         ]
 
 
+def _filter_duplicates_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+    # --input is a shorthand: one folder for every content type, unless the
+    # specific --*-dir flag is also given.
+    if args.input:
+        for key in ("CharaDir", "SceneDir", "CoordDir", "ModsDir", "OverlaysDir"):
+            overrides.setdefault(key, args.input)
+
+
 def _export_mods_guids(parser: argparse.ArgumentParser) -> None:
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--guids", metavar="TEXT", default=None,
@@ -450,15 +458,30 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
         name="FilterDuplicateContents", command="filter-duplicate-contents",
         help="Find and handle duplicate PNG cards and zipmod files",
         description=(
-            "Scans the input folder recursively for duplicate PNG cards and zipmod files. "
+            "Scans the game's chara, scene, coordinate, mods and overlays folders (or the custom "
+            "directories given) recursively for duplicate PNG cards and zipmod files. "
             "Duplicates are identified by content (not filename). "
             "By default they are moved to a _duplicates_/ subfolder and renamed. "
             "With --action delete they are sent to the recycle bin instead."
         ),
         target="kkafio.tasks.filter_duplicate_contents:FilterDuplicateContents",
+        prepare=_filter_duplicates_prepare,
         options=(
-            Value("--input", "-i", key="InputPath", coerce=Path, metavar="DIR", default=None,
-                  help="Folder to scan (default: FilterDuplicateContents.InputPath from config)"),
+            # Shorthand used by the context menu: scan DIR for every content type.
+            Value("--input", "-i", metavar="DIR", default=None,
+                  help="Scan this one folder for every selected content type, instead of the "
+                       "per-type directories (shorthand for setting all five --*-dir options)"),
+            *_content_type_toggles("chara", "mods", "coords", "scenes", "overlays"),
+            Value("--chara-dir", key="CharaDir", ignore_blank=True, default=None, metavar="DIR",
+                  help="Custom chara directory (default: the game's female and male chara folders)"),
+            Value("--scene-dir", key="SceneDir", ignore_blank=True, default=None, metavar="DIR",
+                  help="Custom scene directory (default: the game's Studio scene folder)"),
+            Value("--coord-dir", key="CoordDir", ignore_blank=True, default=None, metavar="DIR",
+                  help="Custom coordinate directory (default: the game's coordinate folder)"),
+            Value("--mods-dir", key="ModsDir", ignore_blank=True, default=None, metavar="DIR",
+                  help="Custom mods directory (default: the game's mods folder)"),
+            Value("--overlays-dir", key="OverlaysDir", ignore_blank=True, default=None, metavar="DIR",
+                  help="Custom overlays directory (default: the game's Overlays folder)"),
             Toggle("fuzzy", key="FuzzyChara",
                    help="Enable fuzzy matching for chara cards (overrides config)",
                    off_help="Disable fuzzy matching (overrides config)"),

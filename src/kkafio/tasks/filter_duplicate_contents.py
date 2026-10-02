@@ -1,5 +1,6 @@
 import io
 import json as _json
+import os
 import shutil
 import struct
 from collections import defaultdict
@@ -8,10 +9,12 @@ from typing import Literal
 
 import xxhash
 
-from kkafio.tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
+from kkafio.tasks.base_task import DEFAULT_DOWNLOADS_PATH
+from kkafio.cards.mods import in_modpack_folder
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import Config
+from kkafio.core.errors import InputError
 from kkafio.core.file_manager import FileManager
 from kkafio.core.logger import logger
 
@@ -360,22 +363,84 @@ class FilterDuplicateContents:
     def __init__(self, config: Config, file_manager: FileManager):
         self.config       = config
         self.file_manager = file_manager
+        self.game_path    = self.config.game_path
         cfg = self.config.filter_duplicate_contents
         self.fuzzy_chara : bool = cfg.get("FuzzyChara", False)
         self.keep        : str  = cfg.get("Keep",       KEEP_BIGGEST)
         self.duplicate_action : str = cfg.get("DuplicateAction", ACTION_MOVE_RENAME)
         self.use_cache   : bool = cfg.get("UseCache",   True)
 
-    def run(self, folder_path: Path | None = None) -> None:
-        if folder_path is None:
-            folder_path = Path(self.config.filter_duplicate_contents["InputPath"])
-        folder_path = Path(folder_path)
-        duplicates_root = folder_path / self.DUPLICATES_DIR
+        self.do_chara    : bool = cfg.get("Chara",    True)
+        self.do_mods     : bool = cfg.get("Mods",     True)
+        self.do_coords   : bool = cfg.get("Coords",   True)
+        self.do_scenes   : bool = cfg.get("Scenes",   True)
+        self.do_overlays : bool = cfg.get("Overlays", True)
 
-        validate_input_path("DUPLIC", folder_path, default_path=DEFAULT_DOWNLOADS_PATH)
+        self.chara_dir_str    : str = cfg.get("CharaDir",    "")
+        self.scene_dir_str    : str = cfg.get("SceneDir",    "")
+        self.coord_dir_str    : str = cfg.get("CoordDir",    "")
+        self.mods_dir_str     : str = cfg.get("ModsDir",     "")
+        self.overlays_dir_str : str = cfg.get("OverlaysDir", "")
+
+    def _resolve_targets(self) -> list[tuple[Path, set[str]]]:
+        """Work out which folders to scan and which content categories to
+        handle in each.
+
+        Every enabled content type uses its custom directory if one is set,
+        otherwise the game's own folder(s) for it (chara has two: female and
+        male). A folder shared by several content types (e.g. every custom
+        directory pointing at the same staging folder) is scanned once, with
+        all of its categories handled in that single pass.
+        """
+        gp = self.game_path
+        spec = (
+            ("chara",      "Chara",      self.do_chara,    self.chara_dir_str,
+             [gp.get("charaFemale"), gp.get("charaMale")]),
+            ("scene",      "Scene",      self.do_scenes,   self.scene_dir_str,   [gp.get("scene")]),
+            ("coordinate", "Coordinate", self.do_coords,   self.coord_dir_str,   [gp.get("coordinate")]),
+            ("mods",       "Mods",       self.do_mods,     self.mods_dir_str,    [gp.get("mods")]),
+            ("overlays",   "Overlays",   self.do_overlays, self.overlays_dir_str, [gp.get("Overlays")]),
+        )
+        if not any(enabled for _, _, enabled, _, _ in spec):
+            raise InputError("No content types selected.", tag="DUPLIC")
+
+        targets: dict[str, tuple[Path, set[str]]] = {}
+        for category, label, enabled, custom, defaults in spec:
+            if not enabled:
+                continue
+            if custom.strip():
+                folder = Path(custom)
+                if not folder.exists():
+                    if folder == Path(DEFAULT_DOWNLOADS_PATH):
+                        logger.info("DUPLIC", f"{label} directory does not exist yet, creating default folder: {folder}")
+                        folder.mkdir(parents=True, exist_ok=True)
+                    else:
+                        raise InputError(f"Custom {label.lower()} directory does not exist: {folder}", tag="DUPLIC")
+                folders = [folder]
+            else:
+                folders = [d for d in defaults if d]
+                if not folders:
+                    logger.info("DUPLIC", f"{label}: no game folder available - skipping")
+                    continue
+            for folder in folders:
+                key = os.path.normcase(os.path.realpath(str(folder)))
+                targets.setdefault(key, (Path(folder), set()))[1].add(category)
+
+        return list(targets.values())
+
+    def run(self) -> None:
+        targets = self._resolve_targets()
+        for folder_path, categories in targets:
+            self._process_folder(folder_path, categories)
+
+    def _process_folder(self, folder_path: Path, categories: set[str]) -> None:
+        duplicates_root = folder_path / self.DUPLICATES_DIR
+        scan_pngs = bool(categories & {"chara", "scene", "coordinate", "overlays"})
+        scan_mods = "mods" in categories
 
         logger.line()
         logger.info("DUPLIC", f"Scanning        : {folder_path}")
+        logger.info("DUPLIC", f"Content types   : {', '.join(sorted(categories))}")
         logger.info("DUPLIC", f"Keep strategy   : {self.keep}")
         logger.info("DUPLIC", f"Fuzzy chara     : {self.fuzzy_chara}")
         logger.info("DUPLIC", f"Duplicate action: {self.duplicate_action}")
@@ -396,9 +461,12 @@ class FilterDuplicateContents:
             except ValueError:
                 pass
             suffix = p.suffix.lower()
-            if suffix == ".png":
+            if suffix == ".png" and scan_pngs:
                 png_files.append(p)
-            elif suffix == ".zipmod":
+            elif suffix == ".zipmod" and scan_mods:
+                # Never touch the Sideloader Modpack, wherever it's scanned.
+                if in_modpack_folder(p, folder_path):
+                    continue
                 mod_files.append(p)
 
         logger.info("DUPLIC",
@@ -420,7 +488,7 @@ class FilterDuplicateContents:
 
         # Fuzzy matching needs pillow + imagehash; check once up front rather
         # than failing per file.
-        do_fuzzy = self.fuzzy_chara
+        do_fuzzy = self.fuzzy_chara and "chara" in categories
         if do_fuzzy:
             try:
                 import imagehash  # noqa: F401
@@ -529,6 +597,8 @@ class FilterDuplicateContents:
             if len(files) < 2:
                 continue
             category = category_map.get(digest)
+            if category is not None and category not in categories:
+                continue  # content type not selected for this folder
             if category == "chara" and do_fuzzy:
                 exact_chara_groups[digest] = files
             else:

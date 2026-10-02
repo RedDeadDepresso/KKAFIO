@@ -225,5 +225,7 @@
   "option.OpenReport.label": "Open Report",
   "option.OpenReport.description": "Automatically open the report (kkafio_missing_mods_report.txt) when mods are still missing or a download failed. Mods skipped on purpose by the Sideloader Modpack setting don't count.",
   "option.OpenReport.case.Yes.label": "Open if Missing",
-  "option.OpenReport.case.No.label": "Don't Open"
+  "option.OpenReport.case.No.label": "Don't Open",
+  "option.OverlaysDir.label": "Custom Overlays Directory",
+  "option.OverlaysDir.description": "Override the overlays folder to scan (used by Filter Duplicate Contents). Leave empty to use the game's default Overlays folder."
 }

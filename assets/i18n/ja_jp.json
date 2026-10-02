@@ -225,5 +225,7 @@
   "option.OpenReport.label": "レポートを開く",
   "option.OpenReport.description": "レポート（kkafio_missing_mods_report.txt）を、MODがまだ不足している場合またはダウンロードに失敗した場合に自動で開きます。Sideloader Modpackの設定で意図的にスキップされたMODは対象外です。",
   "option.OpenReport.case.Yes.label": "不足時に開く",
-  "option.OpenReport.case.No.label": "開かない"
+  "option.OpenReport.case.No.label": "開かない",
+  "option.OverlaysDir.label": "カスタムオーバーレイフォルダ",
+  "option.OverlaysDir.description": "スキャンするオーバーレイフォルダを上書きします（重複コンテンツのフィルタで使用）。空欄の場合はゲームのデフォルトのOverlaysフォルダを使用します。"
 }

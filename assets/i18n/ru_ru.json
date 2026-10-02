@@ -225,5 +225,7 @@
   "option.OpenReport.label": "Открыть отчёт",
   "option.OpenReport.description": "Автоматически открывать отчёт (kkafio_missing_mods_report.txt), если моды всё ещё отсутствуют или загрузка не удалась. Моды, намеренно пропущенные настройкой Sideloader Modpack, не учитываются.",
   "option.OpenReport.case.Yes.label": "Открыть при нехватке",
-  "option.OpenReport.case.No.label": "Не открывать"
+  "option.OpenReport.case.No.label": "Не открывать",
+  "option.OverlaysDir.label": "Своя папка оверлеев",
+  "option.OverlaysDir.description": "Переопределяет папку оверлеев для сканирования (используется в «Фильтр дублирующегося содержимого»). Оставьте пустым, чтобы использовать стандартную папку Overlays игры."
 }

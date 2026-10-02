@@ -3529,18 +3529,103 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
       "duplicate_action": "Delete",
       "fuzzy_chara": true,
       "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
       "use_cache": false
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "/cfg/in"
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: filter-duplicate-contents --chara-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
+      "duplicate_action": "Delete",
+      "fuzzy_chara": true,
+      "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
      },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: filter-duplicate-contents --coord-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
+      "duplicate_action": "Delete",
+      "fuzzy_chara": true,
+      "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
      "task": "FilterDuplicateContents"
     }
    ],
@@ -3561,20 +3646,142 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
       "duplicate_action": "Delete",
       "fuzzy_chara": true,
       "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
       "use_cache": false
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "."
-      }
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: filter-duplicate-contents --mods-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
+      "duplicate_action": "Delete",
+      "fuzzy_chara": true,
+      "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
      },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: filter-duplicate-contents --overlays-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--overlays-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
+      "duplicate_action": "Delete",
+      "fuzzy_chara": true,
+      "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: filter-duplicate-contents --scene-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coord",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
+      "duplicate_action": "Delete",
+      "fuzzy_chara": true,
+      "keep": "Newest",
+      "mods_dir_str": "/cfg/mods",
+      "overlays_dir_str": "/cfg/overlays",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
      "task": "FilterDuplicateContents"
     }
    ],
@@ -3590,6 +3797,21 @@
    "filter-duplicate-contents",
    "--input",
    "S_input",
+   "--chara",
+   "--mods",
+   "--coords",
+   "--scenes",
+   "--overlays",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--overlays-dir",
+   "S_overlays_dir",
    "--fuzzy",
    "--keep",
    "None",
@@ -3601,20 +3823,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": true,
       "keep": "None",
+      "mods_dir_str": "S_mods_dir",
+      "overlays_dir_str": "S_overlays_dir",
+      "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "S_input"
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -3630,6 +3857,21 @@
    "filter-duplicate-contents",
    "--input",
    "S_input",
+   "--no-chara",
+   "--no-mods",
+   "--no-coords",
+   "--no-scenes",
+   "--no-overlays",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--overlays-dir",
+   "S_overlays_dir",
    "--no-fuzzy",
    "--keep",
    "First alphabetically",
@@ -3641,20 +3883,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "do_chara": false,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
       "duplicate_action": "Delete",
       "fuzzy_chara": false,
       "keep": "First alphabetically",
+      "mods_dir_str": "S_mods_dir",
+      "overlays_dir_str": "S_overlays_dir",
+      "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "S_input"
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9348,18 +9595,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9380,18 +9634,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Delete",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9412,18 +9673,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9444,18 +9712,257 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --chara": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--chara"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
      },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --chara-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --chara-dir=S_chara_dir": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--chara-dir",
+   "S_chara_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --coord-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --coord-dir=S_coord_dir": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "S_coord_dir",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --coords": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--coords"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9475,18 +9982,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": true,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9507,20 +10021,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "."
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9541,20 +10060,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "S_input",
+      "coord_dir_str": "S_input",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "S_input",
+      "overlays_dir_str": "S_input",
+      "scene_dir_str": "S_input",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "S_input"
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9575,18 +10099,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9607,18 +10138,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "First alphabetically",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9639,18 +10177,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Last alphabetically",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9671,18 +10216,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Newest",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9703,18 +10255,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "None",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9735,18 +10294,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Oldest",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9767,18 +10333,217 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Smallest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --mods": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
      },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --mods-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --mods-dir=S_mods_dir": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--mods-dir",
+   "S_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "S_mods_dir",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --no-chara": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--no-chara"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": false,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --no-coords": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--no-coords"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": false,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9798,18 +10563,139 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --no-mods": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--no-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": false,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
      },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --no-overlays": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--no-overlays"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": false,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --no-scenes": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--no-scenes"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": false,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9829,18 +10715,257 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": false
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --overlays": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--overlays"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
      },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --overlays-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--overlays-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --overlays-dir=S_overlays_dir": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--overlays-dir",
+   "S_overlays_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "S_overlays_dir",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --scene-dir=<blank>": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --scene-dir=S_scene_dir": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--scene-dir",
+   "S_scene_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "filter-duplicate-contents --scenes": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--scenes"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Move & Rename",
+      "fuzzy_chara": false,
+      "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9860,18 +10985,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": "C:/KKAFIO/Downloads"
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9892,20 +11024,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "S_input",
+      "coord_dir_str": "S_input",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": false,
       "keep": "Biggest file size",
+      "mods_dir_str": "S_input",
+      "overlays_dir_str": "S_input",
+      "scene_dir_str": "S_input",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "S_input"
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9921,6 +11058,21 @@
    "filter-duplicate-contents",
    "--input",
    "S_input",
+   "--chara",
+   "--mods",
+   "--coords",
+   "--scenes",
+   "--overlays",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--overlays-dir",
+   "S_overlays_dir",
    "--fuzzy",
    "--keep",
    "None",
@@ -9932,20 +11084,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
       "duplicate_action": "Move & Rename",
       "fuzzy_chara": true,
       "keep": "None",
+      "mods_dir_str": "S_mods_dir",
+      "overlays_dir_str": "S_overlays_dir",
+      "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "S_input"
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],
@@ -9961,6 +11118,21 @@
    "filter-duplicate-contents",
    "--input",
    "S_input",
+   "--no-chara",
+   "--no-mods",
+   "--no-coords",
+   "--no-scenes",
+   "--no-overlays",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--overlays-dir",
+   "S_overlays_dir",
    "--no-fuzzy",
    "--keep",
    "First alphabetically",
@@ -9972,20 +11144,25 @@
    "events": [
     {
      "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "do_chara": false,
+      "do_coords": false,
+      "do_mods": false,
+      "do_overlays": false,
+      "do_scenes": false,
       "duplicate_action": "Delete",
       "fuzzy_chara": false,
       "keep": "First alphabetically",
+      "mods_dir_str": "S_mods_dir",
+      "overlays_dir_str": "S_overlays_dir",
+      "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
      "class": "FilterDuplicateContents",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "section_reads": {
-      "InputPath": {
-       "__path__": "S_input"
-      }
-     },
      "task": "FilterDuplicateContents"
     }
    ],

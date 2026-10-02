@@ -689,6 +689,16 @@
         "CoordDir": "{coord_dir}"
       }
     },
+    "OverlaysDir": {
+      "type": "folder",
+      "name": "overlays_dir",
+      "label": "$option.OverlaysDir.label",
+      "description": "$option.OverlaysDir.description",
+      "default": "",
+      "pipeline_override": {
+        "OverlaysDir": "{overlays_dir}"
+      }
+    },
     "ContentTypes": {
       "type": "checkbox",
       "label": "$option.ContentTypes.label",
@@ -1104,7 +1114,12 @@
       "description": "$task.FilterDuplicateContents.description",
       "group": ["content-management"],
       "option": [
-        "DownloadsInputPath",
+        "InstallContentTypes",
+        "CharaDir",
+        "SceneDir",
+        "CoordDir",
+        "ModsDir",
+        "OverlaysDir",
         "UseCache",
         "FuzzyMatching",
         "KeepStrategy",
@@ -1288,6 +1303,11 @@
         {
           "name": "FilterDuplicateContents",
           "option": {
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "SceneDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads",
+            "ModsDir": "C:/KKAFIO/Downloads",
+            "OverlaysDir": "C:/KKAFIO/Downloads",
             "DuplicateAction": "Delete"
           }
         },
@@ -1321,7 +1341,6 @@
         {
           "name": "FilterDuplicateContents",
           "option": {
-            "DownloadsInputPath": "",
             "DuplicateAction": "Delete"
           }
         },

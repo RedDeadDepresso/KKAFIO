@@ -65,7 +65,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Entry                           | Action                                                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                      |
-| Filter Duplicate Contents       | `filter-duplicate-contents --input <folder>`                                                               |
+| Filter Duplicate Contents       | `filter-duplicate-contents --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder> --overlays-dir <folder>`                                                               |
 | Download Missing Mods           | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --output-mods-dir <folder>` |
 | Compress Cards Textures         | `compress-cards-textures --input <folder>`                                                                 |
 | Install Contents                | `install-contents --input <folder>`                                                                        |
@@ -146,7 +146,10 @@ Everything else — CLI output, log files, and error messages — is English-onl
 
 **4. Filter Duplicate Contents**
 
-- Given a folder, scans recursively for duplicate `.png` cards and `.zipmod` files.
+- Scans recursively for duplicate `.png` cards and `.zipmod` files in the game's content folders — or in the folders you point it at.
+- **Content Types** — pick which of Chara / Mods / Coords / Scenes / Overlays to check (all selected by default), the same as in Install Contents. Only duplicates of the selected types are touched.
+- **Custom Chara / Scene / Coordinate / Mods / Overlays Directory** — all blank by default, which means the game's own folder for that type (chara checks both the female and male folders; scenes need Studio to be installed). Set one to scan somewhere else instead, such as a staging folder; a folder shared by several types is scanned once. The **📥 Download, Filter & Install** preset points all five at `C:/KKAFIO/Downloads`.
+- Zipmods inside a Sideloader Modpack folder are never touched.
 - Duplicates are detected by **content** (not filename):
   - PNG cards are fingerprinted using the character data payload embedded after the PNG IEND chunk, so two cards with different preview images are still caught as duplicates.
   - **Optional fuzzy matching** _(off by default)_ uses perceptual image hashing to detect updated cards with the same preview pose.
@@ -495,6 +498,10 @@ kkafio_cli filter-convert-kks [--input DIR]
                                 [--extract-archive | --no-extract-archive]
 
 kkafio_cli filter-duplicate-contents [--input DIR]
+                             [--chara | --no-chara] [--mods | --no-mods] [--coords | --no-coords]
+                             [--scenes | --no-scenes] [--overlays | --no-overlays]
+                             [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
+                             [--mods-dir DIR] [--overlays-dir DIR]
                              [--fuzzy | --no-fuzzy]
                              [--keep STRATEGY]
                              [--action move-rename|move|delete]
