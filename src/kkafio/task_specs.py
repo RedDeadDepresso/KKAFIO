@@ -414,12 +414,13 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
-        name="UngroupChara", command="ungroup-chara",
-        help="Move character cards from subfolders back to the top-level folder",
-        target="kkafio.tasks.ungroup_chara:UngroupChara",
+        name="UngroupCards", command="ungroup-cards",
+        help="Move cards (chara, scenes, coordinates) from subfolders back to the top-level folder",
+        target="kkafio.tasks.ungroup_cards:UngroupCards",
         options=(
             Value("--input", "-i", key="InputPath", coerce=Path, metavar="DIR", default=None,
-                  help="Folder to ungroup (default: UngroupChara.InputPath from config)"),
+                  help="Folder to ungroup (default: UngroupCards.InputPath from config)"),
+            *_content_type_toggles("chara", "scenes", "coords"),
             Toggle("delete-empty", key="DeleteEmptyFolders",
                    help="Remove empty subfolders after moving (overrides config)",
                    off_help="Keep empty subfolders (overrides config)"),

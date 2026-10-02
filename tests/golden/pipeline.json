@@ -271,9 +271,12 @@
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -282,7 +285,7 @@
        "__path__": "<ROOT>/work"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -450,9 +453,12 @@
     },
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -461,7 +467,7 @@
        "__path__": "<ROOT>/work"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     },
     {
      "attrs": {
@@ -652,9 +658,12 @@
     },
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -663,7 +672,7 @@
        "__path__": "<ROOT>/work"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     },
     {
      "attrs": {
@@ -866,9 +875,12 @@
     },
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -877,7 +889,7 @@
        "__path__": "<ROOT>/work"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -888,15 +900,18 @@
  },
  "task raises -> exit 1, rest skipped": {
   "kwargs": {
-   "fail_on": "UngroupChara"
+   "fail_on": "UngroupCards"
   },
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -905,7 +920,7 @@
        "__path__": "<ROOT>/work"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -920,9 +935,12 @@
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -931,7 +949,7 @@
        "__path__": "<ROOT>/work"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {

@@ -39,7 +39,7 @@ def _write_config(world: World, kind: str) -> Path:
         inst["globalOptionValues"] = {"GamePath": opt_folder(root / "no_such_game")}
         path.write_text(json.dumps({"instances": [inst]}), encoding="utf-8")
     elif kind == "badtask":     # an enabled task whose folder does not exist
-        inst["tasks"] = [{"taskName": "UngroupChara", "enabled": True, "optionValues": {
+        inst["tasks"] = [{"taskName": "UngroupCards", "enabled": True, "optionValues": {
             "InputPath": opt_folder(root / "missing_dir")}}]
         path.write_text(json.dumps({"instances": [inst]}), encoding="utf-8")
     else:                        # "ok"
@@ -57,9 +57,9 @@ def scenarios() -> dict[str, tuple[str, list[str], dict[str, str]]]:
         "instance index out of range":        ("ok", ["--instance", "5", "run"], {}),
         "GamePath not set (run)":             ("nogame", ["run"], {}),
         "GamePath not valid (run)":           ("badgame", ["run"], {}),
-        "GamePath not valid (single task)":   ("badgame", ["ungroup-chara"], {}),
+        "GamePath not valid (single task)":   ("badgame", ["ungroup-cards"], {}),
         "enabled task folder missing (run)":  ("badtask", ["run"], {}),
-        "input folder missing (ungroup)":     ("ok", ["ungroup-chara", "--input", "{ROOT}/missing_dir"], {}),
+        "input folder missing (ungroup)":     ("ok", ["ungroup-cards", "--input", "{ROOT}/missing_dir"], {}),
         "input folder missing (install)":     ("ok", ["install-contents", "--input", "{ROOT}/missing_dir"], {}),
         "input folder blank (compress)":      ("ok", ["compress-cards-textures", "--input", ""], {}),
         "no content (archive)":               ("ok", ["archive-cards"], {}),
@@ -68,7 +68,7 @@ def scenarios() -> dict[str, tuple[str, list[str], dict[str, str]]]:
         "7-Zip missing (backup)":             ("ok", ["create-backup", "--output", "{ROOT}/bk", "--mods"], no_tools),
         # Documents a known crash: with no --output, the default is a str but CreateBackup needs a Path.
         "backup without --output (known bug)": ("ok", ["create-backup", "--mods"], {}),
-        "success control (ungroup)":          ("ok", ["ungroup-chara", "--input", "{ROOT}/ok_dir"], {}),
+        "success control (ungroup)":          ("ok", ["ungroup-cards", "--input", "{ROOT}/ok_dir"], {}),
     }
 
 

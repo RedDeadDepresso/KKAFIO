@@ -202,8 +202,8 @@
   "task.UninstallContents.description": "게임에서 캐릭터 카드와 그 모드를 제거합니다",
   "task.GroupChara.label": "🗂️ 캐릭터 그룹화",
   "task.GroupChara.description": "LLM을 사용하여 캐릭터 카드를 시리즈별 하위 폴더로 이동합니다(실행 시 복사/붙여넣기 대화 상자가 표시됩니다)",
-  "task.UngroupChara.label": "📂 캐릭터 그룹 해제",
-  "task.UngroupChara.description": "하위 폴더의 카드를 최상위 폴더로 다시 이동합니다",
+  "task.UngroupCards.label": "📂 카드 그룹 해제",
+  "task.UngroupCards.description": "하위 폴더의 카드를 최상위 폴더로 다시 이동합니다",
   "task.RenameChara.label": "✏️ 캐릭터 이름 변경",
   "task.RenameChara.description": "LLM을 사용하여 캐릭터 카드 이름을 다른 언어로 번역합니다(실행 시 복사/붙여넣기 대화 상자가 표시됩니다)",
   "task.ArchiveCards.label": "🎁 카드 보관",
@@ -227,5 +227,10 @@
   "option.OpenReport.case.Yes.label": "누락 시 열기",
   "option.OpenReport.case.No.label": "열지 않음",
   "option.OverlaysDir.label": "사용자 지정 오버레이 폴더",
-  "option.OverlaysDir.description": "검사할 오버레이 폴더를 지정합니다 (중복 콘텐츠 필터에서 사용). 비워 두면 게임의 기본 Overlays 폴더를 사용합니다."
+  "option.OverlaysDir.description": "검사할 오버레이 폴더를 지정합니다 (중복 콘텐츠 필터에서 사용). 비워 두면 게임의 기본 Overlays 폴더를 사용합니다.",
+  "option.UngroupCardTypes.label": "카드 종류",
+  "option.UngroupCardTypes.description": "그룹을 해제할 카드 종류",
+  "option.UngroupCardTypes.case.Chara.label": "캐릭터",
+  "option.UngroupCardTypes.case.Scenes.label": "씬",
+  "option.UngroupCardTypes.case.Coords.label": "코디"
 }

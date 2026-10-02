@@ -71,7 +71,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Install Contents                | `install-contents --input <folder>`                                                                        |
 | Uninstall Contents              | `uninstall-contents --input <folder>`                                                                      |
 | Group Characters                | `group-chara --chara-dir <folder>`                                                                             |
-| Ungroup Characters              | `ungroup-chara --input <folder>`                                                                           |
+| Ungroup Cards                   | `ungroup-cards --input <folder>`                                                                           |
 | Rename Characters               | `rename-chara --chara-dir <folder>`                                                                            |
 | Run GUI                         | Opens GUI                                                                                                  |
 
@@ -270,9 +270,11 @@ https://t.me/kknowcc
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
 
-**10. Ungroup Characters**
+**10. Ungroup Cards**
 
-- Reverse of Group Characters: moves all cards from subfolders back to the top-level input folder.
+- Reverse of Group Characters: moves cards from subfolders back to the top-level input folder.
+- **Card Types** — pick which of Chara / Scenes / Coords to ungroup (all three selected by default). Only cards of the selected types are moved; anything else in the subfolders (overlays, zipmods, other files) is left where it is.
+- If the input folder is the game's `UserData/chara` folder, cards are ungrouped inside `female/` and `male/` instead, so they never end up directly in `UserData/chara` where the game can't read them. (Pointing it at `female/` or `male/` directly works as usual.)
 - **Optional:** Deletes empty subfolders after moving (on by default).
 
 **11. Rename Characters**
@@ -520,7 +522,8 @@ kkafio_cli rename-chara    [--chara-dir DIR]
 
 kkafio_cli group-chara     [--chara-dir DIR] [--include-subfolders]
 
-kkafio_cli ungroup-chara   [--input DIR]
+kkafio_cli ungroup-cards   [--input DIR]
+                           [--chara | --no-chara] [--scenes | --no-scenes] [--coords | --no-coords]
                            [--delete-empty | --no-delete-empty]
 
 kkafio_cli archive-cards  [CONTENT ...] [--output-dir DIR]

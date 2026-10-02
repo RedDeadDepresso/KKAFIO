@@ -44,7 +44,7 @@ TASK_CLASSES: dict[str, tuple[str, str]] = {
     "InstallContents":         ("kkafio.tasks.install_contents", "InstallContents"),
     "UninstallContents":       ("kkafio.tasks.uninstall_contents", "UninstallContents"),
     "GroupChara":              ("kkafio.tasks.group_chara", "GroupChara"),
-    "UngroupChara":            ("kkafio.tasks.ungroup_chara", "UngroupChara"),
+    "UngroupCards":            ("kkafio.tasks.ungroup_cards", "UngroupCards"),
     "RenameChara":             ("kkafio.tasks.rename_chara", "RenameChara"),
     "ArchiveCards":            ("kkafio.tasks.archive_cards", "ArchiveCards"),
     "DeleteCards":             ("kkafio.tasks.delete_cards", "DeleteCards"),
@@ -58,7 +58,7 @@ _SKIP_ATTRS = {"config", "file_manager", "game_path", "game_type", "is_sunshine"
 # Tasks whose run() reads this key straight from the config section rather than
 # from an attribute — so the section value at run() time is part of the behaviour.
 _SECTION_READS = {
-    "UngroupChara": ["InputPath"],
+    "UngroupCards": ["InputPath"],
     "FilterConvertKKS": ["InputPath"],
 }
 
@@ -358,7 +358,7 @@ def handwritten_variants(world: World) -> dict[str, tuple[list[str], dict]]:
         "delete-cards --context-menu <one> [follower]": (["delete-cards", "--context-menu", "a.png"], {"batch": None}),
         "archive-cards --context-menu <one> [follower]": (["archive-cards", "--context-menu", "a.png"], {"batch": None}),
         "delete-cards --context-menu <one> [batch error]": (["delete-cards", "--context-menu", "a.png"], {"batch": "raise"}),
-        "ungroup-chara [task fails]": (["ungroup-chara"], {"fail_on": "UngroupChara"}),
+        "ungroup-cards [task fails]": (["ungroup-cards"], {"fail_on": "UngroupCards"}),
         "create-backup [task fails]": (["create-backup"], {"fail_on": "CreateBackup"}),
     }
 
@@ -407,7 +407,7 @@ def configured_tasks() -> list[dict]:
           ExtractArchive=sw(False)),
         t("UninstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Chara")),
         t("GroupChara", CharaDir=f("/cfg/chara"), GroupCharaIncludeSubfolders=sw(True)),
-        t("UngroupChara", InputPath=f("/cfg/in"), DeleteEmptyFolders=sw(False)),
+        t("UngroupCards", InputPath=f("/cfg/in"), UngroupCardTypes=opt_checkbox("Chara"), DeleteEmptyFolders=sw(False)),
         t("RenameChara", CharaDir=f("/cfg/chara"), SkipAlreadyRenamed=sw(False), UpdateMetadata=sw(True),
           RenameFiles=sw(False)),
         t("ArchiveCards", ArchiveOutputPath=f("/cfg/archive"), ContentPaths=opt_files("cfg1.png", "cfg2.png"),
@@ -451,7 +451,7 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
                    "ExportMods": "ExportOutputPath", "FilterConvertKKS": "DownloadsInputPath",
                    "CompressCardsTextures": "DownloadsInputPath",
                    "InstallContents": "DownloadsInputPath", "UninstallContents": "DownloadsInputPath",
-                   "GroupChara": "CharaDir", "UngroupChara": "InputPath", "RenameChara": "CharaDir"}
+                   "GroupChara": "CharaDir", "UngroupCards": "InputPath", "RenameChara": "CharaDir"}
     def _task(name, enabled=True, **opts):                                                  # noqa: E306
         if name in path_option and path_option[name] not in opts:
             opts[path_option[name]] = opt_folder(work)
@@ -462,16 +462,16 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
     return {
         "every task, interface order": ([_task(n) for n in all_names], {}),
         "every task, reversed": ([_task(n) for n in reversed(all_names)], {}),
-        "disabled tasks are skipped": ([_task("CreateBackup", enabled=False), _task("UngroupChara")], {}),
-        "unknown task is ignored": ([_task("NoSuchTask"), _task("UngroupChara")], {}),
+        "disabled tasks are skipped": ([_task("CreateBackup", enabled=False), _task("UngroupCards")], {}),
+        "unknown task is ignored": ([_task("NoSuchTask"), _task("UngroupCards")], {}),
         "FC before IC, same folder -> skip extract": ([fc(), ic()], {}),
         "IC before FC, same folder -> extract": ([ic(), fc()], {}),
         "FC before IC, different folder -> extract": ([fc(), ic(other)], {}),
         "FC before IC, same folder, FC no extract": ([fc(ExtractArchive=opt_switch(False)), ic()], {}),
         "FC before IC, same folder, IC no extract": ([fc(), ic(ExtractArchive=opt_switch(False))], {}),
         "FC disabled, IC enabled, same folder": ([_task("FilterConvertKKS", enabled=False, DownloadsInputPath=f(same)), ic()], {}),
-        "special task then tasks": ([_special("__MXU_SLEEP__", sleep_time="3"), _task("UngroupChara")], {}),
-        "special task fails -> exit 1, rest skipped": ([_special("__MXU_SLEEP__", sleep_time="3"), _task("UngroupChara")], {"special_ok": False}),
-        "task raises -> exit 1, rest skipped": ([_task("UngroupChara"), _task("GroupChara")], {"fail_on": "UngroupChara"}),
+        "special task then tasks": ([_special("__MXU_SLEEP__", sleep_time="3"), _task("UngroupCards")], {}),
+        "special task fails -> exit 1, rest skipped": ([_special("__MXU_SLEEP__", sleep_time="3"), _task("UngroupCards")], {"special_ok": False}),
+        "task raises -> exit 1, rest skipped": ([_task("UngroupCards"), _task("GroupChara")], {"fail_on": "UngroupCards"}),
         "no tasks at all": ([], {}),
     }

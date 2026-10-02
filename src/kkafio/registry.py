@@ -8,8 +8,8 @@ options. Each option knows both how to be parsed *and* which key of the task's
 config section it sets, so the subcommand, its ``--help``, its dispatch from
 ``kkafio_cli run`` and its config overrides all come from that one declaration.
 
-    TaskSpec("UngroupChara", "ungroup-chara", "Move cards out of subfolders",
-             "kkafio.tasks.ungroup_chara:UngroupChara",
+    TaskSpec("UngroupCards", "ungroup-cards", "Move cards out of subfolders",
+             "kkafio.tasks.ungroup_cards:UngroupCards",
              options=(Value("--input", "-i", key="InputPath", coerce=Path, ...),
                       Toggle("delete-empty", key="DeleteEmptyFolders", ...)))
 
@@ -166,7 +166,7 @@ class TaskSpec:
 
     name         the task's name everywhere else: interface.json, the MXU
                  config, the key of its config section, log/traceback labels
-    command      its subcommand, e.g. ``ungroup-chara``
+    command      its subcommand, e.g. ``ungroup-cards``
     target       ``"package.module:ClassName"`` — imported only when it runs
     options      command-line options, in ``--help`` order
     prepare      optional hook ``(args, overrides) -> bool | None`` run after the

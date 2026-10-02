@@ -202,8 +202,8 @@
   "task.UninstallContents.description": "Uninstall character cards and their mods from the game",
   "task.GroupChara.label": "🗂️ Group Characters",
   "task.GroupChara.description": "Move character cards into series subfolders using an LLM (shows a Copy/Paste dialog when run)",
-  "task.UngroupChara.label": "📂 Ungroup Characters",
-  "task.UngroupChara.description": "Move cards from subfolders back to top-level folder",
+  "task.UngroupCards.label": "📂 Ungroup Cards",
+  "task.UngroupCards.description": "Move cards (chara, scenes, coordinates) from subfolders back to the top-level folder",
   "task.RenameChara.label": "✏️ Rename Characters",
   "task.RenameChara.description": "Translate character card names to another language using an LLM (shows a Copy/Paste dialog when run)",
   "task.ArchiveCards.label": "🎁 Archive Cards",
@@ -227,5 +227,10 @@
   "option.OpenReport.case.Yes.label": "Open if Missing",
   "option.OpenReport.case.No.label": "Don't Open",
   "option.OverlaysDir.label": "Custom Overlays Directory",
-  "option.OverlaysDir.description": "Override the overlays folder to scan (used by Filter Duplicate Contents). Leave empty to use the game's default Overlays folder."
+  "option.OverlaysDir.description": "Override the overlays folder to scan (used by Filter Duplicate Contents). Leave empty to use the game's default Overlays folder.",
+  "option.UngroupCardTypes.label": "Card Types",
+  "option.UngroupCardTypes.description": "Which card types to ungroup",
+  "option.UngroupCardTypes.case.Chara.label": "Chara",
+  "option.UngroupCardTypes.case.Scenes.label": "Scenes",
+  "option.UngroupCardTypes.case.Coords.label": "Coords"
 }

@@ -202,8 +202,8 @@
   "task.UninstallContents.description": "Удалить карточки персонажей и их моды из игры",
   "task.GroupChara.label": "🗂️ Группировать персонажей",
   "task.GroupChara.description": "Переместить карточки персонажей в подпапки по сериям с помощью LLM (при запуске показывает диалог копирования/вставки)",
-  "task.UngroupChara.label": "📂 Разгруппировать персонажей",
-  "task.UngroupChara.description": "Переместить карточки из подпапок обратно в корневую папку",
+  "task.UngroupCards.label": "📂 Разгруппировать карточки",
+  "task.UngroupCards.description": "Переместить карточки из подпапок обратно в корневую папку",
   "task.RenameChara.label": "✏️ Переименовать персонажей",
   "task.RenameChara.description": "Перевести имена карточек персонажей на другой язык с помощью LLM (при запуске показывает диалог копирования/вставки)",
   "task.ArchiveCards.label": "🎁 Архивировать карточки",
@@ -227,5 +227,10 @@
   "option.OpenReport.case.Yes.label": "Открыть при нехватке",
   "option.OpenReport.case.No.label": "Не открывать",
   "option.OverlaysDir.label": "Своя папка оверлеев",
-  "option.OverlaysDir.description": "Переопределяет папку оверлеев для сканирования (используется в «Фильтр дублирующегося содержимого»). Оставьте пустым, чтобы использовать стандартную папку Overlays игры."
+  "option.OverlaysDir.description": "Переопределяет папку оверлеев для сканирования (используется в «Фильтр дублирующегося содержимого»). Оставьте пустым, чтобы использовать стандартную папку Overlays игры.",
+  "option.UngroupCardTypes.label": "Типы карточек",
+  "option.UngroupCardTypes.description": "Какие типы карточек разгруппировать",
+  "option.UngroupCardTypes.case.Chara.label": "Персонажи",
+  "option.UngroupCardTypes.case.Scenes.label": "Сцены",
+  "option.UngroupCardTypes.case.Coords.label": "Наряды"
 }

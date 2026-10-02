@@ -202,8 +202,8 @@
   "task.UninstallContents.description": "ゲームからキャラカードとそのMODをアンインストールする",
   "task.GroupChara.label": "🗂️ キャラをグループ化",
   "task.GroupChara.description": "LLMを使用してキャラカードをシリーズごとのサブフォルダに移動する（実行時にコピー／貼り付けダイアログが表示されます）",
-  "task.UngroupChara.label": "📂 キャラのグループ化を解除",
-  "task.UngroupChara.description": "サブフォルダ内のカードを最上位フォルダに戻す",
+  "task.UngroupCards.label": "📂 カードのグループ化を解除",
+  "task.UngroupCards.description": "サブフォルダ内のカードを最上位フォルダに戻す",
   "task.RenameChara.label": "✏️ キャラをリネーム",
   "task.RenameChara.description": "LLMを使用してキャラカード名を別の言語に翻訳する（実行時にコピー／貼り付けダイアログが表示されます）",
   "task.ArchiveCards.label": "🎁 カードをアーカイブ",
@@ -227,5 +227,10 @@
   "option.OpenReport.case.Yes.label": "不足時に開く",
   "option.OpenReport.case.No.label": "開かない",
   "option.OverlaysDir.label": "カスタムオーバーレイフォルダ",
-  "option.OverlaysDir.description": "スキャンするオーバーレイフォルダを上書きします（重複コンテンツのフィルタで使用）。空欄の場合はゲームのデフォルトのOverlaysフォルダを使用します。"
+  "option.OverlaysDir.description": "スキャンするオーバーレイフォルダを上書きします（重複コンテンツのフィルタで使用）。空欄の場合はゲームのデフォルトのOverlaysフォルダを使用します。",
+  "option.UngroupCardTypes.label": "カードの種類",
+  "option.UngroupCardTypes.description": "グループ化を解除するカードの種類",
+  "option.UngroupCardTypes.case.Chara.label": "キャラ",
+  "option.UngroupCardTypes.case.Scenes.label": "シーン",
+  "option.UngroupCardTypes.case.Coords.label": "コーディネート"
 }

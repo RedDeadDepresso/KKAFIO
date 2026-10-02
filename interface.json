@@ -432,6 +432,35 @@
         }
       ]
     },
+    "UngroupCardTypes": {
+      "type": "checkbox",
+      "label": "$option.UngroupCardTypes.label",
+      "description": "$option.UngroupCardTypes.description",
+      "default_case": ["Chara", "Scenes", "Coords"],
+      "cases": [
+        {
+          "name": "Chara",
+          "label": "$option.UngroupCardTypes.case.Chara.label",
+          "pipeline_override": {
+            "Chara": true
+          }
+        },
+        {
+          "name": "Scenes",
+          "label": "$option.UngroupCardTypes.case.Scenes.label",
+          "pipeline_override": {
+            "Scenes": true
+          }
+        },
+        {
+          "name": "Coords",
+          "label": "$option.UngroupCardTypes.case.Coords.label",
+          "pipeline_override": {
+            "Coords": true
+          }
+        }
+      ]
+    },
     "FileConflicts": {
       "type": "select",
       "label": "$option.FileConflicts.label",
@@ -1194,13 +1223,13 @@
       "option": ["CharaDir", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
     },
     {
-      "name": "UngroupChara",
-      "label": "$task.UngroupChara.label",
-      "entry": "UngroupChara",
+      "name": "UngroupCards",
+      "label": "$task.UngroupCards.label",
+      "entry": "UngroupCards",
       "default_check": false,
-      "description": "$task.UngroupChara.description",
+      "description": "$task.UngroupCards.description",
       "group": ["chara-management"],
-      "option": ["InputPath", "DeleteEmptyFolders"]
+      "option": ["InputPath", "UngroupCardTypes", "DeleteEmptyFolders"]
     },
     {
       "name": "RenameChara",
@@ -1435,7 +1464,7 @@
           "enabled": false
         },
         {
-          "name": "UngroupChara",
+          "name": "UngroupCards",
           "enabled": false
         },
         {

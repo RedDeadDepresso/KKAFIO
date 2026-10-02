@@ -37,26 +37,26 @@ def test_user_error_carries_message_and_tag():
                                   lambda: ConfigError("bad setting", tag="SCRIPT")])
 def test_user_error_in_a_task_exits_1_without_a_traceback(make, tmp_path):
     _traceback_path().unlink(missing_ok=True)
-    result = h.run_argv(h.World(tmp_path), ["ungroup-chara"], fail_on="UngroupChara", fail_with=make)
+    result = h.run_argv(h.World(tmp_path), ["ungroup-cards"], fail_on="UngroupCards", fail_with=make)
     assert result["outcome"]["exit"] == 1
     assert not _traceback_path().exists()
 
 
 def test_task_failure_keeps_its_traceback(tmp_path):
     _traceback_path().unlink(missing_ok=True)
-    result = h.run_argv(h.World(tmp_path), ["ungroup-chara"], fail_on="UngroupChara",
+    result = h.run_argv(h.World(tmp_path), ["ungroup-cards"], fail_on="UngroupCards",
                         fail_with=lambda: TaskFailedError("7-Zip failed"))
     assert result["outcome"]["exit"] == 1
     text = _traceback_path().read_text(encoding="utf-8")
-    assert "[UngroupChara]" in text and "TaskFailedError: 7-Zip failed" in text
+    assert "[UngroupCards]" in text and "TaskFailedError: 7-Zip failed" in text
 
 
 def test_user_error_stops_the_run_pipeline(tmp_path):
     tasks, kwargs = h.pipeline_cases(tmp_path)["task raises -> exit 1, rest skipped"]
-    result = h.run_argv(h.World(tmp_path, tasks), ["run"], fail_on="UngroupChara",
+    result = h.run_argv(h.World(tmp_path, tasks), ["run"], fail_on="UngroupCards",
                         fail_with=lambda: InputError("no folder", tag="UNGRP"))
     assert result["outcome"]["exit"] == 1
-    assert [e["task"] for e in result["events"] if e["kind"] == "task"] == ["UngroupChara"]
+    assert [e["task"] for e in result["events"] if e["kind"] == "task"] == ["UngroupCards"]
 
 
 # --- where they are raised -----------------------------------------------------------------------
@@ -85,7 +85,7 @@ def test_validate_input_path(tmp_path):
     ("noinstances", "no instances"),
     ("nogame", "GamePath is not set"),
     ("badgame", "Game path not valid"),
-    ("badtask", "Path invalid for task UngroupChara"),
+    ("badtask", "Path invalid for task UngroupCards"),
 ])
 def test_config_problems_raise_config_error(kind, message, tmp_path):
     from kkafio.core.config import Config

@@ -55,7 +55,7 @@ KKAFIO-dev/
 │   │   ├── group_chara.py
 │   │   ├── install_contents.py
 │   │   ├── rename_chara.py
-│   │   ├── ungroup_chara.py
+│   │   ├── ungroup_cards.py
 │   │   └── uninstall_contents.py
 │   │
 │   ├── core/                        # Configuration, logging, paths, file operations

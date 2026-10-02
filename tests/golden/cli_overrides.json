@@ -4286,24 +4286,27 @@
   },
   "world": "configured"
  },
- "configured: ungroup-chara": {
+ "configured: ungroup-cards": {
   "argv": [
-   "ungroup-chara"
+   "ungroup-cards"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": false
+      "delete_empty": false,
+      "do_chara": true,
+      "do_coords": false,
+      "do_scenes": false
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
      "section_reads": {
       "InputPath": "/cfg/in"
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -4313,9 +4316,9 @@
   },
   "world": "configured"
  },
- "configured: ungroup-chara --input=<blank>": {
+ "configured: ungroup-cards --input=<blank>": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    ""
   ],
@@ -4323,9 +4326,12 @@
    "events": [
     {
      "attrs": {
-      "delete_empty": false
+      "delete_empty": false,
+      "do_chara": true,
+      "do_coords": false,
+      "do_scenes": false
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -4334,7 +4340,7 @@
        "__path__": "."
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -4344,20 +4350,26 @@
   },
   "world": "configured"
  },
- "configured: ungroup-chara [all-first]": {
+ "configured: ungroup-cards [all-first]": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    "S_input",
+   "--chara",
+   "--scenes",
+   "--coords",
    "--delete-empty"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -4366,7 +4378,7 @@
        "__path__": "S_input"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -4376,20 +4388,26 @@
   },
   "world": "configured"
  },
- "configured: ungroup-chara [all-last]": {
+ "configured: ungroup-cards [all-last]": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    "S_input",
+   "--no-chara",
+   "--no-scenes",
+   "--no-coords",
    "--no-delete-empty"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": false
+      "delete_empty": false,
+      "do_chara": false,
+      "do_coords": false,
+      "do_scenes": false
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -4398,7 +4416,7 @@
        "__path__": "S_input"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12410,24 +12428,27 @@
   },
   "world": "default"
  },
- "ungroup-chara": {
+ "ungroup-cards": {
   "argv": [
-   "ungroup-chara"
+   "ungroup-cards"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
      "section_reads": {
       "InputPath": ""
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12437,25 +12458,90 @@
   },
   "world": "default"
  },
- "ungroup-chara --delete-empty": {
+ "ungroup-cards --chara": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
+   "--chara"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
+     },
+     "class": "UngroupCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "ungroup-cards --coords": {
+  "argv": [
+   "ungroup-cards",
+   "--coords"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
+     },
+     "class": "UngroupCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "ungroup-cards --delete-empty": {
+  "argv": [
+   "ungroup-cards",
    "--delete-empty"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
      "section_reads": {
       "InputPath": ""
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12465,9 +12551,9 @@
   },
   "world": "default"
  },
- "ungroup-chara --input=<blank>": {
+ "ungroup-cards --input=<blank>": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    ""
   ],
@@ -12475,9 +12561,12 @@
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -12486,7 +12575,7 @@
        "__path__": "."
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12496,9 +12585,9 @@
   },
   "world": "default"
  },
- "ungroup-chara --input=S_input": {
+ "ungroup-cards --input=S_input": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    "S_input"
   ],
@@ -12506,9 +12595,12 @@
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -12517,7 +12609,7 @@
        "__path__": "S_input"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12527,25 +12619,28 @@
   },
   "world": "default"
  },
- "ungroup-chara --no-delete-empty": {
+ "ungroup-cards --no-chara": {
   "argv": [
-   "ungroup-chara",
-   "--no-delete-empty"
+   "ungroup-cards",
+   "--no-chara"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": false
+      "delete_empty": true,
+      "do_chara": false,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
      "section_reads": {
       "InputPath": ""
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12555,9 +12650,133 @@
   },
   "world": "default"
  },
- "ungroup-chara -i=S_input": {
+ "ungroup-cards --no-coords": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
+   "--no-coords"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": false,
+      "do_scenes": true
+     },
+     "class": "UngroupCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "ungroup-cards --no-delete-empty": {
+  "argv": [
+   "ungroup-cards",
+   "--no-delete-empty"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": false,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
+     },
+     "class": "UngroupCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "ungroup-cards --no-scenes": {
+  "argv": [
+   "ungroup-cards",
+   "--no-scenes"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": false
+     },
+     "class": "UngroupCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "ungroup-cards --scenes": {
+  "argv": [
+   "ungroup-cards",
+   "--scenes"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
+     },
+     "class": "UngroupCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "section_reads": {
+      "InputPath": ""
+     },
+     "task": "UngroupCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "ungroup-cards -i=S_input": {
+  "argv": [
+   "ungroup-cards",
    "-i",
    "S_input"
   ],
@@ -12565,9 +12784,12 @@
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -12576,7 +12798,7 @@
        "__path__": "S_input"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12586,20 +12808,26 @@
   },
   "world": "default"
  },
- "ungroup-chara [all-first]": {
+ "ungroup-cards [all-first]": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    "S_input",
+   "--chara",
+   "--scenes",
+   "--coords",
    "--delete-empty"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -12608,7 +12836,7 @@
        "__path__": "S_input"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12618,20 +12846,26 @@
   },
   "world": "default"
  },
- "ungroup-chara [all-last]": {
+ "ungroup-cards [all-last]": {
   "argv": [
-   "ungroup-chara",
+   "ungroup-cards",
    "--input",
    "S_input",
+   "--no-chara",
+   "--no-scenes",
+   "--no-coords",
    "--no-delete-empty"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": false
+      "delete_empty": false,
+      "do_chara": false,
+      "do_coords": false,
+      "do_scenes": false
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
@@ -12640,7 +12874,7 @@
        "__path__": "S_input"
       }
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {
@@ -12650,27 +12884,30 @@
   },
   "world": "default"
  },
- "ungroup-chara [task fails]": {
+ "ungroup-cards [task fails]": {
   "argv": [
-   "ungroup-chara"
+   "ungroup-cards"
   ],
   "kwargs": {
-   "fail_on": "UngroupChara"
+   "fail_on": "UngroupCards"
   },
   "result": {
    "events": [
     {
      "attrs": {
-      "delete_empty": true
+      "delete_empty": true,
+      "do_chara": true,
+      "do_coords": true,
+      "do_scenes": true
      },
-     "class": "UngroupChara",
+     "class": "UngroupCards",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
      "section_reads": {
       "InputPath": ""
      },
-     "task": "UngroupChara"
+     "task": "UngroupCards"
     }
    ],
    "outcome": {

@@ -11,7 +11,7 @@ def _traceback_path():
 
 
 @pytest.mark.parametrize("argv, task", [
-    (["ungroup-chara"], "UngroupChara"),
+    (["ungroup-cards"], "UngroupCards"),
     (["create-backup"], "CreateBackup"),
     (["install-contents"], "InstallContents"),
     (["filter-duplicate-contents"], "FilterDuplicateContents"),
@@ -27,6 +27,6 @@ def test_failure_writes_traceback_and_exits_1(argv, task, tmp_path):
 def test_stale_traceback_is_cleared_on_success(tmp_path):
     _traceback_path().parent.mkdir(parents=True, exist_ok=True)
     _traceback_path().write_text("stale", encoding="utf-8")
-    result = h.run_argv(h.World(tmp_path), ["ungroup-chara"])
+    result = h.run_argv(h.World(tmp_path), ["ungroup-cards"])
     assert result["outcome"]["exit"] is None
     assert not _traceback_path().exists()

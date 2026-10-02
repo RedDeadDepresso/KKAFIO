@@ -202,8 +202,8 @@
   "task.UninstallContents.description": "從遊戲中解除安裝角色卡及其模組",
   "task.GroupChara.label": "🗂️ 分組角色",
   "task.GroupChara.description": "使用 LLM 將角色卡移至系列子資料夾（執行時會顯示複製／貼上對話框）",
-  "task.UngroupChara.label": "📂 取消分組角色",
-  "task.UngroupChara.description": "將卡片從子資料夾移回頂層資料夾",
+  "task.UngroupCards.label": "📂 取消分組卡片",
+  "task.UngroupCards.description": "將卡片從子資料夾移回頂層資料夾",
   "task.RenameChara.label": "✏️ 重新命名角色",
   "task.RenameChara.description": "使用 LLM 將角色卡名稱翻譯為其他語言（執行時會顯示複製／貼上對話框）",
   "task.ArchiveCards.label": "🎁 歸檔卡片",
@@ -227,5 +227,10 @@
   "option.OpenReport.case.Yes.label": "缺失時開啟",
   "option.OpenReport.case.No.label": "不開啟",
   "option.OverlaysDir.label": "自訂覆蓋層目錄",
-  "option.OverlaysDir.description": "覆寫要掃描的覆蓋層資料夾（用於過濾重複內容）。留空則使用遊戲預設的 Overlays 資料夾。"
+  "option.OverlaysDir.description": "覆寫要掃描的覆蓋層資料夾（用於過濾重複內容）。留空則使用遊戲預設的 Overlays 資料夾。",
+  "option.UngroupCardTypes.label": "卡片類型",
+  "option.UngroupCardTypes.description": "要取消分組的卡片類型",
+  "option.UngroupCardTypes.case.Chara.label": "角色",
+  "option.UngroupCardTypes.case.Scenes.label": "場景",
+  "option.UngroupCardTypes.case.Coords.label": "衣裝"
 }

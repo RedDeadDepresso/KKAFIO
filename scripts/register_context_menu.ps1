@@ -49,7 +49,7 @@ $FolderTasks = @(
     [ordered]@{ Id = 'InstallContents';         Cli = 'install-contents';          ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'UninstallContents';       Cli = 'uninstall-contents';        ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'GroupChara';              Cli = 'group-chara';               ArgsTemplate = '--chara-dir "{P}"' }
-    [ordered]@{ Id = 'UngroupChara';            Cli = 'ungroup-chara';             ArgsTemplate = '--input "{P}"' }
+    [ordered]@{ Id = 'UngroupCards';            Cli = 'ungroup-cards';             ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'RenameChara';             Cli = 'rename-chara';              ArgsTemplate = '--chara-dir "{P}"' }
 )
 
@@ -75,7 +75,7 @@ $Labels = @{
         InstallContents         = "📦 Install Contents"
         UninstallContents       = "↩️ Uninstall Contents"
         GroupChara              = "🗂️ Group Characters"
-        UngroupChara            = "📂 Ungroup Characters"
+        UngroupCards            = "📂 Ungroup Cards"
         RenameChara             = "✏️ Rename Characters"
         RunGUI                  = "▶️ Run GUI"
         ArchiveCards            = "🎁 Archive Cards"
@@ -89,7 +89,7 @@ $Labels = @{
         InstallContents         = "📦 安装内容"
         UninstallContents       = "↩️ 卸载内容"
         GroupChara              = "🗂️ 分组角色"
-        UngroupChara            = "📂 取消分组角色"
+        UngroupCards            = "📂 取消分组卡片"
         RenameChara             = "✏️ 重命名角色"
         RunGUI                  = "▶️ 启动图形界面"
         ArchiveCards            = "🎁 归档卡片"
@@ -103,7 +103,7 @@ $Labels = @{
         InstallContents         = "📦 安裝內容"
         UninstallContents       = "↩️ 解除安裝內容"
         GroupChara              = "🗂️ 分組角色"
-        UngroupChara            = "📂 取消分組角色"
+        UngroupCards            = "📂 取消分組卡片"
         RenameChara             = "✏️ 重新命名角色"
         RunGUI                  = "▶️ 啟動圖形介面"
         ArchiveCards            = "🎁 歸檔卡片"
@@ -117,7 +117,7 @@ $Labels = @{
         InstallContents         = "📦 コンテンツをインストール"
         UninstallContents       = "↩️ コンテンツをアンインストール"
         GroupChara              = "🗂️ キャラをグループ化"
-        UngroupChara            = "📂 キャラのグループ化を解除"
+        UngroupCards            = "📂 カードのグループ化を解除"
         RenameChara             = "✏️ キャラをリネーム"
         RunGUI                  = "▶️ GUIを起動"
         ArchiveCards            = "🎁 カードをアーカイブ"
@@ -131,7 +131,7 @@ $Labels = @{
         InstallContents         = "📦 콘텐츠 설치"
         UninstallContents       = "↩️ 콘텐츠 제거"
         GroupChara              = "🗂️ 캐릭터 그룹화"
-        UngroupChara            = "📂 캐릭터 그룹 해제"
+        UngroupCards            = "📂 카드 그룹 해제"
         RenameChara             = "✏️ 캐릭터 이름 변경"
         RunGUI                  = "▶️ GUI 실행"
         ArchiveCards            = "🎁 카드 보관"
@@ -145,7 +145,7 @@ $Labels = @{
         InstallContents         = "📦 Установить содержимое"
         UninstallContents       = "↩️ Удалить содержимое"
         GroupChara              = "🗂️ Группировать персонажей"
-        UngroupChara            = "📂 Разгруппировать персонажей"
+        UngroupCards            = "📂 Разгруппировать карточки"
         RenameChara             = "✏️ Переименовать персонажей"
         RunGUI                  = "▶️ Запустить графический интерфейс"
         ArchiveCards            = "🎁 Архивировать карточки"

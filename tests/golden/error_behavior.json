@@ -61,7 +61,7 @@
  "enabled task folder missing (run)": {
   "exit": 1,
   "output": [
-   "ERROR    | SCRIPT   | Path invalid for task UngroupChara: <ROOT>/missing_dir"
+   "ERROR    | SCRIPT   | Path invalid for task UngroupCards: <ROOT>/missing_dir"
   ],
   "traceback": null
  },
