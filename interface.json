@@ -1380,6 +1380,7 @@
           "name": "DownloadMissingMods",
           "enabled": false,
           "option": {
+            "SideloaderModpack": "OnlyUsed",
             "TelegramSource": "Both",
             "OutputModsDir": "C:/KKAFIO/Downloads",
             "CharaDir": "C:/KKAFIO/Downloads",
