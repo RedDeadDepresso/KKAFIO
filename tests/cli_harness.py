@@ -43,6 +43,7 @@ TASK_CLASSES: dict[str, tuple[str, str]] = {
     "CompressCardsTextures":   ("kkafio.tasks.compress_cards_textures", "CompressCardsTextures"),
     "InstallContents":         ("kkafio.tasks.install_contents", "InstallContents"),
     "UninstallContents":       ("kkafio.tasks.uninstall_contents", "UninstallContents"),
+    "GroupScenes":              ("kkafio.tasks.group_scenes", "GroupScenes"),
     "GroupChara":              ("kkafio.tasks.group_chara", "GroupChara"),
     "UngroupCards":            ("kkafio.tasks.ungroup_cards", "UngroupCards"),
     "RenameChara":             ("kkafio.tasks.rename_chara", "RenameChara"),
@@ -406,6 +407,7 @@ def configured_tasks() -> list[dict]:
         t("InstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Mods"),
           ExtractArchive=sw(False)),
         t("UninstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Chara")),
+        t("GroupScenes", SceneDir=f("/cfg/scene"), UseCache=sw(False), GroupScenesIncludeSubfolders=sw(True)),
         t("GroupChara", CharaDir=f("/cfg/chara"), GroupCharaIncludeSubfolders=sw(True)),
         t("UngroupCards", InputPath=f("/cfg/in"), UngroupCardTypes=opt_checkbox("Chara"), DeleteEmptyFolders=sw(False)),
         t("RenameChara", CharaDir=f("/cfg/chara"), SkipAlreadyRenamed=sw(False), UpdateMetadata=sw(True),
@@ -451,7 +453,7 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
                    "ExportMods": "ExportOutputPath", "FilterConvertKKS": "DownloadsInputPath",
                    "CompressCardsTextures": "DownloadsInputPath",
                    "InstallContents": "DownloadsInputPath", "UninstallContents": "DownloadsInputPath",
-                   "GroupChara": "CharaDir", "UngroupCards": "InputPath", "RenameChara": "CharaDir"}
+                   "GroupScenes": "SceneDir", "GroupChara": "CharaDir", "UngroupCards": "InputPath", "RenameChara": "CharaDir"}
     def _task(name, enabled=True, **opts):                                                  # noqa: E306
         if name in path_option and path_option[name] not in opts:
             opts[path_option[name]] = opt_folder(work)

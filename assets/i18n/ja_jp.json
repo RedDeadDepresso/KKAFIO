@@ -232,5 +232,11 @@
   "option.UngroupCardTypes.description": "グループ化を解除するカードの種類",
   "option.UngroupCardTypes.case.Chara.label": "キャラ",
   "option.UngroupCardTypes.case.Scenes.label": "シーン",
-  "option.UngroupCardTypes.case.Coords.label": "コーディネート"
+  "option.UngroupCardTypes.case.Coords.label": "コーディネート",
+  "task.GroupScenes.label": "🎬 シーンをグループ化",
+  "task.GroupScenes.description": "pepper-scene-indexを使ってStudioシーンを作者別フォルダに振り分ける",
+  "option.GroupScenesIncludeSubfolders.label": "サブフォルダを含める",
+  "option.GroupScenesIncludeSubfolders.description": "シーンフォルダ内のサブフォルダにあるシーンも再グループ化します（デフォルトはオフ：直下のシーンのみ移動）",
+  "option.GroupScenesIncludeSubfolders.case.Yes.label": "はい",
+  "option.GroupScenesIncludeSubfolders.case.No.label": "いいえ"
 }

@@ -6,6 +6,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Added
 
+- **Group Scenes** — new task to sort Studio scenes into per-author folders using the pepper-scene-index. The index is re-downloaded only when the repository's latest commit changes, and scenes are hashed with the same cache Filter Duplicate Contents uses. Options: Custom Scene Directory, Use Cache, Include Subfolders. Also added to the Explorer context menu, above Group Characters.
 - **Compress Cards Textures** — new task to shrink the embedded texture data in character and coordinate cards.
 - **Download Missing Mods** — new task to scan cards for zipmods they need but you don't have, and fetch them from BetterRepack and/or Telegram.
 - **Delete Unused Mods** — new task to send zipmods that no chara, scene or coordinate card uses to the Recycle Bin. Sideloader Modpack mods are always kept, and an exception list protects folders, filenames or GUIDs.

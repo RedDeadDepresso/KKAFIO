@@ -232,5 +232,11 @@
   "option.UngroupCardTypes.description": "그룹을 해제할 카드 종류",
   "option.UngroupCardTypes.case.Chara.label": "캐릭터",
   "option.UngroupCardTypes.case.Scenes.label": "씬",
-  "option.UngroupCardTypes.case.Coords.label": "코디"
+  "option.UngroupCardTypes.case.Coords.label": "코디",
+  "task.GroupScenes.label": "🎬 씬 그룹화",
+  "task.GroupScenes.description": "pepper-scene-index를 사용해 스튜디오 씬을 제작자별 폴더로 정리합니다",
+  "option.GroupScenesIncludeSubfolders.label": "하위 폴더 포함",
+  "option.GroupScenesIncludeSubfolders.description": "씬 폴더의 하위 폴더에 있는 씬도 다시 그룹화합니다 (기본값 꺼짐: 최상위 씬만 이동)",
+  "option.GroupScenesIncludeSubfolders.case.Yes.label": "예",
+  "option.GroupScenesIncludeSubfolders.case.No.label": "아니요"
 }

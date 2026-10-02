@@ -141,6 +141,7 @@ _TASK_KEY = {
     "CompressCardsTextures": "CompressCardsTextures",
     "InstallContents": "InstallContents",
     "UninstallContents": "UninstallContents",
+    "GroupScenes": "GroupScenes",
     "GroupChara": "GroupChara",
     "UngroupCards": "UngroupCards",
     "RenameChara": "RenameChara",
@@ -159,6 +160,7 @@ _TASK_DEFAULTS = {
     "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Skip", "ExtractArchive": True, "Password": "Skip"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True},
+    "GroupScenes": {"Enable": False, "SceneDir": "", "UseCache": True, "IncludeSubfolders": False},
     "GroupChara": {"Enable": False, "CharaDir": "", "IncludeSubfolders": False, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n"},
     "UngroupCards": {"Enable": False, "InputPath": "", "Chara": True, "Scenes": True, "Coords": True, "DeleteEmptyFolders": True},
     "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's well-known English name.\n\nRules:\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- Use the name the character is commonly known by, not a literal transliteration.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n"},
@@ -258,6 +260,11 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
             cfg["Coords"] = "Coords" in selected
             cfg["Scenes"] = "Scenes" in selected
             cfg["Overlays"] = "Overlays" in selected
+
+    elif task_name == "GroupScenes":
+        _set("SceneDir", "SceneDir")
+        _set("UseCache", "UseCache")
+        _set("IncludeSubfolders", "GroupScenesIncludeSubfolders")
 
     elif task_name == "GroupChara":
         _set("CharaDir", "CharaDir")
@@ -553,6 +560,7 @@ class Config:
         self.compress_cards_textures   = self.config_data["CompressCardsTextures"]
         self.install_contents          = self.config_data["InstallContents"]
         self.uninstall_contents        = self.config_data["UninstallContents"]
+        self.group_scenes              = self.config_data["GroupScenes"]
         self.group_chara               = self.config_data["GroupChara"]
         self.ungroup_cards             = self.config_data["UngroupCards"]
         self.rename_chara              = self.config_data["RenameChara"]

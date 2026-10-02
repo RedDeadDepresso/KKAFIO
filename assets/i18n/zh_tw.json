@@ -232,5 +232,11 @@
   "option.UngroupCardTypes.description": "要取消分組的卡片類型",
   "option.UngroupCardTypes.case.Chara.label": "角色",
   "option.UngroupCardTypes.case.Scenes.label": "場景",
-  "option.UngroupCardTypes.case.Coords.label": "衣裝"
+  "option.UngroupCardTypes.case.Coords.label": "衣裝",
+  "task.GroupScenes.label": "🎬 分組場景",
+  "task.GroupScenes.description": "使用 pepper-scene-index 將 Studio 場景依作者整理到各自的資料夾",
+  "option.GroupScenesIncludeSubfolders.label": "包含子資料夾",
+  "option.GroupScenesIncludeSubfolders.description": "同時重新分組已位於場景資料夾子資料夾中的場景（預設關閉：僅移動頂層場景）",
+  "option.GroupScenesIncludeSubfolders.case.Yes.label": "是",
+  "option.GroupScenesIncludeSubfolders.case.No.label": "否"
 }

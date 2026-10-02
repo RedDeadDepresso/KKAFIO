@@ -62,18 +62,19 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 
 **On folders and folder backgrounds:**
 
-| Entry                           | Action                                                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                      |
-| Filter Duplicate Contents       | `filter-duplicate-contents --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder> --overlays-dir <folder>`                                                               |
-| Download Missing Mods           | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --output-mods-dir <folder>` |
-| Compress Cards Textures         | `compress-cards-textures --input <folder>`                                                                 |
-| Install Contents                | `install-contents --input <folder>`                                                                        |
-| Uninstall Contents              | `uninstall-contents --input <folder>`                                                                      |
-| Group Characters                | `group-chara --chara-dir <folder>`                                                                             |
-| Ungroup Cards                   | `ungroup-cards --input <folder>`                                                                           |
-| Rename Characters               | `rename-chara --chara-dir <folder>`                                                                            |
-| Run GUI                         | Opens GUI                                                                                                  |
+| Entry                      | Action                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                                                  |
+| Filter Duplicate Contents  | `filter-duplicate-contents --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder> --overlays-dir <folder>` |
+| Download Missing Mods      | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --output-mods-dir <folder>`                      |
+| Compress Cards Textures    | `compress-cards-textures --input <folder>`                                                                                             |
+| Install Contents           | `install-contents --input <folder>`                                                                                                    |
+| Uninstall Contents         | `uninstall-contents --input <folder>`                                                                                                  |
+| Group Scenes               | `group-scenes --scene-dir <folder>`                                                                                                    |
+| Group Characters           | `group-chara --chara-dir <folder>`                                                                                                     |
+| Ungroup Cards              | `ungroup-cards --input <folder>`                                                                                                       |
+| Rename Characters          | `rename-chara --chara-dir <folder>`                                                                                                    |
+| Run GUI                    | Opens GUI                                                                                                                              |
 
 **On PNG files (single or multi-select):**
 
@@ -337,6 +338,16 @@ https://t.me/kknowcc
 - Refuses to run if none of the chara, scene, or coordinate folders can be found, since every mod would otherwise look unused. Deleted files can still be recovered from the Recycle Bin.
 - If two mod files share the same GUID, only one of them is considered, so an unused duplicate copy may be left behind.
 
+**16. Group Scenes**
+
+- Sorts your Studio scenes into per-author folders using the [pepper-scene-index](https://github.com/RedDeadDepresso/pepper-scene-index), a list that maps a scene's content hash (XXH3) to its author.
+- Before sorting, KKAFIO checks the index repository's latest commit against the one saved in `pepper_scene_index_last_commit.txt` (in KKAFIO's config folder). Only when the commit is new does it download `pepper-scene-index.json` again; otherwise the saved copy is used, and if GitHub can't be reached the saved copy is used as a fallback.
+- Every scene found in the index is moved to `<scene folder>/<author>/`. Scenes that aren't in the index, and anything that isn't a scene, are left alone. Author names are cleaned up so they're valid folder names (characters like `/ : ? *` become `_`).
+- **Custom Scene Directory** — blank by default, which means the game's Studio scene folder (`UserData/Studio/scene`).
+- **Use Cache** _(on by default)_ — scenes are hashed with the same cache that Filter Duplicate Contents uses (`kkafio_duplicate_png_cache.json` in the scene folder), so a scene hashed by either task isn't hashed again by the other.
+- **Include Subfolders** _(off by default)_ — also regroup scenes that are already inside subfolders, moving them to `<scene folder>/<author>/`. When off, only scenes directly in the scene folder are moved. Scenes already in the right author folder are skipped.
+- If a file with the same name is already in the author folder, the moved scene gets a `_1`, `_2`, … suffix instead of overwriting it.
+
 ---
 
 ## Presets
@@ -523,6 +534,7 @@ kkafio_cli rename-chara    [--chara-dir DIR]
                            [--update-metadata | --no-update-metadata]
                            [--rename-files | --no-rename-files]
 
+kkafio_cli group-scenes    [--scene-dir DIR] [--use-cache | --no-use-cache] [--include-subfolders]
 kkafio_cli group-chara     [--chara-dir DIR] [--include-subfolders]
 
 kkafio_cli ungroup-cards   [--input DIR]

@@ -232,5 +232,11 @@
   "option.UngroupCardTypes.description": "Какие типы карточек разгруппировать",
   "option.UngroupCardTypes.case.Chara.label": "Персонажи",
   "option.UngroupCardTypes.case.Scenes.label": "Сцены",
-  "option.UngroupCardTypes.case.Coords.label": "Наряды"
+  "option.UngroupCardTypes.case.Coords.label": "Наряды",
+  "task.GroupScenes.label": "🎬 Группировать сцены",
+  "task.GroupScenes.description": "Раскладывает сцены Studio по папкам авторов с помощью pepper-scene-index",
+  "option.GroupScenesIncludeSubfolders.label": "Включая подпапки",
+  "option.GroupScenesIncludeSubfolders.description": "Также перегруппировывать сцены, уже лежащие в подпапках папки сцен (по умолчанию выкл.: перемещаются только сцены верхнего уровня)",
+  "option.GroupScenesIncludeSubfolders.case.Yes.label": "Да",
+  "option.GroupScenesIncludeSubfolders.case.No.label": "Нет"
 }

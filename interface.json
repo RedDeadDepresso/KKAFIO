@@ -599,6 +599,28 @@
         }
       ]
     },
+    "GroupScenesIncludeSubfolders": {
+      "type": "switch",
+      "label": "$option.GroupScenesIncludeSubfolders.label",
+      "description": "$option.GroupScenesIncludeSubfolders.description",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.GroupScenesIncludeSubfolders.case.Yes.label",
+          "pipeline_override": {
+            "IncludeSubfolders": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.GroupScenesIncludeSubfolders.case.No.label",
+          "pipeline_override": {
+            "IncludeSubfolders": false
+          }
+        }
+      ]
+    },
     "DeleteEmptyFolders": {
       "type": "switch",
       "label": "$option.DeleteEmptyFolders.label",
@@ -1214,6 +1236,15 @@
       "option": ["DownloadsInputPath", "InstallContentTypes"]
     },
     {
+      "name": "GroupScenes",
+      "label": "$task.GroupScenes.label",
+      "entry": "GroupScenes",
+      "default_check": false,
+      "description": "$task.GroupScenes.description",
+      "group": ["chara-management"],
+      "option": ["SceneDir", "UseCache", "GroupScenesIncludeSubfolders"]
+    },
+    {
       "name": "GroupChara",
       "label": "$task.GroupChara.label",
       "entry": "GroupChara",
@@ -1457,6 +1488,10 @@
         },
         {
           "name": "UninstallContents",
+          "enabled": false
+        },
+        {
+          "name": "GroupScenes",
           "enabled": false
         },
         {

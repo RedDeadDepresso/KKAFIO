@@ -48,6 +48,7 @@ $FolderTasks = @(
     [ordered]@{ Id = 'CompressCardsTextures';   Cli = 'compress-cards-textures';   ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'InstallContents';         Cli = 'install-contents';          ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'UninstallContents';       Cli = 'uninstall-contents';        ArgsTemplate = '--input "{P}"' }
+    [ordered]@{ Id = 'GroupScenes';              Cli = 'group-scenes';               ArgsTemplate = '--scene-dir "{P}"' }
     [ordered]@{ Id = 'GroupChara';              Cli = 'group-chara';               ArgsTemplate = '--chara-dir "{P}"' }
     [ordered]@{ Id = 'UngroupCards';            Cli = 'ungroup-cards';             ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'RenameChara';             Cli = 'rename-chara';              ArgsTemplate = '--chara-dir "{P}"' }
@@ -74,6 +75,7 @@ $Labels = @{
         CompressCardsTextures   = "🗜️ Compress Cards Textures"
         InstallContents         = "📦 Install Contents"
         UninstallContents       = "↩️ Uninstall Contents"
+        GroupScenes              = "🎬 Group Scenes"
         GroupChara              = "🗂️ Group Characters"
         UngroupCards            = "📂 Ungroup Cards"
         RenameChara             = "✏️ Rename Characters"
@@ -88,6 +90,7 @@ $Labels = @{
         CompressCardsTextures   = "🗜️ 压缩卡片纹理"
         InstallContents         = "📦 安装内容"
         UninstallContents       = "↩️ 卸载内容"
+        GroupScenes              = "🎬 分组场景"
         GroupChara              = "🗂️ 分组角色"
         UngroupCards            = "📂 取消分组卡片"
         RenameChara             = "✏️ 重命名角色"
@@ -102,6 +105,7 @@ $Labels = @{
         CompressCardsTextures   = "🗜️ 壓縮卡片紋理"
         InstallContents         = "📦 安裝內容"
         UninstallContents       = "↩️ 解除安裝內容"
+        GroupScenes              = "🎬 分組場景"
         GroupChara              = "🗂️ 分組角色"
         UngroupCards            = "📂 取消分組卡片"
         RenameChara             = "✏️ 重新命名角色"
@@ -116,6 +120,7 @@ $Labels = @{
         CompressCardsTextures   = "🗜️ カードテクスチャを圧縮"
         InstallContents         = "📦 コンテンツをインストール"
         UninstallContents       = "↩️ コンテンツをアンインストール"
+        GroupScenes              = "🎬 シーンをグループ化"
         GroupChara              = "🗂️ キャラをグループ化"
         UngroupCards            = "📂 カードのグループ化を解除"
         RenameChara             = "✏️ キャラをリネーム"
@@ -130,6 +135,7 @@ $Labels = @{
         CompressCardsTextures   = "🗜️ 카드 텍스처 압축"
         InstallContents         = "📦 콘텐츠 설치"
         UninstallContents       = "↩️ 콘텐츠 제거"
+        GroupScenes              = "🎬 씬 그룹화"
         GroupChara              = "🗂️ 캐릭터 그룹화"
         UngroupCards            = "📂 카드 그룹 해제"
         RenameChara             = "✏️ 캐릭터 이름 변경"
@@ -144,6 +150,7 @@ $Labels = @{
         CompressCardsTextures   = "🗜️ Сжать текстуры карточек"
         InstallContents         = "📦 Установить содержимое"
         UninstallContents       = "↩️ Удалить содержимое"
+        GroupScenes              = "🎬 Группировать сцены"
         GroupChara              = "🗂️ Группировать персонажей"
         UngroupCards            = "📂 Разгруппировать карточки"
         RenameChara             = "✏️ Переименовать персонажей"

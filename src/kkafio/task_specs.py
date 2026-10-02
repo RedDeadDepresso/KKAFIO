@@ -446,6 +446,22 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
+        name="GroupScenes", command="group-scenes",
+        help="Move Studio scenes into per-author folders using the pepper-scene-index",
+        target="kkafio.tasks.group_scenes:GroupScenes",
+        options=(
+            Value("--scene-dir", "--input", "-i", key="SceneDir", ignore_blank=True, metavar="DIR",
+                  default=None,
+                  help="Custom scene directory (default: the game's Studio scene folder; "
+                       "--input is an alias)"),
+            Toggle("use-cache", key="UseCache",
+                   help="Reuse the shared PNG hash cache to skip re-hashing unchanged scenes (default: on)",
+                   off_help="Disable cache and hash every scene"),
+            Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
+                  help="Also regroup scenes that are already in subfolders (overrides config)"),
+        ),
+    ),
+    TaskSpec(
         name="GroupChara", command="group-chara",
         help="Move character cards into series subfolders using an LLM "
              "(shows a native Copy/Paste dialog when it runs)",

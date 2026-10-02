@@ -232,5 +232,11 @@
   "option.UngroupCardTypes.description": "Which card types to ungroup",
   "option.UngroupCardTypes.case.Chara.label": "Chara",
   "option.UngroupCardTypes.case.Scenes.label": "Scenes",
-  "option.UngroupCardTypes.case.Coords.label": "Coords"
+  "option.UngroupCardTypes.case.Coords.label": "Coords",
+  "task.GroupScenes.label": "🎬 Group Scenes",
+  "task.GroupScenes.description": "Sort Studio scenes into per-author folders using the pepper-scene-index",
+  "option.GroupScenesIncludeSubfolders.label": "Include Subfolders",
+  "option.GroupScenesIncludeSubfolders.description": "Also regroup scenes that are already inside subfolders of the scene folder (off by default: only top-level scenes are moved)",
+  "option.GroupScenesIncludeSubfolders.case.Yes.label": "Yes",
+  "option.GroupScenesIncludeSubfolders.case.No.label": "No"
 }
