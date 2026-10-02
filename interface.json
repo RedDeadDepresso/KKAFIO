@@ -1117,6 +1117,11 @@
       "default_expand": true
     },
     {
+      "name": "scene-management",
+      "label": "$group.scene-management.label",
+      "default_expand": true
+    },
+    {
       "name": "mod-management",
       "label": "$group.mod-management.label",
       "default_expand": true
@@ -1147,7 +1152,7 @@
       "entry": "FilterConvertKKS",
       "default_check": false,
       "description": "$task.FilterConvertKKS.description",
-      "group": ["chara-management"],
+      "group": ["card-management"],
       "option": [
         "DownloadsInputPath",
         "Convert",
@@ -1166,15 +1171,15 @@
       "group": ["content-management"],
       "option": [
         "InstallContentTypes",
+        "UseCache",
+        "FuzzyMatching",
+        "KeepStrategy",
+        "DuplicateAction",
         "CharaDir",
         "SceneDir",
         "CoordDir",
         "ModsDir",
-        "OverlaysDir",
-        "UseCache",
-        "FuzzyMatching",
-        "KeepStrategy",
-        "DuplicateAction"
+        "OverlaysDir"
       ]
     },
     {
@@ -1241,7 +1246,7 @@
       "entry": "GroupScenes",
       "default_check": false,
       "description": "$task.GroupScenes.description",
-      "group": ["chara-management"],
+      "group": ["scene-management"],
       "option": ["SceneDir", "UseCache", "GroupScenesIncludeSubfolders"]
     },
     {
@@ -1259,7 +1264,7 @@
       "entry": "UngroupCards",
       "default_check": false,
       "description": "$task.UngroupCards.description",
-      "group": ["chara-management"],
+      "group": ["card-management"],
       "option": ["InputPath", "UngroupCardTypes", "DeleteEmptyFolders"]
     },
     {
@@ -1405,14 +1410,16 @@
           }
         },
         {
+          "name": "GroupScenes"
+        },
+        {
           "name": "GroupChara"
         },
         {
           "name": "RenameChara"
         },
         {
-          "name": "DeleteCards",
-          "enabled": false
+          "name": "DeleteUnusedMods"
         },
         {
           "name": "DownloadMissingMods",
