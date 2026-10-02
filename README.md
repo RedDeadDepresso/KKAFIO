@@ -117,9 +117,11 @@ Everything else — CLI output, log files, and error messages — is English-onl
   | ------------------------------------------- | -------------------------------- |
   | `https://db.bepis.moe/user/cards`           | Single listing page or card page |
   | `https://db.bepis.moe/user/cards \| all`    | All pages until empty            |
+  | `https://db.bepis.moe/user/cards \| 3`      | Only page 3                      |
   | `https://db.bepis.moe/user/cards \| 1 \| 5` | Pages 1 through 5                |
   | `https://db.bepis.moe/user/cards \| 5 \| 1` | Pages 5 down to 1 (reverse)      |
 
+- `link | page` fetches just that one page. If the link already has a `page` in it (e.g. `...?page=2`), it is replaced by the number you give, and any other filters in the link (tags, sort, etc.) are kept.
 - Lines starting with `#` are treated as comments and ignored.
 - **Skip already downloaded** (on by default) uses a history file at `%APPDATA%/KKAFIO/download_history.json` to avoid re-downloading files.
   - **Tip:** combined with **Skip already downloaded**, a paginated link effectively lets you "subscribe" to an author or series — re-running the same task later only picks up whatever's new. For example, on koikatsucards.com you can grab everything from an author or series with `| all` once, then switch to a small window like `| 1 | 3` for future runs (widen it if they upload less often than that) so each run only checks the first few pages, skips anything already downloaded, and grabs whatever's new.

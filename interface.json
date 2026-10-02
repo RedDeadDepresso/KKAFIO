@@ -113,7 +113,7 @@
       "name": "links",
       "label": "$option.DownloadLinks.label",
       "description": "$option.DownloadLinks.description",
-      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 3 | 1",
+      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 3\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 5 | 1",
       "default": "",
       "pipeline_override": {
         "Links": "{links}"

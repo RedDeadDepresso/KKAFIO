@@ -8,6 +8,7 @@ Supports:
 Input line formats (| is the separator — safe because URLs never contain |):
   https://...                   plain URL — single card page or one listing page
   https://... | all             listing: download all pages until empty
+  https://... | 5               listing: just page 5 (replaces any ?page= in the link)
   https://... | 3 | 7           listing: pages 3 through 7 inclusive
   https://... | 7 | 3           listing: pages 7 down to 3 (reverse order)
   # comment                     lines starting with # are ignored
@@ -120,6 +121,8 @@ def _parse_line(raw: str) -> tuple[str, int | None, int | None] | None:
     Returns (url, page_start, page_end) where:
       page_start=None, page_end=None  → plain URL, no pagination
       page_start=N,    page_end=None  → all pages from N until empty
+      page_start=N,    page_end=N     → only page N ("url | N"); any ?page= already
+                                        in the url is replaced by N
       page_start=N,    page_end=M     → pages N through M (inclusive, supports reverse)
 
     Returns None if the line is invalid.
@@ -144,7 +147,7 @@ def _parse_line(raw: str) -> tuple[str, int | None, int | None] | None:
         return url, p_start, p_end
     except (ValueError, IndexError):
         logger.error("DLOAD",
-            f"Could not parse: {raw!r} — expected 'url | all' or 'url | N | M'")
+            f"Could not parse: {raw!r} — expected 'url | all', 'url | N' or 'url | N | M'")
         return None
 
 
@@ -472,6 +475,7 @@ async def _download_bepis(
 
     elif page_start is not None:
         logger.info("DLOAD",
+            f"Scraping page {page_start}: {url}" if page_end == page_start else
             f"Scraping pages {page_start}–{'end' if page_end is None else page_end}: {url}")
         return await _download_pages(
             client, url, directory, history, skip,
@@ -574,6 +578,7 @@ async def _download_koikatsu(
 
     elif page_start is not None:
         logger.info("DLOAD",
+            f"Scraping page {page_start}: {url}" if page_end == page_start else
             f"Scraping pages {page_start}–{'end' if page_end is None else page_end}: {url}")
         return await _download_pages(
             client, url, directory, history, skip,
