@@ -4,6 +4,13 @@ Koikatsu chara/coordinate cards using KoiCardTexTool
 (https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking card file
 size dramatically (often -50% to -80%) with minimal quality loss.
 
+KoiCardTexTool writes its compressed copies to a sibling folder named after the
+input folder plus "[zip]" (C:/KKAFIO/Downloads -> C:/KKAFIO/Downloads[zip]),
+keeping the input's subfolder layout, each file named "<original name>[zip].png".
+Once it finishes, everything is moved back into the input folder (same relative
+layout), the "[zip]" folder is removed, and — if enabled — the originals that
+now have a compressed "[zip]" copy next to them are sent to the bin.
+
 KoiCardTexTool itself isn't bundled with KKAFIO — if it isn't found where
 configured, this task downloads and extracts the release build automatically
 before running it.
@@ -11,6 +18,7 @@ before running it.
 
 import hashlib
 import io
+import shutil
 import subprocess
 import zipfile
 from pathlib import Path
@@ -27,6 +35,14 @@ KOICARDTEXTOOL_URL = (
     "releases/download/v1.0.1/KoiCardTexTool-1.0.1.zip"
 )
 KOICARDTEXTOOL_EXE = "KoiCardTexTool.exe"
+
+# Appended to the input folder's path to name the output folder, and passed to
+# the tool as `suffix=` so every compressed card is named "<name>[zip].png".
+ZIP_SUFFIX = "[zip]"
+
+# Marker KoiCardTexTool drops in its output folder; it must NOT be moved into
+# the input folder, because folders carrying it are never used as tool input.
+OUT_MARKER = ".koicardtex-outdir"
 
 # SHA-256 of the release zip above, pinned so a compromised/replaced GitHub
 # release asset (or a MITM without TLS pinning) is caught instead of silently
@@ -124,17 +140,60 @@ class CompressCardsTextures(BaseTask):
         payload = data[png_end:]
         return get_card_type(payload) != CardType.UNKNOWN or is_coordinate(payload)
 
+    def _merge_output_into_input(self, input_path: Path, output_path: Path) -> bool:
+        """Move every file from the "[zip]" output folder into the input folder
+        (same relative layout; an existing file is overwritten), then delete
+        the output folder. Returns True if the output folder is gone.
+
+        If any file can't be moved the output folder is left in place so
+        nothing is lost.
+        """
+        logger.line()
+        if not output_path.exists():
+            logger.info("KOITEX", f"Output folder {output_path} not found — nothing to move")
+            return False
+
+        logger.info("KOITEX", f"Moving compressed cards into {input_path} ...")
+        moved = 0
+        failed = 0
+        for src in sorted(output_path.rglob("*")):
+            if not src.is_file() or src.name == OUT_MARKER:
+                continue
+            dst = input_path / src.relative_to(output_path)
+            try:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                if dst.exists():
+                    dst.unlink()
+                shutil.move(str(src), str(dst))
+                moved += 1
+            except Exception as e:
+                failed += 1
+                logger.error("KOITEX", f"Could not move {src.name}: {e}")
+        logger.info("KOITEX", f"Moved {moved} file(s)" + (f", {failed} failed" if failed else ""))
+
+        if failed:
+            logger.warning("KOITEX",
+                f"Keeping {output_path} because some files could not be moved")
+            return False
+        try:
+            shutil.rmtree(output_path)
+            logger.removed("KOITEX", output_path.name)
+            return True
+        except Exception as e:
+            logger.error("KOITEX", f"Could not delete {output_path}: {e}")
+            return False
+
     def _delete_originals(self, input_path: Path) -> None:
         logger.line()
-        logger.info("KOITEX", "Deleting original cards with a compressed [zip] version...")
+        logger.info("KOITEX", f"Deleting original cards that have a compressed {ZIP_SUFFIX} version...")
         deleted = 0
         checked = 0
         skipped_invalid = 0
         for compressed in input_path.rglob("*.png"):
-            if "[zip]" not in compressed.stem:
+            if not compressed.stem.endswith(ZIP_SUFFIX):
                 continue
             checked += 1
-            original_path = compressed.with_name(compressed.name.replace("[zip]", "", 1))
+            original_path = compressed.with_name(compressed.stem[:-len(ZIP_SUFFIX)] + ".png")
             if not original_path.exists():
                 continue
 
@@ -186,13 +245,17 @@ class CompressCardsTextures(BaseTask):
         if exe_path is None:
             raise ToolNotFoundError("CompressCardsTextures: KoiCardTexTool is not available", tag="KOITEX")
 
+        # Compressed copies go to "<input folder>[zip]" (a sibling folder).
+        output_path = Path(f"{input_path}{ZIP_SUFFIX}")
+
         logger.line()
         logger.info("KOITEX", f"Input folder    : {input_path}")
+        logger.info("KOITEX", f"Output folder   : {output_path}")
         logger.info("KOITEX", f"KoiCardTexTool  : {exe_path}")
         logger.info("KOITEX", f"Delete originals: {self.delete_original}")
         logger.line()
 
-        cmd = [str(exe_path), "batch", str(input_path), str(input_path)]
+        cmd = [str(exe_path), "batch", str(input_path), str(output_path), f"suffix={ZIP_SUFFIX}"]
 
         try:
             process = popen_text(
@@ -222,6 +285,10 @@ class CompressCardsTextures(BaseTask):
                 f"CompressCardsTextures: KoiCardTexTool exited with code {process.returncode}")
 
         logger.success("KOITEX", "Compression complete")
+
+        # Bring the compressed cards back next to the originals and drop the
+        # temporary "[zip]" folder, then (optionally) bin the originals.
+        self._merge_output_into_input(input_path, output_path)
 
         if self.delete_original:
             self._delete_originals(input_path)

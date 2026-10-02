@@ -236,8 +236,9 @@ https://t.me/kknowcc
 
 - Recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
 - **KoiCardTexTool Path** — folder containing (or where to install) `KoiCardTexTool.exe`. Defaults to `C:/KoiCardTexTool`. If the exe isn't found there (checked recursively, in case the release zip nests it in a subfolder), KKAFIO downloads and extracts the latest release automatically before running it.
-- Runs `KoiCardTexTool.exe batch <input> <input>` — the same folder is used for both input and output, so compressed copies land right alongside the originals, named `CardA[zip].png` for an original `CardA.png`. Its output is streamed live into the log, the same way 7-Zip's output is.
-- **Delete Original Cards** _(off by default)_: after compressing, finds every card whose filename ends in `[zip]`, and if the matching original (with `[zip]` removed from the name) still exists alongside it, sends the original to the Recycle Bin.
+- Runs `KoiCardTexTool.exe batch <input> <input>[zip] suffix=[zip]`, so KoiCardTexTool first writes its compressed copies to a temporary sibling folder named after the input folder plus `[zip]` (for example `C:/KKAFIO/Downloads` → `C:/KKAFIO/Downloads[zip]`), named `CardA[zip].png` for an original `CardA.png`. Its output is streamed live into the log, the same way 7-Zip's output is.
+- When it finishes, KKAFIO moves everything from the `[zip]` folder back into the input folder (keeping the subfolder layout, overwriting any older `[zip]` copy), then deletes the `[zip]` folder. If any file can't be moved, the `[zip]` folder is kept so nothing is lost. The result is the same as before: compressed copies sit right alongside the originals.
+- **Delete Original Cards** _(off by default)_: after the files have been moved back, finds every card whose filename ends in `[zip]`, and if the matching original (with `[zip]` removed from the name) still exists alongside it, sends the original to the Recycle Bin. Originals are only deleted when the compressed card is valid and smaller.
 
 **7. Install Contents**
 
