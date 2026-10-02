@@ -533,6 +533,21 @@
      "kind": "task",
      "run_kwargs": {},
      "task": "ExportMods"
+    },
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
     }
    ],
    "outcome": {
@@ -545,6 +560,21 @@
   "kwargs": {},
   "result": {
    "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    },
     {
      "attrs": {
       "guids_raw": "",

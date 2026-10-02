@@ -117,6 +117,23 @@ def _export_mods_guids_override(args: argparse.Namespace) -> dict[str, Any]:
     return {} if guids is None else {"Guids": guids}
 
 
+def _delete_unused_mods_exceptions(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--exceptions", metavar="TEXT", default=None,
+                       help="Exception list, one entry per line: 'Folder\\\\' (ends in a slash) protects a "
+                            "folder inside mods, a name ending in .zip/.zipmod protects that file, anything "
+                            "else is a GUID. (default: DeleteUnusedMods.ExceptionList from config)")
+    group.add_argument("--exceptions-file", metavar="FILE", default=None,
+                       help="Read the exception list from a text file instead")
+
+
+def _delete_unused_mods_exceptions_override(args: argparse.Namespace) -> dict[str, Any]:
+    text = args.exceptions
+    if args.exceptions_file:
+        text = Path(args.exceptions_file).read_text(encoding="utf-8")
+    return {} if text is None else {"ExceptionList": text}
+
+
 def _create_backup_folders(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("folder selection (each pair overrides its config flag)")
     for flag in ("mods", "userdata", "bepinex"):
@@ -268,6 +285,26 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Use the mods cache to skip re-scanning unchanged zipmods (default: on)"),
             Value("--mods-dir", key="ModsDir", default=None, metavar="DIR",
                   help="Override the mods directory to search (default: game mods dir from config)"),
+        ),
+    ),
+
+    TaskSpec(
+        name="DeleteUnusedMods", command="delete-unused-mods",
+        help="Send zipmods not used by any chara, scene or coordinate card to the recycle bin",
+        target="kkafio.tasks.delete_unused_mods:DeleteUnusedMods",
+        options=(
+            Custom(_delete_unused_mods_exceptions, _delete_unused_mods_exceptions_override),
+            Toggle("use-cache", key="UseCache",
+                   help="Use the mods/card caches to skip re-scanning unchanged files (default: on)",
+                   off_help="Disable cache and do a full scan"),
+            Value("--mods-dir", key="ModsDir", default=None, metavar="DIR",
+                  help="Override the mods directory (default: game mods dir from config)"),
+            Value("--chara-dir", key="CharaDir", default=None, metavar="DIR",
+                  help="Custom chara directory (default: game's chara folders)"),
+            Value("--scene-dir", key="SceneDir", default=None, metavar="DIR",
+                  help="Custom scene directory (default: game's Studio scene folder)"),
+            Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",
+                  help="Custom coordinate directory (default: game's coordinate folder)"),
         ),
     ),
 

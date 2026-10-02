@@ -147,6 +147,7 @@ _TASK_KEY = {
     "ArchiveCards": "ArchiveCards",
     "DeleteCards": "DeleteCards",
     "ExportMods": "ExportMods",
+    "DeleteUnusedMods": "DeleteUnusedMods",
 }
 
 _TASK_DEFAULTS = {
@@ -164,6 +165,7 @@ _TASK_DEFAULTS = {
     "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CoordDir": ""},
     "DeleteCards": {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "ExportMods": {"Enable": False, "OutputPath": "C:/KKAFIO/Exported Mods", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
+    "DeleteUnusedMods": {"Enable": False, "ExceptionList": "BetterPenetration\\\nClo\\", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
 }
 
 
@@ -290,6 +292,14 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("RenameToGuid", "RenameToGuid")
         _set("UseCache", "UseCache")
         _set("ModsDir", "ModsDir")
+
+    elif task_name == "DeleteUnusedMods":
+        _set("ExceptionList", "ExceptionList")
+        _set("UseCache", "UseCache")
+        _set("ModsDir", "ModsDir")
+        _set("CharaDir", "CharaDir")
+        _set("SceneDir", "SceneDir")
+        _set("CoordDir", "CoordDir")
 
     return cfg
 
@@ -533,6 +543,7 @@ class Config:
         self.archive_cards             = self.config_data["ArchiveCards"]
         self.delete_cards              = self.config_data["DeleteCards"]
         self.export_mods               = self.config_data["ExportMods"]
+        self.delete_unused_mods        = self.config_data["DeleteUnusedMods"]
 
 
 # ---------------------------------------------------------------------------

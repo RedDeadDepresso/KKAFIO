@@ -49,6 +49,7 @@ TASK_CLASSES: dict[str, tuple[str, str]] = {
     "ArchiveCards":            ("kkafio.tasks.archive_cards", "ArchiveCards"),
     "DeleteCards":             ("kkafio.tasks.delete_cards", "DeleteCards"),
     "ExportMods":              ("kkafio.tasks.export_mods", "ExportMods"),
+    "DeleteUnusedMods":        ("kkafio.tasks.delete_unused_mods", "DeleteUnusedMods"),
 }
 
 # Attributes that are constant noise for our purposes (derived from the sandbox).
@@ -417,6 +418,9 @@ def configured_tasks() -> list[dict]:
           CharaDir=f("/cfg/chara"), SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coords")),
         t("ExportMods", ExportOutputPath=f("/cfg/export"), Guids=opt_text("cfg.guid"),
           RenameToGuid=sw(False), UseCache=sw(False), ModsDir=f("/cfg/mods")),
+        t("DeleteUnusedMods", ExceptionList=opt_text("cfg.exception"), UseCache=sw(False),
+          ModsDir=f("/cfg/mods"), CharaDir=f("/cfg/chara"), SceneDir=f("/cfg/scene"),
+          CoordDir=f("/cfg/coords")),
     ]
 
 

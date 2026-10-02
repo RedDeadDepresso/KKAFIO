@@ -794,6 +794,17 @@
         "TelegramChatLinks": "{telegram_chat_links}"
       }
     },
+    "ExceptionList": {
+      "type": "textarea",
+      "name": "exception_list",
+      "label": "$option.ExceptionList.label",
+      "description": "$option.ExceptionList.description",
+      "placeholder": "BetterPenetration\\\nClo\\\nMyMod.zipmod\nAuthor.MyGuid",
+      "default": "BetterPenetration\\\nClo\\",
+      "pipeline_override": {
+        "ExceptionList": "{exception_list}"
+      }
+    },
     "Guids": {
       "type": "textarea",
       "name": "guids",
@@ -1221,6 +1232,22 @@
         "UseCache",
         "ModsDir"
       ]
+    },
+    {
+      "name": "DeleteUnusedMods",
+      "label": "$task.DeleteUnusedMods.label",
+      "entry": "DeleteUnusedMods",
+      "default_check": false,
+      "description": "$task.DeleteUnusedMods.description",
+      "group": ["mod-management"],
+      "option": [
+        "ExceptionList",
+        "UseCache",
+        "ModsDir",
+        "CharaDir",
+        "SceneDir",
+        "CoordDir"
+      ]
     }
   ],
   "preset": [
@@ -1383,6 +1410,10 @@
         },
         {
           "name": "ExportMods",
+          "enabled": false
+        },
+        {
+          "name": "DeleteUnusedMods",
           "enabled": false
         }
       ]

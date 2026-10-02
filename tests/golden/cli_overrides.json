@@ -2302,6 +2302,301 @@
   },
   "world": "configured"
  },
+ "configured: delete-unused-mods": {
+  "argv": [
+   "delete-unused-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coords",
+      "exception_list_raw": "cfg.exception",
+      "mods_dir_str": "/cfg/mods",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods --chara-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "/cfg/coords",
+      "exception_list_raw": "cfg.exception",
+      "mods_dir_str": "/cfg/mods",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods --coord-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "",
+      "exception_list_raw": "cfg.exception",
+      "mods_dir_str": "/cfg/mods",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods --exceptions-file=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions-file",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coords",
+      "exception_list_raw": "cfg.exception",
+      "mods_dir_str": "/cfg/mods",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods --exceptions=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coords",
+      "exception_list_raw": "",
+      "mods_dir_str": "/cfg/mods",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods --mods-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coords",
+      "exception_list_raw": "cfg.exception",
+      "mods_dir_str": "",
+      "scene_dir_str": "/cfg/scene",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods --scene-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "coord_dir_str": "/cfg/coords",
+      "exception_list_raw": "cfg.exception",
+      "mods_dir_str": "/cfg/mods",
+      "scene_dir_str": "",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods [all-first]": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   "S_exceptions",
+   "--use-cache",
+   "--mods-dir",
+   "S_mods_dir",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "exception_list_raw": "S_exceptions",
+      "mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: delete-unused-mods [all-last]": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   "S_exceptions",
+   "--no-use-cache",
+   "--mods-dir",
+   "S_mods_dir",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "exception_list_raw": "S_exceptions",
+      "mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
  "configured: download-contents": {
   "argv": [
    "download-contents"
@@ -5546,6 +5841,531 @@
      "kind": "task",
      "run_kwargs": {},
      "task": "DeleteCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods": {
+  "argv": [
+   "delete-unused-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --chara-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --chara-dir=S_chara_dir": {
+  "argv": [
+   "delete-unused-mods",
+   "--chara-dir",
+   "S_chara_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --coord-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --coord-dir=S_coord_dir": {
+  "argv": [
+   "delete-unused-mods",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "S_coord_dir",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --exceptions-file=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions-file",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --exceptions-file=S_exceptions_file": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions-file",
+   "S_exceptions_file"
+  ],
+  "result": {
+   "events": [],
+   "outcome": {
+    "error": null,
+    "exit": 1
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --exceptions=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --exceptions=S_exceptions": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   "S_exceptions"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "S_exceptions",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --mods-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --mods-dir=S_mods_dir": {
+  "argv": [
+   "delete-unused-mods",
+   "--mods-dir",
+   "S_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --no-use-cache": {
+  "argv": [
+   "delete-unused-mods",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --scene-dir=<blank>": {
+  "argv": [
+   "delete-unused-mods",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --scene-dir=S_scene_dir": {
+  "argv": [
+   "delete-unused-mods",
+   "--scene-dir",
+   "S_scene_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods --use-cache": {
+  "argv": [
+   "delete-unused-mods",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods [all-first]": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   "S_exceptions",
+   "--use-cache",
+   "--mods-dir",
+   "S_mods_dir",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "exception_list_raw": "S_exceptions",
+      "mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "delete-unused-mods [all-last]": {
+  "argv": [
+   "delete-unused-mods",
+   "--exceptions",
+   "S_exceptions",
+   "--no-use-cache",
+   "--mods-dir",
+   "S_mods_dir",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "exception_list_raw": "S_exceptions",
+      "mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": false
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
     }
    ],
    "outcome": {
