@@ -226,6 +226,7 @@ https://t.me/kknowcc
 > ⚠️ **Security notice:** Telegram API credentials and the session file give full access to your Telegram account. **We strongly recommend using a secondary/dedicated Telegram account** rather than your personal account. The session file is stored locally and never uploaded anywhere, but treat it like a password. Never share `%APPDATA%/KKAFIO/config/tg_session/` with anyone.
 
 > ⚠️ **Ban/restriction risk:** Download Missing Mods logs in as your real Telegram account (via [Telethon](https://github.com/LonamiWebs/Telethon)) and uses it to run automated server-side searches (`messages.search`) and downloads — not the Bot API. This is inherently more sensitive than a bot account:
+>
 > - Every missing GUID is searched across every entry in **Telegram Chat Links**, in sequence, so a large batch of missing mods can generate a lot of search requests in a short time.
 > - If Telegram responds with a rate limit (`FloodWaitError`), KKAFIO now waits out the exact time Telegram requests before retrying (instead of retrying immediately, which used to risk compounding into a longer restriction) — but this only makes each individual rate limit safer to run into, it doesn't stop one from happening if you run large batches often.
 > - Downloads per chat are capped at 5 candidates per GUID (a chat search can return up to 100 hits; only the first few are ever actually downloaded and GUID-checked) to reduce unnecessary traffic, but the search step itself isn't batched or throttled beyond that.
@@ -340,7 +341,7 @@ https://t.me/kknowcc
 
 **16. Group Scenes**
 
-- Sorts your Studio scenes into per-author folders using the [pepper-scene-index](https://github.com/RedDeadDepresso/pepper-scene-index), a list that maps a scene's content hash (XXH3) to its author.
+- Sorts your Studio scenes into per-author folders using the [pepper-scene-index](https://github.com/RedDeadDepresso/pepper-scene-hasher), a list that maps a scene's content hash (XXH3) to its author.
 - Before sorting, KKAFIO checks the index repository's latest commit against the one saved in `pepper_scene_index_last_commit.txt` (in KKAFIO's config folder). Only when the commit is new does it download `pepper-scene-index.json` again; otherwise the saved copy is used, and if GitHub can't be reached the saved copy is used as a fallback.
 - Every scene found in the index is moved to `<scene folder>/<author>/`. Scenes that aren't in the index, and anything that isn't a scene, are left alone. Author names are cleaned up so they're valid folder names (characters like `/ : ? *` become `_`).
 - **Custom Scene Directory** — blank by default, which means the game's Studio scene folder (`UserData/Studio/scene`).

@@ -1,6 +1,6 @@
 """pepper-scene-index: the {xxhash: author} index of Studio scenes.
 
-The index is published by https://github.com/RedDeadDepresso/pepper-scene-index.
+The index is published by https://github.com/RedDeadDepresso/pepper-scene-hasher.
 A copy is kept in CONFIG_DIR/config and only re-downloaded when the repo's
 latest commit differs from the one recorded in
 pepper_scene_index_last_commit.txt (same scheme as the kkc mod index).
@@ -12,8 +12,8 @@ from pathlib import Path
 
 from kkafio.core.logger import logger
 
-SCENE_INDEX_URL = "https://reddeaddepresso.github.io/pepper-scene-index/pepper-scene-index.json"
-SCENE_INDEX_COMMITS_API = "https://api.github.com/repos/RedDeadDepresso/pepper-scene-index/commits"
+SCENE_INDEX_URL = "https://reddeaddepresso.github.io/pepper-scene-hasher/pepper-scene-index.json"
+SCENE_INDEX_COMMITS_API = "https://api.github.com/repos/RedDeadDepresso/pepper-scene-hasher/commits"
 
 INDEX_FILENAME = "pepper_scene_index.json"
 COMMIT_FILENAME = "pepper_scene_index_last_commit.txt"
