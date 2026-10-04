@@ -113,12 +113,12 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False) -> 
             if result is None:
                 pass                    # not a chara card — skip
             elif result.startswith("__error__"):
-                logger.error("GROUP", f"Could not process {png.name}: {result[9:]}")
+                logger.warning("GROUP", f"Could not process {png.name}: {result[9:]}")
             elif result not in characters:
                 characters[result] = ""
 
     if not characters:
-        logger.error("GROUP", "No readable character cards found")
+        logger.warning("GROUP", "No readable character cards found")
         return ""
 
     json_str = json.dumps(characters, indent=4, ensure_ascii=False)
@@ -203,7 +203,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     try:
         mapping: dict[str, str] = json.loads(clean)
     except json.JSONDecodeError as e:
-        logger.error("GROUP", f"Could not parse response JSON: {e}")
+        logger.warning("GROUP", f"Could not parse response JSON: {e}")
         return
 
     # Build reverse map: key -> destination folder name (skip empty values)
@@ -214,7 +214,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     }
 
     if not dest_map:
-        logger.error("GROUP", "No series assignments found in response — nothing to do")
+        logger.warning("GROUP", "No series assignments found in response — nothing to do")
         return
 
     logger.info("GROUP",
@@ -238,14 +238,14 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                 skipped += 1
                 continue
         except Exception as e:
-            logger.error("GROUP", f"Could not read {png.name}: {e}")
+            logger.warning("GROUP", f"Could not read {png.name}: {e}")
             skipped += 1
             continue
         try:
             kc  = KoikatuCharaData.load(str(png))
             key = make_key(kc)
         except Exception as e:
-            logger.error("GROUP", f"Could not parse {png.name}: {e}")
+            logger.warning("GROUP", f"Could not parse {png.name}: {e}")
             skipped += 1
             continue
 
@@ -274,7 +274,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
             logger.success("GROUP", f"Moved {png.name} -> {series_folder}/")
             moved += 1
         except Exception as e:
-            logger.error("GROUP", f"Could not move {png.name}: {e}")
+            logger.warning("GROUP", f"Could not move {png.name}: {e}")
             skipped += 1
 
     logger.line()

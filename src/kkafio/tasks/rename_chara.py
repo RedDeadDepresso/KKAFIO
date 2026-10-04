@@ -133,7 +133,7 @@ def _load_cache(folder: Path) -> dict:
     except FileNotFoundError:
         return {}
     except Exception as e:
-        logger.error("RENAME", f"Could not load cache: {e}")
+        logger.warning("RENAME", f"Could not load cache: {e}")
         return {}
 
 
@@ -148,7 +148,7 @@ def _save_cache(folder: Path, cache: dict) -> None:
         from kkafio.cards.cache_io import atomic_write_json
         atomic_write_json(folder / CACHE_FILENAME, dict(sorted(cache.items())))
     except Exception as e:
-        logger.error("RENAME", f"Could not save cache: {e}")
+        logger.warning("RENAME", f"Could not save cache: {e}")
 
 
 def _merge_cache(cache: dict, response: dict) -> dict:
@@ -207,7 +207,7 @@ def export(folders, skip_already_renamed: bool = True) -> str:
             elif result is None:
                 pass
             elif result.startswith("__error__"):
-                logger.error("RENAME", f"Could not process {png.name}: {result[9:]}")
+                logger.warning("RENAME", f"Could not process {png.name}: {result[9:]}")
             else:
                 cached = cache.get(result)
                 if not (cached and _name_known(cached)):
@@ -247,7 +247,7 @@ def process(folders, json_str: str,
     try:
         response: dict = json.loads(clean)
     except json.JSONDecodeError as e:
-        logger.error("RENAME", f"Could not parse response JSON: {e}")
+        logger.warning("RENAME", f"Could not parse response JSON: {e}")
         return
 
     for folder_path in folder_list:
@@ -300,7 +300,7 @@ def _process_folder(folder_path: Path, response: dict,
             kc  = KoikatuCharaData.load(str(png))
             key = make_key(kc)
         except Exception as e:
-            logger.error("RENAME", f"Could not read {png.name}: {e}")
+            logger.warning("RENAME", f"Could not read {png.name}: {e}")
             skipped += 1
             continue
 
@@ -346,7 +346,7 @@ def _process_folder(folder_path: Path, response: dict,
                     f"Metadata: {png.name} → {last} {first} ({nickname})")
                 updated += 1
             except Exception as e:
-                logger.error("RENAME", f"Could not update metadata for {png.name}: {e}")
+                logger.warning("RENAME", f"Could not update metadata for {png.name}: {e}")
                 skipped += 1
                 continue
             finally:
@@ -383,7 +383,7 @@ def _process_folder(folder_path: Path, response: dict,
                         logger.success("RENAME", f"Renamed: {png.name} → {new_path.name}")
                         renamed += 1
                     except Exception as e:
-                        logger.error("RENAME", f"Could not rename {png.name}: {e}")
+                        logger.warning("RENAME", f"Could not rename {png.name}: {e}")
 
     logger.line()
     parts = []
