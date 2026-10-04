@@ -139,27 +139,39 @@ jobs:
       # customtkinter's theme assets by itself. If a future Python/PyInstaller
       # change stops that, fail here. (If it ever does, copy the missing files
       # from base_prefix\DLLs the same way the "Copy SSL DLLs" step does.)
+      # The DLL names depend on the Tcl/Tk major version the Python build uses:
+      #   Tcl/Tk 8.6: tcl86t.dll + tk86t.dll
+      #   Tcl/Tk 9.0: tcl90.dll  + tcl9tk90.dll   (uv's Python 3.14 uses this)
       - name: Verify tkinter and customtkinter are bundled
         shell: pwsh
         run: |
           $bundle = "dist\KKAFIO\_internal"
+          # Each component lists the file-name patterns that satisfy it.
           $required = [ordered]@{
-            "_tkinter extension"  = "_tkinter*.pyd"
-            "Tcl library (DLL)"   = "tcl*.dll"
-            "Tk library (DLL)"    = "tk*.dll"
-            "customtkinter theme" = "blue.json"
+            "_tkinter extension"  = @("_tkinter*.pyd")
+            "Tcl library (DLL)"   = @("tcl8?t.dll", "tcl9?.dll")
+            "Tk library (DLL)"    = @("tk8?t.dll", "tcl9tk9?.dll", "*tk*.dll")
+            "customtkinter theme" = @("blue.json")
           }
           $missing = @()
           foreach ($entry in $required.GetEnumerator()) {
-            $hit = Get-ChildItem -Path $bundle -Recurse -File -Filter $entry.Value | Select-Object -First 1
+            $hit = $null
+            foreach ($pattern in $entry.Value) {
+              $hit = Get-ChildItem -Path $bundle -Recurse -File -Filter $pattern | Select-Object -First 1
+              if ($hit) { break }
+            }
             if ($hit) {
               Write-Host "OK      $($entry.Key): $($hit.FullName)"
             } else {
-              Write-Host "MISSING $($entry.Key) (pattern: $($entry.Value))"
+              Write-Host "MISSING $($entry.Key) (tried: $($entry.Value -join ', '))"
               $missing += $entry.Key
             }
           }
           if ($missing.Count -gt 0) {
+            Write-Host "Files in the bundle whose name mentions tcl or tk:"
+            Get-ChildItem -Path $bundle -Recurse -File |
+              Where-Object { $_.Name -match 'tcl|tk' } |
+              ForEach-Object { Write-Host "  $($_.FullName)" }
             throw "Bundle is missing GUI components for the password/LLM dialogs: $($missing -join ', ')"
           }
 
