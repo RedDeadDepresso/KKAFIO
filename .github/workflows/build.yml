@@ -100,6 +100,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --no-dev --group build
 
+      # ── Check the GUI toolkit used by password_dialog / llm_dialog ─────────
+      # The dialogs need tkinter (Tcl/Tk) from the Python build plus
+      # customtkinter. Fail early here instead of shipping an exe whose
+      # dialogs silently fall back to the terminal prompt.
+      - name: Check tkinter and customtkinter are importable
+        shell: pwsh
+        run: |
+          uv run python -c "import tkinter, customtkinter; print('Tcl/Tk', tkinter.Tcl().eval('info patchlevel')); print('customtkinter', customtkinter.__version__)"
+          if ($LASTEXITCODE -ne 0) {
+            throw "tkinter and/or customtkinter cannot be imported. The dialogs need a Python build that includes tkinter."
+          }
+
       # ── Download MXU ────────────────────────────────────────────────────────
       - name: Download MXU (win-${{ matrix.arch }})
         uses: robinraju/release-downloader@v1
@@ -119,7 +131,37 @@ jobs:
           --name "KKAFIO"
           --paths "src"
           --collect-submodules "kkafio"
+          --collect-data "customtkinter"
           kkafio_cli.py
+
+      # ── Verify the dialogs' GUI pieces made it into the bundle ──────────────
+      # PyInstaller normally collects _tkinter, the Tcl/Tk DLLs and
+      # customtkinter's theme assets by itself. If a future Python/PyInstaller
+      # change stops that, fail here. (If it ever does, copy the missing files
+      # from base_prefix\DLLs the same way the "Copy SSL DLLs" step does.)
+      - name: Verify tkinter and customtkinter are bundled
+        shell: pwsh
+        run: |
+          $bundle = "dist\KKAFIO\_internal"
+          $required = [ordered]@{
+            "_tkinter extension"  = "_tkinter*.pyd"
+            "Tcl library (DLL)"   = "tcl*.dll"
+            "Tk library (DLL)"    = "tk*.dll"
+            "customtkinter theme" = "blue.json"
+          }
+          $missing = @()
+          foreach ($entry in $required.GetEnumerator()) {
+            $hit = Get-ChildItem -Path $bundle -Recurse -File -Filter $entry.Value | Select-Object -First 1
+            if ($hit) {
+              Write-Host "OK      $($entry.Key): $($hit.FullName)"
+            } else {
+              Write-Host "MISSING $($entry.Key) (pattern: $($entry.Value))"
+              $missing += $entry.Key
+            }
+          }
+          if ($missing.Count -gt 0) {
+            throw "Bundle is missing GUI components for the password/LLM dialogs: $($missing -join ', ')"
+          }
 
       # ── Assemble release folder ─────────────────────────────────────────────
       - name: Assemble release folder

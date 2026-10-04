@@ -87,9 +87,8 @@ KKAFIO-dev/
 │   └── system/                      # OS-facing helpers (mostly Windows)
 │       ├── special_tasks.py         # Generic MXU automation primitives (sleep/notify/launch/power/etc.)
 │       ├── subprocess_utils.py      # Windows-console-encoding-safe subprocess.run/Popen wrappers
-│       ├── job_object.py            # Windows Job Objects: child processes die with the CLI
-│       ├── password_dialog.py       # Native Windows input dialog (archive passwords, session cookies)
-│       ├── llm_dialog.py            # Native Windows Copy/Paste dialog (Group Chara / Rename Chara)
+│       ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
+│       ├── llm_dialog.py            # Copy/Paste dialog (Group Chara / Rename Chara)
 │       └── context_menu_batch.py    # Coalesces multi-select Explorer context-menu invocations
 │
 ├── docs/                            # You are here

@@ -1,5 +1,5 @@
 """
-llm_dialog.py — Show a native "Copy prompt / Paste LLM response" dialog.
+llm_dialog.py — Show a "Copy prompt / Paste LLM response" dialog.
 
 Used by tasks that need a human to relay text through an external LLM
 (GroupChara, RenameChara): the task builds a prompt + JSON blob, shows it in
@@ -8,34 +8,18 @@ the reply, and clicks Paste — which reads the clipboard and returns it to the
 caller so the task can immediately process it (move/rename files) in the same
 run.
 
-On Windows uses a PowerShell WinForms dialog (same approach as
-password_dialog.py) so no extra runtime or Tcl/Tk dependency is needed. The
-dialog process is tied to this process's lifetime via a Windows Job Object
-(see src/kkafio/system/job_object.py), so it's automatically closed if this process is
-killed while the dialog is still open.
+On Windows uses a CustomTkinter window (see dialog_common.py for the shared
+always-on-top / foreground / centering behaviour). It runs in-process and blocks
+the calling thread until the user answers, so it disappears automatically if
+this process is killed — no child process or Job Object is involved.
 On macOS/Linux falls back to a terminal prompt.
 """
 
-import os
-import subprocess
 import sys
-import tempfile
 
-from kkafio.system.job_object import die_with_parent
+from kkafio.system.dialog_common import new_window, show_and_wait
 
-
-
-def _ps_quote(text: str) -> str:
-    """Escape `text` for use inside a PowerShell single-quoted string.
-
-    PowerShell treats the typographic quotes U+2018, U+2019, U+201A and
-    U+201B as single-quote delimiters just like ASCII ', so all of them must
-    be doubled. Escaping only ASCII ' lets a name such as "Bob\u2019s card.zip"
-    terminate the string early and run the rest as PowerShell code. NUL is
-    dropped.
-    """
-    text = text.replace("\x00", "")
-    return "".join(ch * 2 if ch in "'\u2018\u2019\u201a\u201b" else ch for ch in text)
+_COPIED_FEEDBACK_MS = 1500  # how long the Copy button reads "Copied!"
 
 
 def llm_dialog(title: str, prompt_text: str) -> str:
@@ -44,158 +28,113 @@ def llm_dialog(title: str, prompt_text: str) -> str:
     Returns an empty string if the user cancels the dialog.
     """
     if sys.platform == "win32":
-        return _powershell_dialog(title, prompt_text)
+        try:
+            return _ctk_dialog(title, prompt_text)
+        except Exception:
+            return _terminal_dialog(title, prompt_text)
     return _terminal_dialog(title, prompt_text)
 
 
-def _powershell_dialog(title: str, prompt_text: str) -> str:
+def _ctk_dialog(title: str, prompt_text: str) -> str:
     """
-    Show a WinForms window with a read-only textbox containing prompt_text,
-    plus Copy / Paste / Cancel buttons.
+    Show a resizable window with a read-only, selectable textbox containing
+    prompt_text, plus Copy / Paste / Cancel buttons.
 
-    - Copy  → puts the textbox content on the clipboard.
+    - Copy  → puts the prompt on the clipboard. This also happens automatically
+              when the dialog opens; the button briefly reads "Copied!" each time.
     - Paste → reads the clipboard and closes the dialog, returning that text.
-    - Cancel / closing the window → returns an empty string.
+    - Cancel / Esc / closing the window → returns an empty string.
+    Enter = Paste. No timeout: the user may take a while with their LLM.
     """
-    t = _ps_quote(title)
+    import tkinter as tk
+    import customtkinter as ctk
 
-    # Route prompt in / response out through UTF-8 temp files instead of
-    # stdin/stdout. Windows PowerShell's console pipe encoding is NOT
-    # guaranteed to be UTF-8 (it's typically the system's legacy codepage),
-    # so Write-Output-ing arbitrary pasted text (which can contain CJK
-    # characters, etc.) and decoding it as UTF-8 on the Python side can
-    # raise UnicodeDecodeError. Files written/read with an explicit UTF-8
-    # encoding sidestep that entirely.
-    fd, prompt_path = tempfile.mkstemp(suffix=".txt")
-    response_path = prompt_path + ".response.txt"
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(prompt_text)
+    root = new_window(title)
+    root.minsize(480, 360)
+    root.grid_columnconfigure(0, weight=1)
+    root.grid_rowconfigure(1, weight=1)  # the textbox takes all extra space
 
-        r = _ps_quote(response_path)
-        p = _ps_quote(prompt_path)
+    result = {"value": ""}
+    copy_feedback = {"id": None}
 
-        ps = f"""
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
+    def on_copy() -> None:
+        root.clipboard_clear()
+        root.clipboard_append(prompt_text)
+        # Tk on Windows renders clipboard data lazily; processing pending
+        # events right away makes it stick even if the dialog closes soon.
+        root.update()
+        # Brief "Copied!" feedback; clicking again restarts the timer.
+        if copy_feedback["id"] is not None:
+            root.after_cancel(copy_feedback["id"])
+        copy_btn.configure(text="Copied!")
+        copy_feedback["id"] = root.after(_COPIED_FEEDBACK_MS, reset_copy_label)
 
-Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class KKAFIOWin32 {{
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool SetForegroundWindow(IntPtr hWnd);
-}}
-"@
-
-$promptText = [System.IO.File]::ReadAllText('{p}', [System.Text.Encoding]::UTF8)
-
-$form = New-Object System.Windows.Forms.Form
-$form.Text = '{t}'
-$form.Width = 720
-$form.Height = 600
-$form.StartPosition = 'CenterScreen'
-$form.Topmost = $true
-$form.MinimumSize = New-Object System.Drawing.Size(480, 360)
-
-$label = New-Object System.Windows.Forms.Label
-$label.Text = 'Click Copy, paste into your LLM, then paste its reply here and click Paste.'
-$label.AutoSize = $false
-$label.Anchor = 'Top,Left,Right'
-$label.Left = 10
-$label.Top = 10
-$label.Width = 680
-$label.Height = 36
-$form.Controls.Add($label)
-
-$box = New-Object System.Windows.Forms.TextBox
-$box.Multiline = $true
-$box.ScrollBars = 'Vertical'
-$box.ReadOnly = $true
-$box.WordWrap = $false
-$box.Font = New-Object System.Drawing.Font('Consolas', 9)
-$box.Anchor = 'Top,Bottom,Left,Right'
-$box.Left = 10
-$box.Top = 50
-$box.Width = 680
-$box.Height = 460
-$form.Controls.Add($box)
-$box.Text = $promptText
-
-$cancelBtn = New-Object System.Windows.Forms.Button
-$cancelBtn.Text = 'Cancel'
-$cancelBtn.Anchor = 'Bottom,Left'
-$cancelBtn.Left = 10
-$cancelBtn.Top = 520
-$cancelBtn.Width = 100
-$cancelBtn.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-$form.Controls.Add($cancelBtn)
-
-$copyBtn = New-Object System.Windows.Forms.Button
-$copyBtn.Text = 'Copy'
-$copyBtn.Anchor = 'Bottom,Right'
-$copyBtn.Left = 460
-$copyBtn.Top = 520
-$copyBtn.Width = 100
-$copyBtn.Add_Click({{ [System.Windows.Forms.Clipboard]::SetText($box.Text) }})
-$form.Controls.Add($copyBtn)
-
-$pasteBtn = New-Object System.Windows.Forms.Button
-$pasteBtn.Text = 'Paste'
-$pasteBtn.Anchor = 'Bottom,Right'
-$pasteBtn.Left = 570
-$pasteBtn.Top = 520
-$pasteBtn.Width = 120
-$pasteBtn.DialogResult = [System.Windows.Forms.DialogResult]::OK
-$form.Controls.Add($pasteBtn)
-
-$form.AcceptButton = $pasteBtn
-$form.CancelButton = $cancelBtn
-
-# Force the window to the foreground even though it's launched from a
-# background/hidden process — Topmost alone isn't always enough, since
-# Windows can otherwise refuse to grant a newly created window focus
-# ("foreground lock"), which is why the dialog could appear behind
-# whatever app (e.g. a browser) currently has focus.
-$form.Add_Shown({{
-    $form.Activate()
-    [KKAFIOWin32]::SetForegroundWindow($form.Handle) | Out-Null
-}})
-
-$result = $form.ShowDialog()
-if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
-    try {{
-        $clip = [System.Windows.Forms.Clipboard]::GetText()
-    }} catch {{
-        $clip = ''
-    }}
-    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-    [System.IO.File]::WriteAllText('{r}', $clip, $utf8NoBom)
-}}
-"""
-
+    def reset_copy_label() -> None:
+        copy_feedback["id"] = None
         try:
-            proc = subprocess.Popen(
-                ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=0x0800_0000,  # CREATE_NO_WINDOW (for the powershell.exe console)
-            )
-            die_with_parent(proc)
-            proc.wait()  # no timeout — the user may take a while pasting into their LLM
-            if os.path.isfile(response_path):
-                with open(response_path, "r", encoding="utf-8") as f:
-                    return f.read().strip()
-            return ""  # dialog was cancelled — no response file was written
-        except Exception:
-            return _terminal_dialog(title, prompt_text)
+            copy_btn.configure(text="Copy")
+        except tk.TclError:  # dialog already closed
+            pass
+
+    def on_paste(_event=None) -> None:
+        try:
+            clip = root.clipboard_get()
+        except tk.TclError:  # empty clipboard or non-text content
+            clip = ""
+        result["value"] = clip.strip()
+        root.quit()
+
+    def on_cancel(_event=None) -> None:
+        root.quit()
+
+    label = ctk.CTkLabel(
+        root,
+        text=(
+            "The prompt is on your clipboard (click Copy to copy it again). "
+            "Paste it into your LLM, then copy its reply and click Paste."
+        ),
+        wraplength=680,
+        justify="left",
+        anchor="w",
+    )
+    label.grid(row=0, column=0, padx=10, pady=(10, 4), sticky="ew")
+
+    box = ctk.CTkTextbox(
+        root,
+        width=680,
+        height=460,
+        wrap="none",
+        font=ctk.CTkFont(family="Consolas", size=12),
+    )
+    box.grid(row=1, column=0, padx=10, pady=(4, 0), sticky="nsew")
+    box.insert("1.0", prompt_text)
+    box.configure(state="disabled")  # read-only…
+    # …but still selectable/copyable: a disabled Text widget doesn't take
+    # focus on click by itself, so Ctrl+C would otherwise go nowhere.
+    box.bind("<Button-1>", lambda _e: box.focus_set())
+
+    bar = ctk.CTkFrame(root, fg_color="transparent")
+    bar.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+    bar.grid_columnconfigure(1, weight=1)
+    ctk.CTkButton(bar, text="Cancel", width=100, command=on_cancel).grid(row=0, column=0, sticky="w")
+    copy_btn = ctk.CTkButton(bar, text="Copy", width=100, command=on_copy)
+    copy_btn.grid(row=0, column=2, padx=(0, 10))
+    ctk.CTkButton(bar, text="Paste", width=120, command=on_paste).grid(row=0, column=3)
+
+    root.bind("<Return>", on_paste)
+    root.bind("<Escape>", on_cancel)
+    root.protocol("WM_DELETE_WINDOW", on_cancel)
+
+    # Copy automatically on open so the user can paste straight into their LLM.
+    try:
+        show_and_wait(root, on_shown=on_copy)
     finally:
-        for p in (prompt_path, response_path):
+        if copy_feedback["id"] is not None:  # don't leave the revert timer behind
             try:
-                os.unlink(p)
-            except OSError:
+                root.after_cancel(copy_feedback["id"])
+            except tk.TclError:
                 pass
+    return result["value"]
 
 
 def _terminal_dialog(title: str, prompt_text: str) -> str:
