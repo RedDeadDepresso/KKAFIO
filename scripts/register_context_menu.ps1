@@ -52,6 +52,7 @@ $FolderTasks = @(
     [ordered]@{ Id = 'GroupChara';              Cli = 'group-chara';               ArgsTemplate = '--chara-dir "{P}"' }
     [ordered]@{ Id = 'UngroupCards';            Cli = 'ungroup-cards';             ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'RenameChara';             Cli = 'rename-chara';              ArgsTemplate = '--chara-dir "{P}"' }
+    [ordered]@{ Id = 'ReviewSimilarChara';      Cli = 'review-similar-chara';      ArgsTemplate = '--chara-dir "{P}"' }
 )
 
 # Always registered, not part of the numbered picker: GUI shortcut, plus the
@@ -79,6 +80,7 @@ $Labels = @{
         GroupChara              = "🗂️ Group Characters"
         UngroupCards            = "📂 Ungroup Cards"
         RenameChara             = "✏️ Rename Characters"
+        ReviewSimilarChara      = "🔎 Review Similar Characters"
         RunGUI                  = "▶️ Run GUI"
         ArchiveCards            = "🎁 Archive Cards"
         DeleteCards             = "🗑️ Delete Cards"
@@ -94,6 +96,7 @@ $Labels = @{
         GroupChara              = "🗂️ 分组角色"
         UngroupCards            = "📂 取消分组卡片"
         RenameChara             = "✏️ 重命名角色"
+        ReviewSimilarChara      = "🔎 审查相似角色"
         RunGUI                  = "▶️ 启动图形界面"
         ArchiveCards            = "🎁 归档卡片"
         DeleteCards             = "🗑️ 删除卡片"
@@ -109,6 +112,7 @@ $Labels = @{
         GroupChara              = "🗂️ 分組角色"
         UngroupCards            = "📂 取消分組卡片"
         RenameChara             = "✏️ 重新命名角色"
+        ReviewSimilarChara      = "🔎 檢視相似角色"
         RunGUI                  = "▶️ 啟動圖形介面"
         ArchiveCards            = "🎁 歸檔卡片"
         DeleteCards             = "🗑️ 刪除卡片"
@@ -124,6 +128,7 @@ $Labels = @{
         GroupChara              = "🗂️ キャラをグループ化"
         UngroupCards            = "📂 カードのグループ化を解除"
         RenameChara             = "✏️ キャラをリネーム"
+        ReviewSimilarChara      = "🔎 類似キャラを確認"
         RunGUI                  = "▶️ GUIを起動"
         ArchiveCards            = "🎁 カードをアーカイブ"
         DeleteCards             = "🗑️ カードを削除"
@@ -139,6 +144,7 @@ $Labels = @{
         GroupChara              = "🗂️ 캐릭터 그룹화"
         UngroupCards            = "📂 카드 그룹 해제"
         RenameChara             = "✏️ 캐릭터 이름 변경"
+        ReviewSimilarChara      = "🔎 비슷한 캐릭터 검토"
         RunGUI                  = "▶️ GUI 실행"
         ArchiveCards            = "🎁 카드 보관"
         DeleteCards             = "🗑️ 카드 삭제"
@@ -154,6 +160,7 @@ $Labels = @{
         GroupChara              = "🗂️ Группировать персонажей"
         UngroupCards            = "📂 Разгруппировать карточки"
         RenameChara             = "✏️ Переименовать персонажей"
+        ReviewSimilarChara      = "🔎 Проверить похожих персонажей"
         RunGUI                  = "▶️ Запустить графический интерфейс"
         ArchiveCards            = "🎁 Архивировать карточки"
         DeleteCards             = "🗑️ Удалить карточки"

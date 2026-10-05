@@ -2019,6 +2019,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "/cfg/chara",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "cfg1.png",
@@ -2058,6 +2059,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "cfg1.png",
@@ -2097,6 +2099,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "/cfg/chara",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "cfg1.png",
@@ -2136,6 +2139,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "/cfg/chara",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "cfg1.png",
@@ -2175,6 +2179,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "/cfg/chara",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "cfg1.png",
@@ -2226,6 +2231,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "S_chara_dir",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [
        "a.png",
@@ -2277,6 +2283,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "S_chara_dir",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "a.png",
@@ -4397,6 +4404,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "/cfg/chara",
@@ -4437,6 +4445,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "",
@@ -4477,6 +4486,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "/cfg/chara",
@@ -4517,6 +4527,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "/cfg/chara",
@@ -4557,6 +4568,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "/cfg/chara",
@@ -4609,6 +4621,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "S_chara_dir",
@@ -4661,6 +4674,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "S_chara_dir",
@@ -5582,6 +5596,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5617,6 +5632,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5653,6 +5669,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5689,6 +5706,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "S_chara_dir",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5724,6 +5742,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5759,6 +5778,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5805,6 +5825,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [
        "<ROOT>/sel/a.png",
@@ -5900,6 +5921,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [
        "a.png",
@@ -5942,6 +5964,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -5978,6 +6001,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "S_coord_dir",
@@ -6013,6 +6037,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6049,6 +6074,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6085,6 +6111,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6120,6 +6147,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6155,6 +6183,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6190,6 +6219,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6225,6 +6255,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6261,6 +6292,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6297,6 +6329,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6332,6 +6365,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -6367,6 +6401,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [
        "a.png"
@@ -6405,6 +6440,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [
        "a.png",
@@ -6456,6 +6492,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "S_chara_dir",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [
        "a.png",
@@ -6507,6 +6544,7 @@
       "_local_mods_maps": {},
       "auto_resolve": false,
       "chara_dir_str": "S_chara_dir",
+      "chara_dirs_override": null,
       "check_shared_mods": false,
       "content_paths": [
        "a.png",
@@ -12928,6 +12966,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -12967,6 +13006,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13007,6 +13047,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13047,6 +13088,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "S_chara_dir",
@@ -13086,6 +13128,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13126,6 +13169,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13166,6 +13210,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13205,6 +13250,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13245,6 +13291,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13285,6 +13332,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13325,6 +13373,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13365,6 +13414,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13405,6 +13455,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13444,6 +13495,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "",
@@ -13483,6 +13535,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13522,6 +13575,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13561,6 +13615,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13601,6 +13656,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13641,6 +13697,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13680,6 +13737,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -13732,6 +13790,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "S_chara_dir",
@@ -13784,6 +13843,7 @@
    "events": [
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": false,
        "CharaDir": "S_chara_dir",

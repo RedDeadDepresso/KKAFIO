@@ -375,6 +375,29 @@ def test_nothing_is_deleted_when_the_dialog_returns_nothing_or_nothing_matches(t
     dialog.assert_not_called()                           # no groups -> no dialog
 
 
+def test_shared_mod_check_covers_the_reviewed_folder_and_the_games_chara_folders(tmp_path):
+    """Reviewing one subfolder (e.g. from the context menu) must not blind Delete Cards'
+    shared-mod check to cards elsewhere, or it could delete a mod other characters still use."""
+    sub = tmp_path / "sub"
+    task = _task(sub)
+    task._scan_folders = [sub]
+    settings = task._delete_cards_settings([sub / "a.png"])
+    game = sub.parent / (sub.name + "_game")
+    assert settings["CharaDirs"] == [str(sub), str(game / "female"), str(game / "male")]
+
+    task._scan_folders = [game / "female", game / "male"]          # default scan: no duplicates
+    assert task._delete_cards_settings([])["CharaDirs"] == [str(game / "female"), str(game / "male")]
+
+
+def test_delete_cards_uses_an_explicit_chara_dir_list_for_the_shared_mod_check():
+    from kkafio.tasks.delete_cards import DeleteCards
+    cfg = mock.Mock()
+    cfg.delete_cards = {"CharaDir": "/one"}
+    assert DeleteCards(cfg, None).chara_dirs_override is None
+    own = DeleteCards(cfg, None, settings={"CharaDir": "/one", "CharaDirs": ["/a", "/b"]})
+    assert own.chara_dirs_override == ["/a", "/b"]
+
+
 def test_unknown_mode_is_a_config_error(tmp_path):
     from kkafio.core.errors import ConfigError
     with pytest.raises(ConfigError):

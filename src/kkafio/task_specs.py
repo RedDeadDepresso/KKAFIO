@@ -410,8 +410,8 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--mods-dir", key="ModsDir", default=None, metavar="DIR",
                   help="Mods directory (only used when --no-auto-resolve)"),
             Value("--chara-dir", key="CharaDir", default=None, metavar="DIR",
-                  help="Custom chara directory to scan, and to check for shared mods "
-                       "(default: game's chara folders)"),
+                  help="Custom chara directory to scan (default: game's chara folders). "
+                       "The shared-mod check also covers the game's chara folders"),
             Value("--scene-dir", key="SceneDir", default=None, metavar="DIR",
                   help="Custom scene directory for the shared-mod check (default: game's Studio scene folder)"),
             Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",

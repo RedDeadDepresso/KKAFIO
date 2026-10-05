@@ -74,6 +74,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Group Characters           | `group-chara --chara-dir <folder>`                                                                                                     |
 | Ungroup Cards              | `ungroup-cards --input <folder>`                                                                                                       |
 | Rename Characters          | `rename-chara --chara-dir <folder>`                                                                                                    |
+| Review Similar Characters  | `review-similar-chara --chara-dir <folder>`                                                                                            |
 | Run GUI                    | Opens GUI                                                                                                                              |
 
 **On PNG files (single or multi-select):**

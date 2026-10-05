@@ -292,6 +292,7 @@ class ReviewSimilarChara(BaseTask):
         self.mode      : str  = self.cfg.get("Mode", MODE_COVER)
         self.use_cache : bool = self.cfg.get("UseCache", True)
         self.chara_dir_str : str = self.cfg.get("CharaDir", "")
+        self._scan_folders : list[Path] = []
         if self.mode not in MODES:
             raise ConfigError(f"Unknown match mode '{self.mode}' (expected one of: {', '.join(MODES)})",
                               tag=TAG)
@@ -300,6 +301,17 @@ class ReviewSimilarChara(BaseTask):
         settings = {k: self.cfg[k] for k in _DELETE_CARDS_KEYS if k in self.cfg}
         settings["Enable"] = True
         settings["ContentPaths"] = [str(p) for p in selected]
+        # The shared-mod check must see every card that could still use a mod: the folders
+        # reviewed here AND the game's own chara folders. Passing only CharaDir would make a
+        # review of one subfolder (e.g. from the context menu) blind to cards elsewhere.
+        game = self.config.game_path
+        dirs: list[str] = []
+        seen: set[str] = set()
+        for d in [*self._scan_folders, game.get("charaFemale"), game.get("charaMale")]:
+            if d and (key := os.path.normcase(os.path.realpath(str(d)))) not in seen:
+                seen.add(key)
+                dirs.append(str(d))
+        settings["CharaDirs"] = dirs
         return settings
 
     @staticmethod
@@ -310,6 +322,7 @@ class ReviewSimilarChara(BaseTask):
 
     def run(self) -> None:
         folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, TAG)
+        self._scan_folders = folders
         self.log_start(TAG, ", ".join(str(f) for f in folders))
         logger.info(TAG, f"Match by  : {self.mode}")
         logger.info(TAG, f"Use cache : {self.use_cache}")

@@ -76,6 +76,9 @@ class DeleteCards(BaseTask):
         self.include_coordinates: bool      = cfg.get("IncludeCoordinates", True)
         self.mods_dir_str       : str       = cfg.get("ModsDir", "")
         self.chara_dir_str      : str       = cfg.get("CharaDir", "")
+        # Only set by tasks that call DeleteCards themselves (Review Similar Characters): an
+        # explicit list of chara folders for the shared-mod check, replacing CharaDir.
+        self.chara_dirs_override: list[str] | None = cfg.get("CharaDirs")
         self.scene_dir_str      : str       = cfg.get("SceneDir", "")
         self.coord_dir_str      : str       = cfg.get("CoordDir", "")
         # {mods_dir: {guid: path}} — built once per distinct mods_dir and
@@ -262,7 +265,9 @@ class DeleteCards(BaseTask):
         guids_in_use_elsewhere: set[str] | None = None
         if self.check_shared_mods:
             game_path  = self.config.game_path
-            if self.chara_dir_str:
+            if self.chara_dirs_override:
+                chara_dirs = [Path(d) for d in self.chara_dirs_override]
+            elif self.chara_dir_str:
                 chara_dirs = [Path(self.chara_dir_str)]
             else:
                 chara_dirs = [d for d in (game_path.get("charaFemale"), game_path.get("charaMale")) if d]

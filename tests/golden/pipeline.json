@@ -523,6 +523,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
@@ -539,6 +540,7 @@
     },
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -636,6 +638,7 @@
     },
     {
      "attrs": {
+      "_scan_folders": [],
       "cfg": {
        "AutoResolve": true,
        "CharaDir": "",
@@ -664,6 +667,7 @@
       "_local_mods_maps": {},
       "auto_resolve": true,
       "chara_dir_str": "",
+      "chara_dirs_override": null,
       "check_shared_mods": true,
       "content_paths": [],
       "coord_dir_str": "",
