@@ -162,6 +162,8 @@ def _create_backup_folders_override(args: argparse.Namespace) -> dict[str, Any]:
 
 _DUPLICATE_ACTIONS = {"move-rename": "Move & Rename", "move": "Move", "delete": "Delete"}
 
+_SIMILARITY_MODES = {"cover": "Similar cover", "name": "Same name", "filename": "Similar filename"}
+
 
 # ---------------------------------------------------------------------------
 # The specs, in --help order
@@ -373,6 +375,52 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
+        name="ReviewSimilarChara", command="review-similar-chara",
+        help="Find characters that look like duplicates, pick which to remove in a dialog, "
+             "then send them to the recycle bin with Delete Cards",
+        description=(
+            "Scans the game's chara folders (or --chara-dir) recursively for character cards that "
+            "were probably saved more than once, and groups them by --mode: 'cover' = similar cover "
+            "image (perceptual hash), 'name' = same first and last name, 'filename' = same file name "
+            "once trailing numbers like _1, -05 or (2) are removed (only files in the same folder "
+            "are grouped). The groups are shown in a dialog where you choose what to remove; the "
+            "cards you pick are then deleted by Delete Cards, using the options below. Nothing is "
+            "deleted unless you click 'Trash selected'."
+        ),
+        target="kkafio.tasks.review_similar_chara:ReviewSimilarChara",
+        options=(
+            Value("--mode", key="Mode", transform=_SIMILARITY_MODES.__getitem__,
+                  choices=["cover", "name", "filename"], default=None,
+                  help="How to group characters: similar cover image, same first & last name, or "
+                       "similar filename (overrides config)"),
+            Toggle("check-shared-mods", key="CheckSharedMods",
+                   help="Before deleting a zipmod, verify no other installed character/scene/coordinate "
+                        "still uses it (default: on)",
+                   off_help="Skip the shared-mod check — faster, but may delete mods other characters still need"),
+            Toggle("auto-resolve", key="AutoResolve",
+                   help="Auto-resolve mods and coord dirs (overrides config)",
+                   off_help="Use explicit --mods-dir / --coord-dir instead"),
+            Toggle("use-cache", key="UseCache",
+                   help="Cache cover hashes, character names and mod/coord directory scans (overrides config)",
+                   off_help="Disable cache and do a full scan (overrides config)"),
+            Toggle("include-coordinates", key="IncludeCoordinates",
+                   help="When deleting a character card, also delete its matching coordinate "
+                        "cards and their mods (default: on)",
+                   off_help="Only delete the character card itself, leave its coordinates alone"),
+            Value("--mods-dir", key="ModsDir", default=None, metavar="DIR",
+                  help="Mods directory (only used when --no-auto-resolve)"),
+            Value("--chara-dir", key="CharaDir", default=None, metavar="DIR",
+                  help="Custom chara directory to scan, and to check for shared mods "
+                       "(default: game's chara folders)"),
+            Value("--scene-dir", key="SceneDir", default=None, metavar="DIR",
+                  help="Custom scene directory for the shared-mod check (default: game's Studio scene folder)"),
+            Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",
+                  help="Coordinate directory (used for coordinate matching when --no-auto-resolve, "
+                       "and for the shared-mod check; default: game's coordinate folder)"),
+        ),
+    ),
+
+    TaskSpec(
         name="ArchiveCards", command="archive-cards",
         help="Bundle character cards, coordinate cards, or Studio scenes with their zipmods and matching coordinates",
         target="kkafio.tasks.archive_cards:ArchiveCards",
@@ -505,12 +553,8 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom mods directory (default: the game's mods folder)"),
             Value("--overlays-dir", key="OverlaysDir", ignore_blank=True, default=None, metavar="DIR",
                   help="Custom overlays directory (default: the game's Overlays folder)"),
-            Toggle("fuzzy", key="FuzzyChara",
-                   help="Enable fuzzy matching for chara cards (overrides config)",
-                   off_help="Disable fuzzy matching (overrides config)"),
             Value("--keep", key="Keep", metavar="STRATEGY", default=None,
-                  choices=['None', 'Newest', 'Oldest', 'Biggest file size', 'Smallest file size',
-                           'Last alphabetically', 'First alphabetically'],
+                  choices=['None', 'Newest', 'Oldest', 'Last alphabetically', 'First alphabetically'],
                   help="Which copy to keep as the original (overrides config)"),
             Value("--action", key="DuplicateAction", transform=_DUPLICATE_ACTIONS.__getitem__,
                   choices=["move-rename", "move", "delete"], default=None,
@@ -520,8 +564,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "with a number suffix. 'move' moves them to _duplicates_/ keeping their "
                        "original filenames. 'delete' sends them straight to the recycle bin."),
             Toggle("use-cache", key="UseCache",
-                   help="Cache file hashes (and phashes, for fuzzy matching) to speed up "
-                        "repeat scans (overrides config)",
+                   help="Cache file hashes to speed up repeat scans (overrides config)",
                    off_help="Disable cache and re-hash every file (overrides config)"),
         ),
     ),

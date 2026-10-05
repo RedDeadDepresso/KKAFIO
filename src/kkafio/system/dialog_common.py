@@ -59,16 +59,18 @@ def _get_host():
     return _host
 
 
-def new_window(title: str):
-    """Create a dialog window: titled, always on top, hidden until
-    show_and_wait() has laid it out and centered it (so it never flashes in
-    the wrong place)."""
+def new_window(title: str, topmost: bool = True):
+    """Create a dialog window: titled, always on top (unless `topmost` is
+    False, for long-lived windows the user should be able to put behind other
+    apps), hidden until show_and_wait() has laid it out and centered it (so it
+    never flashes in the wrong place)."""
     import customtkinter as ctk
 
     win = ctk.CTkToplevel(_get_host())
     win.withdraw()
     win.title(title)
-    win.attributes("-topmost", True)
+    if topmost:
+        win.attributes("-topmost", True)
     return win
 
 
@@ -76,6 +78,10 @@ def _center_on_screen(root) -> None:
     """Size the window to its content and center it on the primary screen."""
     root.update_idletasks()
     w, h = root.winfo_reqwidth(), root.winfo_reqheight()
+    # Never bigger than the screen (with a margin for the taskbar / title bar),
+    # however large the content asks to be.
+    w = min(w, int(root.winfo_screenwidth() * 0.9))
+    h = min(h, int(root.winfo_screenheight() * 0.85))
     x = max(0, (root.winfo_screenwidth() - w) // 2)
     y = max(0, (root.winfo_screenheight() - h) // 2)
     # wm_geometry (raw Tk, real pixels) rather than CTk's geometry(), which

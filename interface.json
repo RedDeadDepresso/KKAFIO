@@ -305,33 +305,11 @@
         }
       ]
     },
-    "FuzzyMatching": {
-      "type": "switch",
-      "label": "$option.FuzzyMatching.label",
-      "description": "$option.FuzzyMatching.description",
-      "default_case": "No",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "$option.FuzzyMatching.case.Yes.label",
-          "pipeline_override": {
-            "FuzzyChara": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "$option.FuzzyMatching.case.No.label",
-          "pipeline_override": {
-            "FuzzyChara": false
-          }
-        }
-      ]
-    },
     "KeepStrategy": {
       "type": "select",
       "label": "$option.KeepStrategy.label",
       "description": "$option.KeepStrategy.description",
-      "default_case": "Biggest file size",
+      "default_case": "Oldest",
       "cases": [
         {
           "name": "None",
@@ -344,14 +322,6 @@
         {
           "name": "Oldest",
           "label": "$option.KeepStrategy.case.Oldest.label"
-        },
-        {
-          "name": "Biggest file size",
-          "label": "$option.KeepStrategy.case.Biggest file size.label"
-        },
-        {
-          "name": "Smallest file size",
-          "label": "$option.KeepStrategy.case.Smallest file size.label"
         },
         {
           "name": "Last alphabetically",
@@ -387,6 +357,29 @@
       ],
       "pipeline_override": {
         "DuplicateAction": "{case.name}"
+      }
+    },
+    "SimilarityMode": {
+      "type": "select",
+      "label": "$option.SimilarityMode.label",
+      "description": "$option.SimilarityMode.description",
+      "default_case": "Similar cover",
+      "cases": [
+        {
+          "name": "Similar cover",
+          "label": "$option.SimilarityMode.case.Similar cover.label"
+        },
+        {
+          "name": "Same name",
+          "label": "$option.SimilarityMode.case.Same name.label"
+        },
+        {
+          "name": "Similar filename",
+          "label": "$option.SimilarityMode.case.Similar filename.label"
+        }
+      ],
+      "pipeline_override": {
+        "Mode": "{case.name}"
       }
     },
     "InstallContentTypes": {
@@ -1172,7 +1165,6 @@
       "option": [
         "InstallContentTypes",
         "UseCache",
-        "FuzzyMatching",
         "KeepStrategy",
         "DuplicateAction",
         "CharaDir",
@@ -1311,6 +1303,25 @@
       "group": ["card-management"],
       "option": [
         "ContentPaths",
+        "CheckSharedMods",
+        "IncludeCoordinates",
+        "UseCache",
+        "AutoResolve",
+        "ModsDir",
+        "CharaDir",
+        "SceneDir",
+        "CoordDir"
+      ]
+    },
+    {
+      "name": "ReviewSimilarChara",
+      "label": "$task.ReviewSimilarChara.label",
+      "entry": "ReviewSimilarChara",
+      "default_check": false,
+      "description": "$task.ReviewSimilarChara.description",
+      "group": ["chara-management"],
+      "option": [
+        "SimilarityMode",
         "CheckSharedMods",
         "IncludeCoordinates",
         "UseCache",
@@ -1524,6 +1535,10 @@
         },
         {
           "name": "DeleteCards",
+          "enabled": false
+        },
+        {
+          "name": "ReviewSimilarChara",
           "enabled": false
         },
         {

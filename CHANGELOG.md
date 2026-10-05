@@ -6,6 +6,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Added
 
+- **Review Similar Characters** — new task (`review-similar-chara`) to find characters that were probably saved more than once and choose which to remove in a dialog. Match by similar cover image, same first & last name, or similar filename (ignoring trailing numbers like `_1`, `-05`; grouped per folder). Each card has a lock that engages when you make a choice (and can be toggled by hand); an Auto-select dropdown keeps one card per unlocked group (newest, oldest, biggest, smallest, first/last alphabetically) and ticks the rest. Trashing is done by Delete Cards, with this task's own copy of its options.
 - **Group Scenes** — new task to sort Studio scenes into per-author folders using the pepper-scene-index. The index is re-downloaded only when the repository's latest commit changes, and scenes are hashed with the same cache Filter Duplicate Contents uses. Options: Custom Scene Directory, Use Cache, Include Subfolders. Also added to the Explorer context menu, above Group Characters.
 - **Compress Cards Textures** — new task to shrink the embedded texture data in character and coordinate cards.
 - **Download Missing Mods** — new task to scan cards for zipmods they need but you don't have, and fetch them from BetterRepack and/or Telegram.
@@ -21,6 +22,10 @@ All notable changes to KKAFIO are documented in this file.
 - Filter & Convert KKS Cards no longer treats a KKS scene that contains characters as a KKS character card, and now also finds scenes with no characters.
 - Re-running Filter & Convert KKS Cards with **Move** on a folder that already holds `KKS2KK_*` copies no longer fails.
 - Studio scenes are now recognised by their `KStudio` marker, and checked before character markers. Previously a scene containing characters could be misclassified as a character card, and the old `sceneInfo` marker did not match scenes at all.
+
+### Removed
+
+- **Filter Duplicate Contents**: the *Fuzzy Character Matching* option (`--fuzzy`) and the *Biggest file size* / *Smallest file size* keep strategies. Similar-cover detection moved to Review Similar Characters, which has both size strategies in its Auto-select. The default keep strategy is now **Oldest**; a saved size strategy falls back to it. `kkafio_duplicate_fuzzy_cache.json` is no longer used and can be deleted.
 
 ### Changed
 

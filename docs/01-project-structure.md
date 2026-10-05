@@ -55,6 +55,7 @@ KKAFIO-dev/
 │   │   ├── group_chara.py
 │   │   ├── install_contents.py
 │   │   ├── rename_chara.py
+│   │   ├── review_similar_chara.py
 │   │   ├── ungroup_cards.py
 │   │   └── uninstall_contents.py
 │   │
@@ -75,6 +76,7 @@ KKAFIO-dev/
 │   │   ├── kks_scene.py             # Converting a KKS Studio scene to KK
 │   │   ├── msgpack_min.py           # Byte-exact MessagePack codec used by the scene converter
 │   │   ├── chara_key.py
+│   │   ├── similarity.py            # pHash + leader clustering for cover comparison
 │   │   └── scene_version.py
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
@@ -89,6 +91,7 @@ KKAFIO-dev/
 │       ├── subprocess_utils.py      # Windows-console-encoding-safe subprocess.run/Popen wrappers
 │       ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
 │       ├── llm_dialog.py            # Copy/Paste dialog (Group Chara / Rename Chara)
+│       ├── similar_chara_dialog.py  # Review dialog (Review Similar Characters)
 │       └── context_menu_batch.py    # Coalesces multi-select Explorer context-menu invocations
 │
 ├── docs/                            # You are here

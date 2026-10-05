@@ -147,6 +147,7 @@ _TASK_KEY = {
     "RenameChara": "RenameChara",
     "ArchiveCards": "ArchiveCards",
     "DeleteCards": "DeleteCards",
+    "ReviewSimilarChara": "ReviewSimilarChara",
     "ExportMods": "ExportMods",
     "DeleteUnusedMods": "DeleteUnusedMods",
 }
@@ -155,7 +156,7 @@ _TASK_DEFAULTS = {
     "CreateBackup": {"Enable": False, "OutputPath": "C:/KKAFIO/Backups", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True},
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Skip"},
-    "FilterDuplicateContents": {"Enable": False, "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "CharaDir": "", "SceneDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": "", "UseCache": True, "FuzzyChara": False, "Keep": "Biggest file size", "DuplicateAction": "Move & Rename"},
+    "FilterDuplicateContents": {"Enable": False, "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "UseCache": True, "Keep": "Oldest", "DuplicateAction": "Move & Rename", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
     "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "Skip", "TelegramSource": "No", "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "UseCache": True, "OpenReport": True, "InputModsDir": "", "OutputModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": False},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Skip", "ExtractArchive": True, "Password": "Skip"},
@@ -166,6 +167,7 @@ _TASK_DEFAULTS = {
     "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's well-known English name.\n\nRules:\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- Use the name the character is commonly known by, not a literal transliteration.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n"},
     "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CoordDir": ""},
     "DeleteCards": {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "ReviewSimilarChara": {"Enable": False, "Mode": "Similar cover", "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "ExportMods": {"Enable": False, "OutputPath": "C:/KKAFIO/Exported Mods", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
     "DeleteUnusedMods": {"Enable": False, "ExceptionList": "BetterPenetration\\\nClo\\", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
 }
@@ -210,15 +212,14 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
             cfg["Coords"] = "Coords" in selected
             cfg["Scenes"] = "Scenes" in selected
             cfg["Overlays"] = "Overlays" in selected
+        _set("UseCache", "UseCache")
+        _set("Keep", "KeepStrategy")
+        _set("DuplicateAction", "DuplicateAction")
         _set("CharaDir", "CharaDir")
         _set("SceneDir", "SceneDir")
         _set("CoordDir", "CoordDir")
         _set("ModsDir", "ModsDir")
         _set("OverlaysDir", "OverlaysDir")
-        _set("UseCache", "UseCache")
-        _set("FuzzyChara", "FuzzyMatching")
-        _set("Keep", "KeepStrategy")
-        _set("DuplicateAction", "DuplicateAction")
 
     elif task_name == "DownloadMissingMods":
         _set("ContentTypes", "ContentTypes")
@@ -301,6 +302,17 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "DeleteCards":
         _set("ContentPaths", "ContentPaths")
+        _set("CheckSharedMods", "CheckSharedMods")
+        _set("IncludeCoordinates", "IncludeCoordinates")
+        _set("UseCache", "UseCache")
+        _set("AutoResolve", "AutoResolve")
+        _set("ModsDir", "ModsDir")
+        _set("CharaDir", "CharaDir")
+        _set("SceneDir", "SceneDir")
+        _set("CoordDir", "CoordDir")
+
+    elif task_name == "ReviewSimilarChara":
+        _set("Mode", "SimilarityMode")
         _set("CheckSharedMods", "CheckSharedMods")
         _set("IncludeCoordinates", "IncludeCoordinates")
         _set("UseCache", "UseCache")
@@ -566,6 +578,7 @@ class Config:
         self.rename_chara              = self.config_data["RenameChara"]
         self.archive_cards             = self.config_data["ArchiveCards"]
         self.delete_cards              = self.config_data["DeleteCards"]
+        self.review_similar_chara      = self.config_data["ReviewSimilarChara"]
         self.export_mods               = self.config_data["ExportMods"]
         self.delete_unused_mods        = self.config_data["DeleteUnusedMods"]
 

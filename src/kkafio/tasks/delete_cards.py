@@ -63,9 +63,12 @@ def _collect_guids_in_use(chara_dirs: list[Path], scene_dirs: list[Path],
 
 
 class DeleteCards(BaseTask):
-    def __init__(self, config, file_manager):
+    def __init__(self, config, file_manager, settings: dict | None = None):
+        """`settings` replaces the DeleteCards config section — used by tasks
+        that hand DeleteCards a list of cards together with their own copy of
+        its options (Review Similar Characters)."""
         super().__init__(config, file_manager)
-        cfg = self.config.delete_cards
+        cfg = settings if settings is not None else self.config.delete_cards
         self.content_paths      : list[str] = cfg.get("ContentPaths", [])
         self.check_shared_mods  : bool      = cfg.get("CheckSharedMods", True)
         self.auto_resolve       : bool      = cfg.get("AutoResolve", True)
