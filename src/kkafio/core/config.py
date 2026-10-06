@@ -408,15 +408,25 @@ class Config:
         if gp_val and isinstance(gp_val, dict) and gp_val.get("type") == "folder":
             game_path = gp_val.get("path", "")
 
-        # GamePath — other instances fallback
+        # GamePath — other instances fallback. The GameType travels with
+        # the path: a path borrowed from another instance belongs to that
+        # instance's game, so adopt its GameType too (instead of keeping
+        # this instance's own/default type, which may describe a
+        # different game install).
         if not game_path:
             for other in mxu.get("instances", []):
                 if other is inst:
                     continue
-                other_gp = other.get("globalOptionValues", {}).get("GamePath")
+                other_globals = other.get("globalOptionValues", {})
+                other_gp = other_globals.get("GamePath")
                 if other_gp and isinstance(other_gp, dict) and other_gp.get("type") == "folder":
                     game_path = other_gp.get("path", "")
                     if game_path:
+                        other_gt = other_globals.get("GameType")
+                        if other_gt and isinstance(other_gt, dict) and other_gt.get("type") == "select":
+                            game_type = other_gt.get("caseName", GameType.KOIKATSU.value)
+                        else:
+                            game_type = GameType.KOIKATSU.value
                         break
 
         # GamePath — legacy task optionValues fallback
