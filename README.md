@@ -271,6 +271,7 @@ https://t.me/kknowcc
   4. Copy the LLM's reply, click **Paste** in the same dialog — KKAFIO immediately moves each card into `<chara folder>/<series>/`.
 - **Custom Chara Directory** — blank by default, which means the game's `UserData/chara/female` and `UserData/chara/male` folders, both handled in one run. The game only reads cards inside those two folders, so cards are only ever grouped inside the folder they're already in (`female/<series>/` or `male/<series>/`) — never directly in `UserData/chara`. Pointing the option at the game's `UserData/chara` folder behaves the same as leaving it blank. Any other folder (such as a staging folder) is grouped as a single folder.
 - **Include subfolders** option lets you export already-sorted cards too (off by default to skip them).
+- **Use Cache** _(on by default)_ — remembers each card's identification key (name, personality, hair colour) in `kkafio_chara_key_cache.json` inside each chara folder, keyed by the file's mtime + size, so a repeat run only reads new or changed cards instead of parsing every card (twice) each time. Cards that aren't chara cards are remembered too. The cache is kept up to date as cards are moved — a moved card's entry follows it into its series folder — and is saved when the run ends. Shared with Rename Characters.
 - **Recommended LLMs:**
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
@@ -293,7 +294,8 @@ https://t.me/kknowcc
 - **Update card metadata** (off by default): writes the translated names into the card file.
 - **Rename PNG files** (on by default): also renames the file on disk to `Lastname_Firstname.png`. Files in subfolders stay in their subfolder.
 - **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
-- Results are cached in `kkafio_rename_cache.json` inside each chara folder and reused across runs.
+- Results are cached in `kkafio_rename_cache.json` inside each chara folder and reused across runs. This translation cache is always used.
+- **Use Cache** _(on by default)_ — a separate cache of each card's identification key, `kkafio_chara_key_cache.json` (shared with Group Characters), so unchanged cards aren't re-parsed on every run; with *Rename PNG files* only, no card needs to be parsed at all once the cache is warm. It follows the changes Rename makes: a renamed card's entry moves to its new file name, and a card whose metadata was rewritten gets its new key. Saved when the run ends. Turn it off to read every card.
 - The prompt is fully editable in the settings panel.
 - **Recommended LLMs:** same as Group Characters (see above).
 - **Warning:** Group Characters uses card metadata to extract character names. It is recommended to use **Rename Characters after Group Characters if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
@@ -345,7 +347,7 @@ https://t.me/kknowcc
 - Before sorting, KKAFIO checks the index repository's latest commit against the one saved in `pepper_scene_index_last_commit.txt` (in KKAFIO's config folder). Only when the commit is new does it download `pepper-scene-index.json` again; otherwise the saved copy is used, and if GitHub can't be reached the saved copy is used as a fallback.
 - Every scene found in the index is moved to `<scene folder>/<author>/`. Scenes that aren't in the index, and anything that isn't a scene, are left alone. Author names are cleaned up so they're valid folder names (characters like `/ : ? *` become `_`).
 - **Custom Scene Directory** — blank by default, which means the game's Studio scene folder (`UserData/Studio/scene`).
-- **Use Cache** _(on by default)_ — scenes are hashed with the same cache that Filter Duplicate Contents uses (`kkafio_duplicate_png_cache.json` in the scene folder), so a scene hashed by either task isn't hashed again by the other.
+- **Use Cache** _(on by default)_ — scenes are hashed with the same cache that Filter Duplicate Contents uses (`kkafio_duplicate_png_cache.json` in the scene folder), so a scene hashed by either task isn't hashed again by the other. The cache is saved right after scanning and again once scenes have moved (a moved scene's entry follows it into its author folder), even if the run is stopped part-way, so the next run doesn't have to re-hash anything.
 - **Include Subfolders** _(off by default)_ — also regroup scenes that are already inside subfolders, moving them to `<scene folder>/<author>/`. When off, only scenes directly in the scene folder are moved. Scenes already in the right author folder are skipped.
 - If a file with the same name is already in the author folder, the moved scene gets a `_1`, `_2`, … suffix instead of overwriting it.
 

@@ -1248,7 +1248,7 @@
       "default_check": false,
       "description": "$task.GroupChara.description",
       "group": ["chara-management"],
-      "option": ["CharaDir", "GroupCharaIncludeSubfolders", "GroupCharaPrompt"]
+      "option": ["CharaDir", "GroupCharaIncludeSubfolders", "UseCache", "GroupCharaPrompt"]
     },
     {
       "name": "UngroupCards",
@@ -1271,6 +1271,7 @@
         "SkipAlreadyRenamed",
         "UpdateMetadata",
         "RenameFiles",
+        "UseCache",
         "RenameCharaPrompt"
       ]
     },

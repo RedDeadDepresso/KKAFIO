@@ -3917,7 +3917,8 @@
     {
      "attrs": {
       "chara_dir_str": "/cfg/chara",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -3944,7 +3945,8 @@
     {
      "attrs": {
       "chara_dir_str": "/cfg/chara",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -3965,14 +3967,16 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--use-cache"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -3993,14 +3997,16 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--no-use-cache"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -4287,7 +4293,8 @@
       "chara_dir_str": "/cfg/chara",
       "rename_files": false,
       "skip_already_renamed": false,
-      "update_metadata": true
+      "update_metadata": true,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -4316,7 +4323,8 @@
       "chara_dir_str": "/cfg/chara",
       "rename_files": false,
       "skip_already_renamed": false,
-      "update_metadata": true
+      "update_metadata": true,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -4339,7 +4347,8 @@
    "S_chara_dir",
    "--skip-already-renamed",
    "--update-metadata",
-   "--rename-files"
+   "--rename-files",
+   "--use-cache"
   ],
   "result": {
    "events": [
@@ -4348,7 +4357,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": true
+      "update_metadata": true,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -4371,7 +4381,8 @@
    "S_chara_dir",
    "--no-skip-already-renamed",
    "--no-update-metadata",
-   "--no-rename-files"
+   "--no-rename-files",
+   "--no-use-cache"
   ],
   "result": {
    "events": [
@@ -4380,7 +4391,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": false,
       "skip_already_renamed": false,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": false
      },
      "class": "RenameChara",
      "enabled": true,
@@ -11451,7 +11463,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11478,7 +11491,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11505,7 +11519,8 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11531,7 +11546,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11558,7 +11574,62 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --no-use-cache": {
+  "argv": [
+   "group-chara",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false,
+      "use_cache": false
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --use-cache": {
+  "argv": [
+   "group-chara",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11585,7 +11656,8 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11606,14 +11678,16 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--use-cache"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11634,14 +11708,16 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--no-use-cache"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
-      "include_subfolders": true
+      "include_subfolders": true,
+      "use_cache": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -12594,7 +12670,8 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12623,7 +12700,8 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12652,7 +12730,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12681,7 +12760,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12709,7 +12789,8 @@
       "chara_dir_str": "",
       "rename_files": false,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12737,7 +12818,8 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": false,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12765,7 +12847,37 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --no-use-cache": {
+  "argv": [
+   "rename-chara",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": false
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12793,7 +12905,8 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12821,7 +12934,8 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12849,7 +12963,37 @@
       "chara_dir_str": "",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": true
+      "update_metadata": true,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --use-cache": {
+  "argv": [
+   "rename-chara",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12878,7 +13022,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12901,7 +13046,8 @@
    "S_chara_dir",
    "--skip-already-renamed",
    "--update-metadata",
-   "--rename-files"
+   "--rename-files",
+   "--use-cache"
   ],
   "result": {
    "events": [
@@ -12910,7 +13056,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": true
+      "update_metadata": true,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12933,7 +13080,8 @@
    "S_chara_dir",
    "--no-skip-already-renamed",
    "--no-update-metadata",
-   "--no-rename-files"
+   "--no-rename-files",
+   "--no-use-cache"
   ],
   "result": {
    "events": [
@@ -12942,7 +13090,8 @@
       "chara_dir_str": "S_chara_dir",
       "rename_files": false,
       "skip_already_renamed": false,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": false
      },
      "class": "RenameChara",
      "enabled": true,

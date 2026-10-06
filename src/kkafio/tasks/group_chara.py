@@ -23,7 +23,9 @@ from typing import Sequence
 from kkloader import KoikatuCharaData
 
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
+from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
+from kkafio.cards.chara_key_cache import CharaKeyCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.logger import logger
 
@@ -71,13 +73,16 @@ def _list_pngs(folders: Sequence[Path], include_subfolders: bool) -> list[Path]:
 # Export — build prompt + JSON, return as string for the clipboard
 # ---------------------------------------------------------------------------
 
-def export(folders: Path | Sequence[Path], include_subfolders: bool = False) -> str:
+def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
+           use_cache: bool = True) -> str:
     """Scan the given chara folder(s) for chara PNGs and return the character-key JSON.
 
     Args:
         include_subfolders: When False (default) only scans the top-level folder,
                             skipping already-sorted cards in subfolders.
                             When True scans recursively.
+        use_cache: Reuse each card's key from kkafio_chara_key_cache.json when the file
+                   hasn't changed (mtime + size), instead of re-parsing it.
 
     Returns only the JSON block (no prompt) — the caller splices its own
     prompt text in front, same pattern as rename_chara.export().
@@ -91,14 +96,24 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False) -> 
                          + ", ".join(str(f) for f in folder_list)
                          + (" (top-level only)" if not include_subfolders else " (recursive)"))
 
+    key_cache = CharaKeyCache(folder_list, use_cache, "GROUP")
+
     def _process_png(png: Path) -> tuple[Path, str | None]:
-        """Read, classify and build the key for one PNG. Runs in a thread pool worker."""
+        """Read, classify and build the key for one PNG (or take it from the cache).
+        Runs in a thread pool worker."""
         try:
+            fp = file_fp(png)
+            hit, key = key_cache.lookup(png, fp)
+            if hit:
+                return png, key           # None: not a chara card
             raw = png.read_bytes()
             if get_card_type(raw) not in CHARA_CARD_TYPES:
+                key_cache.put(png, fp, None)
                 return png, None  # not a chara card — skip silently
             kc  = KoikatuCharaData.load(str(png))
-            return png, make_key(kc)
+            key = make_key(kc)
+            key_cache.put(png, fp, key)
+            return png, key
         except Exception as e:
             return png, f"__error__{e}"
 
@@ -116,6 +131,10 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False) -> 
                 logger.warning("GROUP", f"Could not process {png.name}: {result[9:]}")
             elif result not in characters:
                 characters[result] = ""
+
+    if use_cache:
+        logger.info("GROUP", f"Key cache: {key_cache.summary()}")
+        key_cache.save()
 
     if not characters:
         logger.warning("GROUP", "No readable character cards found")
@@ -181,7 +200,8 @@ def _safe_folder_name(name: str) -> str:
     return name[:_MAX_FOLDER_NAME_LEN]
 
 
-def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: bool = False) -> None:
+def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: bool = False,
+            use_cache: bool = True) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response.
 
     Each card is moved into <its own folder>/<series>/ — so with the game's
@@ -190,6 +210,10 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     include_subfolders must match what export() was given: when True, cards
     already sitting in subfolders are regrouped too; when False only
     top-level cards are touched.
+
+    use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
+    unchanged, and keep that cache in step with the moves (a moved card's entry follows
+    it to its new folder) so the next run doesn't have to read the cards again.
     """
     folder_list = _as_folder_list(folders)
 
@@ -228,54 +252,64 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                  for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png"))]
     moved = 0
     skipped = 0
+    key_cache = CharaKeyCache(folder_list, use_cache, "GROUP")
 
-    for folder_path, png in png_files:
-        # Pre-filter: skip non-chara-card files before passing to kkloader
-        try:
-            raw = png.read_bytes()
-            card_type = get_card_type(raw)
-            if card_type not in CHARA_CARD_TYPES:
+    try:
+        for folder_path, png in png_files:
+            # Pre-filter: skip non-chara-card files before passing to kkloader
+            try:
+                fp = file_fp(png)
+                hit, key = key_cache.lookup(png, fp)
+                if not hit:
+                    raw = png.read_bytes()
+                    if get_card_type(raw) not in CHARA_CARD_TYPES:
+                        key_cache.put(png, fp, None)
+                        skipped += 1
+                        continue
+                    kc  = KoikatuCharaData.load(str(png))
+                    key = make_key(kc)
+                    key_cache.put(png, fp, key)
+                elif key is None:
+                    skipped += 1          # cached as "not a chara card"
+                    continue
+            except Exception as e:
+                logger.warning("GROUP", f"Could not read {png.name}: {e}")
                 skipped += 1
                 continue
-        except Exception as e:
-            logger.warning("GROUP", f"Could not read {png.name}: {e}")
-            skipped += 1
-            continue
-        try:
-            kc  = KoikatuCharaData.load(str(png))
-            key = make_key(kc)
-        except Exception as e:
-            logger.warning("GROUP", f"Could not parse {png.name}: {e}")
-            skipped += 1
-            continue
 
-        series_folder = dest_map.get(key)
-        if not series_folder:
-            skipped += 1
-            continue
+            series_folder = dest_map.get(key)
+            if not series_folder:
+                skipped += 1
+                continue
 
-        dest_dir = folder_path / series_folder
-        if png.parent == dest_dir:
-            skipped += 1          # already in the right series folder
-            continue
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        dest = dest_dir / png.name
+            dest_dir = folder_path / series_folder
+            if png.parent == dest_dir:
+                skipped += 1          # already in the right series folder
+                continue
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest = dest_dir / png.name
 
-        # Handle filename collision
-        if dest.exists():
-            stem, suffix = png.stem, png.suffix
-            counter = 1
-            while dest.exists():
-                dest = dest_dir / f"{stem}_{counter}{suffix}"
-                counter += 1
+            # Handle filename collision
+            if dest.exists():
+                stem, suffix = png.stem, png.suffix
+                counter = 1
+                while dest.exists():
+                    dest = dest_dir / f"{stem}_{counter}{suffix}"
+                    counter += 1
 
-        try:
-            shutil.move(str(png), str(dest))
-            logger.success("GROUP", f"Moved {png.name} -> {series_folder}/")
-            moved += 1
-        except Exception as e:
-            logger.warning("GROUP", f"Could not move {png.name}: {e}")
-            skipped += 1
+            try:
+                shutil.move(str(png), str(dest))
+                key_cache.moved(png, dest)
+                logger.success("GROUP", f"Moved {png.name} -> {series_folder}/")
+                moved += 1
+            except Exception as e:
+                logger.warning("GROUP", f"Could not move {png.name}: {e}")
+                skipped += 1
+    finally:
+        # Saved even if the run is stopped part-way, so what was moved/learned so far isn't lost.
+        if use_cache:
+            logger.info("GROUP", f"Key cache: {key_cache.summary()}")
+            key_cache.save()
 
     logger.line()
     logger.success("GROUP", f"Done — moved: {moved}, skipped/unassigned: {skipped}")
@@ -292,13 +326,16 @@ class GroupChara(BaseTask):
         self.chara_dir_str      : str  = cfg.get("CharaDir", "")
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
+        self.use_cache           : bool = cfg.get("UseCache", True)
 
     def run(self) -> None:
         folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "GROUP")
 
         self.log_start("GROUP", ", ".join(str(f) for f in folders))
+        logger.info("GROUP", f"Use cache: {self.use_cache}")
 
-        json_str = export(folders, include_subfolders=self.include_subfolders)
+        json_str = export(folders, include_subfolders=self.include_subfolders,
+                          use_cache=self.use_cache)
         if not json_str:
             return
 
@@ -310,4 +347,5 @@ class GroupChara(BaseTask):
             logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
             return
 
-        process(folders, response, include_subfolders=self.include_subfolders)
+        process(folders, response, include_subfolders=self.include_subfolders,
+                use_cache=self.use_cache)

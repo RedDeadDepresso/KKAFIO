@@ -118,3 +118,80 @@ def test_missing_index_fails_and_moves_nothing(tmp_path):
         except gs.TaskFailedError:
             pass
     assert (tmp_path / "s1.png").exists()
+
+
+# ---------------------------------------------------------------------------
+# the hash cache is kept in step with the moves
+# ---------------------------------------------------------------------------
+
+def _cache_files(folder: Path) -> dict:
+    return json.loads((folder / PNG_CACHE_FILE).read_text())["files"]
+
+
+def test_cache_is_saved_after_moving_and_the_next_run_hashes_nothing(tmp_path):
+    a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
+    cf.write(tmp_path / "s1.png", a)
+    cf.write(tmp_path / "s2.png", b)
+    index = {_digest(a): "Alice", _digest(b): "Bob"}
+    with mock.patch.object(gs, "load_scene_index", return_value=index):
+        _task(tmp_path).run()
+        files = _cache_files(tmp_path)
+        assert set(files) == {str(tmp_path / "Alice" / "s1.png"), str(tmp_path / "Bob" / "s2.png")}
+        assert files[str(tmp_path / "Bob" / "s2.png")]["xxh"] == _digest(b)
+
+        # The cache is valid under the new paths, so a second run reads no file again.
+        with mock.patch.object(gs, "_xxh", wraps=gs._xxh) as hasher:
+            _task(tmp_path, IncludeSubfolders=True).run()
+        assert hasher.call_count == 0
+
+
+def test_hashes_are_saved_before_the_moves_so_an_interrupted_run_keeps_them(tmp_path):
+    a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
+    cf.write(tmp_path / "s1.png", a)
+    cf.write(tmp_path / "s2.png", b)
+    index = {_digest(a): "Alice", _digest(b): "Bob"}
+    with mock.patch.object(gs, "load_scene_index", return_value=index), \
+         mock.patch.object(gs.shutil, "move", side_effect=KeyboardInterrupt):   # stopped at the first move
+        try:
+            _task(tmp_path).run()
+        except KeyboardInterrupt:
+            pass
+    files = _cache_files(tmp_path)
+    assert set(files) == {str(tmp_path / "s1.png"), str(tmp_path / "s2.png")}   # nothing moved, both hashed
+    assert files[str(tmp_path / "s1.png")]["xxh"] == _digest(a)
+
+
+def test_scenes_moved_before_an_interruption_are_cached_under_their_new_path(tmp_path):
+    a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
+    cf.write(tmp_path / "s1.png", a)
+    cf.write(tmp_path / "s2.png", b)
+    index = {_digest(a): "Alice", _digest(b): "Bob"}
+    real_move, calls = gs.shutil.move, []
+
+    def stop_on_second(src, dst):
+        calls.append(src)
+        if len(calls) == 2:
+            raise KeyboardInterrupt
+        return real_move(src, dst)
+
+    with mock.patch.object(gs, "load_scene_index", return_value=index), \
+         mock.patch.object(gs.shutil, "move", stop_on_second):
+        try:
+            _task(tmp_path).run()
+        except KeyboardInterrupt:
+            pass
+    files = _cache_files(tmp_path)
+    assert str(tmp_path / "Alice" / "s1.png") in files and str(tmp_path / "s1.png") not in files   # moved: re-keyed
+    assert str(tmp_path / "s2.png") in files                                                      # not moved: still there
+    assert (tmp_path / "Alice" / "s1.png").exists() and (tmp_path / "s2.png").exists()
+
+
+def test_entries_for_files_that_were_not_scanned_survive_the_save(tmp_path):
+    a = cf.scene_card([["a"]])
+    cf.write(tmp_path / "s1.png", a)
+    cf.write(tmp_path / "deep" / "s9.png", cf.scene_card([["z"]]))
+    with mock.patch.object(gs, "load_scene_index", return_value={_digest(a): "Alice"}):
+        _task(tmp_path, IncludeSubfolders=True).run()                  # caches deep/s9.png too
+        assert str(tmp_path / "deep" / "s9.png") in _cache_files(tmp_path)
+        _task(tmp_path, IncludeSubfolders=False).run()                  # subfolders not scanned this time
+    assert str(tmp_path / "deep" / "s9.png") in _cache_files(tmp_path)  # ...but their entries are kept

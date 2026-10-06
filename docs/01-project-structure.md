@@ -76,6 +76,7 @@ KKAFIO-dev/
 │   │   ├── kks_scene.py             # Converting a KKS Studio scene to KK
 │   │   ├── msgpack_min.py           # Byte-exact MessagePack codec used by the scene converter
 │   │   ├── chara_key.py
+│   │   ├── chara_key_cache.py       # per-card key cache for Group / Rename Characters
 │   │   ├── similarity.py            # pHash + leader clustering for cover comparison
 │   │   └── scene_version.py
 │   │

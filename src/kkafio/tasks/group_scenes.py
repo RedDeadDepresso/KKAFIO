@@ -110,51 +110,64 @@ class GroupScenes(BaseTask):
                          f"{sum(1 for _, d in scenes if d.lower() in index)})")
         logger.line()
 
-        moved = skipped = unknown = 0
-        moved_from: set[str] = set()
-        for path, digest in sorted(scenes):
-            author = index.get(digest.lower())
-            if author is None:
-                unknown += 1
-                continue
-            name = author_folder_name(author)
-            if not name:
-                logger.warning(TAG, f"{path.name}: unusable author name {author!r}")
-                skipped += 1
-                continue
+        moved_from: set[str] = set()      # old paths of scenes moved during this run
 
-            dest_dir = folder / name
-            if path.parent == dest_dir:
-                skipped += 1                      # already in the right author folder
-                continue
-            dest = dest_dir / path.name
-            if dest.exists():
-                stem, suffix, counter = path.stem, path.suffix, 1
-                while dest.exists():
-                    dest = dest_dir / f"{stem}_{counter}{suffix}"
-                    counter += 1
-            try:
-                dest_dir.mkdir(parents=True, exist_ok=True)
-                shutil.move(str(path), str(dest))
-            except Exception as e:
-                logger.error(TAG, f"Could not move {path.name}: {e}")
-                skipped += 1
-                continue
-            logger.success(TAG, f"Moved {path.name} -> {name}/")
-            moved += 1
-            # The move keeps mtime/size, so the cached hash stays valid under the new path.
-            moved_from.add(str(path))
-            entry = new_entries.pop(str(path), None)
-            if entry is not None:
-                new_entries[str(dest)] = entry
-
-        if self.use_cache:
-            # Merge into the existing cache: it also holds entries for files
-            # this run didn't scan (e.g. subfolders when they're excluded).
+        def save_cache() -> None:
+            """Write this run's entries to the cache file. It's merged into what's already
+            there, since the file also holds entries for files this run didn't scan
+            (e.g. subfolders when they're excluded); the old path of a moved scene is dropped."""
             merged = {k: v for k, v in cache.items()
                       if k not in new_entries and k not in moved_from}
             merged.update(new_entries)
             _save_duplic_cache(folder, PNG_CACHE_FILE, merged)
+
+        if self.use_cache:
+            # Saved before anything is moved: the hashes are the expensive part, and a run
+            # that is stopped or fails during the moves must not throw them away.
+            save_cache()
+
+        moved = skipped = unknown = 0
+        try:
+            for path, digest in sorted(scenes):
+                author = index.get(digest.lower())
+                if author is None:
+                    unknown += 1
+                    continue
+                name = author_folder_name(author)
+                if not name:
+                    logger.warning(TAG, f"{path.name}: unusable author name {author!r}")
+                    skipped += 1
+                    continue
+
+                dest_dir = folder / name
+                if path.parent == dest_dir:
+                    skipped += 1                      # already in the right author folder
+                    continue
+                dest = dest_dir / path.name
+                if dest.exists():
+                    stem, suffix, counter = path.stem, path.suffix, 1
+                    while dest.exists():
+                        dest = dest_dir / f"{stem}_{counter}{suffix}"
+                        counter += 1
+                try:
+                    dest_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(path), str(dest))
+                except Exception as e:
+                    logger.error(TAG, f"Could not move {path.name}: {e}")
+                    skipped += 1
+                    continue
+                logger.success(TAG, f"Moved {path.name} -> {name}/")
+                moved += 1
+                # The move keeps mtime/size, so the cached hash stays valid under the new path.
+                moved_from.add(str(path))
+                entry = new_entries.pop(str(path), None)
+                if entry is not None:
+                    new_entries[str(dest)] = entry
+        finally:
+            # Saved again once scenes have moved (even if the run was cut short), so the cache
+            # has each moved scene under its new path and the next run doesn't re-hash it.
+            if self.use_cache and moved_from:
+                save_cache()
 
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}, already in place/skipped: {skipped}, "

@@ -490,6 +490,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Write translated names into card metadata (default: on)"),
             Toggle("rename-files", key="RenameFiles",
                    help="Also rename the PNG file to match the translated name"),
+            Toggle("use-cache", key="UseCache",
+                   help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
+                        "(default: on)",
+                   off_help="Disable cache and read every card"),
         ),
     ),
 
@@ -522,6 +526,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "--input is an alias)"),
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Include character cards from subfolders when scanning (overrides config)"),
+            Toggle("use-cache", key="UseCache",
+                   help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
+                        "(default: on)",
+                   off_help="Disable cache and read every card"),
         ),
     ),
 

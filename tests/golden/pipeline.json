@@ -454,7 +454,8 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -485,7 +486,8 @@
       "chara_dir_str": "<ROOT>/work",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -711,7 +713,8 @@
       "chara_dir_str": "<ROOT>/work",
       "rename_files": true,
       "skip_already_renamed": true,
-      "update_metadata": false
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -740,7 +743,8 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
-      "include_subfolders": false
+      "include_subfolders": false,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,

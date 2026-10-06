@@ -10,7 +10,11 @@ LLM response format — values are dicts:
     "unknown key | ...":        {"lastname": "", "firstname": "", "nickname": ""}
   }
 
-Cache: kkafio_rename_cache.json in input folder, merged on every run.
+Caches (both in the scanned folder):
+  kkafio_rename_cache.json    the LLM's translations (key -> names), merged on every run
+  kkafio_chara_key_cache.json each card's identification key, so unchanged cards aren't
+                              re-parsed on the next run (the "Use Cache" option; shared
+                              with Group Characters, see kkafio.cards.chara_key_cache)
 """
 
 from __future__ import annotations
@@ -23,7 +27,9 @@ from pathlib import Path
 from kkloader import KoikatuCharaData
 
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
+from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
+from kkafio.cards.chara_key_cache import CharaKeyCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.logger import logger
 
@@ -172,7 +178,7 @@ def _as_folder_list(folders) -> list[Path]:
     return [Path(f) for f in folders]
 
 
-def export(folders, skip_already_renamed: bool = True) -> str:
+def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -> str:
     """Scan one or more chara folders and return the JSON of characters still
     to translate (names already in any folder's cache are left out)."""
     folder_list = _as_folder_list(folders)
@@ -184,14 +190,23 @@ def export(folders, skip_already_renamed: bool = True) -> str:
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in "
                           + ", ".join(str(f) for f in folder_list))
 
+    key_cache = CharaKeyCache(folder_list, use_cache, "RENAME")
+
     def _proc(png: Path):
         try:
             if skip_already_renamed and png.stem in known_stems:
                 return png, "__skip__"
+            fp = file_fp(png)
+            hit, key = key_cache.lookup(png, fp)
+            if hit:
+                return png, key           # None: not a chara card
             raw = png.read_bytes()
             if get_card_type(raw) not in CHARA_CARD_TYPES:
+                key_cache.put(png, fp, None)
                 return png, None
-            return png, make_key(KoikatuCharaData.load(str(png)))
+            key = make_key(KoikatuCharaData.load(str(png)))
+            key_cache.put(png, fp, key)
+            return png, key
         except Exception as e:
             return png, f"__error__{e}"
 
@@ -215,6 +230,9 @@ def export(folders, skip_already_renamed: bool = True) -> str:
 
     if skipped:
         logger.info("RENAME", f"Skipped {skipped} already-renamed file(s)")
+    if use_cache:
+        logger.info("RENAME", f"Key cache: {key_cache.summary()}")
+        key_cache.save()
 
     if not to_translate:
         logger.success("RENAME", "All characters already known — nothing to send to LLM.")
@@ -234,8 +252,13 @@ def export(folders, skip_already_renamed: bool = True) -> str:
 def process(folders, json_str: str,
             skip_already_renamed: bool = True,
             update_metadata: bool = True,
-            rename_files: bool = False) -> None:
-    """Apply the LLM's JSON response to every card in the given folder(s)."""
+            rename_files: bool = False,
+            use_cache: bool = True) -> None:
+    """Apply the LLM's JSON response to every card in the given folder(s).
+
+    use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
+    unchanged, and keep that cache in step with what is done to the cards (a renamed
+    card's entry follows it; a card whose metadata was rewritten gets its new key)."""
     folder_list = _as_folder_list(folders)
 
     clean = json_str.strip()
@@ -252,13 +275,14 @@ def process(folders, json_str: str,
 
     for folder_path in folder_list:
         _process_folder(folder_path, response, skip_already_renamed,
-                        update_metadata, rename_files)
+                        update_metadata, rename_files, use_cache)
 
 
 def _process_folder(folder_path: Path, response: dict,
                     skip_already_renamed: bool,
                     update_metadata: bool,
-                    rename_files: bool) -> None:
+                    rename_files: bool,
+                    use_cache: bool = True) -> None:
     cache = _merge_cache(_load_cache(folder_path), response)
     _save_cache(folder_path, cache)
     logger.info("RENAME", f"Cache updated: {len(cache)} entries")
@@ -286,104 +310,138 @@ def _process_folder(folder_path: Path, response: dict,
             used_stems_by_dir[d] = counts
         return used_stems_by_dir[d]
 
-    for png in png_files:
-        if skip_already_renamed and png.stem in known_stems:
-            skipped += 1
-            continue
-
-        try:
-            raw = png.read_bytes()
-            orig_type = get_card_type(raw)
-            if orig_type not in CHARA_CARD_TYPES:
+    key_cache = CharaKeyCache([folder_path], use_cache, "RENAME")
+    try:
+        for png in png_files:
+            if skip_already_renamed and png.stem in known_stems:
                 skipped += 1
                 continue
-            kc  = KoikatuCharaData.load(str(png))
-            key = make_key(kc)
-        except Exception as e:
-            logger.warning("RENAME", f"Could not read {png.name}: {e}")
-            skipped += 1
-            continue
 
-        nd = cache.get(key)
-        if not nd or not _name_known(nd):
-            skipped += 1
-            continue
-
-        last     = nd.get("lastname", "").strip()
-        first    = nd.get("firstname", "").strip()
-        nickname = nd.get("nickname", "").strip()
-
-        if update_metadata:
-            # Save to a temp file next to the card and only replace the
-            # original once the write has fully succeeded and the result
-            # looks like a real, parseable chara card. kc.save() writes
-            # in a single pass; saving in place means a crash, a disk-full
-            # error, or a bad write partway through leaves the card
-            # corrupted with the original gone for good. Going through a
-            # temp file + os.replace means the original is only ever
-            # touched by the atomic rename at the very end.
-            tmp_path = png.with_name(png.name + ".kkafio_rename.tmp")
+            kc = None
+            orig_type = None
             try:
-                kc["Parameter"]["lastname"]  = last
-                kc["Parameter"]["firstname"] = first
-                kc["Parameter"]["nickname"]  = nickname
-                kc.save(str(tmp_path))
-
-                # Sanity-check the written file before trusting it enough to
-                # overwrite the original.
-                # The type must come back exactly as it went in — in
-                # particular a KKS card must still carry its KKS marker
-                # (never silently turn into a KK card the game can't tell
-                # apart from a real one).
-                new_raw = tmp_path.read_bytes()
-                if get_card_type(new_raw) != orig_type:
-                    raise ValueError(
-                        f"saved file is not the same card type as the original "
-                        f"({orig_type.value} -> {get_card_type(new_raw).value})")
-
-                os.replace(tmp_path, png)
-                logger.info("RENAME",
-                    f"Metadata: {png.name} → {last} {first} ({nickname})")
-                updated += 1
+                fp = file_fp(png)
+                hit, key = key_cache.lookup(png, fp)
+                if not hit:
+                    raw = png.read_bytes()
+                    orig_type = get_card_type(raw)
+                    if orig_type not in CHARA_CARD_TYPES:
+                        key_cache.put(png, fp, None)
+                        skipped += 1
+                        continue
+                    kc  = KoikatuCharaData.load(str(png))
+                    key = make_key(kc)
+                    key_cache.put(png, fp, key)
+                elif key is None:
+                    skipped += 1          # cached as "not a chara card"
+                    continue
             except Exception as e:
-                logger.warning("RENAME", f"Could not update metadata for {png.name}: {e}")
+                logger.warning("RENAME", f"Could not read {png.name}: {e}")
                 skipped += 1
                 continue
-            finally:
-                if tmp_path.exists():
-                    try:
-                        tmp_path.unlink()
-                    except OSError:
-                        pass
 
-        if rename_files:
-            stem = _stem_for(nd)
-            if stem:
-                subfolder = png.parent
-                used      = _dir_stems(subfolder)
+            nd = cache.get(key)
+            if not nd or not _name_known(nd):
+                skipped += 1
+                continue
 
-                candidate = stem
-                counter   = 1
-                while _rename_collides(png, candidate, used):
-                    candidate = f"{stem}_{counter}"
-                    counter  += 1
-                new_path = subfolder / f"{candidate}.png"
-                # Compare names exactly (not Path equality, which is
-                # case-insensitive on Windows) so a case-only difference
-                # such as alice.png -> Alice.png is still applied.
-                if new_path.name != png.name:
+            last     = nd.get("lastname", "").strip()
+            first    = nd.get("firstname", "").strip()
+            nickname = nd.get("nickname", "").strip()
+
+            if update_metadata:
+                if kc is None:
+                    # The key came from the cache, so the card hasn't been loaded: it has to be
+                    # now, to rewrite its metadata.
                     try:
-                        png.rename(new_path)
-                        old_key = _fold(png.stem)
-                        used[old_key] = used.get(old_key, 1) - 1
-                        if used[old_key] <= 0:
-                            used.pop(old_key, None)
-                        new_key = _fold(candidate)
-                        used[new_key] = used.get(new_key, 0) + 1
-                        logger.success("RENAME", f"Renamed: {png.name} → {new_path.name}")
-                        renamed += 1
+                        orig_type = get_card_type(png.read_bytes())
+                        kc = KoikatuCharaData.load(str(png))
                     except Exception as e:
-                        logger.warning("RENAME", f"Could not rename {png.name}: {e}")
+                        logger.warning("RENAME", f"Could not read {png.name}: {e}")
+                        skipped += 1
+                        continue
+                # Save to a temp file next to the card and only replace the
+                # original once the write has fully succeeded and the result
+                # looks like a real, parseable chara card. kc.save() writes
+                # in a single pass; saving in place means a crash, a disk-full
+                # error, or a bad write partway through leaves the card
+                # corrupted with the original gone for good. Going through a
+                # temp file + os.replace means the original is only ever
+                # touched by the atomic rename at the very end.
+                tmp_path = png.with_name(png.name + ".kkafio_rename.tmp")
+                try:
+                    kc["Parameter"]["lastname"]  = last
+                    kc["Parameter"]["firstname"] = first
+                    kc["Parameter"]["nickname"]  = nickname
+                    kc.save(str(tmp_path))
+
+                    # Sanity-check the written file before trusting it enough to
+                    # overwrite the original.
+                    # The type must come back exactly as it went in — in
+                    # particular a KKS card must still carry its KKS marker
+                    # (never silently turn into a KK card the game can't tell
+                    # apart from a real one).
+                    new_raw = tmp_path.read_bytes()
+                    if get_card_type(new_raw) != orig_type:
+                        raise ValueError(
+                            f"saved file is not the same card type as the original "
+                            f"({orig_type.value} -> {get_card_type(new_raw).value})")
+
+                    os.replace(tmp_path, png)
+                    # The card's name (part of its key) and its fingerprint just changed.
+                    try:
+                        key_cache.updated(png, make_key(kc))
+                    except Exception:
+                        key_cache.forget(png)
+                    logger.info("RENAME",
+                        f"Metadata: {png.name} → {last} {first} ({nickname})")
+                    updated += 1
+                except Exception as e:
+                    logger.warning("RENAME", f"Could not update metadata for {png.name}: {e}")
+                    skipped += 1
+                    continue
+                finally:
+                    if tmp_path.exists():
+                        try:
+                            tmp_path.unlink()
+                        except OSError:
+                            pass
+
+            if rename_files:
+                stem = _stem_for(nd)
+                if stem:
+                    subfolder = png.parent
+                    used      = _dir_stems(subfolder)
+
+                    candidate = stem
+                    counter   = 1
+                    while _rename_collides(png, candidate, used):
+                        candidate = f"{stem}_{counter}"
+                        counter  += 1
+                    new_path = subfolder / f"{candidate}.png"
+                    # Compare names exactly (not Path equality, which is
+                    # case-insensitive on Windows) so a case-only difference
+                    # such as alice.png -> Alice.png is still applied.
+                    if new_path.name != png.name:
+                        try:
+                            png.rename(new_path)
+                            key_cache.moved(png, new_path)
+                            old_key = _fold(png.stem)
+                            used[old_key] = used.get(old_key, 1) - 1
+                            if used[old_key] <= 0:
+                                used.pop(old_key, None)
+                            new_key = _fold(candidate)
+                            used[new_key] = used.get(new_key, 0) + 1
+                            logger.success("RENAME", f"Renamed: {png.name} → {new_path.name}")
+                            renamed += 1
+                        except Exception as e:
+                            logger.warning("RENAME", f"Could not rename {png.name}: {e}")
+
+    finally:
+        # Saved even if the run is stopped part-way, so what was renamed/learned so far isn't lost.
+        if use_cache:
+            logger.info("RENAME", f"Key cache: {key_cache.summary()}")
+            key_cache.save()
 
     logger.line()
     parts = []
@@ -406,13 +464,16 @@ class RenameChara(BaseTask):
         self.update_metadata      : bool = cfg.get("UpdateMetadata", False)
         self.rename_files         : bool = cfg.get("RenameFiles", True)
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
+        self.use_cache            : bool = cfg.get("UseCache", True)
 
     def run(self) -> None:
         folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "RENAME")
 
         self.log_start("RENAME", ", ".join(str(f) for f in folders))
+        logger.info("RENAME", f"Use cache: {self.use_cache}")
 
-        json_str = export(folders, skip_already_renamed=self.skip_already_renamed)
+        json_str = export(folders, skip_already_renamed=self.skip_already_renamed,
+                          use_cache=self.use_cache)
         if not json_str:
             return
 
@@ -427,4 +488,5 @@ class RenameChara(BaseTask):
         process(folders, response,
                 skip_already_renamed=self.skip_already_renamed,
                 update_metadata=self.update_metadata,
-                rename_files=self.rename_files)
+                rename_files=self.rename_files,
+                use_cache=self.use_cache)
