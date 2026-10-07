@@ -175,7 +175,7 @@
       "type": "switch",
       "label": "$option.DeleteOriginalCards.label",
       "description": "$option.DeleteOriginalCards.description",
-      "default_case": "No",
+      "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
@@ -287,7 +287,7 @@
       "type": "select",
       "label": "$option.ArchivePassword.label",
       "description": "$option.ArchivePassword.description",
-      "default_case": "Skip",
+      "default_case": "Request",
       "cases": [
         {
           "name": "Skip",
@@ -340,15 +340,15 @@
       "type": "select",
       "label": "$option.DuplicateAction.label",
       "description": "$option.DuplicateAction.description",
-      "default_case": "Move & Rename",
+      "default_case": "Delete",
       "cases": [
-        {
-          "name": "Move & Rename",
-          "label": "$option.DuplicateAction.case.Move & Rename.label"
-        },
         {
           "name": "Move",
           "label": "$option.DuplicateAction.case.Move.label"
+        },
+        {
+          "name": "Move & Rename",
+          "label": "$option.DuplicateAction.case.Move & Rename.label"
         },
         {
           "name": "Delete",
@@ -798,7 +798,7 @@
       "type": "select",
       "label": "$option.SideloaderModpack.label",
       "description": "$option.SideloaderModpack.description",
-      "default_case": "Skip",
+      "default_case": "OnlyUsed",
       "cases": [
         {
           "name": "Skip",
@@ -827,7 +827,7 @@
       "type": "select",
       "label": "$option.TelegramSource.label",
       "description": "$option.TelegramSource.description",
-      "default_case": "No",
+      "default_case": "Both",
       "cases": [
         {
           "name": "No",
@@ -1270,7 +1270,12 @@
       "default_check": false,
       "description": "$task.GroupChara.description",
       "group": ["chara-management"],
-      "option": ["CharaDir", "GroupCharaIncludeSubfolders", "UseCache", "GroupCharaPrompt"]
+      "option": [
+        "CharaDir",
+        "GroupCharaIncludeSubfolders",
+        "UseCache",
+        "GroupCharaPrompt"
+      ]
     },
     {
       "name": "GroupCoordinates",
@@ -1279,7 +1284,12 @@
       "default_check": false,
       "description": "$task.GroupCoordinates.description",
       "group": ["chara-management"],
-      "option": ["CharaDir", "CoordDir", "UseCache", "GroupCoordinatesIncludeSubfolders"]
+      "option": [
+        "CharaDir",
+        "CoordDir",
+        "UseCache",
+        "GroupCoordinatesIncludeSubfolders"
+      ]
     },
     {
       "name": "UngroupCards",
@@ -1403,7 +1413,8 @@
       "description": "$preset.DownloadFilterAndInstall.description",
       "task": [
         {
-          "name": "DownloadContents"
+          "name": "DownloadContents",
+          "enabled": false
         },
         {
           "name": "FilterConvertKKS"
@@ -1415,16 +1426,13 @@
             "SceneDir": "C:/KKAFIO/Downloads",
             "CoordDir": "C:/KKAFIO/Downloads",
             "ModsDir": "C:/KKAFIO/Downloads",
-            "OverlaysDir": "C:/KKAFIO/Downloads",
-            "DuplicateAction": "Delete"
+            "OverlaysDir": "C:/KKAFIO/Downloads"
           }
         },
         {
           "name": "DownloadMissingMods",
           "enabled": false,
           "option": {
-            "SideloaderModpack": "OnlyUsed",
-            "TelegramSource": "Both",
             "OutputModsDir": "C:/KKAFIO/Downloads",
             "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
@@ -1432,10 +1440,7 @@
           }
         },
         {
-          "name": "CompressCardsTextures",
-          "option": {
-            "DeleteOriginalCards": "Yes"
-          }
+          "name": "CompressCardsTextures"
         },
         {
           "name": "InstallContents"
@@ -1449,29 +1454,31 @@
       "task": [
         {
           "name": "FilterDuplicateContents",
-          "option": {
-            "DuplicateAction": "Delete"
-          }
+          "enabled": false
         },
         {
-          "name": "GroupScenes"
+          "name": "GroupScenes",
+          "enabled": false
         },
         {
-          "name": "GroupChara"
+          "name": "GroupChara",
+          "enabled": false
         },
         {
-          "name": "RenameChara"
+          "name": "RenameChara",
+          "enabled": false
         },
         {
-          "name": "DeleteUnusedMods"
+          "name": "GroupCoordinates",
+          "enabled": false
         },
         {
           "name": "DownloadMissingMods",
-          "enabled": false,
-          "option": {
-            "SideloaderModpack": "OnlyUsed",
-            "TelegramSource": "Both"
-          }
+          "enabled": false
+        },
+        {
+          "name": "DeleteUnusedMods",
+          "enabled": false
         },
         {
           "name": "DeleteCards",
@@ -1514,16 +1521,12 @@
         },
         {
           "name": "FilterDuplicateContents",
-          "enabled": false,
-          "option": {
-            "DuplicateAction": "Delete"
-          }
+          "enabled": false
         },
         {
           "name": "DownloadMissingMods",
           "enabled": false,
           "option": {
-            "TelegramSource": "Both",
             "OutputModsDir": "C:/KKAFIO/Downloads",
             "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
@@ -1532,10 +1535,7 @@
         },
         {
           "name": "CompressCardsTextures",
-          "enabled": false,
-          "option": {
-            "DeleteOriginalCards": "Yes"
-          }
+          "enabled": false
         },
         {
           "name": "InstallContents",
@@ -1554,6 +1554,14 @@
           "enabled": false
         },
         {
+          "name": "RenameChara",
+          "enabled": false
+        },
+        {
+          "name": "ReviewSimilarChara",
+          "enabled": false
+        },
+        {
           "name": "GroupCoordinates",
           "enabled": false
         },
@@ -1562,11 +1570,7 @@
           "enabled": false
         },
         {
-          "name": "RenameChara",
-          "enabled": false
-        },
-        {
-          "name": "ArchiveCards",
+          "name": "DeleteUnusedMods",
           "enabled": false
         },
         {
@@ -1574,15 +1578,11 @@
           "enabled": false
         },
         {
-          "name": "ReviewSimilarChara",
+          "name": "ArchiveCards",
           "enabled": false
         },
         {
           "name": "ExportMods",
-          "enabled": false
-        },
-        {
-          "name": "DeleteUnusedMods",
           "enabled": false
         }
       ]
