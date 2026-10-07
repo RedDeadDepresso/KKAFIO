@@ -143,6 +143,7 @@ _TASK_KEY = {
     "UninstallContents": "UninstallContents",
     "GroupScenes": "GroupScenes",
     "GroupChara": "GroupChara",
+    "GroupCoordinates": "GroupCoordinates",
     "UngroupCards": "UngroupCards",
     "RenameChara": "RenameChara",
     "ArchiveCards": "ArchiveCards",
@@ -163,6 +164,7 @@ _TASK_DEFAULTS = {
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True},
     "GroupScenes": {"Enable": False, "SceneDir": "", "UseCache": True, "IncludeSubfolders": False},
     "GroupChara": {"Enable": False, "CharaDir": "", "IncludeSubfolders": False, "UseCache": True, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n"},
+    "GroupCoordinates": {"Enable": False, "UseCache": True, "IncludeSubfolders": False, "CharaDir": "", "CoordDir": ""},
     "UngroupCards": {"Enable": False, "InputPath": "", "Chara": True, "Scenes": True, "Coords": True, "DeleteEmptyFolders": True},
     "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "UseCache": True, "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's well-known English name.\n\nRules:\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- Use the name the character is commonly known by, not a literal transliteration.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n"},
     "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CoordDir": ""},
@@ -272,6 +274,12 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("IncludeSubfolders", "GroupCharaIncludeSubfolders")
         _set("UseCache", "UseCache")
         _set("Prompt", "GroupCharaPrompt")
+
+    elif task_name == "GroupCoordinates":
+        _set("UseCache", "UseCache")
+        _set("IncludeSubfolders", "GroupCoordinatesIncludeSubfolders")
+        _set("CharaDir", "CharaDir")
+        _set("CoordDir", "CoordDir")
 
     elif task_name == "UngroupCards":
         _set("InputPath", "InputPath")
@@ -586,6 +594,7 @@ class Config:
         self.uninstall_contents        = self.config_data["UninstallContents"]
         self.group_scenes              = self.config_data["GroupScenes"]
         self.group_chara               = self.config_data["GroupChara"]
+        self.group_coordinates         = self.config_data["GroupCoordinates"]
         self.ungroup_cards             = self.config_data["UngroupCards"]
         self.rename_chara              = self.config_data["RenameChara"]
         self.archive_cards             = self.config_data["ArchiveCards"]

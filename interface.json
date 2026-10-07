@@ -614,6 +614,28 @@
         }
       ]
     },
+    "GroupCoordinatesIncludeSubfolders": {
+      "type": "switch",
+      "label": "$option.GroupCoordinatesIncludeSubfolders.label",
+      "description": "$option.GroupCoordinatesIncludeSubfolders.description",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.GroupCoordinatesIncludeSubfolders.case.Yes.label",
+          "pipeline_override": {
+            "IncludeSubfolders": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.GroupCoordinatesIncludeSubfolders.case.No.label",
+          "pipeline_override": {
+            "IncludeSubfolders": false
+          }
+        }
+      ]
+    },
     "DeleteEmptyFolders": {
       "type": "switch",
       "label": "$option.DeleteEmptyFolders.label",
@@ -1251,6 +1273,15 @@
       "option": ["CharaDir", "GroupCharaIncludeSubfolders", "UseCache", "GroupCharaPrompt"]
     },
     {
+      "name": "GroupCoordinates",
+      "label": "$task.GroupCoordinates.label",
+      "entry": "GroupCoordinates",
+      "default_check": false,
+      "description": "$task.GroupCoordinates.description",
+      "group": ["chara-management"],
+      "option": ["CharaDir", "CoordDir", "UseCache", "GroupCoordinatesIncludeSubfolders"]
+    },
+    {
       "name": "UngroupCards",
       "label": "$task.UngroupCards.label",
       "entry": "UngroupCards",
@@ -1520,6 +1551,10 @@
         },
         {
           "name": "GroupChara",
+          "enabled": false
+        },
+        {
+          "name": "GroupCoordinates",
           "enabled": false
         },
         {

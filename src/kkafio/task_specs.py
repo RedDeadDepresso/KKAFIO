@@ -313,7 +313,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--mods-dir", key="ModsDir", default=None, metavar="DIR",
                   help="Override the mods directory (default: game mods dir from config)"),
             Value("--chara-dir", key="CharaDir", default=None, metavar="DIR",
-                  help="Custom chara directory (default: game's chara folders)"),
+                  help="Custom chara directory, always scanned recursively (default: game's chara folders)"),
             Value("--scene-dir", key="SceneDir", default=None, metavar="DIR",
                   help="Custom scene directory (default: game's Studio scene folder)"),
             Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",
@@ -458,6 +458,26 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--context-menu", action="store_true", default=False,
                   help=_CONTEXT_MENU_HELP + ", and defaults --output-dir to the common parent "
                                             "folder of the selection."),
+        ),
+    ),
+
+    TaskSpec(
+        name="GroupCoordinates", command="group-coordinates",
+        help="Move coordinate cards into per-character subfolders named after the matching chara card",
+        target="kkafio.tasks.group_coordinates:GroupCoordinates",
+        options=(
+            Toggle("use-cache", key="UseCache",
+                   help="Reuse cached chara/coordinate outfit digests for unchanged files (default: on)",
+                   off_help="Disable cache and re-read every card"),
+            Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
+                  help="Also process coordinate cards inside subfolders of the coordinate directory "
+                       "(chara cards are always scanned recursively)"),
+            Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
+                  help="Custom chara directory (default: the game's female and male chara folders)"),
+            Value("--coord-dir", "--input", "-i", key="CoordDir", ignore_blank=True, metavar="DIR",
+                  default=None,
+                  help="Custom coordinate directory (default: the game's coordinate folder; "
+                       "--input is an alias)"),
         ),
     ),
 
