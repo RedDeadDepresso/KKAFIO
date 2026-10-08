@@ -636,6 +636,28 @@
         }
       ]
     },
+    "GroupCoordinatesMatchCharaHair": {
+      "type": "switch",
+      "label": "$option.GroupCoordinatesMatchCharaHair.label",
+      "description": "$option.GroupCoordinatesMatchCharaHair.description",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.GroupCoordinatesMatchCharaHair.case.Yes.label",
+          "pipeline_override": {
+            "MatchCharaHair": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.GroupCoordinatesMatchCharaHair.case.No.label",
+          "pipeline_override": {
+            "MatchCharaHair": false
+          }
+        }
+      ]
+    },
     "GroupCoordinatesGroupByHair": {
       "type": "switch",
       "label": "$option.GroupCoordinatesGroupByHair.label",
@@ -1350,6 +1372,7 @@
         "GroupCoordinatesIncludeSubfolders",
         "GroupCoordinatesClothesTolerance",
         "GroupCoordinatesAccessoryTolerance",
+        "GroupCoordinatesMatchCharaHair",
         "GroupCoordinatesGroupByHair"
       ]
     },

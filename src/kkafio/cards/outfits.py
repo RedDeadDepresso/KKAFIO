@@ -304,6 +304,17 @@ def outfit_hair(outfit: dict, infos: list[dict], outfit_index: int | None = None
     return tuple(items)
 
 
+def chara_outfit_hairs(kc) -> list[tuple[str, ...]]:
+    """Distinct non-empty hairs (see outfit_hair) worn across the outfits of a loaded chara
+    card (KoikatuCharaData), sorted. A character that wears several hairstyles has several."""
+    try:
+        infos = uar_resolve_infos(kc["KKEx"].data)
+    except (KeyError, ValueError):
+        infos = []
+    return sorted({hair for n, outfit in enumerate(kc["Coordinate"].data)
+                   if (hair := outfit_hair(outfit, infos, n))})
+
+
 def _read_coord_outfit(path: Path) -> tuple[dict, list[dict]] | None:
     """(outfit data, UAR resolve infos) of a coordinate card file, or None if it isn't
     a Koikatu coordinate card (e.g. a chara card or stray PNG in the folder).

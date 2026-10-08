@@ -472,6 +472,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Also process coordinate cards inside subfolders of the coordinate directory "
                        "(chara cards are always scanned recursively)"),
+            Toggle("match-chara-hair", key="MatchCharaHair",
+                   help="First match coordinates to characters by hair: a coordinate wearing the hair of "
+                        "exactly one character's outfits moves to that character's folder, and the rest "
+                        "are matched by outfit (default: on)",
+                   off_help="Skip the hair pass and match by outfit only"),
             Value("--group-by-hair", key="GroupByHair", action="store_true", default=None,
                   help="After matching outfits, group the coordinates still left in the coordinate folder by "
                        "hair, using every coordinate including those in subfolders: a coordinate with the "

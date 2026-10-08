@@ -265,3 +265,82 @@ def test_group_by_hair_without_the_cache(tmp_path):
                      use_cache=False)
     assert _layout(coord_dir) == {"a.png": "Alice", "b.png": "Alice"}
     assert not (coord_dir / outfits.HAIR_CACHE_FILE).exists()
+
+
+# --- matching characters by hair first ---------------------------------------------------------------------
+
+def test_hair_matcher_finds_the_characters_wearing_that_hair():
+    charas = {Path("Bob.png"): [("B",), ("B2", "34")], Path("Alice.png"): [("A",)], Path("Cid.png"): [("A", "34")]}
+    matches = gc.hair_matcher(charas)
+    assert matches(("A",)) == ["Alice", "Cid"]                 # same main hair, filename order
+    assert matches(("B", "34")) == ["Bob"]                       # an extra ornament doesn't matter
+    assert matches(("34",)) == []                                # an ornament alone isn't a hairstyle of anyone's
+    assert matches(("Z",)) == [] and matches(()) == []
+
+
+def _chara_hairs(tmp_path, **hairs):
+    return {tmp_path / "chara" / f"{name}.png": value for name, value in hairs.items()}
+
+
+def _run_hair_first(tmp_path, files, chara_hairs, chara_digests=None, **kw):
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir(exist_ok=True)
+    coord_dir.mkdir(exist_ok=True)
+    for rel, outfit in files.items():
+        _write_coord(coord_dir / rel, outfit)
+    with mock.patch.object(gc, "collect_chara_hairs", return_value=chara_hairs), \
+            mock.patch.object(gc, "collect_chara_digests", return_value=chara_digests or {}):
+        _task(chara_dir, coord_dir, hair=False, **kw).run()
+    return coord_dir
+
+
+def test_coordinates_move_to_the_character_wearing_their_hair(tmp_path):
+    coord_dir = _run_hair_first(
+        tmp_path, {"a.png": _outfit(hair=11, top=1), "b.png": _outfit(hair=22, top=2),
+                   "nohair.png": _outfit(top=3), "unknown.png": _outfit(hair=99, top=4)},
+        _chara_hairs(tmp_path, Alice=[("11",)], Bob=[("22",), ("33",)]))
+    assert _layout(coord_dir) == {"a.png": "Alice", "b.png": "Bob", "nohair.png": "", "unknown.png": ""}
+
+
+def test_hair_shared_by_several_characters_is_left_for_outfit_matching(tmp_path):
+    clothes_match = _outfit(hair=11, top=1)
+    chara = {tmp_path / "chara" / "Bob.png": {outfits.outfit_digest(clothes_match, [])}}
+    coord_dir = _run_hair_first(
+        tmp_path, {"decided_by_clothes.png": clothes_match, "undecided.png": _outfit(hair=11, top=2)},
+        _chara_hairs(tmp_path, Alice=[("11",)], Bob=[("11",)]), chara_digests=chara)
+    assert _layout(coord_dir) == {"decided_by_clothes.png": "Bob", "undecided.png": ""}
+
+
+def test_hair_pass_wins_over_an_outfit_match_for_another_character(tmp_path):
+    coord = _outfit(hair=11, top=1)                                  # Bob's outfit, but Alice's hair
+    chara = {tmp_path / "chara" / "Bob.png": {outfits.outfit_digest(coord, [])}}
+    coord_dir = _run_hair_first(tmp_path, {"c.png": coord}, _chara_hairs(tmp_path, Alice=[("11",)], Bob=[("22",)]),
+                                chara_digests=chara)
+    assert _layout(coord_dir) == {"c.png": "Alice"}
+
+
+def test_outfit_pass_still_groups_what_the_hair_pass_left(tmp_path):
+    clothes_match = _outfit(hair=77, top=1)
+    chara = {tmp_path / "chara" / "Dana.png": {outfits.outfit_digest(clothes_match, [])}}
+    coord_dir = _run_hair_first(
+        tmp_path, {"hair.png": _outfit(hair=11, top=2), "clothes.png": clothes_match},
+        _chara_hairs(tmp_path, Alice=[("11",)], Dana=[("55",)]), chara_digests=chara)
+    assert _layout(coord_dir) == {"hair.png": "Alice", "clothes.png": "Dana"}
+
+
+def test_match_chara_hair_can_be_turned_off(tmp_path):
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir()
+    _write_coord(coord_dir / "a.png", _outfit(hair=11, top=1))
+    task = _task(chara_dir, coord_dir, hair=False)
+    task.match_chara_hair = False
+    with mock.patch.object(gc, "collect_chara_hairs", side_effect=AssertionError("hair pass ran")), \
+            mock.patch.object(gc, "collect_chara_digests", return_value={}):
+        task.run()
+    assert _layout(coord_dir) == {"a.png": ""}
+
+
+def test_coordinate_already_in_its_hair_characters_folder_is_not_moved(tmp_path):
+    coord_dir = _run_hair_first(tmp_path, {"Alice/a.png": _outfit(hair=11, top=1)},
+                                _chara_hairs(tmp_path, Alice=[("11",)]))
+    assert _layout(coord_dir) == {"a.png": "Alice"}
