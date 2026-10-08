@@ -56,6 +56,13 @@ def test_hair_is_the_hair_category_accessory_on_the_head_top():
     assert outfits.outfit_hair(_outfit(hair=5, hair_parent="a_n_waist"), []) == ()
 
 
+def test_hair_on_the_head_side_node_counts_too():
+    # Some mods attach their hair / ornament sets to a_n_headside instead of a_n_headtop.
+    assert outfits.outfit_hair(_outfit(hair=5, hair_parent="a_n_headside"), []) == ("5",)
+    mixed = _outfit(hair=5, extra=({"type": 122, "id": 8, "parentKey": "a_n_headside"},))
+    assert outfits.outfit_hair(mixed, []) == ("5", "8")
+
+
 def test_hair_keeps_slot_order_main_hair_first():
     ornament = {"type": 122, "id": 34, "parentKey": "a_n_headtop"}
     extra = ({"type": 124, "id": 3, "parentKey": "a_n_bust"}, ornament, {"type": 122, "id": 34, "parentKey": "a_n_headtop"})

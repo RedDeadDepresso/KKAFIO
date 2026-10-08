@@ -274,7 +274,7 @@ def signature_difference(a: OutfitSignature, b: OutfitSignature) -> tuple[int, i
 #
 # A coordinate card has no hairstyle of its own: its hair is a hair-category
 # accessory (type 122, ChaListDefine.CategoryNo.ao_hair) worn on the head-top
-# node, e.g. a modded "<name> hair" item. A coordinate's hair is the list of
+# or head-side node, e.g. a modded "<name> hair" item. A coordinate's hair is the list of
 # those accessories' items (after the usual modded-ID resolution) in slot
 # order, so a recoloured or nudged hair is still the same hair. The first one
 # is the main hair; later ones are usually ornaments that change from outfit to
@@ -283,11 +283,13 @@ def signature_difference(a: OutfitSignature, b: OutfitSignature) -> tuple[int, i
 
 HAIR_CACHE_FILE = "kkafio_coord_hair_cache.json"
 
-HAIR_CACHE_VERSION = 2
+HAIR_CACHE_VERSION = 3
 
 HAIR_ACCESSORY_TYPE = 122
 
-HAIR_PARENT_KEYS = frozenset({"a_n_headtop"})
+# Head-top is where most hairstyles sit; some mods (e.g. Phantom's hair/ornament sets) attach
+# theirs to the head-side node instead, so both count.
+HAIR_PARENT_KEYS = frozenset({"a_n_headtop", "a_n_headside"})
 
 
 def outfit_hair(outfit: dict, infos: list[dict], outfit_index: int | None = None) -> tuple[str, ...]:
