@@ -636,6 +636,28 @@
         }
       ]
     },
+    "GroupCoordinatesGroupByHair": {
+      "type": "switch",
+      "label": "$option.GroupCoordinatesGroupByHair.label",
+      "description": "$option.GroupCoordinatesGroupByHair.description",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.GroupCoordinatesGroupByHair.case.Yes.label",
+          "pipeline_override": {
+            "GroupByHair": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.GroupCoordinatesGroupByHair.case.No.label",
+          "pipeline_override": {
+            "GroupByHair": false
+          }
+        }
+      ]
+    },
     "GroupCoordinatesAccessoryTolerance": {
       "type": "input",
       "label": "$option.GroupCoordinatesAccessoryTolerance.label",
@@ -644,12 +666,28 @@
         {
           "name": "tolerance",
           "label": "$option.GroupCoordinatesAccessoryTolerance.input.tolerance.label",
-          "default": "0",
+          "default": "15",
           "pipeline_type": "string"
         }
       ],
       "pipeline_override": {
         "AccessoryTolerance": "{tolerance}"
+      }
+    },
+    "GroupCoordinatesClothesTolerance": {
+      "type": "input",
+      "label": "$option.GroupCoordinatesClothesTolerance.label",
+      "description": "$option.GroupCoordinatesClothesTolerance.description",
+      "inputs": [
+        {
+          "name": "tolerance",
+          "label": "$option.GroupCoordinatesClothesTolerance.input.tolerance.label",
+          "default": "1",
+          "pipeline_type": "string"
+        }
+      ],
+      "pipeline_override": {
+        "ClothesTolerance": "{tolerance}"
       }
     },
     "DeleteEmptyFolders": {
@@ -1153,6 +1191,11 @@
       "default_expand": true
     },
     {
+      "name": "coordinate-management",
+      "label": "$group.coordinate-management.label",
+      "default_expand": true
+    },
+    {
       "name": "mod-management",
       "label": "$group.mod-management.label",
       "default_expand": true
@@ -1299,13 +1342,15 @@
       "entry": "GroupCoordinates",
       "default_check": false,
       "description": "$task.GroupCoordinates.description",
-      "group": ["chara-management"],
+      "group": ["coordinate-management"],
       "option": [
         "CharaDir",
         "CoordDir",
         "UseCache",
         "GroupCoordinatesIncludeSubfolders",
-        "GroupCoordinatesAccessoryTolerance"
+        "GroupCoordinatesClothesTolerance",
+        "GroupCoordinatesAccessoryTolerance",
+        "GroupCoordinatesGroupByHair"
       ]
     },
     {

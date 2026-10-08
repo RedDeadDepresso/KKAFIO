@@ -191,26 +191,33 @@ def chara_outfit_digests(kc) -> set[str]:
 
 
 # ---------------------------------------------------------------------------
-# Fuzzy matching: same clothes, a few accessories different
+# Fuzzy matching: a few clothes parts and/or accessories different
 # ---------------------------------------------------------------------------
 #
 # An outfit digest is all-or-nothing, so it can't tell "the same outfit with one
 # accessory swapped" from a different outfit. For that, an outfit is also reduced
-# to a *signature*: (digest of its normalised clothes, sorted digests of each of
-# its non-empty accessories). Two outfits are then compared by requiring identical
-# clothes and counting how many accessories differ.
+# to a *signature*: (clothes tokens, sorted accessory tokens). Two outfits are then
+# compared by counting how many clothes parts and how many accessories differ.
 #
-# Accessories are digested one by one *after* the same UAR normalisation the
-# outfit digest uses, and without their slot number, so moving an accessory to
-# another slot doesn't count as a difference. Only the clothes and accessory
-# parts are compared (as for the digest); other accessory-block fields are ignored.
+# Clothes tokens: one per clothes slot ("<slot>:<digest of that part>", so a part
+# differs if its item, colours, patterns or anything else differ) and one for the
+# rest of the clothes data (sub-parts, hide options). Clothes are compared slot by
+# slot, so wearing the same item in another slot is a difference.
+#
+# Accessory tokens: one digest per non-empty accessory, *without* its slot number,
+# so moving an accessory to another slot isn't a difference. A nudged or recoloured
+# accessory is a different token.
+#
+# Everything is digested *after* the same normalisation the outfit digest uses.
+# Only the clothes and accessory parts are compared (as for the digest); other
+# accessory-block fields are ignored.
 
 SIG_CACHE_FILE = "kkafio_coord_sig_cache.json"
 
-SIG_CACHE_VERSION = 3
+SIG_CACHE_VERSION = 4
 
-# (clothes digest, sorted accessory digests)
-OutfitSignature = tuple[str, tuple[str, ...]]
+# (clothes tokens, sorted accessory tokens)
+OutfitSignature = tuple[tuple[str, ...], tuple[str, ...]]
 
 
 def _canonical(obj) -> bytes:
@@ -218,14 +225,18 @@ def _canonical(obj) -> bytes:
 
 
 def outfit_signature(outfit: dict, infos: list[dict], outfit_index: int | None = None) -> OutfitSignature:
-    """(clothes digest, sorted accessory digests) of an outfit; see the section comment above.
+    """(clothes tokens, sorted accessory tokens) of an outfit; see the section comment above.
     `infos` / `outfit_index` are as for outfit_digest()."""
     import xxhash
 
+    def token(obj) -> str:
+        return xxhash.xxh3_64_hexdigest(_canonical(obj))
+
     clothes, accessory = _normalize_outfit(outfit, _resolve_lookup(infos, outfit_index))
+    clothes_tokens = [f"{i}:{token(part)}" for i, part in enumerate(clothes.get("parts", []))]
+    clothes_tokens.append("r:" + token({k: v for k, v in clothes.items() if k != "parts"}))
     parts = [p for p in accessory.get("parts", []) if isinstance(p, dict) and not _is_empty_accessory(p)]
-    return (xxhash.xxh3_128_hexdigest(_canonical(clothes)),
-            tuple(sorted(xxhash.xxh3_64_hexdigest(_canonical(p)) for p in parts)))
+    return tuple(clothes_tokens), tuple(sorted(token(p) for p in parts))
 
 
 def chara_outfit_signatures(kc) -> list[OutfitSignature]:
@@ -245,11 +256,52 @@ def accessory_difference(a: Iterable[str], b: Iterable[str]) -> int:
     return max(sum((ca - cb).values()), sum((cb - ca).values()))
 
 
-def signature_difference(a: OutfitSignature, b: OutfitSignature) -> int | None:
-    """Accessory difference between two outfits, or None if their clothes differ."""
-    if a[0] != b[0]:
-        return None
-    return accessory_difference(a[1], b[1])
+def clothes_difference(a: Iterable[str], b: Iterable[str]) -> int:
+    """How many clothes parts differ between two clothes token lists (a part of the
+    outfit's remaining clothes data, such as sub-parts, counts as one more)."""
+    sa, sb = set(a), set(b)
+    return max(len(sa), len(sb)) - len(sa & sb)
+
+
+def signature_difference(a: OutfitSignature, b: OutfitSignature) -> tuple[int, int]:
+    """(clothes parts differing, accessories differing) between two outfits."""
+    return clothes_difference(a[0], b[0]), accessory_difference(a[1], b[1])
+
+
+# ---------------------------------------------------------------------------
+# Hair
+# ---------------------------------------------------------------------------
+#
+# A coordinate card has no hairstyle of its own: its hair is a hair-category
+# accessory (type 122, ChaListDefine.CategoryNo.ao_hair) worn on the head-top
+# node, e.g. a modded "<name> hair" item. A coordinate's hair is the list of
+# those accessories' items (after the usual modded-ID resolution) in slot
+# order, so a recoloured or nudged hair is still the same hair. The first one
+# is the main hair; later ones are usually ornaments that change from outfit to
+# outfit (ribbons, bunny ears...). Other hair-category accessories, such as hair
+# ties on other nodes or tails, are not part of it.
+
+HAIR_CACHE_FILE = "kkafio_coord_hair_cache.json"
+
+HAIR_CACHE_VERSION = 2
+
+HAIR_ACCESSORY_TYPE = 122
+
+HAIR_PARENT_KEYS = frozenset({"a_n_headtop"})
+
+
+def outfit_hair(outfit: dict, infos: list[dict], outfit_index: int | None = None) -> tuple[str, ...]:
+    """Items of the hair accessories of an outfit in slot order, the main hair first
+    (empty if it has none). `infos` / `outfit_index` are as for outfit_digest()."""
+    _, accessory = _normalize_outfit(outfit, _resolve_lookup(infos, outfit_index))
+    items: list[str] = []
+    for part in accessory.get("parts", []):
+        if (isinstance(part, dict) and part.get("type") == HAIR_ACCESSORY_TYPE
+                and part.get("parentKey") in HAIR_PARENT_KEYS):
+            item = str(part.get("id"))
+            if item not in items:
+                items.append(item)
+    return tuple(items)
 
 
 def _read_coord_outfit(path: Path) -> tuple[dict, list[dict]] | None:
@@ -279,14 +331,25 @@ def _coord_file_digest(path: Path) -> str | None:
 
 
 def _coord_file_signature(path: Path) -> list | None:
-    """[clothes digest, [accessory digests]] of a coordinate card file (a list, so it
+    """[clothes tokens, accessory tokens] of a coordinate card file (a list, so it
     survives the JSON cache unchanged), or None if it isn't a readable coordinate card."""
     try:
         loaded = _read_coord_outfit(path)
         if not loaded:
             return None
         clothes, accessories = outfit_signature(*loaded)
-        return [clothes, list(accessories)]
+        return [list(clothes), list(accessories)]
+    except Exception:
+        return None
+
+
+def _coord_file_hair(path: Path) -> list[str] | None:
+    """Hair items of a coordinate card file in slot order (a list, so it survives the JSON
+    cache unchanged; empty if it has no hair accessory), or None if it isn't a readable
+    coordinate card."""
+    try:
+        loaded = _read_coord_outfit(path)
+        return list(outfit_hair(*loaded)) if loaded else None
     except Exception:
         return None
 
@@ -376,7 +439,7 @@ def build_coord_sig_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, 
     coord_dir/kkafio_coord_sig_cache.json."""
     raw = _build_cache(coord_dir, use_cache, file_name=SIG_CACHE_FILE, version=SIG_CACHE_VERSION,
                        section="sigs", parse=_coord_file_signature, missing=None)
-    return {sp: (v[0], tuple(v[1])) if v else None for sp, v in raw.items()}
+    return {sp: (tuple(v[0]), tuple(v[1])) if v else None for sp, v in raw.items()}
 
 
 def find_matching_coords(kc, coord_map: dict[str, str]) -> list[Path]:
@@ -385,3 +448,12 @@ def find_matching_coords(kc, coord_map: dict[str, str]) -> list[Path]:
     wanted = chara_outfit_digests(kc)
     return sorted(Path(sp) for sp, digest in coord_map.items()
                   if digest in wanted and Path(sp).exists())
+
+
+def build_coord_hair_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, tuple[str, ...] | None]:
+    """Return {str(path): hair items} for every PNG under coord_dir (None for PNGs that
+    aren't coordinate cards, an empty tuple for coordinates without hair). Cached like
+    build_coord_cache(), in coord_dir/kkafio_coord_hair_cache.json."""
+    raw = _build_cache(coord_dir, use_cache, file_name=HAIR_CACHE_FILE, version=HAIR_CACHE_VERSION,
+                       section="hairs", parse=_coord_file_hair, missing=None)
+    return {sp: (tuple(v) if v is not None else None) for sp, v in raw.items()}

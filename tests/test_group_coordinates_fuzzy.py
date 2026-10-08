@@ -44,6 +44,19 @@ def test_signature_separates_clothes_from_accessories():
     assert a[0] == c[0] and a[1] != c[1]
 
 
+def test_clothes_tokens_are_per_slot():
+    def outfit(*ids):
+        o = _outfit()
+        o["clothes"]["parts"] = [{"id": i, "colorInfo": []} for i in ids]
+        return o
+    sig = lambda *ids: outfits.outfit_signature(outfit(*ids), [])[0]       # noqa: E731
+    assert len(sig(1, 2, 3)) == 4                                           # three slots + the rest
+    assert outfits.clothes_difference(sig(1, 2, 3), sig(1, 2, 3)) == 0
+    assert outfits.clothes_difference(sig(1, 2, 3), sig(1, 9, 3)) == 1
+    assert outfits.clothes_difference(sig(1, 2, 3), sig(3, 2, 1)) == 2      # same items, other slots
+    assert outfits.clothes_difference(sig(1, 2, 3), sig(7, 8, 9)) == 3
+
+
 def test_signature_resolves_modded_ids_like_the_digest_does():
     by_slot = outfits.outfit_signature(_outfit(top_id=1, accessories=((5, 1),)), _INFOS)
     by_local = outfits.outfit_signature(_outfit(top_id=1001, accessories=((1005, 1),)), _INFOS)
@@ -60,29 +73,59 @@ def test_accessory_difference_counts_changes_not_slots():
     assert d([], []) == 0
 
 
-def test_signature_difference_needs_identical_clothes():
+def test_signature_difference_counts_clothes_and_accessories_separately():
     sa = outfits.outfit_signature(_outfit(top_id=1), [])
     sb = outfits.outfit_signature(_outfit(top_id=2), [])
     sc = outfits.outfit_signature(_outfit(top_id=1, accessories=((5, 1),)), [])
-    assert outfits.signature_difference(sa, sb) is None
-    assert outfits.signature_difference(sa, sc) == 1
+    sd = outfits.outfit_signature(_outfit(top_id=2, accessories=((5, 1),)), [])
+    assert outfits.signature_difference(sa, sb) == (1, 0)
+    assert outfits.signature_difference(sa, sc) == (0, 1)
+    assert outfits.signature_difference(sa, sd) == (1, 1)
 
 
 # --- the matcher --------------------------------------------------------------------------------------
 
 def _sig(clothes, *accs):
-    return (clothes, tuple(sorted(accs)))
+    """A signature; `clothes` is a string of slot letters, e.g. "ABC" is three clothes slots."""
+    return tuple(f"{i}:{c}" for i, c in enumerate(clothes)), tuple(sorted(accs))
 
 
-def test_matcher_applies_tolerance_and_requires_same_clothes():
-    chara = {Path("Alice.png"): [_sig("C1", "a", "b", "c")]}
+def test_matcher_applies_accessory_tolerance_and_requires_same_clothes():
+    chara = {Path("Alice.png"): [_sig("ABC", "a", "b", "c")]}
     m = gc.fuzzy_matcher(chara, 1)
-    assert m(_sig("C1", "a", "b", "c")) == [("Alice", 0)]
-    assert m(_sig("C1", "a", "b", "x")) == [("Alice", 1)]
-    assert m(_sig("C1", "a", "b")) == [("Alice", 1)]
-    assert m(_sig("C1", "a", "x", "y")) == []                  # 2 differ, tolerance 1
-    assert m(_sig("C2", "a", "b", "c")) == []                  # other clothes
-    assert gc.fuzzy_matcher(chara, 2)(_sig("C1", "a", "x", "y")) == [("Alice", 2)]
+    assert m(_sig("ABC", "a", "b", "c")) == [("Alice", 0, 0)]
+    assert m(_sig("ABC", "a", "b", "x")) == [("Alice", 0, 1)]
+    assert m(_sig("ABC", "a", "b")) == [("Alice", 0, 1)]
+    assert m(_sig("ABC", "a", "x", "y")) == []                  # 2 differ, tolerance 1
+    assert m(_sig("ABD", "a", "b", "c")) == []                  # other clothes
+    assert gc.fuzzy_matcher(chara, 2)(_sig("ABC", "a", "x", "y")) == [("Alice", 0, 2)]
+
+
+def test_matcher_applies_clothes_tolerance_separately():
+    chara = {Path("Alice.png"): [_sig("ABCD", "a", "b")]}
+    m = gc.fuzzy_matcher(chara, 1, 1)
+    assert m(_sig("ABCX", "a", "b")) == [("Alice", 1, 0)]
+    assert m(_sig("ABCX", "a", "x")) == [("Alice", 1, 1)]
+    assert m(_sig("ABXY", "a", "b")) == []                      # 2 clothes parts, limit 1
+    assert m(_sig("ABCX", "a", "x", "y")) == []                 # 2 accessories, limit 1
+    assert gc.fuzzy_matcher(chara, 0, 1)(_sig("ABCX", "a", "x")) == []      # accessory limit 0
+    assert gc.fuzzy_matcher(chara, 0, 2)(_sig("ABXY", "a", "b")) == [("Alice", 2, 0)]
+
+
+def test_clothes_tolerance_does_not_miss_matches_the_index_could_skip():
+    """Brute-force cross-check of the candidate lookup (shared common tokens, k = 0..3)."""
+    import random
+    rng = random.Random(1)
+    letters = "ABCDEFGH"
+    chara = {Path(f"c{n:02d}.png"): [_sig("".join(rng.choice("AAAB" if i == 0 else letters) for i in range(6)))
+                                     for _ in range(3)] for n in range(25)}
+    for k in range(4):
+        m = gc.fuzzy_matcher(chara, 0, k)
+        for _ in range(60):
+            q = _sig("".join(rng.choice("AAAB" if i == 0 else letters) for i in range(6)))
+            expected = sorted({p.stem for p, sigs in chara.items()
+                               for s in sigs if outfits.clothes_difference(q[0], s[0]) <= k})
+            assert sorted(n for n, _, _ in m(q)) == expected, (k, q)
 
 
 def test_matcher_prefers_fewest_differences_then_filename():
@@ -90,25 +133,32 @@ def test_matcher_prefers_fewest_differences_then_filename():
              Path("Bob.png"): [_sig("C", "a", "x")],
              Path("Amy.png"): [_sig("C", "a", "y")]}
     m = gc.fuzzy_matcher(chara, 2)
-    assert m(_sig("C", "a", "b")) == [("Zed", 0), ("Amy", 1), ("Bob", 1)]
+    assert m(_sig("C", "a", "b")) == [("Zed", 0, 0), ("Amy", 0, 1), ("Bob", 0, 1)]
+
+
+def test_matcher_counts_clothes_and_accessory_differences_together():
+    chara = {Path("Amy.png"): [_sig("AB", "a", "b")], Path("Zed.png"): [_sig("AC", "a", "b", "c")]}
+    q = _sig("AC", "a", "b")
+    assert gc.fuzzy_matcher(chara, 1, 1)(q) == [("Zed", 0, 1), ("Amy", 1, 0)]   # total 1 each: fewer clothes diffs first
 
 
 def test_matcher_uses_a_characters_closest_outfit():
     chara = {Path("Amy.png"): [_sig("C", "a", "b", "c"), _sig("C", "a", "b", "c", "d")]}
-    assert gc.fuzzy_matcher(chara, 3)(_sig("C", "a", "b", "c", "d")) == [("Amy", 0)]
+    assert gc.fuzzy_matcher(chara, 3)(_sig("C", "a", "b", "c", "d")) == [("Amy", 0, 0)]
 
 
 # --- the task ------------------------------------------------------------------------------------------
 
-def _task(chara_dir, coord_dir, tolerance, sub=True, use_cache=True):
+def _task(chara_dir, coord_dir, tolerance, sub=True, use_cache=True, clothes=0):
     cfg = {"UseCache": use_cache, "IncludeSubfolders": sub, "AccessoryTolerance": tolerance,
+           "ClothesTolerance": clothes,
            "CharaDir": str(chara_dir), "CoordDir": str(coord_dir)}
     config = SimpleNamespace(group_coordinates=cfg, game_path={
         "charaFemale": chara_dir, "charaMale": chara_dir, "coordinate": coord_dir})
     return gc.GroupCoordinates(config, None)
 
 
-def _run(tmp_path, chara_sigs, coord_sigs, tolerance, sub=True):
+def _run(tmp_path, chara_sigs, coord_sigs, tolerance, sub=True, clothes=0):
     chara_dir, coord_dir = tmp_path / "chara", tmp_path / "coord"
     chara_dir.mkdir(exist_ok=True)
     coord_dir.mkdir(exist_ok=True)
@@ -121,7 +171,7 @@ def _run(tmp_path, chara_sigs, coord_sigs, tolerance, sub=True):
                            return_value={str(coord_dir / n): s for n, s in coord_sigs.items()}), \
          mock.patch.object(gc, "collect_chara_digests", side_effect=AssertionError("exact path used")), \
          mock.patch.object(gc, "build_coord_cache", side_effect=AssertionError("exact path used")):
-        _task(chara_dir, coord_dir, tolerance, sub).run()
+        _task(chara_dir, coord_dir, tolerance, sub, clothes=clothes).run()
     return coord_dir
 
 
@@ -133,6 +183,23 @@ def test_near_match_moves_and_non_match_stays(tmp_path):
     assert (out / "Alice" / "exact.png").exists() and (out / "Alice" / "swap.png").exists()
     for n in ("far.png", "clothes.png", "notcoord.png"):
         assert (out / n).exists()
+
+
+def test_clothes_tolerance_moves_variants_with_different_clothes(tmp_path):
+    out = _run(tmp_path, {"Alice.png": [_sig("ABCD", "a", "b")]},
+               {"one.png": _sig("ABCX", "a", "b"), "two.png": _sig("ABXY", "a", "b"),
+                "both.png": _sig("ABCX", "a", "x"), "acc_only.png": _sig("ABCD", "a", "x")},
+               tolerance=0, clothes=1)
+    assert (out / "Alice" / "one.png").exists()
+    assert (out / "two.png").exists()                           # 2 clothes parts, limit 1
+    assert (out / "both.png").exists() and (out / "acc_only.png").exists()   # accessory limit is still 0
+
+
+def test_both_tolerances_together(tmp_path):
+    out = _run(tmp_path, {"Alice.png": [_sig("ABCD", "a", "b")]},
+               {"both.png": _sig("ABCX", "a", "x"), "too_far.png": _sig("ABXY", "a", "x")},
+               tolerance=1, clothes=1)
+    assert (out / "Alice" / "both.png").exists() and (out / "too_far.png").exists()
 
 
 def test_best_match_wins_over_filename_order(tmp_path):
@@ -168,6 +235,13 @@ def test_tolerance_parsing(tmp_path, raw, expected):
 def test_bad_tolerance_is_an_input_error(tmp_path, raw):
     with pytest.raises(InputError):
         _task(tmp_path, tmp_path, raw)._accessory_tolerance()
+    with pytest.raises(InputError):
+        _task(tmp_path, tmp_path, 0, clothes=raw)._clothes_tolerance()
+
+
+def test_clothes_tolerance_parsing(tmp_path):
+    assert _task(tmp_path, tmp_path, 0, clothes="2")._clothes_tolerance() == 2
+    assert _task(tmp_path, tmp_path, 0, clothes=None)._clothes_tolerance() == 0
 
 
 def test_zero_tolerance_keeps_the_exact_path(tmp_path):
@@ -212,6 +286,7 @@ def test_real_coordinate_files_end_to_end(tmp_path):
     _write_coord(coord_dir / "reslotted.png", _outfit(accessories=((7, 1), (0, 120), (6, 1), (5, 1))))
     _write_coord(coord_dir / "two_off.png", _outfit(accessories=((5, 1), (9, 1), (10, 1))))
     _write_coord(coord_dir / "other_clothes.png", _outfit(top_id=2, accessories=((5, 1), (6, 1), (7, 1))))
+    _write_coord(coord_dir / "other_clothes_and_acc.png", _outfit(top_id=2, accessories=((5, 1), (6, 1), (9, 1))))
     (coord_dir / "stray.png").write_bytes(cf.png_bytes())
 
     sigs = outfits.build_coord_sig_cache(coord_dir, use_cache=True)
@@ -226,8 +301,15 @@ def test_real_coordinate_files_end_to_end(tmp_path):
 
     moved = sorted(p.name for p in (coord_dir / "Alice").iterdir())
     assert moved == ["one_added.png", "one_swapped.png", "reslotted.png", "same.png"]
-    for n in ("two_off.png", "other_clothes.png", "stray.png"):
+    for n in ("two_off.png", "other_clothes.png", "other_clothes_and_acc.png", "stray.png"):
         assert (coord_dir / n).exists()
+
+    # with a clothes tolerance of 1 (and accessory tolerance 1) the different-top variants join in
+    with mock.patch.object(gc, "collect_chara_signatures", return_value=chara_sigs):
+        _task(chara_dir, coord_dir, 1, clothes=1).run()
+    assert (coord_dir / "Alice" / "other_clothes.png").exists()
+    assert (coord_dir / "Alice" / "other_clothes_and_acc.png").exists()
+    assert (coord_dir / "two_off.png").exists()                 # still 2 accessories off
 
     # the signature cache followed the moves, so a second run re-parses nothing
     with mock.patch.object(outfits, "_coord_file_signature", side_effect=AssertionError("re-parsed")):

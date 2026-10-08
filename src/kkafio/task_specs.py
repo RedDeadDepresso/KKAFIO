@@ -472,9 +472,18 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Also process coordinate cards inside subfolders of the coordinate directory "
                        "(chara cards are always scanned recursively)"),
+            Value("--group-by-hair", key="GroupByHair", action="store_true", default=None,
+                  help="After matching outfits, group the coordinates still left in the coordinate folder by "
+                       "hair, using every coordinate including those in subfolders: a coordinate with the "
+                       "same hair as the coordinates of one folder moves there; ungrouped coordinates sharing "
+                       "hair with each other go into a new UNKNOWN_<n> folder"),
             Value("--accessory-tolerance", key="AccessoryTolerance", type=int, metavar="N", default=None,
                   help="Also match a coordinate that has the same clothes as one of a character's outfits "
                        "but up to N accessories added, removed or swapped (default: 0, exact copies only)"),
+            Value("--clothes-tolerance", key="ClothesTolerance", type=int, metavar="N", default=None,
+                  help="Also match a coordinate that has up to N clothes parts (top, bottom, gloves, ...) "
+                       "different in item or colours from one of a character's outfits "
+                       "(default: 0). Combines with --accessory-tolerance"),
             Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom chara directory (default: the game's female and male chara folders)"),
             Value("--coord-dir", "--input", "-i", key="CoordDir", ignore_blank=True, metavar="DIR",

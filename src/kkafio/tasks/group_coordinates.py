@@ -13,10 +13,21 @@ filename), unless it already sits in the folder of one of them, in which case
 it stays put.
 
 By default a coordinate must be an exact copy of an outfit. With an Accessory
-Tolerance of N > 0 it may instead be the same clothes with up to N accessories
-added, removed or swapped (accessories are compared regardless of their slot).
-The clothes must still match exactly. When several characters match, the one
-with the fewest differing accessories wins, then the first by filename.
+Tolerance of N > 0 it may instead have up to N accessories added, removed or
+swapped (accessories are compared regardless of their slot; a nudged or
+recoloured one counts as different). With a Clothes Tolerance of M > 0 up to M
+clothes parts (slots such as top, bottom, gloves, pantyhose...) may differ in
+item, colours or patterns. The two limits apply separately. When several
+characters match, the one with the fewest differences in total wins, then the
+first by filename.
+
+With Group By Hair, coordinates that are still ungrouped afterwards (left directly
+in the coordinate folder) are grouped by their hair (see same_hair), using every
+coordinate card including those in subfolders: an ungrouped coordinate with the same hair as the
+coordinates of one folder moves into that folder, and ungrouped coordinates that
+share hair with each other but with no folder move together into a new
+UNKNOWN_<n> folder. Hair that appears in several folders is ambiguous, so those
+coordinates stay where they are.
 
 The chara folder(s) are always scanned recursively. With Include Subfolders off
 (the default) only coordinates directly inside the coordinate folder are
@@ -34,9 +45,11 @@ from pathlib import Path
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.cards.outfits import (
-    COORD_CACHE_FILE, COORD_CACHE_VERSION, SIG_CACHE_FILE, SIG_CACHE_VERSION, OutfitSignature,
-    accessory_difference, build_coord_cache, build_coord_sig_cache, chara_outfit_digests,
-    chara_outfit_signatures,
+    COORD_CACHE_FILE, COORD_CACHE_VERSION, HAIR_CACHE_FILE, HAIR_CACHE_VERSION, SIG_CACHE_FILE,
+    SIG_CACHE_VERSION, OutfitSignature,
+    accessory_difference, build_coord_cache, build_coord_hair_cache, build_coord_sig_cache,
+    chara_outfit_digests,
+    chara_outfit_signatures, clothes_difference,
 )
 from kkafio.core.errors import InputError
 from kkafio.core.logger import logger
@@ -45,7 +58,7 @@ from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 TAG = "GRPCOORD"
 
 CHARA_OUTFIT_CACHE_FILE = "kkafio_chara_outfit_cache.json"
-CHARA_OUTFIT_CACHE_VERSION = 3
+CHARA_OUTFIT_CACHE_VERSION = 4
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 _RESERVED = {"CON", "PRN", "AUX", "NUL",
@@ -77,7 +90,7 @@ def _load_outfit_cache(coord_dir: Path) -> dict[str, dict]:
 
 def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
                  need_sigs: bool) -> dict[Path, dict]:
-    """{chara PNG: {"digests": [...], "sigs": [[clothes, [accessories]], ...]}} for every
+    """{chara PNG: {"digests": [...], "sigs": [[[clothes tokens], [accessories]], ...]}} for every
     chara card under chara_dirs. Both are always computed for cards that get read, so
     the cache can serve either mode; entries cached without "sigs" are only re-read
     when `need_sigs`."""
@@ -110,7 +123,7 @@ def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
         from kkloader import KoikatuCharaData
         kc = KoikatuCharaData.load(str(png))
         return png, fp, {"digests": sorted(chara_outfit_digests(kc)),
-                         "sigs": [[clothes, list(accs)] for clothes, accs in chara_outfit_signatures(kc)]}
+                         "sigs": [[list(clothes), list(accs)] for clothes, accs in chara_outfit_signatures(kc)]}
 
     if to_read:
         workers = min(32, (os.cpu_count() or 4) * 2)
@@ -147,7 +160,7 @@ def collect_chara_signatures(chara_dirs: list[Path], coord_dir: Path,
                              use_cache: bool) -> dict[Path, list[OutfitSignature]]:
     """{chara PNG: its outfit signatures} for every chara card under chara_dirs."""
     scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=True)
-    return {png: [(clothes, tuple(accs)) for clothes, accs in e["sigs"]] for png, e in scanned.items()}
+    return {png: [(tuple(clothes), tuple(accs)) for clothes, accs in e["sigs"]] for png, e in scanned.items()}
 
 
 def _sorted_charas(charas) -> list[tuple[Path, str]]:
@@ -163,7 +176,7 @@ def _sorted_charas(charas) -> list[tuple[Path, str]]:
 
 
 def exact_matcher(chara_digests: dict[Path, set[str]]):
-    """matches(digest) -> [(folder name, 0)] for coordinates that are an exact copy of an outfit."""
+    """matches(digest) -> [(folder name, 0, 0)] for coordinates that are an exact copy of an outfit."""
     # digest -> chara folder names that own it (sorted by chara filename for a stable pick)
     owners: dict[str, list[str]] = {}
     for chara, name in _sorted_charas(chara_digests):
@@ -171,30 +184,187 @@ def exact_matcher(chara_digests: dict[Path, set[str]]):
             lst = owners.setdefault(digest, [])
             if name not in lst:
                 lst.append(name)
-    return lambda digest: [(name, 0) for name in owners.get(digest, [])]
+    return lambda digest: [(name, 0, 0) for name in owners.get(digest, [])]
 
 
-def fuzzy_matcher(chara_sigs: dict[Path, list[OutfitSignature]], tolerance: int):
-    """matches(signature) -> [(folder name, accessory difference)], best first, for
-    coordinates with the same clothes as an outfit and at most `tolerance` accessories
-    different. Ties go to the character that sorts first by filename."""
-    # clothes digest -> [(folder name, accessory digests)]
-    by_clothes: dict[str, list[tuple[str, tuple[str, ...]]]] = defaultdict(list)
+def fuzzy_matcher(chara_sigs: dict[Path, list[OutfitSignature]], accessory_tolerance: int,
+                  clothes_tolerance: int = 0):
+    """matches(signature) -> [(folder name, clothes parts differing, accessories differing)],
+    best first, for coordinates with at most `clothes_tolerance` clothes parts and at most
+    `accessory_tolerance` accessories different from one of a character's outfits. Best is
+    the fewest differences in total (then fewest clothes differences); ties go to the
+    character that sorts first by filename."""
+    outfits: list[tuple[str, tuple[str, ...], tuple[str, ...]]] = []      # (folder name, clothes, accessories)
     rank: dict[str, int] = {}
     for chara, name in _sorted_charas(chara_sigs):
         rank.setdefault(name, len(rank))
         for clothes, accessories in chara_sigs[chara]:
-            by_clothes[clothes].append((name, accessories))
+            outfits.append((name, clothes, accessories))
 
-    def matches(sig: OutfitSignature) -> list[tuple[str, int]]:
-        best: dict[str, int] = {}
-        for name, accessories in by_clothes.get(sig[0], ()):
-            diff = accessory_difference(sig[1], accessories)
-            if diff <= tolerance and diff < best.get(name, tolerance + 1):
-                best[name] = diff
-        return sorted(best.items(), key=lambda item: (item[1], rank[item[0]]))
+    # Candidate lookup, so a big library isn't compared outfit by outfit with every coordinate.
+    by_clothes: dict[tuple[str, ...], list[int]] = defaultdict(list)       # exact clothes (tolerance 0)
+    postings: dict[str, list[int]] = defaultdict(list)                     # clothes token -> outfits
+    for n, (_, clothes, _) in enumerate(outfits):
+        if clothes_tolerance:
+            for token in clothes:
+                postings[token].append(n)
+        else:
+            by_clothes[clothes].append(n)
+
+    def candidates(clothes: tuple[str, ...]):
+        if not clothes_tolerance:
+            return by_clothes.get(clothes, ())
+        # An outfit with at most k clothes parts different shares at least one of any k+1
+        # of this coordinate's tokens, so the k+1 rarest tokens are enough to find them.
+        rarest = sorted(set(clothes), key=lambda t: len(postings.get(t, ())))[:clothes_tolerance + 1]
+        return {n for token in rarest for n in postings.get(token, ())}
+
+    def matches(sig: OutfitSignature) -> list[tuple[str, int, int]]:
+        best: dict[str, tuple[int, int]] = {}
+        for n in candidates(sig[0]):
+            name, clothes, accessories = outfits[n]
+            clothes_diff = clothes_difference(sig[0], clothes)
+            if clothes_diff > clothes_tolerance:
+                continue
+            accessory_diff = accessory_difference(sig[1], accessories)
+            if accessory_diff > accessory_tolerance:
+                continue
+            found = (clothes_diff + accessory_diff, clothes_diff)
+            if name not in best or found < best[name]:
+                best[name] = found
+        ranked = sorted(best.items(), key=lambda item: (item[1], rank[item[0]]))
+        return [(name, clothes_diff, total - clothes_diff) for name, (total, clothes_diff) in ranked]
 
     return matches
+
+
+UNKNOWN_FOLDER_PREFIX = "UNKNOWN_"
+
+_UNKNOWN_FOLDER_RE = re.compile(rf"^{UNKNOWN_FOLDER_PREFIX}(\d+)$", re.IGNORECASE)
+
+
+def next_unknown_number(coord_dir: Path) -> int:
+    """The number for the next UNKNOWN_<n> folder: one above the highest existing one."""
+    highest = 0
+    for entry in coord_dir.iterdir():
+        match = _UNKNOWN_FOLDER_RE.match(entry.name)
+        if match and entry.is_dir():
+            highest = max(highest, int(match.group(1)))
+    return highest + 1
+
+
+def same_hair(a: tuple[str, ...], b: tuple[str, ...]) -> bool:
+    """Whether two coordinates (hair items in slot order, see outfit_hair) have the same hair:
+    each one's main hair (its first hair accessory) is also worn in the other. Extra
+    ornaments therefore don't matter, but an ornament-only coordinate doesn't match one that
+    has that ornament plus a real hairstyle, and neither do two different hairstyles that
+    happen to share an ornament."""
+    return bool(a) and bool(b) and a[0] in b and b[0] in a
+
+
+def plan_hair_groups(coord_hair: dict[Path, tuple[str, ...] | None], coord_dir: Path,
+                     first_unknown: int = 1) -> dict:
+    """Decide where ungrouped coordinates (directly in coord_dir) go, by hair.
+
+    `coord_hair` maps every coordinate card under coord_dir, subfolders included, to its
+    hair items (None: not a coordinate card, empty: no hair). A folder named UNKNOWN_<n>
+    only stands in for a real folder, so when a hair is used in both, the real folder(s)
+    decide. Returns a dict with
+      "moves":     {coordinate: destination folder name}
+      "ambiguous": {coordinate: the folders whose coordinates share its hair}  (left alone)
+      "no_hair":   [ungrouped coordinates without hair]
+      "lone":      {ungrouped coordinate: its hair} whose hair matches nothing else
+      "grouped":   how many coordinates are already in folders
+    """
+    # item -> (top-level folder, hair) of the grouped coordinates wearing it as hair
+    grouped_by_item: dict[str, list[tuple[str, tuple[str, ...]]]] = defaultdict(list)
+    ungrouped: list[tuple[Path, tuple[str, ...]]] = []
+    no_hair: list[Path] = []
+    grouped = 0
+    for path in sorted(coord_hair):
+        hair = coord_hair[path]
+        if hair is None:
+            continue
+        parts = path.relative_to(coord_dir).parts
+        if len(parts) > 1:                       # in a folder; the top-level one names the group
+            grouped += 1
+            for item in hair:
+                grouped_by_item[item].append((parts[0], hair))
+        elif hair:
+            ungrouped.append((path, hair))
+        else:
+            no_hair.append(path)
+
+    moves: dict[Path, str] = {}
+    ambiguous: dict[Path, list[str]] = {}
+    pending: list[tuple[Path, tuple[str, ...]]] = []
+    for path, hair in ungrouped:
+        folders = {folder for folder, other in grouped_by_item.get(hair[0], ()) if same_hair(hair, other)}
+        deciding = {f for f in folders if not _UNKNOWN_FOLDER_RE.match(f)} or folders
+        if not deciding:
+            pending.append((path, hair))
+        elif len(deciding) == 1:
+            moves[path] = next(iter(deciding))
+        else:
+            ambiguous[path] = sorted(deciding, key=str.casefold)
+
+    # The rest: ungrouped coordinates that share hair with each other form a new folder.
+    parent = list(range(len(pending)))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    pending_by_item: dict[str, list[int]] = defaultdict(list)
+    for i, (_, hair) in enumerate(pending):
+        for item in hair:
+            pending_by_item[item].append(i)
+    for i, (_, hair) in enumerate(pending):
+        for j in pending_by_item.get(hair[0], ()):
+            if j != i and same_hair(hair, pending[j][1]):
+                parent[find(i)] = find(j)
+
+    clusters: dict[int, list[int]] = defaultdict(list)
+    for i in range(len(pending)):
+        clusters[find(i)].append(i)
+
+    lone: dict[Path, tuple[str, ...]] = {}
+    number = first_unknown
+    for members in sorted(clusters.values(), key=lambda m: pending[m[0]][0]):    # pending is in path order
+        if len(members) < 2:
+            path, hair = pending[members[0]]
+            lone[path] = hair
+            continue
+        for i in members:
+            moves[pending[i][0]] = f"{UNKNOWN_FOLDER_PREFIX}{number}"
+        number += 1
+    return {"moves": moves, "ambiguous": ambiguous, "no_hair": no_hair, "lone": lone, "grouped": grouped}
+
+
+def _move_unique(src: Path, dest_dir: Path) -> Path:
+    """Move `src` into `dest_dir` (created if needed), numbering the name if taken; returns the new path."""
+    dest = dest_dir / src.name
+    counter = 1
+    while dest.exists():
+        dest = dest_dir / f"{src.stem}_{counter}{src.suffix}"
+        counter += 1
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dest))
+    return dest
+
+
+def _difference_note(clothes_diff: int, accessory_diff: int) -> str:
+    """" (1 clothes part, 2 accessories differ)" for the log; empty for an exact match."""
+    parts = []
+    if clothes_diff:
+        parts.append(f"{clothes_diff} clothes part{'s' if clothes_diff != 1 else ''}")
+    if accessory_diff:
+        parts.append(f"{accessory_diff} accessor{'ies' if accessory_diff != 1 else 'y'}")
+    if not parts:
+        return ""
+    return f" ({', '.join(parts)} differ{'s' if len(parts) == 1 and (clothes_diff or accessory_diff) == 1 else ''})"
 
 
 def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
@@ -202,7 +372,8 @@ def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
     so the next run doesn't re-parse them."""
     for file_name, version, sections in (
             (COORD_CACHE_FILE, COORD_CACHE_VERSION, ("files", "coords")),
-            (SIG_CACHE_FILE, SIG_CACHE_VERSION, ("files", "sigs"))):
+            (SIG_CACHE_FILE, SIG_CACHE_VERSION, ("files", "sigs")),
+            (HAIR_CACHE_FILE, HAIR_CACHE_VERSION, ("files", "hairs"))):
         cache_path = coord_dir / file_name
         try:
             data = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -229,18 +400,26 @@ class GroupCoordinates(BaseTask):
         self.coord_dir_str  : str  = cfg.get("CoordDir", "")
         self.include_subfolders: bool = cfg.get("IncludeSubfolders", False)
         self.accessory_tolerance_raw = cfg.get("AccessoryTolerance", 0)
+        self.clothes_tolerance_raw = cfg.get("ClothesTolerance", 0)
+        self.group_by_hair: bool = cfg.get("GroupByHair", False)
 
-    def _accessory_tolerance(self) -> int:
-        raw = self.accessory_tolerance_raw
+    @staticmethod
+    def _tolerance(raw, label: str) -> int:
         if raw is None:
             return 0
         try:
             value = int(str(raw).strip() or 0)
         except (TypeError, ValueError):
-            raise InputError(f"Accessory tolerance must be a whole number, got {raw!r}.", tag=TAG) from None
+            raise InputError(f"{label} tolerance must be a whole number, got {raw!r}.", tag=TAG) from None
         if value < 0:
-            raise InputError(f"Accessory tolerance can't be negative, got {value}.", tag=TAG)
+            raise InputError(f"{label} tolerance can't be negative, got {value}.", tag=TAG)
         return value
+
+    def _accessory_tolerance(self) -> int:
+        return self._tolerance(self.accessory_tolerance_raw, "Accessory")
+
+    def _clothes_tolerance(self) -> int:
+        return self._tolerance(self.clothes_tolerance_raw, "Clothes")
 
     def _coord_dir(self) -> Path:
         if self.coord_dir_str.strip():
@@ -257,30 +436,40 @@ class GroupCoordinates(BaseTask):
     def run(self) -> None:
         chara_dirs = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, TAG)
         coord_dir = self._coord_dir()
-        tolerance = self._accessory_tolerance()
+        accessory_tolerance = self._accessory_tolerance()
+        clothes_tolerance = self._clothes_tolerance()
+        fuzzy = bool(accessory_tolerance or clothes_tolerance)
 
         self.log_start(TAG, f"{coord_dir}  (characters: {', '.join(str(d) for d in chara_dirs)})")
         logger.info(TAG, f"Use cache: {self.use_cache}")
         logger.info(TAG, f"Include coordinate subfolders: {self.include_subfolders}")
-        logger.info(TAG, "Accessory tolerance: "
-                         + (f"{tolerance} (same clothes, up to {tolerance} accessory difference(s))"
-                            if tolerance else "0 (exact copies only)"))
+        logger.info(TAG, f"Accessory tolerance: {accessory_tolerance}, clothes tolerance: {clothes_tolerance}"
+                         + ("" if fuzzy else " (exact copies only)"))
+        logger.info(TAG, f"Group remaining coordinates by hair: {self.group_by_hair}")
         logger.line()
 
-        # matches(key) -> [(chara folder name, accessory difference)], best first;
+        self._group_by_outfits(chara_dirs, coord_dir, accessory_tolerance, clothes_tolerance)
+        if self.group_by_hair:
+            self._group_by_hair(coord_dir)
+
+    def _group_by_outfits(self, chara_dirs: list[Path], coord_dir: Path,
+                          accessory_tolerance: int, clothes_tolerance: int) -> bool:
+        """Move coordinates into the folder of the character whose outfit they match.
+        Returns False if there are no character cards to match against."""
+        # matches(key) -> [(chara folder name, clothes differences, accessory differences)], best first;
         # coord_keys maps each coordinate card's path to its key (falsy: not a coordinate card).
-        if tolerance:
+        if accessory_tolerance or clothes_tolerance:
             chara_sigs = collect_chara_signatures(chara_dirs, coord_dir, self.use_cache)
             if not chara_sigs:
-                logger.warning(TAG, "No character cards found — nothing to do")
-                return
-            matches = fuzzy_matcher(chara_sigs, tolerance)
+                logger.warning(TAG, "No character cards found — nothing to match outfits against")
+                return False
+            matches = fuzzy_matcher(chara_sigs, accessory_tolerance, clothes_tolerance)
             coord_keys = build_coord_sig_cache(coord_dir, use_cache=self.use_cache)
         else:
             chara_digests = collect_chara_digests(chara_dirs, coord_dir, self.use_cache)
             if not chara_digests:
-                logger.warning(TAG, "No character cards found — nothing to do")
-                return
+                logger.warning(TAG, "No character cards found — nothing to match outfits against")
+                return False
             matches = exact_matcher(chara_digests)
             coord_keys = build_coord_cache(coord_dir, use_cache=self.use_cache)
 
@@ -295,7 +484,7 @@ class GroupCoordinates(BaseTask):
             for coord in coords:
                 found = matches(coord_keys[str(coord)])
                 names: list[str] = []
-                for name, _ in found:
+                for name, _, _ in found:
                     if name not in names:
                         names.append(name)
                 if not names:
@@ -310,23 +499,13 @@ class GroupCoordinates(BaseTask):
                 if len(names) > 1:
                     logger.info(TAG, f"{coord.name} matches {len(names)} characters "
                                      f"({', '.join(names)}) — using {names[0]}")
-
-                dest_dir = coord_dir / names[0]
-                dest = dest_dir / coord.name
-                if dest.exists():
-                    counter = 1
-                    while dest.exists():
-                        dest = dest_dir / f"{coord.stem}_{counter}{coord.suffix}"
-                        counter += 1
                 try:
-                    dest_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.move(str(coord), str(dest))
+                    dest = _move_unique(coord, coord_dir / names[0])
                 except Exception as e:
                     logger.error(TAG, f"Could not move {coord.name}: {e}")
                     failed += 1
                     continue
-                diff = found[0][1]
-                note = f" ({diff} accessor{'y' if diff == 1 else 'ies'} differ{'s' if diff == 1 else ''})" if diff else ""
+                note = _difference_note(found[0][1], found[0][2])
                 logger.success(TAG, f"Moved {coord.name} -> {names[0]}/{note}")
                 moves[str(coord)] = str(dest)
                 moved += 1
@@ -337,4 +516,50 @@ class GroupCoordinates(BaseTask):
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}, already in place: {in_place}, "
                             f"no matching character: {unmatched}"
+                            + (f", failed: {failed}" if failed else ""))
+        return True
+
+    def _group_by_hair(self, coord_dir: Path) -> None:
+        """Group the coordinates still sitting directly in coord_dir by their hair."""
+        logger.line()
+        logger.info(TAG, "Grouping remaining coordinates by hair")
+        coord_hair = {Path(sp): hair for sp, hair in
+                      build_coord_hair_cache(coord_dir, use_cache=self.use_cache).items()}
+        plan = plan_hair_groups(coord_hair, coord_dir, next_unknown_number(coord_dir))
+
+        ungrouped = len(plan["moves"]) + len(plan["ambiguous"]) + len(plan["lone"]) + len(plan["no_hair"])
+        logger.info(TAG, f"Coordinates already in folders: {plan['grouped']}, "
+                         f"ungrouped (directly in the coordinate folder): {ungrouped}")
+        for coord, folders in sorted(plan["ambiguous"].items()):
+            logger.info(TAG, f"{coord.name}: its hair is used in several folders ({', '.join(folders)}) — left alone")
+        for coord, hair in sorted(plan["lone"].items()):
+            logger.info(TAG, f"{coord.name}: its hair ({', '.join(hair)}) isn't shared with any other coordinate — left alone")
+        for coord in sorted(plan["no_hair"]):
+            logger.info(TAG, f"{coord.name}: no hair accessory found — left alone")
+
+        moved_known = moved_unknown = failed = 0
+        moves: dict[str, str] = {}
+        try:
+            for coord, folder in sorted(plan["moves"].items()):
+                try:
+                    dest = _move_unique(coord, coord_dir / folder)
+                except Exception as e:
+                    logger.error(TAG, f"Could not move {coord.name}: {e}")
+                    failed += 1
+                    continue
+                logger.success(TAG, f"Moved {coord.name} -> {folder}/ (same hair)")
+                moves[str(coord)] = str(dest)
+                if folder.upper().startswith(UNKNOWN_FOLDER_PREFIX):
+                    moved_unknown += 1
+                else:
+                    moved_known += 1
+        finally:
+            if self.use_cache and moves:
+                _update_coord_cache(coord_dir, moves)
+
+        logger.line()
+        logger.success(TAG, f"Hair grouping done — added to existing folders: {moved_known}, "
+                            f"moved to new {UNKNOWN_FOLDER_PREFIX}* folders: {moved_unknown}, "
+                            f"ambiguous hair: {len(plan['ambiguous'])}, hair matches nothing: {len(plan['lone'])}, "
+                            f"no hair found: {len(plan['no_hair'])}"
                             + (f", failed: {failed}" if failed else ""))
