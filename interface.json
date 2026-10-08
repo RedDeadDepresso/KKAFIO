@@ -636,6 +636,22 @@
         }
       ]
     },
+    "GroupCoordinatesAccessoryTolerance": {
+      "type": "input",
+      "label": "$option.GroupCoordinatesAccessoryTolerance.label",
+      "description": "$option.GroupCoordinatesAccessoryTolerance.description",
+      "inputs": [
+        {
+          "name": "tolerance",
+          "label": "$option.GroupCoordinatesAccessoryTolerance.input.tolerance.label",
+          "default": "0",
+          "pipeline_type": "string"
+        }
+      ],
+      "pipeline_override": {
+        "AccessoryTolerance": "{tolerance}"
+      }
+    },
     "DeleteEmptyFolders": {
       "type": "switch",
       "label": "$option.DeleteEmptyFolders.label",
@@ -1288,7 +1304,8 @@
         "CharaDir",
         "CoordDir",
         "UseCache",
-        "GroupCoordinatesIncludeSubfolders"
+        "GroupCoordinatesIncludeSubfolders",
+        "GroupCoordinatesAccessoryTolerance"
       ]
     },
     {

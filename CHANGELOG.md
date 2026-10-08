@@ -6,7 +6,8 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Added
 
-- **Group Coordinates** — new task (`group-coordinates`) to sort coordinate cards into per-character subfolders named after the matching chara card's filename. Uses the same outfit matching as Include Coordinates in Archive/Delete Cards. Options: Use Cache, Include Subfolders, Custom Chara Directory, Custom Coordinate Directory. Also added to the Explorer context menu (re-run the context menu registration).
+- **Group Coordinates** — new task (`group-coordinates`) to sort coordinate cards into per-character subfolders named after the matching chara card's filename. Uses the same outfit matching as Include Coordinates in Archive/Delete Cards. Options: Use Cache, Include Subfolders, Accessory Tolerance, Custom Chara Directory, Custom Coordinate Directory. Also added to the Explorer context menu (re-run the context menu registration).
+  - **Accessory Tolerance** (`--accessory-tolerance N`, default 0) also matches a coordinate that has exactly the same clothes as one of the character's outfits but up to N accessories added, removed or swapped (accessories are compared regardless of slot). When several characters match, the one with the fewest differing accessories wins. With 0 only exact copies move, as before. Near matches are cached separately in `kkafio_coord_sig_cache.json`.
 - **Group Scenes** saves its hash cache right after scanning and again after moving scenes (with each moved scene under its new path), even if the run is stopped part-way. Before, the cache was only written at the very end of a completed run.
 - **Group Characters** and **Rename Characters** now have a **Use Cache** option (`--use-cache` / `--no-use-cache`, on by default). Each card's identification key is cached in `kkafio_chara_key_cache.json` (keyed by mtime + size) so unchanged cards aren't re-parsed on every run; the cache follows moves, renames and metadata updates and is saved at the end of the run, even if it's stopped part-way.
 - **Review Similar Characters** — new task (`review-similar-chara`) to find characters that were probably saved more than once and choose which to remove in a dialog. Match by similar cover image, same first & last name, or similar filename (ignoring trailing numbers like `_1`, `-05`; grouped per folder). Each card has a lock that engages when you make a choice (and can be toggled by hand); an Auto-select dropdown keeps one card per unlocked group (newest, oldest, biggest, smallest, first/last alphabetically) and ticks the rest. Trashing is done by Delete Cards, with this task's own copy of its options. Also available from the Explorer folder context menu (re-run the context menu registration to add it).
@@ -20,6 +21,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Fixed
 
+- Coordinate matching (Group Coordinates, and Include Coordinates in Archive/Delete Cards) no longer misses coordinates because of serialization noise: `"ExtendedSaveData": null` entries that some character cards carry at every level of their outfit data, trailing empty accessory slots (a coordinate saved with 92 MoreAccessories slots versus a card's 20), and leftover colours in clothes slots with nothing worn. The coordinate and character outfit caches are rebuilt once.
 - Auto-update.
 - Downloading content from koikatsucards.com.
 - Filter & Convert KKS Cards no longer treats a KKS scene that contains characters as a KKS character card, and now also finds scenes with no characters.

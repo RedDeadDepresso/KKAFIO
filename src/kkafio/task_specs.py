@@ -472,6 +472,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Also process coordinate cards inside subfolders of the coordinate directory "
                        "(chara cards are always scanned recursively)"),
+            Value("--accessory-tolerance", key="AccessoryTolerance", type=int, metavar="N", default=None,
+                  help="Also match a coordinate that has the same clothes as one of a character's outfits "
+                       "but up to N accessories added, removed or swapped (default: 0, exact copies only)"),
             Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom chara directory (default: the game's female and male chara folders)"),
             Value("--coord-dir", "--input", "-i", key="CoordDir", ignore_blank=True, metavar="DIR",
