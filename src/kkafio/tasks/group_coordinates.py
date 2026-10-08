@@ -12,19 +12,17 @@ A coordinate that matches several characters goes to the first one (sorted by
 filename), unless it already sits in the folder of one of them, in which case
 it stays put.
 
-By default a coordinate must be an exact copy of an outfit. With an Accessory
-Tolerance of N > 0 it may instead have up to N accessories added, removed or
-swapped (accessories are compared regardless of their slot; a nudged or
-recoloured one counts as different). With a Clothes Tolerance of M > 0 up to M
-clothes parts (slots such as top, bottom, gloves, pantyhose...) may differ in
-item, colours or patterns. The two limits apply separately. When several
-characters match, the one with the fewest differences in total wins, then the
-first by filename.
+A first pass matches coordinates to characters by hair: a coordinate whose hair (see
+same_hair) is worn in an outfit of exactly one character moves to that character's folder.
+Coordinates whose hair fits no character, or fits several, are left for the outfit matching
+described below, which then handles everything the hair pass didn't.
 
-With Match Chara Hair (on by default) a first pass matches coordinates to characters by hair: a
-coordinate whose hair (see same_hair) is worn in an outfit of exactly one character moves to that
-character's folder. Coordinates whose hair fits no character, or fits several, are left for the
-outfit matching described above, which then handles everything the hair pass didn't.
+By default a coordinate must be an exact copy of an outfit. With Ignore Accessories on, the
+accessories are left out of the comparison, so a coordinate with the same clothes as one of a
+character's outfits matches whatever accessories it has. With a Clothes Tolerance of M > 0 up to
+M clothes parts (slots such as top, bottom, gloves, pantyhose...) may differ in item, colours or
+patterns. When several characters match, the one with the fewest clothes differences wins, then
+the first by filename.
 
 With Group By Hair, coordinates that are still ungrouped afterwards (left directly
 in the coordinate folder) are grouped by their hair (see same_hair), using every
@@ -200,12 +198,13 @@ def exact_matcher(chara_digests: dict[Path, set[str]]):
     return lambda digest: [(name, 0, 0) for name in owners.get(digest, [])]
 
 
-def fuzzy_matcher(chara_sigs: dict[Path, list[OutfitSignature]], accessory_tolerance: int,
+def fuzzy_matcher(chara_sigs: dict[Path, list[OutfitSignature]], ignore_accessories: bool,
                   clothes_tolerance: int = 0):
     """matches(signature) -> [(folder name, clothes parts differing, accessories differing)],
-    best first, for coordinates with at most `clothes_tolerance` clothes parts and at most
-    `accessory_tolerance` accessories different from one of a character's outfits. Best is
-    the fewest differences in total (then fewest clothes differences); ties go to the
+    best first, for coordinates with at most `clothes_tolerance` clothes parts different from
+    one of a character's outfits. Unless `ignore_accessories` is set the accessories must also
+    be identical; when it is set they aren't compared (and are reported as 0 differing). Best
+    is the fewest differences in total (then fewest clothes differences); ties go to the
     character that sorts first by filename."""
     outfits: list[tuple[str, tuple[str, ...], tuple[str, ...]]] = []      # (folder name, clothes, accessories)
     rank: dict[str, int] = {}
@@ -239,8 +238,8 @@ def fuzzy_matcher(chara_sigs: dict[Path, list[OutfitSignature]], accessory_toler
             clothes_diff = clothes_difference(sig[0], clothes)
             if clothes_diff > clothes_tolerance:
                 continue
-            accessory_diff = accessory_difference(sig[1], accessories)
-            if accessory_diff > accessory_tolerance:
+            accessory_diff = 0 if ignore_accessories else accessory_difference(sig[1], accessories)
+            if accessory_diff:
                 continue
             found = (clothes_diff + accessory_diff, clothes_diff)
             if name not in best or found < best[name]:
@@ -434,10 +433,9 @@ class GroupCoordinates(BaseTask):
         self.chara_dir_str  : str  = cfg.get("CharaDir", "")
         self.coord_dir_str  : str  = cfg.get("CoordDir", "")
         self.include_subfolders: bool = cfg.get("IncludeSubfolders", False)
-        self.accessory_tolerance_raw = cfg.get("AccessoryTolerance", 0)
+        self.ignore_accessories: bool = cfg.get("IgnoreAccessories", False)
         self.clothes_tolerance_raw = cfg.get("ClothesTolerance", 0)
         self.group_by_hair: bool = cfg.get("GroupByHair", False)
-        self.match_chara_hair: bool = cfg.get("MatchCharaHair", True)
 
     @staticmethod
     def _tolerance(raw, label: str) -> int:
@@ -450,9 +448,6 @@ class GroupCoordinates(BaseTask):
         if value < 0:
             raise InputError(f"{label} tolerance can't be negative, got {value}.", tag=TAG)
         return value
-
-    def _accessory_tolerance(self) -> int:
-        return self._tolerance(self.accessory_tolerance_raw, "Accessory")
 
     def _clothes_tolerance(self) -> int:
         return self._tolerance(self.clothes_tolerance_raw, "Clothes")
@@ -472,25 +467,21 @@ class GroupCoordinates(BaseTask):
     def run(self) -> None:
         chara_dirs = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, TAG)
         coord_dir = self._coord_dir()
-        accessory_tolerance = self._accessory_tolerance()
         clothes_tolerance = self._clothes_tolerance()
-        fuzzy = bool(accessory_tolerance or clothes_tolerance)
+        fuzzy = bool(self.ignore_accessories or clothes_tolerance)
 
         self.log_start(TAG, f"{coord_dir}  (characters: {', '.join(str(d) for d in chara_dirs)})")
         logger.info(TAG, f"Use cache: {self.use_cache}")
         logger.info(TAG, f"Include coordinate subfolders: {self.include_subfolders}")
-        logger.info(TAG, f"Accessory tolerance: {accessory_tolerance}, clothes tolerance: {clothes_tolerance}"
+        logger.info(TAG, f"Ignore accessories: {self.ignore_accessories}, clothes tolerance: {clothes_tolerance}"
                          + ("" if fuzzy else " (exact copies only)"))
-        logger.info(TAG, f"Match characters by hair first: {self.match_chara_hair}")
         logger.info(TAG, f"Group remaining coordinates by hair: {self.group_by_hair}")
         logger.line()
 
-        handled: set[str] = set()
-        if self.match_chara_hair:
-            handled = self._group_by_chara_hair(chara_dirs, coord_dir)
-            logger.line()
-            logger.info(TAG, "Matching the remaining coordinates by outfit")
-        self._group_by_outfits(chara_dirs, coord_dir, accessory_tolerance, clothes_tolerance, handled)
+        handled = self._group_by_chara_hair(chara_dirs, coord_dir)
+        logger.line()
+        logger.info(TAG, "Matching the remaining coordinates by outfit")
+        self._group_by_outfits(chara_dirs, coord_dir, clothes_tolerance, handled)
         if self.group_by_hair:
             self._group_by_hair(coord_dir)
 
@@ -547,19 +538,19 @@ class GroupCoordinates(BaseTask):
         return handled
 
     def _group_by_outfits(self, chara_dirs: list[Path], coord_dir: Path,
-                          accessory_tolerance: int, clothes_tolerance: int,
+                          clothes_tolerance: int,
                           skip: set[str] = frozenset()) -> bool:
         """Move coordinates into the folder of the character whose outfit they match, except
         the coordinates in `skip` (paths already settled by the hair pass).
         Returns False if there are no character cards to match against."""
         # matches(key) -> [(chara folder name, clothes differences, accessory differences)], best first;
         # coord_keys maps each coordinate card's path to its key (falsy: not a coordinate card).
-        if accessory_tolerance or clothes_tolerance:
+        if self.ignore_accessories or clothes_tolerance:
             chara_sigs = collect_chara_signatures(chara_dirs, coord_dir, self.use_cache)
             if not chara_sigs:
                 logger.warning(TAG, "No character cards found — nothing to match outfits against")
                 return False
-            matches = fuzzy_matcher(chara_sigs, accessory_tolerance, clothes_tolerance)
+            matches = fuzzy_matcher(chara_sigs, self.ignore_accessories, clothes_tolerance)
             coord_keys = build_coord_sig_cache(coord_dir, use_cache=self.use_cache)
         else:
             chara_digests = collect_chara_digests(chara_dirs, coord_dir, self.use_cache)

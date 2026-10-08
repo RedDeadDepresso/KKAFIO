@@ -636,28 +636,6 @@
         }
       ]
     },
-    "GroupCoordinatesMatchCharaHair": {
-      "type": "switch",
-      "label": "$option.GroupCoordinatesMatchCharaHair.label",
-      "description": "$option.GroupCoordinatesMatchCharaHair.description",
-      "default_case": "Yes",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "$option.GroupCoordinatesMatchCharaHair.case.Yes.label",
-          "pipeline_override": {
-            "MatchCharaHair": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "$option.GroupCoordinatesMatchCharaHair.case.No.label",
-          "pipeline_override": {
-            "MatchCharaHair": false
-          }
-        }
-      ]
-    },
     "GroupCoordinatesGroupByHair": {
       "type": "switch",
       "label": "$option.GroupCoordinatesGroupByHair.label",
@@ -680,21 +658,27 @@
         }
       ]
     },
-    "GroupCoordinatesAccessoryTolerance": {
-      "type": "input",
-      "label": "$option.GroupCoordinatesAccessoryTolerance.label",
-      "description": "$option.GroupCoordinatesAccessoryTolerance.description",
-      "inputs": [
+    "GroupCoordinatesIgnoreAccessories": {
+      "type": "switch",
+      "label": "$option.GroupCoordinatesIgnoreAccessories.label",
+      "description": "$option.GroupCoordinatesIgnoreAccessories.description",
+      "default_case": "No",
+      "cases": [
         {
-          "name": "tolerance",
-          "label": "$option.GroupCoordinatesAccessoryTolerance.input.tolerance.label",
-          "default": "15",
-          "pipeline_type": "string"
+          "name": "Yes",
+          "label": "$option.GroupCoordinatesIgnoreAccessories.case.Yes.label",
+          "pipeline_override": {
+            "IgnoreAccessories": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.GroupCoordinatesIgnoreAccessories.case.No.label",
+          "pipeline_override": {
+            "IgnoreAccessories": false
+          }
         }
-      ],
-      "pipeline_override": {
-        "AccessoryTolerance": "{tolerance}"
-      }
+      ]
     },
     "GroupCoordinatesClothesTolerance": {
       "type": "input",
@@ -1371,8 +1355,7 @@
         "UseCache",
         "GroupCoordinatesIncludeSubfolders",
         "GroupCoordinatesClothesTolerance",
-        "GroupCoordinatesAccessoryTolerance",
-        "GroupCoordinatesMatchCharaHair",
+        "GroupCoordinatesIgnoreAccessories",
         "GroupCoordinatesGroupByHair"
       ]
     },

@@ -1,4 +1,4 @@
-"""Group Coordinates with an accessory tolerance: same clothes, a few accessories different."""
+"""Group Coordinates with Ignore Accessories / Clothes Tolerance: same or similar clothes, any accessories."""
 
 import json
 from pathlib import Path
@@ -90,26 +90,33 @@ def _sig(clothes, *accs):
     return tuple(f"{i}:{c}" for i, c in enumerate(clothes)), tuple(sorted(accs))
 
 
-def test_matcher_applies_accessory_tolerance_and_requires_same_clothes():
+def test_matcher_ignores_accessories_but_requires_same_clothes():
     chara = {Path("Alice.png"): [_sig("ABC", "a", "b", "c")]}
-    m = gc.fuzzy_matcher(chara, 1)
+    m = gc.fuzzy_matcher(chara, True)
     assert m(_sig("ABC", "a", "b", "c")) == [("Alice", 0, 0)]
-    assert m(_sig("ABC", "a", "b", "x")) == [("Alice", 0, 1)]
-    assert m(_sig("ABC", "a", "b")) == [("Alice", 0, 1)]
-    assert m(_sig("ABC", "a", "x", "y")) == []                  # 2 differ, tolerance 1
+    assert m(_sig("ABC", "a", "b", "x")) == [("Alice", 0, 0)]
+    assert m(_sig("ABC")) == [("Alice", 0, 0)]
+    assert m(_sig("ABC", "x", "y", "z", "w")) == [("Alice", 0, 0)]
     assert m(_sig("ABD", "a", "b", "c")) == []                  # other clothes
-    assert gc.fuzzy_matcher(chara, 2)(_sig("ABC", "a", "x", "y")) == [("Alice", 0, 2)]
 
 
-def test_matcher_applies_clothes_tolerance_separately():
+def test_matcher_without_ignore_accessories_needs_identical_accessories():
+    chara = {Path("Alice.png"): [_sig("ABC", "a", "b", "c")]}
+    m = gc.fuzzy_matcher(chara, False, 1)
+    assert m(_sig("ABC", "a", "b", "c")) == [("Alice", 0, 0)]
+    assert m(_sig("ABX", "a", "b", "c")) == [("Alice", 1, 0)]   # clothes tolerance only
+    assert m(_sig("ABC", "a", "b", "x")) == []
+    assert m(_sig("ABC", "a", "b")) == []
+
+
+def test_matcher_combines_ignore_accessories_with_clothes_tolerance():
     chara = {Path("Alice.png"): [_sig("ABCD", "a", "b")]}
-    m = gc.fuzzy_matcher(chara, 1, 1)
+    m = gc.fuzzy_matcher(chara, True, 1)
     assert m(_sig("ABCX", "a", "b")) == [("Alice", 1, 0)]
-    assert m(_sig("ABCX", "a", "x")) == [("Alice", 1, 1)]
+    assert m(_sig("ABCX", "a", "x", "y")) == [("Alice", 1, 0)]  # accessories don't count
     assert m(_sig("ABXY", "a", "b")) == []                      # 2 clothes parts, limit 1
-    assert m(_sig("ABCX", "a", "x", "y")) == []                 # 2 accessories, limit 1
-    assert gc.fuzzy_matcher(chara, 0, 1)(_sig("ABCX", "a", "x")) == []      # accessory limit 0
-    assert gc.fuzzy_matcher(chara, 0, 2)(_sig("ABXY", "a", "b")) == [("Alice", 2, 0)]
+    assert gc.fuzzy_matcher(chara, False, 1)(_sig("ABCX", "a", "x")) == []   # accessories must match
+    assert gc.fuzzy_matcher(chara, False, 2)(_sig("ABXY", "a", "b")) == [("Alice", 2, 0)]
 
 
 def test_clothes_tolerance_does_not_miss_matches_the_index_could_skip():
@@ -120,7 +127,7 @@ def test_clothes_tolerance_does_not_miss_matches_the_index_could_skip():
     chara = {Path(f"c{n:02d}.png"): [_sig("".join(rng.choice("AAAB" if i == 0 else letters) for i in range(6)))
                                      for _ in range(3)] for n in range(25)}
     for k in range(4):
-        m = gc.fuzzy_matcher(chara, 0, k)
+        m = gc.fuzzy_matcher(chara, True, k)
         for _ in range(60):
             q = _sig("".join(rng.choice("AAAB" if i == 0 else letters) for i in range(6)))
             expected = sorted({p.stem for p, sigs in chara.items()
@@ -128,29 +135,23 @@ def test_clothes_tolerance_does_not_miss_matches_the_index_could_skip():
             assert sorted(n for n, _, _ in m(q)) == expected, (k, q)
 
 
-def test_matcher_prefers_fewest_differences_then_filename():
-    chara = {Path("Zed.png"): [_sig("C", "a", "b")],
-             Path("Bob.png"): [_sig("C", "a", "x")],
-             Path("Amy.png"): [_sig("C", "a", "y")]}
-    m = gc.fuzzy_matcher(chara, 2)
-    assert m(_sig("C", "a", "b")) == [("Zed", 0, 0), ("Amy", 0, 1), ("Bob", 0, 1)]
-
-
-def test_matcher_counts_clothes_and_accessory_differences_together():
-    chara = {Path("Amy.png"): [_sig("AB", "a", "b")], Path("Zed.png"): [_sig("AC", "a", "b", "c")]}
-    q = _sig("AC", "a", "b")
-    assert gc.fuzzy_matcher(chara, 1, 1)(q) == [("Zed", 0, 1), ("Amy", 1, 0)]   # total 1 each: fewer clothes diffs first
+def test_matcher_prefers_fewest_clothes_differences_then_filename():
+    chara = {Path("Zed.png"): [_sig("AB", "a")],
+             Path("Bob.png"): [_sig("AC", "a")],
+             Path("Amy.png"): [_sig("AD", "a")]}
+    m = gc.fuzzy_matcher(chara, True, 1)
+    assert m(_sig("AB", "a")) == [("Zed", 0, 0), ("Amy", 1, 0), ("Bob", 1, 0)]
 
 
 def test_matcher_uses_a_characters_closest_outfit():
-    chara = {Path("Amy.png"): [_sig("C", "a", "b", "c"), _sig("C", "a", "b", "c", "d")]}
-    assert gc.fuzzy_matcher(chara, 3)(_sig("C", "a", "b", "c", "d")) == [("Amy", 0, 0)]
+    chara = {Path("Amy.png"): [_sig("AB", "a"), _sig("AC", "a")]}
+    assert gc.fuzzy_matcher(chara, True, 1)(_sig("AC", "a")) == [("Amy", 0, 0)]
 
 
 # --- the task ------------------------------------------------------------------------------------------
 
-def _task(chara_dir, coord_dir, tolerance, sub=True, use_cache=True, clothes=0):
-    cfg = {"UseCache": use_cache, "IncludeSubfolders": sub, "AccessoryTolerance": tolerance,
+def _task(chara_dir, coord_dir, ignore=False, sub=True, use_cache=True, clothes=0):
+    cfg = {"UseCache": use_cache, "IncludeSubfolders": sub, "IgnoreAccessories": ignore,
            "ClothesTolerance": clothes,
            "CharaDir": str(chara_dir), "CoordDir": str(coord_dir)}
     config = SimpleNamespace(group_coordinates=cfg, game_path={
@@ -158,7 +159,7 @@ def _task(chara_dir, coord_dir, tolerance, sub=True, use_cache=True, clothes=0):
     return gc.GroupCoordinates(config, None)
 
 
-def _run(tmp_path, chara_sigs, coord_sigs, tolerance, sub=True, clothes=0):
+def _run(tmp_path, chara_sigs, coord_sigs, ignore, sub=True, clothes=0):
     chara_dir, coord_dir = tmp_path / "chara", tmp_path / "coord"
     chara_dir.mkdir(exist_ok=True)
     coord_dir.mkdir(exist_ok=True)
@@ -171,46 +172,47 @@ def _run(tmp_path, chara_sigs, coord_sigs, tolerance, sub=True, clothes=0):
                            return_value={str(coord_dir / n): s for n, s in coord_sigs.items()}), \
          mock.patch.object(gc, "collect_chara_digests", side_effect=AssertionError("exact path used")), \
          mock.patch.object(gc, "build_coord_cache", side_effect=AssertionError("exact path used")):
-        _task(chara_dir, coord_dir, tolerance, sub, clothes=clothes).run()
+        _task(chara_dir, coord_dir, ignore, sub, clothes=clothes).run()
     return coord_dir
 
 
-def test_near_match_moves_and_non_match_stays(tmp_path):
+def test_ignore_accessories_moves_any_accessories_and_leaves_other_clothes(tmp_path):
     out = _run(tmp_path, {"Alice.png": [_sig("C", "a", "b", "c")]},
                {"exact.png": _sig("C", "a", "b", "c"), "swap.png": _sig("C", "a", "b", "z"),
                 "far.png": _sig("C", "x", "y", "z"), "clothes.png": _sig("D", "a", "b", "c"),
-                "notcoord.png": None}, tolerance=1)
-    assert (out / "Alice" / "exact.png").exists() and (out / "Alice" / "swap.png").exists()
-    for n in ("far.png", "clothes.png", "notcoord.png"):
+                "notcoord.png": None}, ignore=True)
+    for n in ("exact.png", "swap.png", "far.png"):
+        assert (out / "Alice" / n).exists()
+    for n in ("clothes.png", "notcoord.png"):
         assert (out / n).exists()
 
 
-def test_clothes_tolerance_moves_variants_with_different_clothes(tmp_path):
+def test_clothes_tolerance_alone_still_compares_accessories(tmp_path):
     out = _run(tmp_path, {"Alice.png": [_sig("ABCD", "a", "b")]},
                {"one.png": _sig("ABCX", "a", "b"), "two.png": _sig("ABXY", "a", "b"),
                 "both.png": _sig("ABCX", "a", "x"), "acc_only.png": _sig("ABCD", "a", "x")},
-               tolerance=0, clothes=1)
+               ignore=False, clothes=1)
     assert (out / "Alice" / "one.png").exists()
     assert (out / "two.png").exists()                           # 2 clothes parts, limit 1
-    assert (out / "both.png").exists() and (out / "acc_only.png").exists()   # accessory limit is still 0
+    assert (out / "both.png").exists() and (out / "acc_only.png").exists()   # accessories differ
 
 
-def test_both_tolerances_together(tmp_path):
+def test_ignore_accessories_and_clothes_tolerance_together(tmp_path):
     out = _run(tmp_path, {"Alice.png": [_sig("ABCD", "a", "b")]},
                {"both.png": _sig("ABCX", "a", "x"), "too_far.png": _sig("ABXY", "a", "x")},
-               tolerance=1, clothes=1)
+               ignore=True, clothes=1)
     assert (out / "Alice" / "both.png").exists() and (out / "too_far.png").exists()
 
 
 def test_best_match_wins_over_filename_order(tmp_path):
-    out = _run(tmp_path, {"Amy.png": [_sig("C", "a", "x")], "Zed.png": [_sig("C", "a", "b")]},
-               {"c.png": _sig("C", "a", "b")}, tolerance=1)
+    out = _run(tmp_path, {"Amy.png": [_sig("ABD", "a")], "Zed.png": [_sig("ABC", "a")]},
+               {"c.png": _sig("ABC", "a")}, ignore=True, clothes=1)
     assert (out / "Zed" / "c.png").exists()
 
 
 def test_coord_already_in_a_matching_folder_stays(tmp_path):
-    out = _run(tmp_path, {"Amy.png": [_sig("C", "a")], "Zed.png": [_sig("C", "a", "b")]},
-               {"Zed/c.png": _sig("C", "a")}, tolerance=1)
+    out = _run(tmp_path, {"Amy.png": [_sig("ABC", "a")], "Zed.png": [_sig("ABD", "a")]},
+               {"Zed/c.png": _sig("ABC", "a")}, ignore=True, clothes=1)
     assert (out / "Zed" / "c.png").exists()                    # Amy matches better, but it's already filed
 
 
@@ -221,30 +223,23 @@ def test_sig_cache_follows_moves(tmp_path):
     cache = coord_dir / gc.SIG_CACHE_FILE
     cache.write_text(json.dumps({"version": gc.SIG_CACHE_VERSION, "coord_dir": str(coord_dir),
                                  "files": {old: [1, 2]}, "sigs": {old: ["C", ["a"]]}}))
-    _run(tmp_path, {"Alice.png": [_sig("C", "a")]}, {"a.png": _sig("C", "a")}, tolerance=1)
+    _run(tmp_path, {"Alice.png": [_sig("C", "a")]}, {"a.png": _sig("C", "a")}, ignore=True)
     data = json.loads(cache.read_text())
     assert new in data["sigs"] and old not in data["sigs"] and new in data["files"]
 
 
-@pytest.mark.parametrize("raw, expected", [(0, 0), ("0", 0), ("3", 3), (" 2 ", 2), ("", 0), (None, 0)])
-def test_tolerance_parsing(tmp_path, raw, expected):
-    assert _task(tmp_path, tmp_path, raw)._accessory_tolerance() == expected
-
-
 @pytest.mark.parametrize("raw", ["-1", -2, "abc", "1.5"])
-def test_bad_tolerance_is_an_input_error(tmp_path, raw):
+def test_bad_clothes_tolerance_is_an_input_error(tmp_path, raw):
     with pytest.raises(InputError):
-        _task(tmp_path, tmp_path, raw)._accessory_tolerance()
-    with pytest.raises(InputError):
-        _task(tmp_path, tmp_path, 0, clothes=raw)._clothes_tolerance()
+        _task(tmp_path, tmp_path, clothes=raw)._clothes_tolerance()
 
 
 def test_clothes_tolerance_parsing(tmp_path):
-    assert _task(tmp_path, tmp_path, 0, clothes="2")._clothes_tolerance() == 2
-    assert _task(tmp_path, tmp_path, 0, clothes=None)._clothes_tolerance() == 0
+    assert _task(tmp_path, tmp_path, clothes="2")._clothes_tolerance() == 2
+    assert _task(tmp_path, tmp_path, clothes=None)._clothes_tolerance() == 0
 
 
-def test_zero_tolerance_keeps_the_exact_path(tmp_path):
+def test_default_options_keep_the_exact_path(tmp_path):
     chara_dir, coord_dir = tmp_path / "chara", tmp_path / "coord"
     chara_dir.mkdir()
     coord_dir.mkdir()
@@ -252,7 +247,7 @@ def test_zero_tolerance_keeps_the_exact_path(tmp_path):
     with mock.patch.object(gc, "collect_chara_digests", return_value={chara_dir / "Alice.png": {"d"}}) as digests, \
          mock.patch.object(gc, "build_coord_cache", return_value={str(coord_dir / "a.png"): "d"}), \
          mock.patch.object(gc, "collect_chara_signatures", side_effect=AssertionError("fuzzy path used")):
-        _task(chara_dir, coord_dir, 0).run()
+        _task(chara_dir, coord_dir).run()
     assert digests.called and (coord_dir / "Alice" / "a.png").exists()
 
 
@@ -297,19 +292,18 @@ def test_real_coordinate_files_end_to_end(tmp_path):
     chara_dir.mkdir()
     chara_sigs = {chara_dir / "Alice.png": outfits.chara_outfit_signatures(_fake_chara([base]))}
     with mock.patch.object(gc, "collect_chara_signatures", return_value=chara_sigs):
-        _task(chara_dir, coord_dir, 1).run()
+        _task(chara_dir, coord_dir, True).run()
 
     moved = sorted(p.name for p in (coord_dir / "Alice").iterdir())
-    assert moved == ["one_added.png", "one_swapped.png", "reslotted.png", "same.png"]
-    for n in ("two_off.png", "other_clothes.png", "other_clothes_and_acc.png", "stray.png"):
+    assert moved == ["one_added.png", "one_swapped.png", "reslotted.png", "same.png", "two_off.png"]
+    for n in ("other_clothes.png", "other_clothes_and_acc.png", "stray.png"):
         assert (coord_dir / n).exists()
 
-    # with a clothes tolerance of 1 (and accessory tolerance 1) the different-top variants join in
+    # with a clothes tolerance of 1 the different-top variants join in
     with mock.patch.object(gc, "collect_chara_signatures", return_value=chara_sigs):
-        _task(chara_dir, coord_dir, 1, clothes=1).run()
+        _task(chara_dir, coord_dir, True, clothes=1).run()
     assert (coord_dir / "Alice" / "other_clothes.png").exists()
     assert (coord_dir / "Alice" / "other_clothes_and_acc.png").exists()
-    assert (coord_dir / "two_off.png").exists()                 # still 2 accessories off
 
     # the signature cache followed the moves, so a second run re-parses nothing
     with mock.patch.object(outfits, "_coord_file_signature", side_effect=AssertionError("re-parsed")):

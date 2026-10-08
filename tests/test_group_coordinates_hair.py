@@ -328,18 +328,6 @@ def test_outfit_pass_still_groups_what_the_hair_pass_left(tmp_path):
     assert _layout(coord_dir) == {"hair.png": "Alice", "clothes.png": "Dana"}
 
 
-def test_match_chara_hair_can_be_turned_off(tmp_path):
-    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
-    chara_dir.mkdir()
-    _write_coord(coord_dir / "a.png", _outfit(hair=11, top=1))
-    task = _task(chara_dir, coord_dir, hair=False)
-    task.match_chara_hair = False
-    with mock.patch.object(gc, "collect_chara_hairs", side_effect=AssertionError("hair pass ran")), \
-            mock.patch.object(gc, "collect_chara_digests", return_value={}):
-        task.run()
-    assert _layout(coord_dir) == {"a.png": ""}
-
-
 def test_coordinate_already_in_its_hair_characters_folder_is_not_moved(tmp_path):
     coord_dir = _run_hair_first(tmp_path, {"Alice/a.png": _outfit(hair=11, top=1)},
                                 _chara_hairs(tmp_path, Alice=[("11",)]))
