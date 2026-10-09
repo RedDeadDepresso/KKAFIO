@@ -61,7 +61,7 @@ from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 TAG = "GRPCOORD"
 
 CHARA_OUTFIT_CACHE_FILE = "kkafio_chara_outfit_cache.json"
-CHARA_OUTFIT_CACHE_VERSION = 5
+CHARA_OUTFIT_CACHE_VERSION = 6
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 _RESERVED = {"CON", "PRN", "AUX", "NUL",

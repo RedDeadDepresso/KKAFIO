@@ -280,12 +280,20 @@ def signature_difference(a: OutfitSignature, b: OutfitSignature) -> tuple[int, i
 # is the main hair; later ones are usually ornaments that change from outfit to
 # outfit (ribbons, bunny ears...). Other hair-category accessories, such as hair
 # ties on other nodes or tails, are not part of it.
+#
+# Exception: a bald cap (a hair-category accessory like "enk.acc.bald") is a blank base for a
+# wig, and the wig is a plain head accessory (type 121) on the same nodes. A bald cap says
+# nothing about whose hair it is, so in such an outfit the wigs are the main hair and the bald
+# cap only follows them.
 
 HAIR_CACHE_FILE = "kkafio_coord_hair_cache.json"
 
-HAIR_CACHE_VERSION = 3
+HAIR_CACHE_VERSION = 4
 
 HAIR_ACCESSORY_TYPE = 122
+WIG_ACCESSORY_TYPE = 121
+# A hair accessory whose resolved item contains one of these is a bald cap, not a hairstyle.
+BALD_CAP_MARKERS = ("bald", "nohair")
 
 # Head-top is where most hairstyles sit; some mods (e.g. Phantom's hair/ornament sets) attach
 # theirs to the head-side node instead, so both count.
@@ -297,12 +305,18 @@ def outfit_hair(outfit: dict, infos: list[dict], outfit_index: int | None = None
     (empty if it has none). `infos` / `outfit_index` are as for outfit_digest()."""
     _, accessory = _normalize_outfit(outfit, _resolve_lookup(infos, outfit_index))
     items: list[str] = []
+    wigs: list[str] = []
     for part in accessory.get("parts", []):
-        if (isinstance(part, dict) and part.get("type") == HAIR_ACCESSORY_TYPE
-                and part.get("parentKey") in HAIR_PARENT_KEYS):
-            item = str(part.get("id"))
+        if not isinstance(part, dict) or part.get("parentKey") not in HAIR_PARENT_KEYS:
+            continue
+        item = str(part.get("id"))
+        if part.get("type") == HAIR_ACCESSORY_TYPE:
             if item not in items:
                 items.append(item)
+        elif part.get("type") == WIG_ACCESSORY_TYPE and item not in wigs:
+            wigs.append(item)
+    if wigs and any(marker in item.lower() for item in items for marker in BALD_CAP_MARKERS):
+        return tuple(wigs + items)
     return tuple(items)
 
 

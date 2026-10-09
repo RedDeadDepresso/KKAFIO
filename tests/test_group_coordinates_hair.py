@@ -63,6 +63,30 @@ def test_hair_on_the_head_side_node_counts_too():
     assert outfits.outfit_hair(mixed, []) == ("5", "8")
 
 
+def _wig(item, parent="a_n_headside", type_=121):
+    return {"type": type_, "id": item, "parentKey": parent}
+
+
+def test_wig_over_a_bald_cap_is_the_main_hair():
+    extra = (_wig("mod.wig:5"), _wig("mod.earring:9", parent="a_n_earrings_L"))
+    assert outfits.outfit_hair(_outfit(hair="enk.acc.bald:1080", extra=extra), []) == ("mod.wig:5", "enk.acc.bald:1080")
+    assert outfits.outfit_hair(_outfit(hair="enk.acc.bald:1080"), []) == ("enk.acc.bald:1080",)   # no wig: as before
+
+
+def test_head_accessories_are_not_hair_without_a_bald_cap():
+    assert outfits.outfit_hair(_outfit(hair="mod.hair:3", extra=(_wig("mod.hat:1"),)), []) == ("mod.hair:3",)
+    assert outfits.outfit_hair(_outfit(extra=(_wig("mod.hat:1"),)), []) == ()
+
+
+def test_wigs_tell_apart_characters_who_share_a_bald_cap():
+    from kkafio.tasks import group_coordinates as gc
+    bald = "enk.acc.bald:1080"
+    a, b = Path("a/Augusta.png"), Path("b/Bella.png")
+    matches = gc.hair_matcher({a: [("mod.wigA:1", bald)], b: [("mod.wigB:2", bald)]})
+    assert matches(("mod.wigA:1", bald)) == ["Augusta"]
+    assert matches(("mod.wigB:2", bald)) == ["Bella"]
+
+
 def test_hair_keeps_slot_order_main_hair_first():
     ornament = {"type": 122, "id": 34, "parentKey": "a_n_headtop"}
     extra = ({"type": 124, "id": 3, "parentKey": "a_n_bust"}, ornament, {"type": 122, "id": 34, "parentKey": "a_n_headtop"})
