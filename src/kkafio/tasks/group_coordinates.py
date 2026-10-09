@@ -20,7 +20,9 @@ described below, which then handles everything the hair pass didn't.
 Coordinates that still match nothing after the outfit matching get a last pass by head mod: a
 coordinate whose head accessories (hair, wigs, head parts) come from a mod that exactly one
 character wears moves to that character, even when the exact items differ. Mods worn by several
-characters (and bald caps) identify nobody. When a coordinate's mods point to several characters,
+characters identify nobody on their own; coordinates wearing a head mod that several characters
+each wear as their own (two cards of one character, say) are grouped into
+"<first character>_SHARED" instead. Bald caps identify nobody. When a coordinate's mods point to several characters,
 the one who wears hers in far more of her outfits wins (see mod_matcher); otherwise it is left
 alone.
 
@@ -315,6 +317,12 @@ def hair_matcher(chara_hairs: dict[Path, list[tuple[str, ...]]]):
 
 MOD_DOMINANCE = 2.0
 
+# A head mod worn by several characters (two cards of the same character, say) groups the
+# coordinates wearing it into "<first character>_SHARED", but only when each wearer wears it in
+# at least this share of her outfits, so a one-off costume-pack item never groups anything.
+MOD_SHARED_MIN_SHARE = 0.5
+SHARED_SUFFIX = "_SHARED"
+
 
 def mod_matcher(chara_mods: dict[Path, dict[str, float]]):
     """matches(coordinate head mods) -> [folder names] of the characters its head mods point to.
@@ -347,6 +355,22 @@ def mod_matcher(chara_mods: dict[Path, dict[str, float]]):
                 return [best]
         return found
 
+    def shared_folder(mods) -> tuple[str, list[str]] | None:
+        """For a coordinate no single character owns: (folder name, wearers) of the head mod
+        it wears that the fewest characters share, if each of those wears it as her own (see
+        MOD_SHARED_MIN_SHARE). The folder is the first wearer in filename order plus
+        SHARED_SUFFIX; None if there is no such mod."""
+        candidates = []
+        for mod in dict.fromkeys(mods):
+            names = wearers.get(mod, ())
+            if len(names) > 1 and all(share[(name, mod)] >= MOD_SHARED_MIN_SHARE for name in names):
+                candidates.append((len(names), [n for n in order if n in names], mod))
+        if not candidates:
+            return None
+        _, names, _ = min(candidates, key=lambda c: (c[0], c[1], c[2]))
+        return names[0] + SHARED_SUFFIX, names
+
+    matches.shared_folder = shared_folder
     return matches
 
 
@@ -695,6 +719,23 @@ class GroupCoordinates(BaseTask):
             for coord in coords:
                 names = matches(coord_mods[str(coord)])
                 if not names:
+                    shared = matches.shared_folder(coord_mods[str(coord)])
+                    if not shared:
+                        continue
+                    folder, wearers = shared
+                    if coord.parent == coord_dir / folder:
+                        in_place += 1
+                        continue
+                    try:
+                        dest = _move_unique(coord, coord_dir / folder)
+                    except Exception as e:
+                        logger.error(TAG, f"Could not move {coord.name}: {e}")
+                        failed += 1
+                        continue
+                    logger.success(TAG, f"Moved {coord.name} -> {folder}/ (head mod shared by "
+                                        f"{', '.join(wearers)})")
+                    moves[str(coord)] = str(dest)
+                    moved += 1
                     continue
                 if len(names) > 1:
                     logger.info(TAG, f"{coord.name}: its head mods belong to several characters "

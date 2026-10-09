@@ -424,7 +424,7 @@ def test_coordinates_move_to_the_character_owning_their_head_mod(tmp_path):
          "both.png": _outfit(top=4, extra=(_head("mod.an:1"), _head("mod.bo:1"))),
          "none.png": _outfit(top=5)},
         {"An": ["mod.an", "mod.shared"], "Bo": ["mod.bo", "mod.shared"]})
-    assert _layout(coord_dir) == {"a.png": "An", "b.png": "Bo", "shared.png": "", "both.png": "", "none.png": ""}
+    assert _layout(coord_dir) == {"a.png": "An", "b.png": "Bo", "shared.png": "An_SHARED", "both.png": "", "none.png": ""}
     # a second run changes nothing, and the cache follows the moves
     _run_mods(tmp_path, {}, {"An": ["mod.an", "mod.shared"], "Bo": ["mod.bo", "mod.shared"]})
     assert _layout(coord_dir)["a.png"] == "An"
@@ -441,3 +441,28 @@ def test_head_mod_pass_leaves_outfit_and_hair_matches_alone(tmp_path):
             mock.patch.object(gc, "collect_chara_digests", return_value={chara_dir / "Bo.png": {digest}}):
         _task(chara_dir, coord_dir, hair=False).run()
     assert _layout(coord_dir) == {"c.png": "Bo"}                        # the exact outfit match came first
+
+
+def test_shared_head_mod_groups_coordinates_into_a_shared_folder():
+    charas = {Path("c/Kanade_2.png"): {"mod.kanade": 1.0, "mod.pack": 0.14},
+              Path("c/Kanade_1.png"): {"mod.kanade": 1.0},
+              Path("c/Other.png"): {"mod.other": 0.9, "mod.pack": 0.14}}
+    matches = gc.mod_matcher(charas)
+    assert matches(("mod.kanade",)) == []
+    assert matches.shared_folder(("mod.kanade",)) == ("Kanade_1_SHARED", ["Kanade_1", "Kanade_2"])
+    assert matches.shared_folder(("mod.pack",)) is None                 # a one-off item groups nothing
+    assert matches.shared_folder(("mod.zzz",)) is None and matches.shared_folder(()) is None
+    # a mod only one character owns still wins outright
+    assert matches(("mod.other", "mod.kanade")) == ["Other"]
+
+
+def test_coordinates_with_a_shared_head_mod_move_to_the_shared_folder(tmp_path):
+    coord_dir = _run_mods(
+        tmp_path,
+        {"a.png": _outfit(top=1, extra=(_head("mod.k:3211"),)),
+         "b.png": _outfit(top=2, extra=(_head("mod.k:3500"),)),
+         "c.png": _outfit(top=3, extra=(_head("mod.solo:1"),)),
+         "d.png": _outfit(top=4)},
+        {"Kanade_2": ["mod.k"], "Kanade_1": ["mod.k"], "Solo": ["mod.solo"]})
+    assert _layout(coord_dir) == {"a.png": "Kanade_1_SHARED", "b.png": "Kanade_1_SHARED",
+                                  "c.png": "Solo", "d.png": ""}
