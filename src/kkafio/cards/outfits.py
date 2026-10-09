@@ -3,6 +3,7 @@ cache, and matching a character's outfits to coordinate cards.
 """
 
 import copy
+import functools
 import json as _json
 import os
 import re
@@ -14,6 +15,7 @@ from pathlib import Path
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.parsing import _coord_kkex_bytes, _find_iend_end, _unpack_kkex, uar_resolve_infos
 from kkafio.core.logger import logger
+from kkafio.core.paths import ASSETS_DATA_DIR
 
 
 COORD_CACHE_FILE = "kkafio_coord_cache.json"
@@ -53,6 +55,34 @@ COORD_CACHE_FILE = "kkafio_coord_cache.json"
 # floats surviving a JSON round-trip).
 
 COORD_CACHE_VERSION = 4
+
+# ---------------------------------------------------------------------------
+# Default coordinates
+# ---------------------------------------------------------------------------
+#
+# Default clothes (a costume pack's stock outfits, say) say nothing about whose outfit it is, so
+# a coordinate card that is a default coordinate is left alone by Group Coordinates. They are
+# recognised by their outfit digest (see outfit_digest), so a renamed or copied file is still
+# one. The digests come from assets/data/kkafio_default_clothes.json, written by
+# tools/build_default_clothes.py from a folder of default coordinates; without that file no
+# coordinate is a default one.
+
+DEFAULT_CLOTHES_FILE = "kkafio_default_clothes.json"
+
+
+@functools.cache
+def default_coordinate_digests() -> frozenset[str]:
+    """Outfit digests of the default coordinates; empty if there is no data file."""
+    path = ASSETS_DATA_DIR / DEFAULT_CLOTHES_FILE
+    try:
+        digests = _json.loads(path.read_text(encoding="utf-8")).get("digests", {})
+        return frozenset(map(str, digests))
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        logger.warning("CACHE", f"Ignoring unreadable {path}: {e}")
+    return frozenset()
+
 
 _CLOTHES_KINDS = ("Top", "Bot", "Bra", "Shorts", "Gloves", "Pants", "Socks",
                   "ShoesInner", "ShoesOuter")   # indexes of ClothesKind
@@ -558,3 +588,8 @@ def build_coord_mod_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, 
     raw = _build_cache(coord_dir, use_cache, file_name=MOD_CACHE_FILE, version=MOD_CACHE_VERSION,
                        section="mods", parse=_coord_file_mods, missing=None)
     return {sp: (tuple(v) if v is not None else None) for sp, v in raw.items()}
+
+
+def coord_digest(path: Path) -> str | None:
+    """Outfit digest of a coordinate card file, None if it isn't a readable coordinate card."""
+    return _coord_file_digest(path)

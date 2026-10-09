@@ -200,7 +200,34 @@ worst case, the next run does a full rescan and rebuilds them.
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
 | `assets/data/kkafio_modpack_index_kk.json` / `assets/data/kkafio_modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/cards/mods.py`'s `load_modpack_index()`. |
+| `assets/data/kkafio_default_clothes.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_clothes.py`; see [Default Clothes](#default-clothes) below. Read by `src/kkafio/cards/outfits.py`'s `default_coordinate_digests()`. |
 | `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/classifier.py`. Never modified at runtime. |
+
+---
+
+## Default Clothes
+
+Default clothes say nothing about whose outfit a coordinate is, so Group Coordinates can skip
+them per file: a coordinate card that is one of your default coordinates is not matched to any
+character, not moved, and not counted when grouping by hair.
+
+Put the default coordinates in a folder (any depth; other PNGs are skipped) and run:
+
+```
+python tools/build_default_clothes.py "C:/KK/default clothes"
+```
+
+This writes `assets/data/kkafio_default_clothes.json` (replacing its previous content). Each
+default coordinate is recorded by its outfit digest, the same one Group Coordinates compares, so
+a copy that was renamed, moved to another folder or saved with a different picture is still
+recognised. Options:
+
+| Option | Effect |
+|---|---|
+| `--merge` | Add to the existing file instead of replacing it. |
+| `--output PATH` | Write somewhere else. |
+
+Delete the file to stop skipping anything. Nothing needs rebuilding: the lookup happens on every run.
 
 ---
 

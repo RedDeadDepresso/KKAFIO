@@ -1,6 +1,8 @@
 """Group Coordinates, Group By Hair: ungrouped coordinates are grouped by their hair accessory."""
 
 import json
+
+import pytest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -466,3 +468,100 @@ def test_coordinates_with_a_shared_head_mod_move_to_the_shared_folder(tmp_path):
         {"Kanade_2": ["mod.k"], "Kanade_1": ["mod.k"], "Solo": ["mod.solo"]})
     assert _layout(coord_dir) == {"a.png": "Kanade_1_SHARED", "b.png": "Kanade_1_SHARED",
                                   "c.png": "Solo", "d.png": ""}
+
+
+# --- default coordinates ----------------------------------------------------------------------------------
+
+def _use_defaults(tmp_path, monkeypatch, digests=()):
+    """Point the default coordinates data at a temporary file holding these digests."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / outfits.DEFAULT_CLOTHES_FILE).write_text(
+        json.dumps({"digests": {d: "x.png" for d in digests}}), encoding="utf-8")
+    monkeypatch.setattr(outfits, "ASSETS_DATA_DIR", data_dir)
+    outfits.default_coordinate_digests.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_default_digests_left_behind():
+    yield
+    outfits.default_coordinate_digests.cache_clear()
+
+
+def test_default_coordinates_are_left_alone_by_every_pass(tmp_path, monkeypatch):
+    default = _outfit(top=1, hair="mod.hair:1", extra=(_head("mod.an:3227"),))
+    ordinary = _outfit(top=2, hair="mod.hair:1", extra=(_head("mod.an:3227"),))      # same hair and head mod
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir()
+    _write_coord(coord_dir / "default.png", default)
+    _write_coord(coord_dir / "renamed copy.png", default)
+    _write_coord(coord_dir / "ordinary.png", ordinary)
+    digest = outfits.outfit_digest(default, [])
+    _use_defaults(tmp_path, monkeypatch, [digest])
+
+    png = chara_dir / "An.png"
+    with mock.patch.object(gc, "collect_chara_hairs", return_value={png: [("mod.hair:1",)]}), \
+            mock.patch.object(gc, "collect_chara_mods", return_value={png: {"mod.an": 0.9}}), \
+            mock.patch.object(gc, "collect_chara_digests", return_value={png: {digest}}):
+        _task(chara_dir, coord_dir, hair=True).run()
+    # the ordinary coordinate is placed by hair; both copies of the default one stay where they are
+    assert _layout(coord_dir) == {"default.png": "", "renamed copy.png": "", "ordinary.png": "An"}
+
+
+def test_without_default_coordinates_the_same_files_are_all_placed(tmp_path, monkeypatch):
+    default = _outfit(top=1, hair="mod.hair:1")
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir()
+    _write_coord(coord_dir / "default.png", default)
+    _use_defaults(tmp_path, monkeypatch)
+    png = chara_dir / "An.png"
+    with mock.patch.object(gc, "collect_chara_hairs", return_value={png: [("mod.hair:1",)]}), \
+            mock.patch.object(gc, "collect_chara_mods", return_value={}), \
+            mock.patch.object(gc, "collect_chara_digests", return_value={}):
+        _task(chara_dir, coord_dir, hair=False).run()
+    assert _layout(coord_dir) == {"default.png": "An"}
+
+
+def test_default_coordinates_do_not_take_part_in_grouping_by_hair(tmp_path, monkeypatch):
+    shared = dict(hair="mod.hair:9")
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir()
+    for name, top in (("a.png", 1), ("b.png", 2), ("stock.png", 3)):
+        _write_coord(coord_dir / name, _outfit(top=top, **shared))
+    _use_defaults(tmp_path, monkeypatch, [outfits.outfit_digest(_outfit(top=3, **shared), [])])
+    with mock.patch.object(gc, "collect_chara_hairs", return_value={}), \
+            mock.patch.object(gc, "collect_chara_mods", return_value={}), \
+            mock.patch.object(gc, "collect_chara_digests", return_value={}):
+        _task(chara_dir, coord_dir, hair=True).run()
+    layout = _layout(coord_dir)
+    assert layout["stock.png"] == "" and layout["a.png"] == layout["b.png"] != ""     # a and b grouped together
+
+
+def test_the_tool_collects_the_digests_of_a_folder_of_coordinates(tmp_path):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+    import build_default_clothes as tool
+    folder = tmp_path / "defaults"
+    one, two = _outfit(top="pack.stock:10"), _outfit(top=2)
+    _write_coord(folder / "a.png", one)
+    _write_coord(folder / "sub" / "copy of a.png", one)
+    _write_coord(folder / "sub" / "b.png", two)
+    (folder / "notacoord.png").write_bytes(cf.png_bytes())
+    out = tmp_path / "out" / "defaults.json"
+
+    assert tool.build(folder, out, merge=False) == 0
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["coordinates"] == 3
+    assert set(data["digests"]) == {outfits.outfit_digest(one, []), outfits.outfit_digest(two, [])}
+    assert data["digests"][outfits.outfit_digest(one, [])] == "a.png"
+
+    more = tmp_path / "more"
+    three = _outfit(top=3)
+    _write_coord(more / "c.png", three)
+    assert tool.build(more, out, merge=True) == 0
+    merged = json.loads(out.read_text(encoding="utf-8"))
+    assert len(merged["digests"]) == 3 and merged["coordinates"] == 4
+    assert tool.build(more, out, merge=False) == 0                       # replacing drops the earlier ones
+    assert len(json.loads(out.read_text(encoding="utf-8"))["digests"]) == 1
+
+    assert tool.build(tmp_path / "empty", out, merge=False) == 1         # no PNGs: nothing written

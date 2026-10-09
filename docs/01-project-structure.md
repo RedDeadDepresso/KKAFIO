@@ -16,6 +16,7 @@ KKAFIO-dev/
 │   └── delete_config_and_task_folders.bat # Deletes %APPDATA%\KKAFIO and C:\KKAFIO (with confirmation)
 │
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
+│   ├── build_default_clothes.py     # Records a folder of default-clothes coordinates in assets/data/kkafio_default_clothes.json (Group Coordinates leaves those coordinates alone)
 │   ├── build_modpack_index.py       # Regenerates assets/kkafio_modpack_index_*.json
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
 │   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
@@ -25,6 +26,7 @@ KKAFIO-dev/
 │   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
 │   ├── kkafio_modpack_index_kk.json  # Pre-built Sideloader Modpack index for Koikatsu/Party
 │   ├── kkafio_modpack_index_kks.json # Pre-built Sideloader Modpack index for Koikatsu Sunshine
+│   ├── kkafio_default_clothes.json  # Optional, written by tools/build_default_clothes.py: outfit digests of the default coordinates Group Coordinates skips
 │   ├── xkcd_colors.json             # Named colour list used by the coordinate colour-fingerprint matcher
 │   └── i18n/                        # GUI translation strings, one file per language (see doc 03)
 │       ├── en_us.json

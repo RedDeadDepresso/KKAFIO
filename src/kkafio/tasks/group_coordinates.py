@@ -26,6 +26,10 @@ each wear as their own (two cards of one character, say) are grouped into
 the one who wears hers in far more of her outfits wins (see mod_matcher); otherwise it is left
 alone.
 
+Coordinates that are default coordinates (listed in assets/data/kkafio_default_clothes.json,
+built with tools/build_default_clothes.py from a folder of them) are left alone by every pass:
+they are neither matched nor moved, and don't take part in grouping.
+
 By default a coordinate must be an exact copy of an outfit. With Ignore Accessories on, the
 accessories are left out of the comparison, so a coordinate with the same clothes as one of a
 character's outfits matches whatever accessories it has. With a Clothes Tolerance of M > 0 up to
@@ -60,7 +64,8 @@ from kkafio.cards.outfits import (
     COORD_CACHE_FILE, COORD_CACHE_VERSION, HAIR_CACHE_FILE, HAIR_CACHE_VERSION, MOD_CACHE_FILE,
     MOD_CACHE_VERSION, SIG_CACHE_FILE, SIG_CACHE_VERSION, OutfitSignature,
     accessory_difference, build_coord_cache, build_coord_hair_cache, build_coord_mod_cache,
-    build_coord_sig_cache, chara_outfit_digests, chara_outfit_hairs, chara_outfit_head_mods,
+    build_coord_sig_cache, chara_outfit_digests, chara_outfit_hairs,
+    chara_outfit_head_mods, default_coordinate_digests,
     chara_outfit_signatures, clothes_difference,
 )
 from kkafio.core.errors import InputError
@@ -555,9 +560,11 @@ class GroupCoordinates(BaseTask):
         logger.info(TAG, f"Ignore accessories: {self.ignore_accessories}, clothes tolerance: {clothes_tolerance}"
                          + ("" if fuzzy else " (exact copies only)"))
         logger.info(TAG, f"Group remaining coordinates by hair: {self.group_by_hair}")
+        ignored = self._default_coordinates(coord_dir)
         logger.line()
 
-        handled = self._group_by_chara_hair(chara_dirs, coord_dir)
+        handled = self._group_by_chara_hair(chara_dirs, coord_dir, ignored)
+        handled |= ignored
         logger.line()
         logger.info(TAG, "Matching the remaining coordinates by outfit")
         self._group_by_outfits(chara_dirs, coord_dir, clothes_tolerance, handled)
@@ -565,9 +572,22 @@ class GroupCoordinates(BaseTask):
         logger.info(TAG, "Matching the remaining coordinates by head mod")
         self._group_by_chara_mods(chara_dirs, coord_dir, handled)
         if self.group_by_hair:
-            self._group_by_hair(coord_dir)
+            self._group_by_hair(coord_dir, ignored)
 
-    def _group_by_chara_hair(self, chara_dirs: list[Path], coord_dir: Path) -> set[str]:
+    def _default_coordinates(self, coord_dir: Path) -> set[str]:
+        """Paths of the coordinate cards that are default coordinates, which every pass leaves
+        alone (see default_coordinate_digests)."""
+        defaults = default_coordinate_digests()
+        if not defaults:
+            return set()
+        coord_keys = build_coord_cache(coord_dir, use_cache=self.use_cache)
+        ignored = {sp for sp, key in coord_keys.items() if key and key in defaults}
+        logger.info(TAG, f"Default coordinates left alone: {len(ignored)} "
+                         f"(of {len(defaults)} known default outfit(s))")
+        return ignored
+
+    def _group_by_chara_hair(self, chara_dirs: list[Path], coord_dir: Path,
+                             ignored: set[str] = frozenset()) -> set[str]:
         """Move coordinates into the folder of the one character that wears their hair.
         Returns the paths (as they are now) of the coordinates this pass settled, so the outfit
         pass leaves them alone. A coordinate whose hair fits no character or several is not
@@ -579,7 +599,8 @@ class GroupCoordinates(BaseTask):
         matches = hair_matcher(chara_hairs)
         coord_hair = build_coord_hair_cache(coord_dir, use_cache=self.use_cache)
         coords = sorted(Path(sp) for sp, hair in coord_hair.items()
-                        if hair and (self.include_subfolders or Path(sp).parent == coord_dir))
+                        if hair and sp not in ignored
+                        and (self.include_subfolders or Path(sp).parent == coord_dir))
         logger.info(TAG, f"Coordinate cards with hair: {len(coords)}")
 
         handled: set[str] = set()
@@ -763,12 +784,13 @@ class GroupCoordinates(BaseTask):
                             f"head mods of several characters: {ambiguous}"
                             + (f", failed: {failed}" if failed else ""))
 
-    def _group_by_hair(self, coord_dir: Path) -> None:
+    def _group_by_hair(self, coord_dir: Path, ignored: set[str] = frozenset()) -> None:
         """Group the coordinates still sitting directly in coord_dir by their hair."""
         logger.line()
         logger.info(TAG, "Grouping remaining coordinates by hair")
         coord_hair = {Path(sp): hair for sp, hair in
-                      build_coord_hair_cache(coord_dir, use_cache=self.use_cache).items()}
+                      build_coord_hair_cache(coord_dir, use_cache=self.use_cache).items()
+                      if sp not in ignored}
         plan = plan_hair_groups(coord_hair, coord_dir, next_unknown_number(coord_dir))
 
         ungrouped = len(plan["moves"]) + len(plan["ambiguous"]) + len(plan["lone"]) + len(plan["no_hair"])
