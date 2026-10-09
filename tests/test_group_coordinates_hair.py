@@ -363,3 +363,81 @@ def test_coordinate_already_in_its_hair_characters_folder_is_not_moved(tmp_path)
     coord_dir = _run_hair_first(tmp_path, {"Alice/a.png": _outfit(hair=11, top=1)},
                                 _chara_hairs(tmp_path, Alice=[("11",)]))
     assert _layout(coord_dir) == {"a.png": "Alice"}
+
+
+# --- head mods ---------------------------------------------------------------------------------------------
+
+def _head(item, parent="a_n_headside", type_=121):
+    return {"type": type_, "id": item, "parentKey": parent}
+
+
+def test_head_mods_are_the_mods_of_head_accessories_without_bald_caps():
+    extra = (_head("mod.an:3227"), _head("mod.an:3226"), _head("mod.other:1", type_=122),
+             _head("enk.acc.bald:1080", type_=122), _head("12"),                       # bald cap, vanilla item
+             _head("mod.ear:5", parent="a_n_earrings_L"))                               # not a head node
+    assert outfits.outfit_head_mods(_outfit(extra=extra), []) == ("mod.an", "mod.other")
+    assert outfits.outfit_head_mods(_outfit(), []) == ()
+
+
+def test_mod_matcher_only_trusts_mods_that_one_character_wears():
+    from kkafio.tasks import group_coordinates as gc
+    charas = {Path("c/An.png"): {"mod.an": 0.8, "mod.shared": 0.5},
+              Path("c/Bo.png"): {"mod.bo": 0.8, "mod.shared": 0.5}}
+    matches = gc.mod_matcher(charas)
+    assert matches(("mod.an",)) == ["An"]
+    assert matches(("mod.shared", "mod.bo")) == ["Bo"]                 # the shared mod counts for nobody
+    assert matches(("mod.shared",)) == [] and matches(("mod.zzz",)) == [] and matches(()) == []
+    assert matches(("mod.an", "mod.bo")) == ["An", "Bo"]               # equally theirs: the caller leaves it
+
+
+def test_a_characters_own_head_mod_beats_another_characters_one_off_item():
+    from kkafio.tasks import group_coordinates as gc
+    charas = {Path("c/Akito.png"): {"mod.akito": 0.43, "mod.pack": 0.14},       # pack item: 1 outfit of 7
+              Path("c/Kohane.png"): {"mod.kohane": 0.86}}
+    matches = gc.mod_matcher(charas)
+    assert matches(("mod.kohane", "mod.pack")) == ["Kohane"]
+    assert matches(("mod.akito", "mod.pack")) == ["Akito"]
+    close = gc.mod_matcher({Path("c/A.png"): {"m.a": 0.6}, Path("c/B.png"): {"m.b": 0.5}})
+    assert close(("m.a", "m.b")) == ["A", "B"]                         # not clearly one of them
+
+
+def _run_mods(tmp_path, files, chara_mods, **kw):
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir(exist_ok=True)
+    coord_dir.mkdir(exist_ok=True)
+    for rel, outfit in files.items():
+        _write_coord(coord_dir / rel, outfit)
+    mods = {chara_dir / f"{name}.png": {m: 0.5 for m in value} for name, value in chara_mods.items()}
+    with mock.patch.object(gc, "collect_chara_mods", return_value=mods), \
+            mock.patch.object(gc, "collect_chara_hairs", return_value={}), \
+            mock.patch.object(gc, "collect_chara_digests", return_value={}):
+        _task(chara_dir, coord_dir, hair=False, **kw).run()
+    return coord_dir
+
+
+def test_coordinates_move_to_the_character_owning_their_head_mod(tmp_path):
+    coord_dir = _run_mods(
+        tmp_path,
+        {"a.png": _outfit(top=1, extra=(_head("mod.an:3227"),)),
+         "b.png": _outfit(top=2, extra=(_head("mod.bo:1"), _head("mod.shared:9"))),
+         "shared.png": _outfit(top=3, extra=(_head("mod.shared:9"),)),
+         "both.png": _outfit(top=4, extra=(_head("mod.an:1"), _head("mod.bo:1"))),
+         "none.png": _outfit(top=5)},
+        {"An": ["mod.an", "mod.shared"], "Bo": ["mod.bo", "mod.shared"]})
+    assert _layout(coord_dir) == {"a.png": "An", "b.png": "Bo", "shared.png": "", "both.png": "", "none.png": ""}
+    # a second run changes nothing, and the cache follows the moves
+    _run_mods(tmp_path, {}, {"An": ["mod.an", "mod.shared"], "Bo": ["mod.bo", "mod.shared"]})
+    assert _layout(coord_dir)["a.png"] == "An"
+
+
+def test_head_mod_pass_leaves_outfit_and_hair_matches_alone(tmp_path):
+    coord = _outfit(top=1, extra=(_head("mod.an:3227"),))
+    coord_dir, chara_dir = tmp_path / "coord", tmp_path / "chara"
+    chara_dir.mkdir()
+    _write_coord(coord_dir / "c.png", coord)
+    digest = outfits.outfit_digest(coord, [])
+    with mock.patch.object(gc, "collect_chara_mods", return_value={chara_dir / "An.png": {"mod.an": 0.5}}), \
+            mock.patch.object(gc, "collect_chara_hairs", return_value={}), \
+            mock.patch.object(gc, "collect_chara_digests", return_value={chara_dir / "Bo.png": {digest}}):
+        _task(chara_dir, coord_dir, hair=False).run()
+    assert _layout(coord_dir) == {"c.png": "Bo"}                        # the exact outfit match came first

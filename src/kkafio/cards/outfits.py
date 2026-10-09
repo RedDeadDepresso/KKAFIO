@@ -320,6 +320,61 @@ def outfit_hair(outfit: dict, infos: list[dict], outfit_index: int | None = None
     return tuple(items)
 
 
+# ---------------------------------------------------------------------------
+# Head mods
+# ---------------------------------------------------------------------------
+#
+# A character built from a "no hair" base (her hairstyle is head accessories) is identified by
+# the mod her head accessories come from, even when a coordinate wears a different variant of
+# them than any of her outfits does. The head mods of an outfit are the mods of its type-121 /
+# type-122 accessories on the head-top / head-side nodes (vanilla items have no mod). Bald caps
+# are left out: they say nothing about whose head it is.
+
+MOD_CACHE_FILE = "kkafio_coord_mod_cache.json"
+
+MOD_CACHE_VERSION = 1
+
+
+def item_mod(item: str) -> str | None:
+    """Mod ID of a resolved item ("<mod id>:<slot>"), None for a vanilla item or a bald cap."""
+    mod, sep, slot = str(item).rpartition(":")
+    if not sep or not mod or not slot.isdigit():
+        return None
+    if any(marker in mod.lower() for marker in BALD_CAP_MARKERS):
+        return None
+    return mod
+
+
+def outfit_head_mods(outfit: dict, infos: list[dict], outfit_index: int | None = None) -> tuple[str, ...]:
+    """Sorted, distinct mod IDs of the head accessories of an outfit (empty if it has none).
+    `infos` / `outfit_index` are as for outfit_digest()."""
+    _, accessory = _normalize_outfit(outfit, _resolve_lookup(infos, outfit_index))
+    mods: set[str] = set()
+    for part in accessory.get("parts", []):
+        if (isinstance(part, dict) and part.get("type") in (HAIR_ACCESSORY_TYPE, WIG_ACCESSORY_TYPE)
+                and part.get("parentKey") in HAIR_PARENT_KEYS):
+            mod = item_mod(str(part.get("id")))
+            if mod:
+                mods.add(mod)
+    return tuple(sorted(mods))
+
+
+def chara_outfit_head_mods(kc) -> dict[str, float]:
+    """{head mod: share of the card's outfits that wear it} for a loaded chara card. A mod worn
+    in most outfits is the character's own head mod; one worn in a single outfit is a one-off
+    (a costume-pack hat, say)."""
+    try:
+        infos = uar_resolve_infos(kc["KKEx"].data)
+    except (KeyError, ValueError):
+        infos = []
+    outfits = kc["Coordinate"].data
+    counts: dict[str, int] = {}
+    for n, outfit in enumerate(outfits):
+        for mod in outfit_head_mods(outfit, infos, n):
+            counts[mod] = counts.get(mod, 0) + 1
+    return {mod: round(count / len(outfits), 4) for mod, count in sorted(counts.items())}
+
+
 def chara_outfit_hairs(kc) -> list[tuple[str, ...]]:
     """Distinct non-empty hairs (see outfit_hair) worn across the outfits of a loaded chara
     card (KoikatuCharaData), sorted. A character that wears several hairstyles has several."""
@@ -377,6 +432,16 @@ def _coord_file_hair(path: Path) -> list[str] | None:
     try:
         loaded = _read_coord_outfit(path)
         return list(outfit_hair(*loaded)) if loaded else None
+    except Exception:
+        return None
+
+
+def _coord_file_mods(path: Path) -> list[str] | None:
+    """Head mods of a coordinate card file (a list, so it survives the JSON cache), or None
+    if it isn't a readable coordinate card."""
+    try:
+        loaded = _read_coord_outfit(path)
+        return list(outfit_head_mods(*loaded)) if loaded else None
     except Exception:
         return None
 
@@ -483,4 +548,13 @@ def build_coord_hair_cache(coord_dir: Path, use_cache: bool = True) -> dict[str,
     build_coord_cache(), in coord_dir/kkafio_coord_hair_cache.json."""
     raw = _build_cache(coord_dir, use_cache, file_name=HAIR_CACHE_FILE, version=HAIR_CACHE_VERSION,
                        section="hairs", parse=_coord_file_hair, missing=None)
+    return {sp: (tuple(v) if v is not None else None) for sp, v in raw.items()}
+
+
+def build_coord_mod_cache(coord_dir: Path, use_cache: bool = True) -> dict[str, tuple[str, ...] | None]:
+    """Return {str(path): head mods} for every PNG under coord_dir (None for PNGs that aren't
+    coordinate cards, an empty tuple for coordinates without head mods). Cached like
+    build_coord_cache(), in coord_dir/kkafio_coord_mod_cache.json."""
+    raw = _build_cache(coord_dir, use_cache, file_name=MOD_CACHE_FILE, version=MOD_CACHE_VERSION,
+                       section="mods", parse=_coord_file_mods, missing=None)
     return {sp: (tuple(v) if v is not None else None) for sp, v in raw.items()}

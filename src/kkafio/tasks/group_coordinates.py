@@ -17,6 +17,13 @@ same_hair) is worn in an outfit of exactly one character moves to that character
 Coordinates whose hair fits no character, or fits several, are left for the outfit matching
 described below, which then handles everything the hair pass didn't.
 
+Coordinates that still match nothing after the outfit matching get a last pass by head mod: a
+coordinate whose head accessories (hair, wigs, head parts) come from a mod that exactly one
+character wears moves to that character, even when the exact items differ. Mods worn by several
+characters (and bald caps) identify nobody. When a coordinate's mods point to several characters,
+the one who wears hers in far more of her outfits wins (see mod_matcher); otherwise it is left
+alone.
+
 By default a coordinate must be an exact copy of an outfit. With Ignore Accessories on, the
 accessories are left out of the comparison, so a coordinate with the same clothes as one of a
 character's outfits matches whatever accessories it has. With a Clothes Tolerance of M > 0 up to
@@ -48,10 +55,10 @@ from pathlib import Path
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.cards.outfits import (
-    COORD_CACHE_FILE, COORD_CACHE_VERSION, HAIR_CACHE_FILE, HAIR_CACHE_VERSION, SIG_CACHE_FILE,
-    SIG_CACHE_VERSION, OutfitSignature,
-    accessory_difference, build_coord_cache, build_coord_hair_cache, build_coord_sig_cache,
-    chara_outfit_digests, chara_outfit_hairs,
+    COORD_CACHE_FILE, COORD_CACHE_VERSION, HAIR_CACHE_FILE, HAIR_CACHE_VERSION, MOD_CACHE_FILE,
+    MOD_CACHE_VERSION, SIG_CACHE_FILE, SIG_CACHE_VERSION, OutfitSignature,
+    accessory_difference, build_coord_cache, build_coord_hair_cache, build_coord_mod_cache,
+    build_coord_sig_cache, chara_outfit_digests, chara_outfit_hairs, chara_outfit_head_mods,
     chara_outfit_signatures, clothes_difference,
 )
 from kkafio.core.errors import InputError
@@ -61,7 +68,7 @@ from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 TAG = "GRPCOORD"
 
 CHARA_OUTFIT_CACHE_FILE = "kkafio_chara_outfit_cache.json"
-CHARA_OUTFIT_CACHE_VERSION = 6
+CHARA_OUTFIT_CACHE_VERSION = 8
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 _RESERVED = {"CON", "PRN", "AUX", "NUL",
@@ -92,11 +99,12 @@ def _load_outfit_cache(coord_dir: Path) -> dict[str, dict]:
 
 
 def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
-                 need_sigs: bool, need_hairs: bool = False) -> dict[Path, dict]:
+                 need_sigs: bool, need_hairs: bool = False,
+                 need_mods: bool = False) -> dict[Path, dict]:
     """{chara PNG: {"digests": [...], "sigs": [[[clothes tokens], [accessories]], ...],
-    "hairs": [[hair items], ...]}} for every chara card under chara_dirs. All three are always
+    "hairs": [[hair items], ...], "mods": {head mod: share of outfits}}} for every chara card under chara_dirs. All four are always
     computed for cards that get read, so the cache can serve any mode; entries cached without
-    "sigs" / "hairs" are only re-read when `need_sigs` / `need_hairs`."""
+    "sigs" / "hairs" / "mods" are only re-read when `need_sigs` / `need_hairs` / `need_mods`."""
     pngs: list[Path] = []
     for folder in chara_dirs:
         pngs.extend(folder.rglob("*.png"))
@@ -112,7 +120,8 @@ def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
         sp, fp = str(png), file_fp(png)
         entry = cache.get(sp)
         if (entry is not None and entry.get("fp") == fp and "digests" in entry
-                and (not need_sigs or "sigs" in entry) and (not need_hairs or "hairs" in entry)):
+                and (not need_sigs or "sigs" in entry) and (not need_hairs or "hairs" in entry)
+                and (not need_mods or "mods" in entry)):
             new_cache[sp] = entry
             if entry["digests"]:
                 result[png] = entry
@@ -122,12 +131,13 @@ def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
     def _read(png: Path) -> tuple[Path, list[int], dict]:
         fp = file_fp(png)
         if get_card_type(png.read_bytes()) not in CHARA_CARD_TYPES:
-            return png, fp, {"digests": [], "sigs": [], "hairs": []}
+            return png, fp, {"digests": [], "sigs": [], "hairs": [], "mods": {}}
         from kkloader import KoikatuCharaData
         kc = KoikatuCharaData.load(str(png))
         return png, fp, {"digests": sorted(chara_outfit_digests(kc)),
                          "sigs": [[list(clothes), list(accs)] for clothes, accs in chara_outfit_signatures(kc)],
-                         "hairs": [list(hair) for hair in chara_outfit_hairs(kc)]}
+                         "hairs": [list(hair) for hair in chara_outfit_hairs(kc)],
+                         "mods": chara_outfit_head_mods(kc)}
 
     if to_read:
         workers = min(32, (os.cpu_count() or 4) * 2)
@@ -172,6 +182,13 @@ def collect_chara_hairs(chara_dirs: list[Path], coord_dir: Path,
     """{chara PNG: the hairs its outfits wear} for every chara card under chara_dirs."""
     scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=False, need_hairs=True)
     return {png: [tuple(hair) for hair in e.get("hairs", [])] for png, e in scanned.items()}
+
+
+def collect_chara_mods(chara_dirs: list[Path], coord_dir: Path,
+                       use_cache: bool) -> dict[Path, dict[str, float]]:
+    """{chara PNG: {head mod: share of its outfits wearing it}} for every chara card."""
+    scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=False, need_mods=True)
+    return {png: dict(e.get("mods", {})) for png, e in scanned.items()}
 
 
 def _sorted_charas(charas) -> list[tuple[Path, str]]:
@@ -296,6 +313,43 @@ def hair_matcher(chara_hairs: dict[Path, list[tuple[str, ...]]]):
     return matches
 
 
+MOD_DOMINANCE = 2.0
+
+
+def mod_matcher(chara_mods: dict[Path, dict[str, float]]):
+    """matches(coordinate head mods) -> [folder names] of the characters its head mods point to.
+
+    A mod only points to a character when exactly one character wears it, so shared mods count
+    for nobody. A character's score is the highest share of her outfits that wear one of the
+    coordinate's mods that are hers alone. When several characters qualify, the best one is
+    returned alone if her score is at least MOD_DOMINANCE times every other's (her own head mod
+    worn in most outfits beats another character's one-off costume-pack item); otherwise all
+    of them are returned, in filename order, and the caller leaves the coordinate alone."""
+    sorted_charas = _sorted_charas(chara_mods)
+    wearers: dict[str, list[str]] = defaultdict(list)
+    for chara, name in sorted_charas:
+        for mod in chara_mods[chara]:
+            if name not in wearers[mod]:
+                wearers[mod].append(name)
+    share = {(name, mod): value for chara, name in sorted_charas for mod, value in chara_mods[chara].items()}
+    order = [name for _, name in sorted_charas]
+
+    def matches(mods) -> list[str]:
+        score: dict[str, float] = {}
+        for mod in mods:
+            if len(wearers.get(mod, ())) == 1:
+                name = wearers[mod][0]
+                score[name] = max(score.get(name, 0.0), share[(name, mod)])
+        found = [name for name in order if name in score]
+        if len(found) > 1:
+            best = max(found, key=lambda n: score[n])
+            if all(score[best] >= MOD_DOMINANCE * score[n] for n in found if n != best):
+                return [best]
+        return found
+
+    return matches
+
+
 def plan_hair_groups(coord_hair: dict[Path, tuple[str, ...] | None], coord_dir: Path,
                      first_unknown: int = 1) -> dict:
     """Decide where ungrouped coordinates (directly in coord_dir) go, by hair.
@@ -407,7 +461,8 @@ def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
     for file_name, version, sections in (
             (COORD_CACHE_FILE, COORD_CACHE_VERSION, ("files", "coords")),
             (SIG_CACHE_FILE, SIG_CACHE_VERSION, ("files", "sigs")),
-            (HAIR_CACHE_FILE, HAIR_CACHE_VERSION, ("files", "hairs"))):
+            (HAIR_CACHE_FILE, HAIR_CACHE_VERSION, ("files", "hairs")),
+            (MOD_CACHE_FILE, MOD_CACHE_VERSION, ("files", "mods"))):
         cache_path = coord_dir / file_name
         try:
             data = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -482,6 +537,9 @@ class GroupCoordinates(BaseTask):
         logger.line()
         logger.info(TAG, "Matching the remaining coordinates by outfit")
         self._group_by_outfits(chara_dirs, coord_dir, clothes_tolerance, handled)
+        logger.line()
+        logger.info(TAG, "Matching the remaining coordinates by head mod")
+        self._group_by_chara_mods(chara_dirs, coord_dir, handled)
         if self.group_by_hair:
             self._group_by_hair(coord_dir)
 
@@ -580,9 +638,11 @@ class GroupCoordinates(BaseTask):
                     continue
                 if coord.parent.parent == coord_dir and coord.parent.name in names:
                     in_place += 1                     # already in one of its characters' folders
+                    self._settle(skip, coord)
                     continue
                 if coord.parent == coord_dir / names[0]:
                     in_place += 1
+                    self._settle(skip, coord)
                     continue
                 if len(names) > 1:
                     logger.info(TAG, f"{coord.name} matches {len(names)} characters "
@@ -596,6 +656,7 @@ class GroupCoordinates(BaseTask):
                 note = _difference_note(found[0][1], found[0][2])
                 logger.success(TAG, f"Moved {coord.name} -> {names[0]}/{note}")
                 moves[str(coord)] = str(dest)
+                self._settle(skip, dest)
                 moved += 1
         finally:
             if self.use_cache and moves:
@@ -606,6 +667,60 @@ class GroupCoordinates(BaseTask):
                             f"no matching character: {unmatched}"
                             + (f", failed: {failed}" if failed else ""))
         return True
+
+    @staticmethod
+    def _settle(settled, path: Path) -> None:
+        """Remember a coordinate a pass has dealt with (when the caller passed a mutable set)."""
+        if isinstance(settled, set):
+            settled.add(str(path))
+
+    def _group_by_chara_mods(self, chara_dirs: list[Path], coord_dir: Path,
+                             skip: set[str] = frozenset()) -> None:
+        """Move the coordinates the earlier passes left alone into the folder of the one
+        character wearing a mod their head accessories come from."""
+        chara_mods = collect_chara_mods(chara_dirs, coord_dir, self.use_cache)
+        if not any(chara_mods.values()):
+            logger.info(TAG, "No character wears a head mod — skipping the head mod pass")
+            return
+        matches = mod_matcher(chara_mods)
+        coord_mods = build_coord_mod_cache(coord_dir, use_cache=self.use_cache)
+        coords = sorted(Path(sp) for sp, mods in coord_mods.items()
+                        if mods and sp not in skip
+                        and (self.include_subfolders or Path(sp).parent == coord_dir))
+        logger.info(TAG, f"Coordinate cards with head mods: {len(coords)}")
+
+        moved = in_place = ambiguous = failed = 0
+        moves: dict[str, str] = {}
+        try:
+            for coord in coords:
+                names = matches(coord_mods[str(coord)])
+                if not names:
+                    continue
+                if len(names) > 1:
+                    logger.info(TAG, f"{coord.name}: its head mods belong to several characters "
+                                     f"({', '.join(names)}) — left alone")
+                    ambiguous += 1
+                    continue
+                if coord.parent == coord_dir / names[0]:
+                    in_place += 1
+                    continue
+                try:
+                    dest = _move_unique(coord, coord_dir / names[0])
+                except Exception as e:
+                    logger.error(TAG, f"Could not move {coord.name}: {e}")
+                    failed += 1
+                    continue
+                logger.success(TAG, f"Moved {coord.name} -> {names[0]}/ (character's head mod)")
+                moves[str(coord)] = str(dest)
+                moved += 1
+        finally:
+            if self.use_cache and moves:
+                _update_coord_cache(coord_dir, moves)
+
+        logger.line()
+        logger.success(TAG, f"Head mod matching done — moved: {moved}, already in place: {in_place}, "
+                            f"head mods of several characters: {ambiguous}"
+                            + (f", failed: {failed}" if failed else ""))
 
     def _group_by_hair(self, coord_dir: Path) -> None:
         """Group the coordinates still sitting directly in coord_dir by their hair."""
