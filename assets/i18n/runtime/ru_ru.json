@@ -69,7 +69,7 @@
   "dialog.password.tfa_title": "Пароль двухфакторной аутентификации Telegram",
   "dialog.password.tfa_body": "В вашем аккаунте включена двухфакторная аутентификация.\nВведите пароль 2FA:",
   "dialog.password.kkd_title": "Cookie сессии koikatsucards.com",
-  "dialog.password.kkd_body": "Войдите на koikatsucards.com, затем:\n1. Откройте DevTools (F12)\n2. Перейдите в Application → Cookies → https://koikatsucards.com\n3. Найдите «kkd_session» и скопируйте его Value\n\nВставьте значение ниже:",
+  "dialog.password.kkd_body": "Войдите на koikatsucards.com, затем:\n1. Откройте DevTools (инструменты разработчика) в браузере (F12)\n2. Chrome/Edge: Application (Приложение) → Storage (Хранилище) → Cookies (Файлы cookie) → https://koikatsucards.com\n    Firefox: Storage → Cookies → https://koikatsucards.com\n3. Найдите «kkd_session» и скопируйте его Value (значение)\n\nВставьте значение ниже:",
   "dialog.password.archive_title": "Введите пароль",
   "dialog.password.archive_body": "Ошибка при обработке архива {archive}. Возможно, он защищён паролем?",
   "dialog.password.archive_retry": "Неверный пароль, либо {archive} повреждён. Введите пароль ещё раз или нажмите «Отмена»."

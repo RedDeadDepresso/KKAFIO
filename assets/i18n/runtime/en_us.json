@@ -69,7 +69,7 @@
   "dialog.password.tfa_title": "Telegram Two-Factor Password",
   "dialog.password.tfa_body": "Your account has Two-Factor Authentication enabled.\nEnter your 2FA password:",
   "dialog.password.kkd_title": "koikatsucards.com Session Cookie",
-  "dialog.password.kkd_body": "Log in to koikatsucards.com, then:\n1. Open DevTools (F12)\n2. Go to Application → Cookies → https://koikatsucards.com\n3. Find 'kkd_session' and copy its Value\n\nPaste the value below:",
+  "dialog.password.kkd_body": "Log in to koikatsucards.com, then:\n1. Open your browser's DevTools (F12)\n2. Chrome/Edge: go to Application → Storage → Cookies → https://koikatsucards.com\n    Firefox: go to Storage → Cookies → https://koikatsucards.com\n3. Find 'kkd_session' and copy its Value\n\nPaste the value below:",
   "dialog.password.archive_title": "Enter Password",
   "dialog.password.archive_body": "There is an error with the archive {archive}. Maybe it requires a password?",
   "dialog.password.archive_retry": "Wrong password or {archive} is corrupted. Please enter the password again or click Cancel."

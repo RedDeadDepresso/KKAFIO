@@ -69,7 +69,7 @@
   "dialog.password.tfa_title": "Telegram二段階認証パスワード",
   "dialog.password.tfa_body": "アカウントで二段階認証が有効になっています。\n2FAパスワードを入力してください：",
   "dialog.password.kkd_title": "koikatsucards.com セッションCookie",
-  "dialog.password.kkd_body": "koikatsucards.comにログインし、次の手順に従ってください：\n1. DevTools（F12）を開く\n2. Application → Cookies → https://koikatsucards.com に移動\n3. 「kkd_session」を探し、その Value をコピー\n\n下に値を貼り付けてください：",
+  "dialog.password.kkd_body": "koikatsucards.comにログインし、次の手順に従ってください：\n1. ブラウザーのDevTools（開発者ツール）を開く（F12）\n2. Chrome／Edge：Application（アプリケーション／アプリ）→ Storage（ストレージ）→ Cookies（Cookie）→ https://koikatsucards.com\n    Firefox：Storage → Cookies → https://koikatsucards.com\n3. 「kkd_session」を探し、その Value（値）をコピー\n\n下に値を貼り付けてください：",
   "dialog.password.archive_title": "パスワードを入力",
   "dialog.password.archive_body": "アーカイブ {archive} でエラーが発生しました。パスワードが必要かもしれません。",
   "dialog.password.archive_retry": "パスワードが違うか、{archive} が破損しています。もう一度パスワードを入力するか、キャンセルをクリックしてください。"

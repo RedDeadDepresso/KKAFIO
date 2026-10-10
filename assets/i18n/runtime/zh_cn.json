@@ -69,7 +69,7 @@
   "dialog.password.tfa_title": "Telegram 两步验证密码",
   "dialog.password.tfa_body": "你的账号已启用两步验证。\n请输入你的两步验证密码：",
   "dialog.password.kkd_title": "koikatsucards.com 会话 Cookie",
-  "dialog.password.kkd_body": "登录 koikatsucards.com，然后：\n1. 打开 DevTools（F12）\n2. 进入 Application → Cookies → https://koikatsucards.com\n3. 找到“kkd_session”并复制它的 Value\n\n请在下方粘贴该值：",
+  "dialog.password.kkd_body": "登录 koikatsucards.com，然后：\n1. 打开浏览器的 DevTools（开发者工具，F12）\n2. Chrome/Edge：Application（应用）→ Storage（存储）→ Cookies（Cookie）→ https://koikatsucards.com\n    Firefox：Storage → Cookies → https://koikatsucards.com\n3. 找到“kkd_session”并复制它的 Value（值）\n\n请在下方粘贴该值：",
   "dialog.password.archive_title": "输入密码",
   "dialog.password.archive_body": "压缩包 {archive} 出错。可能需要密码？",
   "dialog.password.archive_retry": "密码错误，或 {archive} 已损坏。请重新输入密码，或点击“取消”。"

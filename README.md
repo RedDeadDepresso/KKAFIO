@@ -130,7 +130,7 @@ Everything else — CLI output, log files, and error messages — is English-onl
 - **Skip already downloaded** (on by default) uses a history file at `%APPDATA%/KKAFIO/download_history.json` to avoid re-downloading files.
   - **Tip:** combined with **Skip already downloaded**, a paginated link effectively lets you "subscribe" to an author or series — re-running the same task later only picks up whatever's new. For example, on koikatsucards.com you can grab everything from an author or series with `| all` once, then switch to a small window like `| 1 | 3` for future runs (widen it if they upload less often than that) so each run only checks the first few pages, skips anything already downloaded, and grabs whatever's new.
 - **koikatsucards.com session cookie** — downloading from koikatsucards.com requires a valid session. KKAFIO manages this automatically:
-  - On first use (or when the session expires), KKAFIO opens [koikatsucards.com/login](https://koikatsucards.com/login) in your browser and shows a dialog asking you to paste the `kkd_session` cookie value from DevTools (F12 → Application → Cookies → koikatsucards.com).
+  - On first use (or when the session expires), KKAFIO opens [koikatsucards.com/login](https://koikatsucards.com/login) in your browser and shows a dialog asking you to paste the `kkd_session` cookie value from DevTools (F12 → Application → Storage → Cookies → koikatsucards.com in Chrome/Edge; Storage → Cookies → koikatsucards.com in Firefox).
   - The session is validated against `koikatsucards.com/api/session` before use. If it is expired, you are prompted for a new one automatically.
   - The session is stored in `%APPDATA%/KKAFIO/config/kkd_session.json`. It does not need to be entered in the GUI settings.
 

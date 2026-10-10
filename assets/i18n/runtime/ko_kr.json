@@ -69,7 +69,7 @@
   "dialog.password.tfa_title": "Telegram 2단계 인증 비밀번호",
   "dialog.password.tfa_body": "계정에 2단계 인증이 설정되어 있습니다.\n2단계 인증 비밀번호를 입력하세요:",
   "dialog.password.kkd_title": "koikatsucards.com 세션 쿠키",
-  "dialog.password.kkd_body": "koikatsucards.com에 로그인한 후 다음을 진행하세요:\n1. DevTools 열기(F12)\n2. Application → Cookies → https://koikatsucards.com 로 이동\n3. 'kkd_session'을 찾아 Value를 복사\n\n아래에 값을 붙여넣으세요:",
+  "dialog.password.kkd_body": "koikatsucards.com에 로그인한 후 다음을 진행하세요:\n1. 브라우저의 DevTools(개발자 도구) 열기(F12)\n2. Chrome/Edge: Application(애플리케이션) → Storage(저장소/저장용량) → Cookies(쿠키) → https://koikatsucards.com\n    Firefox: Storage → Cookies → https://koikatsucards.com\n3. 'kkd_session'을 찾아 Value(값)를 복사\n\n아래에 값을 붙여넣으세요:",
   "dialog.password.archive_title": "비밀번호 입력",
   "dialog.password.archive_body": "아카이브 {archive}에 오류가 있습니다. 비밀번호가 필요할 수 있습니다.",
   "dialog.password.archive_retry": "비밀번호가 틀렸거나 {archive}이(가) 손상되었습니다. 비밀번호를 다시 입력하거나 취소를 클릭하세요."
