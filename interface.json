@@ -458,7 +458,7 @@
       "type": "select",
       "label": "$option.FileConflicts.label",
       "description": "$option.FileConflicts.description",
-      "default_case": "Skip",
+      "default_case": "Rename",
       "cases": [
         {
           "name": "Skip",

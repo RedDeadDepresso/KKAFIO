@@ -4,6 +4,11 @@ All notable changes to KKAFIO are documented in this file.
 
 ## [2.1.0]
 
+### Changed
+
+- **Install Contents** — **File Conflicts** now defaults to `Rename`. With `Rename`, an existing file with identical content (xxhash) is skipped instead of being installed again under a timestamped name.
+- **Uninstall Contents** — a file is only deleted when its content is identical (xxhash) to the one being uninstalled; same-named files with different content are skipped.
+
 ### Added
 
 - **Translated native dialogs** — the Copy/Paste dialog (Group/Rename Characters), the password prompt and the Review Similar Characters window now appear in English, Simplified/Traditional Chinese, Japanese, Korean and Russian. The language is the GUI's language setting, or the OS display language when the GUI follows the system, else English. Strings live in `assets/i18n/runtime/`.

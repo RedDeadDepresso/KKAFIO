@@ -11,10 +11,29 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from typing import Union, Literal
 
+import xxhash
+
 from kkafio.system.subprocess_utils import popen_text, run_text
 
 
 FileEntry = tuple[Path, int, str]
+
+
+def _xxh_file(path: Path) -> str:
+    """Streamed XXH3-128 hex digest of a file's contents."""
+    h = xxhash.xxh3_128()
+    with Path(path).open("rb") as f:
+        while chunk := f.read(8 * 1024 * 1024):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def files_identical(a: Path | str, b: Path | str) -> bool:
+    """True if both files have the same content (size check first, then xxhash)."""
+    a, b = Path(a), Path(b)
+    if a.stat().st_size != b.stat().st_size:
+        return False
+    return _xxh_file(a) == _xxh_file(b)
 
 
 class FileManager:
@@ -83,6 +102,16 @@ class FileManager:
             logger.replaced(type, base_name)
         
         elif already_exists and conflicts == "Rename":
+            # Same name AND same content -> it's already installed; skip
+            # instead of creating a timestamped duplicate.
+            try:
+                if files_identical(source_path, destination_path):
+                    logger.skipped(type, base_name)
+                    return
+            except OSError as e:
+                logger.error(type, f"Could not compare {base_name}: {e}")
+                return
+
             max_retries = 3
             for attempt in range(max_retries):
                 try:
@@ -110,7 +139,7 @@ class FileManager:
             logger.error(type, f"An error occurred: {e}")
 
     def find_and_remove(self, file_type: str, source_path: str | Path, destination_folder: str | Path):
-        """Remove file if it exists at the destination."""
+        """Remove the file at the destination if it exists and matches the source (xxhash)."""
         source_path = Path(source_path)
         destination_folder = Path(destination_folder)
 
@@ -119,6 +148,12 @@ class FileManager:
 
         if destination_path.exists():
             try:
+                # Only delete the installed file if it's byte-identical to
+                # the one being uninstalled; a same-named but different
+                # file belongs to something else, so leave it alone.
+                if not files_identical(source_path, destination_path):
+                    logger.skipped(file_type, f"{base_name} (content differs)")
+                    return
                 destination_path.unlink()
                 logger.removed(file_type, base_name)
             except OSError as e:

@@ -250,17 +250,17 @@ https://t.me/kknowcc
 - **Content Types to Install** — multi-select: Chara / Mods / Coords / Scenes / Overlays. All five selected by default; deselect any type you don't want copied in.
 - Respects the configured **Game Type**: Koikatsu Sunshine installs KK, KKSP, and KKS cards. Koikatsu / Koikatsu Party installs KK and KKSP cards only — KKS cards are skipped with a log message. The same applies to Studio scenes: a KKS scene (scene version 1.1.0.0 or newer) is skipped when the game is Koikatsu / Koikatsu Party, because KK can't load it; KK scenes are installed everywhere. Run **Filter & Convert KKS Cards** first to convert KKS scenes to KK.
 - Scene cards (Studio) are installed only if the Studio `scene` folder is present.
-- **File Conflicts** _(`Skip` by default)_: `Skip` leaves an existing file in place and doesn't install the new one over it; `Replace` overwrites it; `Rename` installs the new file alongside the existing one under a new name.
+- **File Conflicts** _(`Rename` by default)_: `Skip` leaves an existing file in place and doesn't install the new one over it; `Replace` overwrites it; `Rename` installs the new file alongside the existing one under a new name — unless the existing file is identical (same content, compared with xxhash), in which case it is skipped instead of creating a duplicate.
 - **Extract Archives** _(on by default)_: extracts ZIP / RAR / 7z archives automatically. Each archive is extracted next to itself into a folder named after it and that folder is left in place; an archive whose folder already exists is not extracted again.
 - **Archive Password** _(`Skip` by default)_: `Skip` ignores password-protected archives; `Request Password` prompts you for one when an archive needs it. Has a separate value from Filter & Convert KKS Cards.
 - If both Filter & Convert KKS Cards and Install Contents are enabled with the same input folder, archive extraction runs in the filter step only to avoid double-extracting.
 
 **8. Uninstall Contents**
 
-- Reverse of Install Contents: given the same folder, deletes the matching files from the game directories.
+- Reverse of Install Contents: given the same folder, deletes the matching files from the game directories. A file is only deleted if its content is identical (compared with xxhash) to the one in the input folder; a same-named file with different content is skipped and logged.
 - **Content Types to Uninstall** — the same Chara / Mods / Coords / Scenes / Overlays multi-select as Install Contents, all five selected by default; deselect any type you don't want removed.
 - Respects the configured **Game Type** the same way Install Contents does: KKS cards and KKS scenes are skipped (with a log message) when the game is Koikatsu / Koikatsu Party, since they could never have been installed there.
-- **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing.
+- **Note:** Only use this if you selected **Rename** or **Replace** under file conflicts when installing. Files that Install Contents renamed (timestamped copies of differing files) or replaced no longer match their originals, so they won't be removed.
 - **Warning:** Uninstall Contents does not check whether a zipmod is shared with other characters before deleting it. Removing a zipmod used by multiple cards will break all of them. Character cards work independently from coordinate cards, so removing a coordinate does not affect the character card itself. Only use this task when you are certain the files being removed are exclusive to the cards you are deleting. Files can still be recovered from the Recycle Bin.
 
 **9. Group Characters**
