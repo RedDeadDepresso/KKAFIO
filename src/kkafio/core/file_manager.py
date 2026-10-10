@@ -16,9 +16,6 @@ import xxhash
 from kkafio.system.subprocess_utils import popen_text, run_text
 
 
-FileEntry = tuple[Path, int, str]
-
-
 def _xxh_file(path: Path) -> str:
     """Streamed XXH3-128 hex digest of a file's contents."""
     h = xxhash.xxh3_128()
@@ -42,7 +39,7 @@ class FileManager:
     def __init__(self, config):
         self.config = config
 
-    def find_supported_files(self, directory: Path | str) -> tuple[list[FileEntry], list[FileEntry]]:
+    def find_supported_files(self, directory: Path | str) -> tuple[list[Path], list[Path]]:
         """Find installable files and archive files in the given directory.
 
         Only .png, .zipmod, .zip, .rar and .7z files are considered (matched
@@ -55,33 +52,24 @@ class FileManager:
             - A list of archive files (path, size, extension)
         """
         directory = Path(directory)
-        file_list: list[FileEntry] = []
-        archive_list: list[FileEntry] = []
+        file_list: list[Path] = []
+        archive_list: list[Path] = []
         archive_extensions = {".rar", ".zip", ".7z"}
         supported_extensions = {".png", ".zipmod"} | archive_extensions
 
         # Target only the specific extensions recursively
         for ext in supported_extensions:
             for file_path in directory.rglob(f"*{ext}"):
-
-                file_extension = file_path.suffix.lower()
-
-                file_size = file_path.stat().st_size
-                file_entry: FileEntry = (file_path, file_size, file_extension)
-
-                if file_extension == ".zip" and is_mod_archive(file_path):
-                    file_list.append(file_entry)
-                elif file_extension in archive_extensions:
-                    archive_list.append(file_entry)
+                if ext == ".zip" and is_mod_archive(file_path):
+                    file_list.append(file_path)
+                elif ext in archive_extensions:
+                    archive_list.append(file_path)
                 else:
-                    file_list.append(file_entry)
-
-        file_list.sort(key=lambda x: x[1])
-        archive_list.sort(key=lambda x: x[1])
+                    file_list.append(file_path)
 
         return file_list, archive_list
 
-    def find_archives(self, directory: Path | str) -> list[FileEntry]:
+    def find_archives(self, directory: Path | str) -> list[Path]:
         """Find only the archive files (.zip, .rar, .7z) under a directory.
 
         Same rules as the archive list from `find_supported_files` — extensions are
@@ -95,18 +83,16 @@ class FileManager:
         """
         directory = Path(directory)
         archive_extensions = {".rar", ".zip", ".7z"}
-        archive_list: list[FileEntry] = []
+        archive_list: list[Path] = []
 
         for ext in archive_extensions:
             for file_path in directory.rglob(f"*{ext}"):
-                file_extension = file_path.suffix.lower()
-                
-                if file_extension == ".zip" and is_mod_archive(file_path):
+
+                if ext == ".zip" and is_mod_archive(file_path):
                     continue
                     
-                archive_list.append((file_path, file_path.stat().st_size, file_extension))
+                archive_list.append(file_path)
 
-        archive_list.sort(key=lambda x: x[1])
         return archive_list
 
     def copy_and_paste(self, type: str, source_path: Path | str, destination_folder: str | Path):

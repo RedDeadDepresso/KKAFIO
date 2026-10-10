@@ -218,9 +218,9 @@ class FilterConvertKKS:
         if not archive_list:
             return
         logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
-        for archive in archive_list:
+        for archive_path in archive_list:
             self.file_manager.extract_archive(
-                archive[0], task_config=self.config.filter_convert_kks)
+                archive_path, task_config=self.config.filter_convert_kks)
 
     # ------------------------------------------------------------------
     # Main

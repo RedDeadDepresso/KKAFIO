@@ -44,9 +44,8 @@ class InstallContents(ContentTypeResolver):
 
         file_list, archive_list = self.file_manager.find_supported_files(folder_path)
 
-        for file in file_list:
-            path, size, extension = file
-            match extension:
+        for path in file_list:
+            match path.suffix:
                 case ".zipmod" | ".zip":
                     # A plain .zip only reaches file_list (as opposed to
                     # archive_list) when find_supported_files has already
