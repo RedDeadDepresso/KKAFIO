@@ -133,11 +133,12 @@
   "resolved_by_slot": "e8e6f17c3282598a79e2d9b7de0096d4"
  },
  "source_labels": {
-  "Both": "koikatsucards.com + Telegram Chat Links",
-  "ChatLinks": "Telegram Chat Links",
-  "KoikatsuCards": "koikatsucards.com",
-  "No": "No",
-  "anything else": "anything else"
+  "both": "koikatsucards.com + Telegram Chat Links",
+  "both, reversed": "koikatsucards.com + Telegram Chat Links",
+  "chatlinks": "Telegram Chat Links",
+  "koikatsucards": "koikatsucards.com",
+  "none": "No",
+  "unknown name": "anything else"
  },
  "tme_links": {
   "": null,

@@ -77,7 +77,7 @@ def build_pure_functions() -> dict:
     """Recorded outputs of pure helpers. Imports live in test_pure_functions / test_card_code."""
     import test_card_code as cc
     import test_pure_functions as pf
-    from pure_corpus import msgpack_corpus
+    from pure_corpus import SOURCE_SELECTIONS, msgpack_corpus
 
     links = ["https://t.me/c/1234567890/42", "t.me/c/123/9", "https://t.me/somechannel/77",
              "https://t.me/+InviteHash", "http://t.me/c/5/6/7", "not a link", "", "https://t.me/c/abc/1",
@@ -93,8 +93,8 @@ def build_pure_functions() -> dict:
         "chat_link_for_search": {x: pf._jsonable(pf.telegram_links._parse_chat_link_for_search(x)) for x in search},
         "chat_links": {x: pf._jsonable(pf.telegram_links.parse_chat_links(x)) for x in raws},
         "default_chat_links": pf._jsonable(pf.telegram_links.parse_chat_links(pf.telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)),
-        "source_labels": {x: pf.telegram_links.telegram_source_label(x)
-                          for x in ("No", "KoikatsuCards", "ChatLinks", "Both", "anything else")},
+        "source_labels": {name: pf.telegram_links.telegram_sources_label(sel)
+                          for name, sel in SOURCE_SELECTIONS.items()},
     }
 
 

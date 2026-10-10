@@ -883,38 +883,24 @@
         }
       ]
     },
-    "TelegramSource": {
-      "type": "select",
-      "label": "$option.TelegramSource.label",
-      "description": "$option.TelegramSource.description",
-      "default_case": "Both",
+    "TelegramSources": {
+      "type": "checkbox",
+      "label": "$option.TelegramSources.label",
+      "description": "$option.TelegramSources.description",
+      "default_case": ["KoikatsuCards", "ChatLinks"],
       "cases": [
         {
-          "name": "No",
-          "label": "$option.TelegramSource.case.No.label",
-          "pipeline_override": {
-            "TelegramSource": "No"
-          }
-        },
-        {
           "name": "KoikatsuCards",
-          "label": "$option.TelegramSource.case.KoikatsuCards.label",
+          "label": "$option.TelegramSources.case.KoikatsuCards.label",
           "pipeline_override": {
-            "TelegramSource": "KoikatsuCards"
+            "UseKoikatsuCards": true
           }
         },
         {
           "name": "ChatLinks",
-          "label": "$option.TelegramSource.case.ChatLinks.label",
+          "label": "$option.TelegramSources.case.ChatLinks.label",
           "pipeline_override": {
-            "TelegramSource": "ChatLinks"
-          }
-        },
-        {
-          "name": "Both",
-          "label": "$option.TelegramSource.case.Both.label",
-          "pipeline_override": {
-            "TelegramSource": "Both"
+            "UseChatLinks": true
           }
         }
       ]
@@ -936,7 +922,7 @@
       "label": "$option.ExceptionList.label",
       "description": "$option.ExceptionList.description",
       "placeholder": "BetterPenetration\\\nClo\\\nMyMod.zipmod\nAuthor.MyGuid",
-      "default": "BetterPenetration\\\nClo\\",
+      "default": "BetterPenetration\\\nClo\\\ncom.joan6694.dynamic_bone_collider",
       "pipeline_override": {
         "ExceptionList": "{exception_list}"
       }
@@ -1271,7 +1257,7 @@
       "option": [
         "ContentTypes",
         "SideloaderModpack",
-        "TelegramSource",
+        "TelegramSources",
         "TelegramChatLinks",
         "UseCache",
         "OpenReport",

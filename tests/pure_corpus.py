@@ -24,3 +24,14 @@ def msgpack_corpus() -> dict[str, bytes]:
     out["float32"] = p(1.5, use_single_float=True)
     out["array_65536"] = p(list(range(65536)))[:0] or p(list(range(300)))
     return out
+
+
+# Selections of the TelegramSources checkbox, by name, for telegram_sources_label().
+SOURCE_SELECTIONS: dict[str, list[str]] = {
+    "none": [],
+    "koikatsucards": ["KoikatsuCards"],
+    "chatlinks": ["ChatLinks"],
+    "both": ["KoikatsuCards", "ChatLinks"],
+    "both, reversed": ["ChatLinks", "KoikatsuCards"],
+    "unknown name": ["anything else"],
+}

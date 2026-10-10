@@ -65,16 +65,19 @@ def _camel_to_snake(name: str) -> str:
 # where pipeline_override's case data ("ScanChara", "ScanScene", ...)
 # doesn't match what the Python side actually stores — DownloadMissingMods
 # keeps the raw ["Chara", "Scene", ...] list under "ContentTypes" rather
-# than three separate Scan* booleans.
-CHECKBOX_AS_LIST = {"ContentTypes"}
+# than three separate Scan* booleans. TelegramSources works the same way:
+# the task wants ["KoikatsuCards", "ChatLinks"], not two Use* booleans.
+CHECKBOX_AS_LIST = {"ContentTypes", "TelegramSources"}
 
 # Manual (option_id -> config_key) overrides, for the rare option whose
 # pipeline_override can't be resolved to a single target key automatically.
-# ContentTypes is here because it's in CHECKBOX_AS_LIST above: its
-# pipeline_override describes three separate booleans (ScanChara, ...) but
-# the real config key is the option's own ID, holding the raw list.
+# ContentTypes and TelegramSources are here because they're in
+# CHECKBOX_AS_LIST above: their pipeline_override describes separate
+# booleans (ScanChara, UseChatLinks, ...) but the real config key is the
+# option's own ID, holding the raw list.
 CONFIG_KEY_OVERRIDES: dict[str, str] = {
     "ContentTypes": "ContentTypes",
+    "TelegramSources": "TelegramSources",
 }
 
 

@@ -39,6 +39,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Changed
 
+- **Download Missing Mods**: the **Telegram Source** dropdown (`No` / `KoikatsuCards` / `ChatLinks` / `Both`) is now a **Telegram Sources** checkbox with one entry per source (`KoikatsuCards`, `ChatLinks`), both checked by default; leaving both unchecked replaces `No`. On the command line, `--telegram-source {No,KoikatsuCards,ChatLinks,Both}` is now `--telegram-sources [{KoikatsuCards,ChatLinks} ...]` (e.g. `--telegram-sources KoikatsuCards ChatLinks`; the flag with no values disables Telegram). A previously saved Telegram Source choice is not carried over; the new default applies until it is set again.
 - **Install / Uninstall Contents** now only look at `.png`, `.zipmod`, `.zip`, `.rar` and `.7z` files (extensions are matched case-insensitively). Other files in the folder are ignored instead of being reported as "Cannot classify".
 - **Ungroup Characters** is now **Ungroup Cards** (`ungroup-cards`) and has a **Card Types** option (Chara / Scenes / Coords) so it can ungroup character cards, Studio scenes and coordinate cards. It now moves only cards of the selected types — zipmods and other files in subfolders are left alone.
 - **Filter Duplicate Contents** no longer has an input folder. It now has **Content Types** (like Install Contents) and custom chara, scene, coordinate, mods and overlays directories that default to the game's folders. `--input DIR` still works on the command line (and in the context menu) as a shorthand for scanning one folder for every type.

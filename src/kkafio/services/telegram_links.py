@@ -1,6 +1,7 @@
 """Parsing Telegram links and the user's list of chats to search (pure string handling, no network)."""
 
 import re
+from collections.abc import Iterable
 
 from kkafio.core.logger import logger
 
@@ -41,16 +42,25 @@ DEFAULT_TELEGRAM_CHAT_LINKS = (
     "https://t.me/kknowcc"
 )
 
-telegram_source_labelS = {
-    "No":            "No",
+# Display labels for the TelegramSources checkbox, in the order they are tried
+# (koikatsucards.com first, then the chat links).
+TELEGRAM_SOURCE_LABELS = {
     "KoikatsuCards": "koikatsucards.com",
     "ChatLinks":     "Telegram Chat Links",
-    "Both":          "koikatsucards.com + Telegram Chat Links",
 }
 
 
-def telegram_source_label(source: str) -> str:
-    return telegram_source_labelS.get(source, source)
+def telegram_sources_label(sources: Iterable[str]) -> str:
+    """Human-readable summary of the selected sources, e.g.
+    ``"koikatsucards.com + Telegram Chat Links"``; ``"No"`` if none are selected.
+
+    Always uses the canonical order, whatever order the selection came in.
+    """
+    selected = set(sources)
+    labels = [label for name, label in TELEGRAM_SOURCE_LABELS.items() if name in selected]
+    # Unknown names are shown as-is rather than silently dropped.
+    labels += sorted(selected - TELEGRAM_SOURCE_LABELS.keys())
+    return " + ".join(labels) if labels else "No"
 
 
 # A chat/channel/group link, optionally pointing at a specific forum topic:

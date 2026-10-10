@@ -267,18 +267,20 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "Skip=ignore modpack entirely, "
                        "OnlyUsed=download missing mods used by chara (default), "
                        "All=download all missing modpack mods"),
-            Value("--telegram-source", key="TelegramSource", default=None,
-                  choices=["No", "KoikatsuCards", "ChatLinks", "Both"],
-                  help="Where to look for mods not covered by BetterRepack: "
-                       "No=don't use Telegram (default), "
+            Value("--telegram-sources", key="TelegramSources", default=None, nargs="*",
+                  choices=["KoikatsuCards", "ChatLinks"], metavar="SOURCE",
+                  help="Where to look for mods not covered by BetterRepack; give any of: "
                        "KoikatsuCards=look up each GUID on koikatsucards.com, "
-                       "ChatLinks=search the chats in --telegram-chat-links directly, "
-                       "Both=try koikatsucards.com first, then ChatLinks for anything it couldn't find"),
+                       "ChatLinks=search the chats in --telegram-chat-links directly. "
+                       "With both, koikatsucards.com is tried first, then ChatLinks for "
+                       "anything it couldn't find. Pass the flag with no sources to "
+                       "disable Telegram entirely. Default: the setting in the config "
+                       "(both sources)"),
             Value("--telegram-chat-links", key="TelegramChatLinks", default=None, metavar="LINKS",
                   help="Newline-separated Telegram chat/channel/group links to search "
                        "(one per line; add a topic ID like .../299 to search only that "
                        "forum topic; a trailing '# comment' is ignored). Only used when "
-                       "--telegram-source is ChatLinks or Both. Default: the two example "
+                       "--telegram-sources includes ChatLinks. Default: the two example "
                        "chats shipped in the config."),
         ),
     ),

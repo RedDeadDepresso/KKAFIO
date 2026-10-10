@@ -81,8 +81,10 @@ def testparse_chat_links(raw):
 
 def test_default_chat_links_and_source_labels():
     assert _jsonable(telegram_links.parse_chat_links(telegram_links.DEFAULT_TELEGRAM_CHAT_LINKS)) == GOLDEN["default_chat_links"]
-    for source in ("No", "KoikatsuCards", "ChatLinks", "Both", "anything else"):
-        assert telegram_links.telegram_source_label(source) == GOLDEN["source_labels"][source]
+    from pure_corpus import SOURCE_SELECTIONS
+    assert set(GOLDEN["source_labels"]) == set(SOURCE_SELECTIONS)
+    for name, selection in SOURCE_SELECTIONS.items():
+        assert telegram_links.telegram_sources_label(selection) == GOLDEN["source_labels"][name]
 
 
 def _jsonable(x):

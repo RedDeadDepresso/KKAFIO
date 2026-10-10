@@ -16,12 +16,12 @@ Strategy
      All      — also download every GUID in the modpack index not installed
 5. For each GUID to download:
      a) In modpack index → BetterRepack (httpx, no auth)
-     b) Not in index, Telegram Source is KoikatsuCards/Both → look up the
+     b) Not in index, Telegram Sources includes KoikatsuCards → look up the
         GUID in kkc_mod_index.json (kkc-mod-scraper; cached in CONFIG_DIR and
         refreshed when the repo's latest commit changes), then download the
         linked t.me message directly from Telegram
      c) Not in index (or the KKC mod index had no link / the download
-        failed), Telegram Source is ChatLinks/Both → search each
+        failed), Telegram Sources includes ChatLinks → search each
         configured Telegram Chat Links entry (channel, group, or forum
         topic) via Telegram's server-side document search, and download
         the first result whose filename ends in .zipmod or .zip
@@ -50,7 +50,7 @@ from kkafio.services.http_mod_sources import (
 )
 from kkafio.services.telegram_links import (
     parse_chat_links,
-    telegram_source_label,
+    telegram_sources_label,
     DEFAULT_TELEGRAM_CHAT_LINKS,
 )
 from kkafio.services.telegram_mods import (
@@ -74,7 +74,7 @@ class DownloadMissingMods(BaseTask):
         self.use_cache           : bool = cfg.get("UseCache",             True)
         self.open_report         : bool = cfg.get("OpenReport",           True)
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
-        self.telegram_source     : str  = cfg.get("TelegramSource",       "No")  # No | KoikatsuCards | ChatLinks | Both
+        self.telegram_sources    : list[str] = cfg.get("TelegramSources", [])    # any of: KoikatsuCards, ChatLinks
         self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
 
     @staticmethod
@@ -96,7 +96,7 @@ class DownloadMissingMods(BaseTask):
         ok: int,
         fail: int,
         modpack_mode: str,
-        telegram_source: str,
+        telegram_sources: str,
         generated: str,
     ) -> Path | None:
         """Write a report to output_mods_dir summarising the download run.
@@ -117,7 +117,7 @@ class DownloadMissingMods(BaseTask):
             f"Input mods dir   : {input_mods_dir}",
             f"Output mods dir  : {output_mods_dir}",
             f"Sideloader mode  : {modpack_mode}",
-            f"Telegram source  : {telegram_source}",
+            f"Telegram sources : {telegram_sources}",
             "",
             "=" * 60,
             "",
@@ -409,12 +409,12 @@ class DownloadMissingMods(BaseTask):
             return
 
         # ── Step 5: partition ─────────────────────────────────────────────
-        use_koikatsucards = self.telegram_source in ("KoikatsuCards", "Both")
-        use_chat_links    = self.telegram_source in ("ChatLinks", "Both")
+        use_koikatsucards = "KoikatsuCards" in self.telegram_sources
+        use_chat_links    = "ChatLinks" in self.telegram_sources
         use_telegram      = use_koikatsucards or use_chat_links
         if not use_telegram:
             logger.info("DLMOD",
-                "Telegram Source is 'No' — "
+                "No Telegram source is selected — "
                 "only BetterRepack mods will be downloaded.")
 
         from_betterrepack: dict[str, str] = {}
@@ -660,7 +660,7 @@ class DownloadMissingMods(BaseTask):
                                         "Telegram Chat Links is enabled but no valid "
                                         "chat links are configured — nothing to search.")
 
-                            source_label = telegram_source_label(self.telegram_source)
+                            source_label = telegram_sources_label(self.telegram_sources)
                             logger.info("DLMOD",
                                 f"Processing {len(telegram_queue)} mod(s) via {source_label}...")
 
@@ -764,7 +764,7 @@ class DownloadMissingMods(BaseTask):
             ok                = ok,
             fail              = fail,
             modpack_mode      = self.modpack_mode,
-            telegram_source   = telegram_source_label(self.telegram_source),
+            telegram_sources  = telegram_sources_label(self.telegram_sources),
             generated         = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 

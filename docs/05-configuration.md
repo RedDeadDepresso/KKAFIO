@@ -129,8 +129,8 @@ at `https://reddeaddepresso.github.io/kkc-mod-scraper/kkc_mod_index.json`.
 `kkc_mod_index_last_commit.txt` holds the SHA of that repo's latest commit
 at the time the index was downloaded.
 
-Used by **Download Missing Mods** when Telegram Source is
-`KoikatsuCards` or `Both`. It replaces the old per-GUID lookup on
+Used by **Download Missing Mods** when the `KoikatsuCards` entry of
+Telegram Sources is checked. It replaces the old per-GUID lookup on
 koikatsucards.com. It is only read when at least one mod needs a Telegram
 download (`src/kkafio/tasks/download_missing_mods.py`, `load_kkc_mod_index()`):
 
