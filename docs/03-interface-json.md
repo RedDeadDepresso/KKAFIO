@@ -146,7 +146,7 @@ and is untouched by the generator.
 ```jsonc
 {
   "name": "GroupChara",                     // must match kkafio.core.config._TASK_KEY
-  "label": "🗂️ Group Characters",
+  "label": "👥 Group Characters",
   "entry": "GroupChara",
   "default_check": false,
   "description": "...",

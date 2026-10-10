@@ -231,7 +231,7 @@
   "task.UninstallContents.description": "從遊戲中解除安裝角色卡及其模組",
   "task.GroupScenes.label": "🎬 分組場景",
   "task.GroupScenes.description": "透過將場景的雜湊值與索引比對，將 Studio 場景依作者整理到各自的資料夾；該索引儲存了 Pepper Scene Archive（2026/07/24）中場景的雜湊值及其作者。準確率 100%，但僅對能在索引 / Pepper Scene Archive 中找到的場景有效。",
-  "task.GroupChara.label": "🗂️ 分組角色",
+  "task.GroupChara.label": "👥 分組角色",
   "task.GroupChara.description": "使用 LLM 將角色卡移至系列子資料夾（執行時會顯示複製／貼上對話框）",
   "task.GroupCoordinates.label": "🧥 分組服裝",
   "task.GroupCoordinates.description": "透過比較服裝卡與角色卡中儲存的服裝，將服裝卡移至以對應角色卡檔名命名的子資料夾中",

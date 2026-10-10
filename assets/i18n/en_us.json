@@ -231,7 +231,7 @@
   "task.UninstallContents.description": "Uninstall character cards and their mods from the game",
   "task.GroupScenes.label": "🎬 Group Scenes",
   "task.GroupScenes.description": "Sort Studio scenes into per-author folders by comparing their hashes to an index storing the hashes and authors of the scenes in the Pepper Scene Archive (2026/07/24). 100% accurate, but only works if the scene is found in the index / Pepper Scene Archive.",
-  "task.GroupChara.label": "🗂️ Group Characters",
+  "task.GroupChara.label": "👥 Group Characters",
   "task.GroupChara.description": "Move character cards into series subfolders using an LLM (shows a Copy/Paste dialog when run)",
   "task.GroupCoordinates.label": "🧥 Group Coordinates",
   "task.GroupCoordinates.description": "Move coordinate cards into per-character subfolders (named after the matching chara card's filename) by comparing their outfits with the outfits saved in each character card",

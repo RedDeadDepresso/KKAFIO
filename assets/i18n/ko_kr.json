@@ -231,7 +231,7 @@
   "task.UninstallContents.description": "게임에서 캐릭터 카드와 그 모드를 제거합니다",
   "task.GroupScenes.label": "🎬 씬 그룹화",
   "task.GroupScenes.description": "씬의 해시를 Pepper Scene Archive(2026/07/24)에 있는 씬의 해시와 제작자를 저장한 인덱스와 비교하여 스튜디오 씬을 제작자별 폴더로 정리합니다. 정확도는 100%이지만, 인덱스(Pepper Scene Archive)에서 찾을 수 있는 씬에서만 작동합니다.",
-  "task.GroupChara.label": "🗂️ 캐릭터 그룹화",
+  "task.GroupChara.label": "👥 캐릭터 그룹화",
   "task.GroupChara.description": "LLM을 사용하여 캐릭터 카드를 시리즈별 하위 폴더로 이동합니다(실행 시 복사/붙여넣기 대화 상자가 표시됩니다)",
   "task.GroupCoordinates.label": "🧥 코디 그룹화",
   "task.GroupCoordinates.description": "코디 카드를 캐릭터 카드에 저장된 의상과 비교하여 일치하는 캐릭터 카드의 파일명으로 된 하위 폴더로 이동합니다",

@@ -231,7 +231,7 @@
   "task.UninstallContents.description": "ゲームからキャラカードとそのMODをアンインストールする",
   "task.GroupScenes.label": "🎬 シーンをグループ化",
   "task.GroupScenes.description": "シーンのハッシュを、Pepper Scene Archive（2026/07/24）のシーンのハッシュと作者を保存したインデックスと照合して、Studioシーンを作者別フォルダに振り分けます。精度は100%ですが、インデックス（Pepper Scene Archive）に存在するシーンにのみ有効です。",
-  "task.GroupChara.label": "🗂️ キャラをグループ化",
+  "task.GroupChara.label": "👥 キャラをグループ化",
   "task.GroupChara.description": "LLMを使用してキャラカードをシリーズごとのサブフォルダに移動する（実行時にコピー／貼り付けダイアログが表示されます）",
   "task.GroupCoordinates.label": "🧥 コーディネートをグループ化",
   "task.GroupCoordinates.description": "コーディネートカードをキャラカードに保存された衣装と照合し、一致したキャラカードのファイル名のサブフォルダに移動する",
