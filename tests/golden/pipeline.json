@@ -455,6 +455,8 @@
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -484,6 +486,8 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -711,6 +715,8 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -744,6 +750,8 @@
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",

@@ -483,6 +483,44 @@
         }
       ]
     },
+    "OpenLlmWebsite": {
+      "type": "switch",
+      "label": "$option.OpenLlmWebsite.label",
+      "description": "$option.OpenLlmWebsite.description",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.OpenLlmWebsite.case.Yes.label",
+          "pipeline_override": {
+            "OpenLlmWebsite": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.OpenLlmWebsite.case.No.label",
+          "pipeline_override": {
+            "OpenLlmWebsite": false
+          }
+        }
+      ]
+    },
+    "LlmWebsiteUrl": {
+      "type": "input",
+      "label": "$option.LlmWebsiteUrl.label",
+      "description": "$option.LlmWebsiteUrl.description",
+      "inputs": [
+        {
+          "name": "url",
+          "label": "$option.LlmWebsiteUrl.input.url.label",
+          "default": "https://chat.deepseek.com/",
+          "pipeline_type": "string"
+        }
+      ],
+      "pipeline_override": {
+        "LlmWebsiteUrl": "{url}"
+      }
+    },
     "RenameCharaPrompt": {
       "type": "textarea",
       "name": "prompt",
@@ -1325,6 +1363,8 @@
         "CharaDir",
         "GroupCharaIncludeSubfolders",
         "UseCache",
+        "OpenLlmWebsite",
+        "LlmWebsiteUrl",
         "GroupCharaPrompt"
       ]
     },
@@ -1367,6 +1407,8 @@
         "UpdateMetadata",
         "RenameFiles",
         "UseCache",
+        "OpenLlmWebsite",
+        "LlmWebsiteUrl",
         "RenameCharaPrompt"
       ]
     },

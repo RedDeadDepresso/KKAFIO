@@ -3918,6 +3918,8 @@
      "attrs": {
       "chara_dir_str": "/cfg/chara",
       "include_subfolders": true,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -3946,6 +3948,38 @@
      "attrs": {
       "chara_dir_str": "/cfg/chara",
       "include_subfolders": true,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: group-chara --llm-website-url=<blank>": {
+  "argv": [
+   "group-chara",
+   "--llm-website-url",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "include_subfolders": true,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -3968,7 +4002,10 @@
    "--chara-dir",
    "S_chara_dir",
    "--include-subfolders",
-   "--use-cache"
+   "--use-cache",
+   "--open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
@@ -3976,6 +4013,8 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": true,
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -3998,7 +4037,10 @@
    "--chara-dir",
    "S_chara_dir",
    "--include-subfolders",
-   "--no-use-cache"
+   "--no-use-cache",
+   "--no-open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
@@ -4006,6 +4048,8 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": true,
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": false,
       "use_cache": false
      },
      "class": "GroupChara",
@@ -4291,6 +4335,8 @@
     {
      "attrs": {
       "chara_dir_str": "/cfg/chara",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": true,
@@ -4321,6 +4367,40 @@
     {
      "attrs": {
       "chara_dir_str": "/cfg/chara",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "rename_files": false,
+      "skip_already_renamed": false,
+      "update_metadata": true,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: rename-chara --llm-website-url=<blank>": {
+  "argv": [
+   "rename-chara",
+   "--llm-website-url",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": true,
@@ -4348,13 +4428,18 @@
    "--skip-already-renamed",
    "--update-metadata",
    "--rename-files",
-   "--use-cache"
+   "--use-cache",
+   "--open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": true,
@@ -4382,13 +4467,18 @@
    "--no-skip-already-renamed",
    "--no-update-metadata",
    "--no-rename-files",
-   "--no-use-cache"
+   "--no-use-cache",
+   "--no-open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": false,
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": false,
@@ -11464,6 +11554,8 @@
      "attrs": {
       "chara_dir_str": "",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11492,6 +11584,8 @@
      "attrs": {
       "chara_dir_str": "",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11520,6 +11614,8 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11547,6 +11643,8 @@
      "attrs": {
       "chara_dir_str": "",
       "include_subfolders": true,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11575,6 +11673,97 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --llm-website-url=<blank>": {
+  "argv": [
+   "group-chara",
+   "--llm-website-url",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --llm-website-url=S_llm_website_url": {
+  "argv": [
+   "group-chara",
+   "--llm-website-url",
+   "S_llm_website_url"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false,
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --no-open-llm-website": {
+  "argv": [
+   "group-chara",
+   "--no-open-llm-website"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": false,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11602,7 +11791,38 @@
      "attrs": {
       "chara_dir_str": "",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": false
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --open-llm-website": {
+  "argv": [
+   "group-chara",
+   "--open-llm-website"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -11629,6 +11849,8 @@
      "attrs": {
       "chara_dir_str": "",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11657,6 +11879,8 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": false,
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11679,7 +11903,10 @@
    "--chara-dir",
    "S_chara_dir",
    "--include-subfolders",
-   "--use-cache"
+   "--use-cache",
+   "--open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
@@ -11687,6 +11914,8 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": true,
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -11709,7 +11938,10 @@
    "--chara-dir",
    "S_chara_dir",
    "--include-subfolders",
-   "--no-use-cache"
+   "--no-use-cache",
+   "--no-open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
@@ -11717,6 +11949,8 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "include_subfolders": true,
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": false,
       "use_cache": false
      },
      "class": "GroupChara",
@@ -12668,6 +12902,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12698,6 +12934,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12728,6 +12966,8 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12758,6 +12998,103 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --llm-website-url=<blank>": {
+  "argv": [
+   "rename-chara",
+   "--llm-website-url",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --llm-website-url=S_llm_website_url": {
+  "argv": [
+   "rename-chara",
+   "--llm-website-url",
+   "S_llm_website_url"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": true,
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --no-open-llm-website": {
+  "argv": [
+   "rename-chara",
+   "--no-open-llm-website"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": false,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12787,6 +13124,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": false,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12816,6 +13155,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": false,
       "update_metadata": false,
@@ -12845,6 +13186,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12874,10 +13217,43 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": false
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --open-llm-website": {
+  "argv": [
+   "rename-chara",
+   "--open-llm-website"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
+      "rename_files": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
      },
      "class": "RenameChara",
      "enabled": true,
@@ -12903,6 +13279,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12932,6 +13310,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -12961,6 +13341,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": true,
@@ -12990,6 +13372,8 @@
     {
      "attrs": {
       "chara_dir_str": "",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -13020,6 +13404,8 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "https://chat.deepseek.com/",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": false,
@@ -13047,13 +13433,18 @@
    "--skip-already-renamed",
    "--update-metadata",
    "--rename-files",
-   "--use-cache"
+   "--use-cache",
+   "--open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": true,
       "rename_files": true,
       "skip_already_renamed": true,
       "update_metadata": true,
@@ -13081,13 +13472,18 @@
    "--no-skip-already-renamed",
    "--no-update-metadata",
    "--no-rename-files",
-   "--no-use-cache"
+   "--no-use-cache",
+   "--no-open-llm-website",
+   "--llm-website-url",
+   "S_llm_website_url"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "llm_website_url": "S_llm_website_url",
+      "open_llm_website": false,
       "rename_files": false,
       "skip_already_renamed": false,
       "update_metadata": false,

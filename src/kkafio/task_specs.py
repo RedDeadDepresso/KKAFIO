@@ -530,6 +530,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
                         "(default: on)",
                    off_help="Disable cache and read every card"),
+            Toggle("open-llm-website", key="OpenLlmWebsite",
+                   help="Open the LLM website in your browser before the dialog appears (default: on)",
+                   off_help="Don't open the LLM website"),
+            Value("--llm-website-url", key="LlmWebsiteUrl", ignore_blank=True, metavar="URL",
+                  default=None,
+                  help="LLM website to open (default: https://chat.deepseek.com/)"),
         ),
     ),
 
@@ -566,6 +572,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
                         "(default: on)",
                    off_help="Disable cache and read every card"),
+            Toggle("open-llm-website", key="OpenLlmWebsite",
+                   help="Open the LLM website in your browser before the dialog appears (default: on)",
+                   off_help="Don't open the LLM website"),
+            Value("--llm-website-url", key="LlmWebsiteUrl", ignore_blank=True, metavar="URL",
+                  default=None,
+                  help="LLM website to open (default: https://chat.deepseek.com/)"),
         ),
     ),
 

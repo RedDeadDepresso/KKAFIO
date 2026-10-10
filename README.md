@@ -274,6 +274,8 @@ https://t.me/kknowcc
 - **Custom Chara Directory** — blank by default, which means the game's `UserData/chara/female` and `UserData/chara/male` folders, both handled in one run. The game only reads cards inside those two folders, so cards are only ever grouped inside the folder they're already in (`female/<series>/` or `male/<series>/`) — never directly in `UserData/chara`. Pointing the option at the game's `UserData/chara` folder behaves the same as leaving it blank. Any other folder (such as a staging folder) is grouped as a single folder.
 - **Include subfolders** option lets you export already-sorted cards too (off by default to skip them).
 - **Use Cache** _(on by default)_ — remembers each card's identification key (name, personality, hair colour) in `kkafio_chara_key_cache.json` inside each chara folder, keyed by the file's mtime + size, so a repeat run only reads new or changed cards instead of parsing every card (twice) each time. Cards that aren't chara cards are remembered too. The cache is kept up to date as cards are moved — a moved card's entry follows it into its series folder — and is saved when the run ends. Shared with Rename Characters.
+- **Open LLM Website** _(on by default)_ — opens the LLM website in your default browser right before the Copy/Paste dialog appears, so you can paste the prompt straight into it. Turn off if you already have your LLM open.
+- **LLM Website URL** _(`https://chat.deepseek.com/` by default)_ — the page opened by **Open LLM Website**. Must start with `http://` or `https://`; if it is blank the default is used. Set it to your preferred LLM (e.g. `https://claude.ai`). This option and the one above are separate for Group and Rename Characters.
 - **Recommended LLMs:**
   - [DeepSeek](https://chat.deepseek.com) — highly recommended: large context window, excels at identifying characters from Chinese gacha games (Genshin Impact, Honkai Star Rail, Arknights). Enable **Expert** for better identification of obscure characters.
   - [Claude](https://claude.ai) — strong general-purpose identification, particularly good for Japanese anime and game characters.
@@ -298,6 +300,7 @@ https://t.me/kknowcc
 - **Skip already renamed** (on by default): skips cards whose name is already in the local cache.
 - Results are cached in `kkafio_rename_cache.json` inside each chara folder and reused across runs. This translation cache is always used.
 - **Use Cache** _(on by default)_ — a separate cache of each card's identification key, `kkafio_chara_key_cache.json` (shared with Group Characters), so unchanged cards aren't re-parsed on every run; with *Rename PNG files* only, no card needs to be parsed at all once the cache is warm. It follows the changes Rename makes: a renamed card's entry moves to its new file name, and a card whose metadata was rewritten gets its new key. Saved when the run ends. Turn it off to read every card.
+- **Open LLM Website** _(on by default)_ and **LLM Website URL** _(`https://chat.deepseek.com/` by default)_ — open the LLM website in your browser right before the Copy/Paste dialog appears; same as in Group Characters (see above).
 - The prompt is fully editable in the settings panel.
 - **Recommended LLMs:** same as Group Characters (see above).
 - **Warning:** Group Characters uses card metadata to extract character names. It is recommended to use **Rename Characters after Group Characters if Update card metadata is turned on**, as LLMs might not recognize the characters by their translated names.
@@ -553,9 +556,12 @@ kkafio_cli rename-chara    [--chara-dir DIR]
                            [--skip-already-renamed | --no-skip-already-renamed]
                            [--update-metadata | --no-update-metadata]
                            [--rename-files | --no-rename-files]
+                           [--use-cache | --no-use-cache]
+                           [--open-llm-website | --no-open-llm-website] [--llm-website-url URL]
 
 kkafio_cli group-scenes    [--scene-dir DIR] [--use-cache | --no-use-cache] [--include-subfolders]
-kkafio_cli group-chara     [--chara-dir DIR] [--include-subfolders]
+kkafio_cli group-chara     [--chara-dir DIR] [--include-subfolders] [--use-cache | --no-use-cache]
+                           [--open-llm-website | --no-open-llm-website] [--llm-website-url URL]
 
 kkafio_cli ungroup-cards   [--input DIR]
                            [--chara | --no-chara] [--scenes | --no-scenes] [--coords | --no-coords]

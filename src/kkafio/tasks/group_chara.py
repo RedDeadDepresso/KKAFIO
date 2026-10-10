@@ -22,7 +22,7 @@ from typing import Sequence
 
 from kkloader import KoikatuCharaData
 
-from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
+from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
@@ -327,6 +327,8 @@ class GroupChara(BaseTask):
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache           : bool = cfg.get("UseCache", True)
+        self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
+        self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
     def run(self) -> None:
         folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "GROUP")
@@ -341,7 +343,9 @@ class GroupChara(BaseTask):
 
         prompt_text = self.prompt.rstrip("\n") + "\n" + json_str
 
-        from kkafio.system.llm_dialog import llm_dialog
+        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+        if self.open_llm_website:
+            open_llm_website("GROUP", self.llm_website_url)
         response = llm_dialog("KKAFIO — Group Characters", prompt_text)
         if not response or not response.strip():
             logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")

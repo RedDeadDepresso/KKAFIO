@@ -16,11 +16,38 @@ On macOS/Linux falls back to a terminal prompt.
 """
 
 import sys
+import webbrowser
+from urllib.parse import urlparse
 
 from kkafio.core.i18n import t
+from kkafio.core.logger import logger
 from kkafio.system.dialog_common import new_window, show_and_wait
 
 _COPIED_FEEDBACK_MS = 1500  # how long the Copy button reads "Copied!"
+
+
+def open_llm_website(tag: str, url: str) -> None:
+    """Open the LLM website in the default browser (best effort).
+
+    Meant to be called right before ``llm_dialog`` so the page is already
+    loading when the Copy/Paste dialog appears. A blank URL or one that isn't
+    http(s) is ignored with a warning; a browser failure is only logged, never
+    raised, so it can't stop the task.
+    """
+    url = (url or "").strip()
+    if not url:
+        logger.warning(tag, "LLM website URL is empty — not opening a browser.")
+        return
+    if urlparse(url).scheme not in ("http", "https"):
+        logger.warning(tag, f"LLM website URL must start with http:// or https:// — not opening: {url}")
+        return
+    try:
+        if webbrowser.open(url):
+            logger.info(tag, f"Opened LLM website: {url}")
+        else:
+            logger.warning(tag, f"Could not open a browser for: {url}")
+    except Exception as e:
+        logger.warning(tag, f"Could not open LLM website {url}: {e}")
 
 
 def llm_dialog(title: str, prompt_text: str) -> str:

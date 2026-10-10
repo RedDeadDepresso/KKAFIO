@@ -20,6 +20,10 @@ from kkafio.core.logger import logger
 # "DownloadsInputPath" option in interface.json.
 DEFAULT_DOWNLOADS_PATH = Path("C:/KKAFIO/Downloads")
 
+# Fallback for the "LlmWebsiteUrl" option (Group / Rename Characters) when it
+# is blank — must match the option's "default" in interface.json.
+DEFAULT_LLM_WEBSITE_URL = "https://chat.deepseek.com/"
+
 
 def validate_input_path(tag: str, folder_path: Path, default_path: Path | None = None) -> None:
     """Raise `InputError` (logged by the CLI under `tag`) if folder_path is unset
