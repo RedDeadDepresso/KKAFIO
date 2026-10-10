@@ -57,5 +57,20 @@
   "dialog.review.keep_first": "保留依字母順序最前的",
   "dialog.review.keep_none": "全選（不保留）",
   "dialog.review.detail_character": "角色",
-  "dialog.review.no_name": "（無名稱）"
+  "dialog.review.no_name": "（無名稱）",
+  "dialog.password.api_id_title": "Telegram API ID",
+  "dialog.password.api_id_body": "請輸入你的 Telegram API ID\n（可在 https://my.telegram.org → API development tools 中找到）：",
+  "dialog.password.api_hash_title": "Telegram API Hash",
+  "dialog.password.api_hash_body": "請輸入你的 Telegram API Hash\n（可在 https://my.telegram.org → API development tools 中找到）：",
+  "dialog.password.phone_title": "登入 Telegram",
+  "dialog.password.phone_body": "請輸入你的 Telegram 手機號碼（含國碼，例如 +447911123456）：",
+  "dialog.password.code_title": "Telegram 驗證碼",
+  "dialog.password.code_body": "驗證碼已傳送至 {phone}。\n請輸入驗證碼：",
+  "dialog.password.tfa_title": "Telegram 兩步驟驗證密碼",
+  "dialog.password.tfa_body": "你的帳號已啟用兩步驟驗證。\n請輸入你的兩步驟驗證密碼：",
+  "dialog.password.kkd_title": "koikatsucards.com 工作階段 Cookie",
+  "dialog.password.kkd_body": "登入 koikatsucards.com，然後：\n1. 開啟 DevTools（F12）\n2. 前往 Application → Cookies → https://koikatsucards.com\n3. 找到「kkd_session」並複製其 Value\n\n請在下方貼上該值：",
+  "dialog.password.archive_title": "輸入密碼",
+  "dialog.password.archive_body": "壓縮檔 {archive} 發生錯誤。可能需要密碼？",
+  "dialog.password.archive_retry": "密碼錯誤，或 {archive} 已損毀。請重新輸入密碼，或按「取消」。"
 }

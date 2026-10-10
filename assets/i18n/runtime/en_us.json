@@ -57,5 +57,20 @@
   "dialog.review.keep_first": "Keep first alphabetically",
   "dialog.review.keep_none": "Select all (keep none)",
   "dialog.review.detail_character": "Character",
-  "dialog.review.no_name": "(no name)"
+  "dialog.review.no_name": "(no name)",
+  "dialog.password.api_id_title": "Telegram API ID",
+  "dialog.password.api_id_body": "Enter your Telegram API ID\n(found on https://my.telegram.org → API development tools):",
+  "dialog.password.api_hash_title": "Telegram API Hash",
+  "dialog.password.api_hash_body": "Enter your Telegram API Hash\n(found on https://my.telegram.org → API development tools):",
+  "dialog.password.phone_title": "Telegram Sign-in",
+  "dialog.password.phone_body": "Enter your Telegram phone number (with country code, e.g. +447911123456):",
+  "dialog.password.code_title": "Telegram Verification Code",
+  "dialog.password.code_body": "A verification code was sent to {phone}.\nEnter the code:",
+  "dialog.password.tfa_title": "Telegram Two-Factor Password",
+  "dialog.password.tfa_body": "Your account has Two-Factor Authentication enabled.\nEnter your 2FA password:",
+  "dialog.password.kkd_title": "koikatsucards.com Session Cookie",
+  "dialog.password.kkd_body": "Log in to koikatsucards.com, then:\n1. Open DevTools (F12)\n2. Go to Application → Cookies → https://koikatsucards.com\n3. Find 'kkd_session' and copy its Value\n\nPaste the value below:",
+  "dialog.password.archive_title": "Enter Password",
+  "dialog.password.archive_body": "There is an error with the archive {archive}. Maybe it requires a password?",
+  "dialog.password.archive_retry": "Wrong password or {archive} is corrupted. Please enter the password again or click Cancel."
 }

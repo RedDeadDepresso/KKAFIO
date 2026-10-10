@@ -6,6 +6,7 @@ import asyncio
 from pathlib import Path
 
 from kkafio.cards.mods import guid_from_zipmod
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.services.telegram_links import parse_tme_link
 
@@ -347,8 +348,8 @@ async def ensure_session(tg_data: dict) -> bool:
         logger.info("DLMOD", "Telegram session not found or expired — starting sign-in...")
 
         phone = password_dialog(
-            "Telegram Sign-in",
-            "Enter your Telegram phone number (with country code, e.g. +447911123456):",
+            t("dialog.password.phone_title"),
+            t("dialog.password.phone_body"),
             mask=False,
         ).strip()
         if not phone:
@@ -372,8 +373,8 @@ async def ensure_session(tg_data: dict) -> bool:
         max_code_attempts = 3
         for attempt in range(1, max_code_attempts + 1):
             code = password_dialog(
-                "Telegram Verification Code",
-                f"A verification code was sent to {phone}.\nEnter the code:",
+                t("dialog.password.code_title"),
+                t("dialog.password.code_body", phone=phone),
                 mask=False,
             ).strip()
             if not code:
@@ -394,8 +395,8 @@ async def ensure_session(tg_data: dict) -> bool:
                 return False
             except SessionPasswordNeededError:
                 pw = password_dialog(
-                    "Telegram Two-Factor Password",
-                    "Your account has Two-Factor Authentication enabled.\nEnter your 2FA password:",
+                    t("dialog.password.tfa_title"),
+                    t("dialog.password.tfa_body"),
                 )
                 if not pw:
                     logger.error("DLMOD", "2FA password not provided.")

@@ -18,6 +18,7 @@ import webbrowser
 
 import httpx
 
+from kkafio.core.i18n import t
 from kkafio.core.paths import CONFIG_DIR
 from kkafio.core.logger import logger
 from kkafio.system.password_dialog import password_dialog
@@ -99,12 +100,8 @@ def _prompt() -> str | None:
     webbrowser.open(KKD_LOGIN_URL)
 
     value = password_dialog(
-        "koikatsucards.com Session Cookie",
-        "Log in to koikatsucards.com, then:\n"
-        "1. Open DevTools (F12)\n"
-        "2. Go to Application → Cookies → https://koikatsucards.com\n"
-        "3. Find 'kkd_session' and copy its Value\n\n"
-        "Paste the value below:",
+        t("dialog.password.kkd_title"),
+        t("dialog.password.kkd_body"),
     ).strip()
 
     return value if value else None

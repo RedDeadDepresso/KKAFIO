@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from kkafio.cards.classifier import is_mod_archive
 from kkafio.core.errors import InputError, TaskFailedError, ToolNotFoundError
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from typing import Union, Literal
 
@@ -489,21 +490,19 @@ class FileManager:
             return None
 
         # Failed — may need a password
-        text = (f"There is an error with the archive {archive_name}. "
-                f"Maybe it requires a password?")
+        text = t("dialog.password.archive_body", archive=archive_name)
 
         from kkafio.system.password_dialog import password_dialog
 
         while True:
-            password = password_dialog("Enter Password", text)
+            password = password_dialog(t("dialog.password.archive_title"), text)
             if not password:
                 break
 
             if self._run_7zip_extract(archive_path, extract_path, password=password):
                 return extract_path
 
-            text = (f"Wrong password or {archive_name} is corrupted. "
-                    f"Please enter the password again or click Cancel.")
+            text = t("dialog.password.archive_retry", archive=archive_name)
 
         logger.error("ARCHIVE", archive_name)
         return None

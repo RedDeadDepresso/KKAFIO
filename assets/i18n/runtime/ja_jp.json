@@ -57,5 +57,20 @@
   "dialog.review.keep_first": "名前順で最初を残す",
   "dialog.review.keep_none": "すべて選択（残さない）",
   "dialog.review.detail_character": "キャラ",
-  "dialog.review.no_name": "（名前なし）"
+  "dialog.review.no_name": "（名前なし）",
+  "dialog.password.api_id_title": "Telegram API ID",
+  "dialog.password.api_id_body": "Telegram API IDを入力してください\n（https://my.telegram.org → API development tools にあります）：",
+  "dialog.password.api_hash_title": "Telegram API Hash",
+  "dialog.password.api_hash_body": "Telegram API Hashを入力してください\n（https://my.telegram.org → API development tools にあります）：",
+  "dialog.password.phone_title": "Telegramにサインイン",
+  "dialog.password.phone_body": "Telegramの電話番号を国番号付きで入力してください（例：+447911123456）：",
+  "dialog.password.code_title": "Telegram認証コード",
+  "dialog.password.code_body": "認証コードを{phone}に送信しました。\nコードを入力してください：",
+  "dialog.password.tfa_title": "Telegram二段階認証パスワード",
+  "dialog.password.tfa_body": "アカウントで二段階認証が有効になっています。\n2FAパスワードを入力してください：",
+  "dialog.password.kkd_title": "koikatsucards.com セッションCookie",
+  "dialog.password.kkd_body": "koikatsucards.comにログインし、次の手順に従ってください：\n1. DevTools（F12）を開く\n2. Application → Cookies → https://koikatsucards.com に移動\n3. 「kkd_session」を探し、その Value をコピー\n\n下に値を貼り付けてください：",
+  "dialog.password.archive_title": "パスワードを入力",
+  "dialog.password.archive_body": "アーカイブ {archive} でエラーが発生しました。パスワードが必要かもしれません。",
+  "dialog.password.archive_retry": "パスワードが違うか、{archive} が破損しています。もう一度パスワードを入力するか、キャンセルをクリックしてください。"
 }

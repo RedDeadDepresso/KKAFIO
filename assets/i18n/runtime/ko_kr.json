@@ -57,5 +57,20 @@
   "dialog.review.keep_first": "이름순 처음 유지",
   "dialog.review.keep_none": "모두 선택(유지 안 함)",
   "dialog.review.detail_character": "캐릭터",
-  "dialog.review.no_name": "(이름 없음)"
+  "dialog.review.no_name": "(이름 없음)",
+  "dialog.password.api_id_title": "Telegram API ID",
+  "dialog.password.api_id_body": "Telegram API ID를 입력하세요\n(https://my.telegram.org → API development tools에서 확인할 수 있습니다):",
+  "dialog.password.api_hash_title": "Telegram API Hash",
+  "dialog.password.api_hash_body": "Telegram API Hash를 입력하세요\n(https://my.telegram.org → API development tools에서 확인할 수 있습니다):",
+  "dialog.password.phone_title": "Telegram 로그인",
+  "dialog.password.phone_body": "Telegram 전화번호를 국가 번호와 함께 입력하세요(예: +447911123456):",
+  "dialog.password.code_title": "Telegram 인증 코드",
+  "dialog.password.code_body": "{phone}(으)로 인증 코드를 보냈습니다.\n코드를 입력하세요:",
+  "dialog.password.tfa_title": "Telegram 2단계 인증 비밀번호",
+  "dialog.password.tfa_body": "계정에 2단계 인증이 설정되어 있습니다.\n2단계 인증 비밀번호를 입력하세요:",
+  "dialog.password.kkd_title": "koikatsucards.com 세션 쿠키",
+  "dialog.password.kkd_body": "koikatsucards.com에 로그인한 후 다음을 진행하세요:\n1. DevTools 열기(F12)\n2. Application → Cookies → https://koikatsucards.com 로 이동\n3. 'kkd_session'을 찾아 Value를 복사\n\n아래에 값을 붙여넣으세요:",
+  "dialog.password.archive_title": "비밀번호 입력",
+  "dialog.password.archive_body": "아카이브 {archive}에 오류가 있습니다. 비밀번호가 필요할 수 있습니다.",
+  "dialog.password.archive_retry": "비밀번호가 틀렸거나 {archive}이(가) 손상되었습니다. 비밀번호를 다시 입력하거나 취소를 클릭하세요."
 }

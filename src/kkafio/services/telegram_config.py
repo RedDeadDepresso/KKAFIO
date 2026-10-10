@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import webbrowser
 
+from kkafio.core.i18n import t
 from kkafio.core.paths import TELEGRAM_CONFIG
 from kkafio.core.logger import logger
 from kkafio.system.password_dialog import password_dialog
@@ -65,9 +66,8 @@ def prompt_for_credentials() -> dict:
     webbrowser.open("https://my.telegram.org/apps")
 
     api_id_str = password_dialog(
-        "Telegram API ID",
-        "Enter your Telegram API ID\n"
-        "(found on https://my.telegram.org → API development tools):",
+        t("dialog.password.api_id_title"),
+        t("dialog.password.api_id_body"),
         mask=False,
     ).strip()
 
@@ -76,9 +76,8 @@ def prompt_for_credentials() -> dict:
         return {}
 
     api_hash = password_dialog(
-        "Telegram API Hash",
-        "Enter your Telegram API Hash\n"
-        "(found on https://my.telegram.org → API development tools):",
+        t("dialog.password.api_hash_title"),
+        t("dialog.password.api_hash_body"),
     ).strip()
 
     if not api_hash:
