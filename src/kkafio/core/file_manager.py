@@ -42,7 +42,7 @@ class FileManager:
     def __init__(self, config):
         self.config = config
 
-    def find_all_files(self, directory: Path | str) -> tuple[list[FileEntry], list[FileEntry]]:
+    def find_supported_files(self, directory: Path | str) -> tuple[list[FileEntry], list[FileEntry]]:
         """Find installable files and archive files in the given directory.
 
         Only .png, .zipmod, .zip, .rar and .7z files are considered (matched
@@ -60,25 +60,22 @@ class FileManager:
         archive_extensions = {".rar", ".zip", ".7z"}
         supported_extensions = {".png", ".zipmod"} | archive_extensions
 
-        for file_path in directory.glob('**/*'):
-            if file_path.is_file():
-                file_extension = file_path.suffix.lower()
-                if file_extension not in supported_extensions:
-                    continue
-                file_size = file_path.stat().st_size
+        # Target only the specific extensions recursively
+        for ext in supported_extensions:
+            for file_path in directory.rglob(f"*{ext}"):
 
+                file_extension = file_path.suffix.lower()
+
+                file_size = file_path.stat().st_size
                 file_entry: FileEntry = (file_path, file_size, file_extension)
 
                 if file_extension == ".zip" and is_mod_archive(file_path):
-                    # A plain .zip containing a manifest.xml is a mod, not a
-                    # generic archive to extract — route it alongside
-                    # .zipmod files instead of into archive_list.
                     file_list.append(file_entry)
                 elif file_extension in archive_extensions:
                     archive_list.append(file_entry)
                 else:
                     file_list.append(file_entry)
-                    
+
         file_list.sort(key=lambda x: x[1])
         archive_list.sort(key=lambda x: x[1])
 
@@ -87,7 +84,7 @@ class FileManager:
     def find_archives(self, directory: Path | str) -> list[FileEntry]:
         """Find only the archive files (.zip, .rar, .7z) under a directory.
 
-        Same rules as the archive list from `find_all_files` — extensions are
+        Same rules as the archive list from `find_supported_files` — extensions are
         matched case-insensitively, a .zip that is really a mod (contains a
         manifest.xml) is left out, and the result is sorted by size — but
         without collecting or stat-ing the .png / .zipmod files, so it's the
@@ -96,16 +93,18 @@ class FileManager:
         Returns:
             A list of archive files (path, size, extension)
         """
+        directory = Path(directory)
         archive_extensions = {".rar", ".zip", ".7z"}
         archive_list: list[FileEntry] = []
 
-        for file_path in Path(directory).glob('**/*'):
-            file_extension = file_path.suffix.lower()
-            if file_extension not in archive_extensions or not file_path.is_file():
-                continue
-            if file_extension == ".zip" and is_mod_archive(file_path):
-                continue
-            archive_list.append((file_path, file_path.stat().st_size, file_extension))
+        for ext in archive_extensions:
+            for file_path in directory.rglob(f"*{ext}"):
+                file_extension = file_path.suffix.lower()
+                
+                if file_extension == ".zip" and is_mod_archive(file_path):
+                    continue
+                    
+                archive_list.append((file_path, file_path.stat().st_size, file_extension))
 
         archive_list.sort(key=lambda x: x[1])
         return archive_list

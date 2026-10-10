@@ -37,14 +37,14 @@ class UninstallContents(ContentTypeResolver):
         logger.line()
         logger.info("FOLDER", foldername)
 
-        file_list, _ = self.file_manager.find_all_files(folder_path)
+        file_list, _ = self.file_manager.find_supported_files(folder_path)
 
         for file in file_list:
             path, size, extension = file
             match extension:
                 case ".zipmod" | ".zip":
                     # A plain .zip only reaches file_list (as opposed to
-                    # being extracted as an archive) when find_all_files has
+                    # being extracted as an archive) when find_supported_files has
                     # already confirmed it contains a manifest.xml, so it's
                     # safe to treat it exactly like a .zipmod here.
                     if self.do_mods:

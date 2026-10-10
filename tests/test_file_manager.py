@@ -1,4 +1,4 @@
-"""find_all_files only reports supported content/archive files."""
+"""find_supported_files only reports supported content/archive files."""
 
 import zipfile
 from pathlib import Path
@@ -19,7 +19,7 @@ def _mod_zip(path: Path) -> Path:
     return path
 
 
-def test_find_all_files_restricted_to_supported_extensions(tmp_path):
+def test_find_supported_files_restricted_to_supported_extensions(tmp_path):
     _touch(tmp_path / "card.png")
     _touch(tmp_path / "sub" / "UPPER.PNG")
     _touch(tmp_path / "mod.zipmod")
@@ -30,7 +30,7 @@ def test_find_all_files_restricted_to_supported_extensions(tmp_path):
     for ignored in ("notes.txt", "pic.jpg", "lib.dll", "readme", "x.png.bak"):
         _touch(tmp_path / ignored)
 
-    files, archives = FileManager(config=None).find_all_files(tmp_path)
+    files, archives = FileManager(config=None).find_supported_files(tmp_path)
 
     assert sorted((p.name, ext) for p, _, ext in files) == [
         ("UPPER.PNG", ".png"), ("card.png", ".png"),
