@@ -27,6 +27,7 @@ from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 
 # ---------------------------------------------------------------------------
@@ -346,7 +347,7 @@ class GroupChara(BaseTask):
         from kkafio.system.llm_dialog import llm_dialog, open_llm_website
         if self.open_llm_website:
             open_llm_website("GROUP", self.llm_website_url)
-        response = llm_dialog("KKAFIO — Group Characters", prompt_text)
+        response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
         if not response or not response.strip():
             logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
             return

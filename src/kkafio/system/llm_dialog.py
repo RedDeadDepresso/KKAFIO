@@ -179,5 +179,5 @@ def _terminal_dialog(title: str, prompt_text: str) -> str:
 
 
 if __name__ == "__main__":
-    reply = llm_dialog("KKAFIO — Example", "Please translate this JSON:\n{\n    \"key\": \"\"\n}")
+    reply = llm_dialog(t("dialog.llm.example_title"), "Please translate this JSON:\n{\n    \"key\": \"\"\n}")
     print(f"Got: {reply!r}")

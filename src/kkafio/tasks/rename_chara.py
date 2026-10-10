@@ -31,6 +31,7 @@ from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 
 CACHE_FILENAME = "kkafio_rename_cache.json"
@@ -484,7 +485,7 @@ class RenameChara(BaseTask):
         from kkafio.system.llm_dialog import llm_dialog, open_llm_website
         if self.open_llm_website:
             open_llm_website("RENAME", self.llm_website_url)
-        response = llm_dialog("KKAFIO — Rename Characters", prompt_text)
+        response = llm_dialog(t("dialog.llm.rename_title"), prompt_text)
         if not response or not response.strip():
             logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
             return
