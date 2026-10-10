@@ -10,6 +10,7 @@ On macOS/Linux falls back to a terminal prompt.
 
 import sys
 
+from kkafio.core.i18n import t
 from kkafio.system.dialog_common import new_window, show_and_wait
 
 
@@ -59,8 +60,8 @@ def _ctk_dialog(title: str, content: str, mask: bool = True) -> str:
 
     buttons = ctk.CTkFrame(root, fg_color="transparent")
     buttons.grid(row=2, column=0, padx=10, pady=12, sticky="e")
-    ctk.CTkButton(buttons, text="OK", width=90, command=on_ok).pack(side="left", padx=(0, 10))
-    ctk.CTkButton(buttons, text="Cancel", width=90, command=on_cancel).pack(side="left")
+    ctk.CTkButton(buttons, text=t("dialog.ok"), width=90, command=on_ok).pack(side="left", padx=(0, 10))
+    ctk.CTkButton(buttons, text=t("dialog.cancel"), width=90, command=on_cancel).pack(side="left")
 
     root.bind("<Return>", on_ok)
     root.bind("<Escape>", on_cancel)
@@ -74,7 +75,7 @@ def _terminal_prompt(title: str, content: str, mask: bool = True) -> str:
     print(f"\n{title}\n{content}")
     if mask:
         import getpass
-        return getpass.getpass("Password: ")
+        return getpass.getpass(t("dialog.password.prompt") + " ")
     return input("> ")
 
 

@@ -33,6 +33,7 @@ from kkafio.cards.cache_io import file_fp
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.cards.similarity import fuzzy_group, phash_of_file
 from kkafio.core.errors import ConfigError
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.system.similar_chara_dialog import ReviewGroup
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
@@ -60,15 +61,18 @@ MODES = (MODE_COVER, MODE_NAME, MODE_FILENAME)
 KEEP_BIGGEST  = "Biggest file size"
 KEEP_SMALLEST = "Smallest file size"
 
-KEEP_CHOICES: tuple[tuple[str, str], ...] = (
-    ("Keep newest",              KEEP_NEWEST),
-    ("Keep oldest",              KEEP_OLDEST),
-    ("Keep biggest file",        KEEP_BIGGEST),
-    ("Keep smallest file",       KEEP_SMALLEST),
-    ("Keep last alphabetically",  KEEP_LAST_LEX),
-    ("Keep first alphabetically", KEEP_FIRST_LEX),
-    ("Select all (keep none)",   KEEP_NONE),
-)
+def keep_choices() -> tuple[tuple[str, str], ...]:
+    """(dropdown label, strategy key) pairs. A function, not a constant: the labels
+    are translated, and the language is only known once the config has been read."""
+    return (
+        (t("dialog.review.keep_newest"),   KEEP_NEWEST),
+        (t("dialog.review.keep_oldest"),   KEEP_OLDEST),
+        (t("dialog.review.keep_biggest"),  KEEP_BIGGEST),
+        (t("dialog.review.keep_smallest"), KEEP_SMALLEST),
+        (t("dialog.review.keep_last"),     KEEP_LAST_LEX),
+        (t("dialog.review.keep_first"),    KEEP_FIRST_LEX),
+        (t("dialog.review.keep_none"),     KEEP_NONE),
+    )
 
 
 def select_keep(paths: list[Path], keep: str) -> Path | None:
@@ -231,9 +235,7 @@ def group_by_cover(cards: list[_Card]) -> list[ReviewGroup]:
     if skipped:
         logger.warning(TAG, f"{skipped} card(s) had no usable cover image and were not compared")
     clusters = fuzzy_group([c.path for c in usable], [c.phash for c in usable])
-    return [_finish("similar cover",
-                    "The cover images look alike. Different characters in the same pose can match too — "
-                    "check before removing.", cluster)
+    return [_finish(t("dialog.review.group_cover"), t("dialog.review.desc_cover"), cluster)
             for cluster in clusters if len(cluster) > 1]
 
 
@@ -248,7 +250,7 @@ def group_by_name(cards: list[_Card]) -> list[ReviewGroup]:
         if len(members) > 1:
             first = min(members, key=lambda c: _path_key(c.path))
             name = f"{first.last} {first.first}".strip()
-            groups.append(_finish(name, "Same first and last name. Outfits, overlays or edits may differ.",
+            groups.append(_finish(name, t("dialog.review.desc_name"),
                                   [c.path for c in members]))
     return groups
 
@@ -263,7 +265,7 @@ def group_by_filename(cards: list[_Card]) -> list[ReviewGroup]:
         if len(members) > 1:
             first = min(members, key=_path_key)
             groups.append(_finish(strip_number_suffix(first.stem),
-                                  f"Same file name apart from the trailing number, in {first.parent}",
+                                  t("dialog.review.desc_filename", folder=first.parent),
                                   members))
     return groups
 
@@ -318,7 +320,8 @@ class ReviewSimilarChara(BaseTask):
     def _extra_details(path: Path) -> list[tuple[str, str]]:
         """Character name, for the dialog's Details window."""
         first, last = _read_names(path)
-        return [("Character", f"{last} {first}".strip() or "(no name)")]
+        return [(t("dialog.review.detail_character"),
+                 f"{last} {first}".strip() or t("dialog.review.no_name"))]
 
     def run(self) -> None:
         folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, TAG)
@@ -337,7 +340,7 @@ class ReviewSimilarChara(BaseTask):
                          f"({sum(len(g.paths) for g in groups)} cards) - opening the review dialog...")
 
         from kkafio.system.similar_chara_dialog import review_dialog
-        selected = review_dialog("Review similar characters", groups, KEEP_CHOICES, select_keep,
+        selected = review_dialog(t("dialog.review.title"), groups, keep_choices(), select_keep,
                                  self._extra_details)
         if not selected:
             logger.info(TAG, "Nothing selected - nothing was deleted")

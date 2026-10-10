@@ -17,6 +17,7 @@ On macOS/Linux falls back to a terminal prompt.
 
 import sys
 
+from kkafio.core.i18n import t
 from kkafio.system.dialog_common import new_window, show_and_wait
 
 _COPIED_FEEDBACK_MS = 1500  # how long the Copy button reads "Copied!"
@@ -66,13 +67,13 @@ def _ctk_dialog(title: str, prompt_text: str) -> str:
         # Brief "Copied!" feedback; clicking again restarts the timer.
         if copy_feedback["id"] is not None:
             root.after_cancel(copy_feedback["id"])
-        copy_btn.configure(text="Copied!")
+        copy_btn.configure(text=t("dialog.llm.copied"))
         copy_feedback["id"] = root.after(_COPIED_FEEDBACK_MS, reset_copy_label)
 
     def reset_copy_label() -> None:
         copy_feedback["id"] = None
         try:
-            copy_btn.configure(text="Copy")
+            copy_btn.configure(text=t("dialog.llm.copy"))
         except tk.TclError:  # dialog already closed
             pass
 
@@ -89,10 +90,7 @@ def _ctk_dialog(title: str, prompt_text: str) -> str:
 
     label = ctk.CTkLabel(
         root,
-        text=(
-            "The prompt is on your clipboard (click Copy to copy it again). "
-            "Paste it into your LLM, then copy its reply and click Paste."
-        ),
+        text=t("dialog.llm.intro"),
         wraplength=680,
         justify="left",
         anchor="w",
@@ -116,10 +114,10 @@ def _ctk_dialog(title: str, prompt_text: str) -> str:
     bar = ctk.CTkFrame(root, fg_color="transparent")
     bar.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
     bar.grid_columnconfigure(1, weight=1)
-    ctk.CTkButton(bar, text="Cancel", width=100, command=on_cancel).grid(row=0, column=0, sticky="w")
-    copy_btn = ctk.CTkButton(bar, text="Copy", width=100, command=on_copy)
+    ctk.CTkButton(bar, text=t("dialog.cancel"), width=100, command=on_cancel).grid(row=0, column=0, sticky="w")
+    copy_btn = ctk.CTkButton(bar, text=t("dialog.llm.copy"), width=100, command=on_copy)
     copy_btn.grid(row=0, column=2, padx=(0, 10))
-    ctk.CTkButton(bar, text="Paste", width=120, command=on_paste).grid(row=0, column=3)
+    ctk.CTkButton(bar, text=t("dialog.llm.paste"), width=120, command=on_paste).grid(row=0, column=3)
 
     root.bind("<Return>", on_paste)
     root.bind("<Escape>", on_cancel)
@@ -140,10 +138,7 @@ def _ctk_dialog(title: str, prompt_text: str) -> str:
 def _terminal_dialog(title: str, prompt_text: str) -> str:
     print(f"\n{title}\n{'=' * len(title)}\n")
     print(prompt_text)
-    print(
-        "\nCopy the text above into your LLM, then paste its response below.\n"
-        "Press Enter on an empty line when done (or leave empty to cancel):"
-    )
+    print(t("dialog.llm.terminal_help"))
     lines: list[str] = []
     try:
         while True:

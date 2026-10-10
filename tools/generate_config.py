@@ -339,6 +339,7 @@ import json
 from pathlib import Path
 from typing import Any
 from kkafio.core.errors import ConfigError
+from kkafio.core.i18n import set_language
 from kkafio.core.logger import logger
 from enum import Enum
 
@@ -460,6 +461,10 @@ class Config:
             raise ConfigError(f"Config file '{self.config_file}' not found.", tag="SCRIPT") from None
         except json.JSONDecodeError:
             raise ConfigError(f"Invalid JSON format in '{self.config_file}'.", tag="SCRIPT") from None
+
+        # The GUI's language also drives the native dialogs (see core/i18n.py);
+        # "system" there means "follow the OS".
+        set_language(mxu.get("settings", {}).get("language", "system").lower())
 
         instances = mxu.get("instances", [])
         if not instances:

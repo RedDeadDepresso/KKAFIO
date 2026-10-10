@@ -922,7 +922,7 @@
       "label": "$option.ExceptionList.label",
       "description": "$option.ExceptionList.description",
       "placeholder": "BetterPenetration\\\nClo\\\nMyMod.zipmod\nAuthor.MyGuid",
-      "default": "BetterPenetration\\\nClo\\\ncom.joan6694.dynamic_bone_collider",
+      "default": "BetterPenetration\\\nClo\\",
       "pipeline_override": {
         "ExceptionList": "{exception_list}"
       }

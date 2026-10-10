@@ -29,6 +29,7 @@ KKAFIO-dev/
 │   ├── kkafio_default_clothes.json  # Optional, written by tools/build_default_clothes.py: outfit digests of the default coordinates Group Coordinates skips
 │   ├── xkcd_colors.json             # Named colour list used by the coordinate colour-fingerprint matcher
 │   └── i18n/                        # GUI translation strings, one file per language (see doc 03)
+│       ├── runtime/                 # Same languages: text for Python's own dialogs, via core/i18n.py (see doc 03)
 │       ├── en_us.json
 │       ├── ja_jp.json
 │       ├── ko_kr.json

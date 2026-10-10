@@ -221,6 +221,24 @@ Run it (without `--check`) after adding or renaming anything in
 `interface.json`, then fill in any `[TODO]` placeholders it reports before
 shipping.
 
+### Text drawn by Python itself (`assets/i18n/runtime/`)
+
+The native dialogs (Copy/Paste, password prompt, Review Similar Characters)
+are drawn by Python, not the GUI, so their text can't come from
+`interface.json`. It lives in `assets/i18n/runtime/<lang>.json` (the same six
+languages) and is looked up with `t("dialog.…", name=value)` from
+[`core/i18n.py`](../src/kkafio/core/i18n.py). The files are separate because
+`sync_i18n_keys.py` deletes every key `interface.json` doesn't reference. Values
+are `str.format` templates (`{name}` placeholders). Add a key to **all six**
+files; `tests/test_i18n.py` fails if a language is missing one, renames a
+placeholder, or a `t()` call names a key that doesn't exist.
+
+The language is the GUI's own setting (`settings.language` in
+`mxu-KKAFIO.json`), which `Config.read()` passes to `set_language()` (the call
+lives in the `FOOTER` template of `tools/generate_config.py`, since `config.py`
+is generated). `"system"` there, or a language that isn't shipped, means the
+operating system's UI language, and failing that English.
+
 ## `preset` entries
 
 Named bundles of tasks that can be enabled all at once from the GUI (⚡ All

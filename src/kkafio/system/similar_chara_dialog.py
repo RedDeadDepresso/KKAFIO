@@ -39,6 +39,7 @@ from datetime import datetime
 from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
+from kkafio.core.i18n import t
 from kkafio.system.dialog_common import new_window, show_and_wait
 
 
@@ -259,12 +260,6 @@ def review_dialog(
         raise TaskFailedError(f"The review dialog needs tkinter and customtkinter: {e}") from e
 
 
-_AUTO_PLACEHOLDER = "Auto-select…"
-_HINT = ("Tick the cards you want to remove. Making a choice locks that group (🔒); "
-         "click a lock to lock or unlock a group yourself. Auto-select fills in every group "
-         "that isn't locked (Undo takes it back). Keys: A/D or ←/→ change page, W/S or ↑/↓ scroll "
-         "(not while the search box has focus; press Enter there to leave it).")
-
 # (light, dark) colour pairs, as CustomTkinter expects
 _MUTED = ("gray40", "gray65")
 _ACCENT = ("#15803d", "#4ade80")
@@ -318,10 +313,10 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
                  font=ctk.CTkFont(size=22, weight="bold")).grid(row=0, column=0, sticky="w")
     summary = ctk.CTkLabel(header, text="", anchor="e", text_color=_MUTED)
     summary.grid(row=0, column=1, sticky="e")
-    ctk.CTkLabel(header, text=_HINT, anchor="w", justify="left", wraplength=840,
+    ctk.CTkLabel(header, text=t("dialog.review.hint"), anchor="w", justify="left", wraplength=840,
                  text_color=_MUTED).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
 
-    search = ctk.CTkEntry(root, placeholder_text="Search filename, folder or character name")
+    search = ctk.CTkEntry(root, placeholder_text=t("dialog.review.search_placeholder"))
     search.grid(row=1, column=0, sticky="ew", padx=16, pady=(10, 8))
 
     listing = ctk.CTkScrollableFrame(root, width=820, height=420, fg_color="transparent")
@@ -330,23 +325,23 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
     pager = ctk.CTkFrame(root, fg_color="transparent")
     pager.grid(row=3, column=0, pady=(6, 0))
-    prev_btn = ctk.CTkButton(pager, text="◀  Previous", width=110, command=lambda: go_page(-1))
+    prev_btn = ctk.CTkButton(pager, text=t("dialog.review.previous"), width=110, command=lambda: go_page(-1))
     prev_btn.grid(row=0, column=0, padx=8)
     page_label = ctk.CTkLabel(pager, text="", width=190)
     page_label.grid(row=0, column=1)
-    next_btn = ctk.CTkButton(pager, text="Next  ▶", width=110, command=lambda: go_page(1))
+    next_btn = ctk.CTkButton(pager, text=t("dialog.review.next"), width=110, command=lambda: go_page(1))
     next_btn.grid(row=0, column=2, padx=8)
 
     bar = ctk.CTkFrame(root, fg_color="transparent")
     bar.grid(row=4, column=0, sticky="ew", padx=16, pady=12)
     bar.grid_columnconfigure(3, weight=1)
 
-    auto_menu = ctk.CTkOptionMenu(bar, values=[label for label, _ in keep_choices], width=220,
+    auto_menu = ctk.CTkOptionMenu(bar, values=[label for label, _ in keep_choices], width=260,
                                   dynamic_resizing=False, command=lambda choice: on_auto(choice))
-    auto_menu.set(_AUTO_PLACEHOLDER)
+    auto_menu.set(t("dialog.review.auto_placeholder"))
     auto_menu.grid(row=0, column=0, padx=(0, 6))
 
-    undo_btn = ctk.CTkButton(bar, text="↶  Undo", width=90, fg_color=_BTN_GREY,
+    undo_btn = ctk.CTkButton(bar, text=t("dialog.review.undo"), width=90, fg_color=_BTN_GREY,
                              hover_color=_BTN_GREY_HOVER, text_color=("gray10", "gray90"),
                              command=lambda: on_undo())
     undo_btn.grid(row=0, column=1, padx=(0, 10))
@@ -358,7 +353,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     status = ctk.CTkLabel(bar, text="", anchor="w", text_color=_MUTED)
     status.grid(row=0, column=3, sticky="ew", padx=14)
 
-    ctk.CTkButton(bar, text="Close", width=90, fg_color=_BTN_GREY, hover_color=_BTN_GREY_HOVER,
+    ctk.CTkButton(bar, text=t("dialog.close"), width=90, fg_color=_BTN_GREY, hover_color=_BTN_GREY_HOVER,
                   text_color=("gray10", "gray90"), command=lambda: on_close()).grid(row=0, column=4)
 
     # -----------------------------------------------------------------------
@@ -386,7 +381,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
     def update_counts() -> None:
         n = state.selected_count()
-        trash_btn.configure(text=f"🗑  Trash selected ({n})",
+        trash_btn.configure(text=t("dialog.review.trash", count=n),
                             state="normal" if n else "disabled")
         undo_btn.configure(state="normal" if state.can_undo() else "disabled")
 
@@ -396,12 +391,13 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     def update_summary(shown: int) -> None:
         total = len(state.groups)
         files = sum(len(g.paths) for g in state.groups)
-        text = f"{total} groups · {files} files"
         if shown != total:
-            text = f"showing {shown} of {text}"
+            text = t("dialog.review.summary_filtered", shown=shown, total=total, files=files)
+        else:
+            text = t("dialog.review.summary", total=total, files=files)
         summary.configure(text=text)
         pages = page_count()
-        page_label.configure(text=f"Page {build['page'] + 1} of {pages}")
+        page_label.configure(text=t("dialog.review.page", page=build["page"] + 1, pages=pages))
         prev_btn.configure(state="normal" if build["page"] > 0 else "disabled")
         next_btn.configure(state="normal" if build["page"] < pages - 1 else "disabled")
 
@@ -424,9 +420,10 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
         try:
             st = path.stat()
-            meta = f"{format_size(st.st_size)}  ·  Created {format_date(created_timestamp(st))}"
+            meta = t("dialog.review.card_meta", size=format_size(st.st_size),
+                     date=format_date(created_timestamp(st)))
         except OSError:
-            meta = "file not found"
+            meta = t("dialog.review.file_not_found")
         info = ctk.CTkFrame(card, fg_color="transparent")
         info.grid(row=0, column=2, sticky="w")
         ctk.CTkLabel(info, text=path.name, anchor="w",
@@ -435,7 +432,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
         ctk.CTkLabel(info, text=str(path.parent), anchor="w", justify="left", wraplength=520,
                      text_color=_MUTED).grid(row=2, column=0, sticky="w")
 
-        ctk.CTkButton(card, text="ⓘ  Details", width=96, fg_color=_BTN_GREY,
+        ctk.CTkButton(card, text=t("dialog.review.details_button"), width=110, fg_color=_BTN_GREY,
                       hover_color=_BTN_GREY_HOVER, text_color=("gray10", "gray90"),
                       command=lambda: show_details(path)).grid(row=0, column=3, padx=(12, 4))
 
@@ -454,7 +451,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
                              font=ctk.CTkFont(size=18), command=lambda: on_lock(gi))
         lock.grid(row=0, column=0, rowspan=2, padx=(10, 2), pady=(8, 2), sticky="n")
         group_locks[gi] = lock
-        ctk.CTkLabel(frame, text=f"{len(group.paths)} files · {group.label}", anchor="w",
+        ctk.CTkLabel(frame, text=t("dialog.review.group_header", count=len(group.paths), label=group.label), anchor="w",
                      font=ctk.CTkFont(size=16, weight="bold"),
                      text_color=_ACCENT).grid(row=0, column=1, sticky="w", padx=(4, 14), pady=(10, 0))
         ctk.CTkLabel(frame, text=group.description, anchor="w", justify="left", wraplength=760,
@@ -479,7 +476,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
         for gi in build["order"][start:start + GROUPS_PER_PAGE]:
             build_group(gi)
         if not build["order"]:
-            empty = ctk.CTkLabel(listing, text="No groups match your search.", text_color=_MUTED)
+            empty = ctk.CTkLabel(listing, text=t("dialog.review.no_matches"), text_color=_MUTED)
             empty.grid(row=0, column=0, pady=40)
             group_frames.append(empty)
         update_summary(len(build["order"]))
@@ -549,7 +546,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
         image = images.get(path)
         try:
             if image is None:
-                label.configure(text="no\npreview")
+                label.configure(text=t("dialog.review.no_preview"))
             else:
                 label.configure(image=image, text="")
         except tk.TclError:
@@ -596,23 +593,23 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
         refresh_lock(gi)
 
     def on_auto(choice: str) -> None:
-        auto_menu.set(_AUTO_PLACEHOLDER)
+        auto_menu.set(t("dialog.review.auto_placeholder"))
         applied, skipped, failed = state.apply_keep(keep_by_label[choice])
         refresh_all()
-        text = f"{choice}: {applied} group(s) updated"
+        parts = [t("dialog.review.status_applied", choice=choice, count=applied)]
         if skipped:
-            text += f", {skipped} skipped (locked)"
+            parts.append(t("dialog.review.status_skipped", count=skipped))
         if failed:
-            text += f", {failed} couldn't be read"
-        status.configure(text=text)
+            parts.append(t("dialog.review.status_failed", count=failed))
+        status.configure(text=t("dialog.review.status_sep").join(parts))
 
     def on_undo() -> None:
         restored, kept = state.undo_auto()
         refresh_all()
-        text = f"Undid auto-select: {restored} group(s) restored"
+        parts = [t("dialog.review.status_undone", count=restored)]
         if kept:
-            text += f", {kept} kept (you've made choices in them since)"
-        status.configure(text=text)
+            parts.append(t("dialog.review.status_kept", count=kept))
+        status.configure(text=t("dialog.review.status_sep").join(parts))
 
     def on_trash() -> None:
         paths = state.selected_paths()
@@ -620,9 +617,8 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
             return
         everything = state.fully_selected_groups()
         if everything and not messagebox.askyesno(
-                "Trash every copy?",
-                f"In {len(everything)} group(s) every card is ticked, so no copy of that "
-                "character would be left.\n\nTrash them anyway?",
+                t("dialog.review.confirm_all_title"),
+                t("dialog.review.confirm_all_body", count=len(everything)),
                 parent=root):
             return
         result.extend(paths)
@@ -631,8 +627,8 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     def on_close(_event=None) -> None:
         n = state.selected_count()
         if n and not messagebox.askyesno(
-                "Close without trashing?",
-                f"{n} card(s) are ticked. Close without trashing anything?", parent=root):
+                t("dialog.review.confirm_close_title"),
+                t("dialog.review.confirm_close_body", count=n), parent=root):
             return
         finish()
 
@@ -642,19 +638,23 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
     def show_details(path: Path) -> None:
         top = ctk.CTkToplevel(root)
-        top.title(f"Details — {path.name}")
+        top.title(t("dialog.review.details_title", name=path.name))
         top.transient(root)
         top.grid_columnconfigure(1, weight=1)
         top.bind("<Escape>", lambda _e: top.destroy())
 
-        rows: list[tuple[str, str]] = [("File", path.name), ("Folder", str(path.parent))]
+        rows: list[tuple[str, str]] = [(t("dialog.review.detail_file"), path.name),
+                                       (t("dialog.review.detail_folder"), str(path.parent))]
         try:
             st = path.stat()
-            rows += [("Size", f"{format_size(st.st_size)}  ({st.st_size:,} bytes)"),
-                     ("Created", datetime.fromtimestamp(created_timestamp(st)).strftime("%Y/%m/%d %H:%M:%S")),
-                     ("Modified", datetime.fromtimestamp(st.st_mtime).strftime("%Y/%m/%d %H:%M:%S"))]
+            rows += [(t("dialog.review.detail_size"),
+                      t("dialog.review.size_value", size=format_size(st.st_size), bytes=f"{st.st_size:,}")),
+                     (t("dialog.review.detail_created"),
+                      datetime.fromtimestamp(created_timestamp(st)).strftime("%Y/%m/%d %H:%M:%S")),
+                     (t("dialog.review.detail_modified"),
+                      datetime.fromtimestamp(st.st_mtime).strftime("%Y/%m/%d %H:%M:%S"))]
         except OSError:
-            rows.append(("Status", "file not found"))
+            rows.append((t("dialog.review.detail_status"), t("dialog.review.file_not_found")))
         if extra_details is not None:
             try:
                 rows += extra_details(path)
@@ -678,14 +678,14 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
         box = ctk.CTkTextbox(top, width=420, height=max(160, 28 * len(rows)), wrap="word")
         box.grid(row=0, column=1, padx=(0, 14), pady=14, sticky="nsew")
-        box.insert("1.0", "\n".join(f"{k}: {v}" for k, v in rows))
+        box.insert("1.0", "\n".join(t("dialog.review.detail_line", label=k, value=v) for k, v in rows))
         box.configure(state="disabled")
 
         buttons = ctk.CTkFrame(top, fg_color="transparent")
         buttons.grid(row=1, column=0, columnspan=2, sticky="e", padx=14, pady=(0, 14))
-        ctk.CTkButton(buttons, text="Show in folder", width=120,
+        ctk.CTkButton(buttons, text=t("dialog.review.show_in_folder"), width=140,
                       command=lambda: reveal_in_folder(path)).grid(row=0, column=0, padx=(0, 8))
-        ctk.CTkButton(buttons, text="Close", width=90, fg_color=_BTN_GREY,
+        ctk.CTkButton(buttons, text=t("dialog.close"), width=90, fg_color=_BTN_GREY,
                       hover_color=_BTN_GREY_HOVER, text_color=("gray10", "gray90"),
                       command=top.destroy).grid(row=0, column=1)
 

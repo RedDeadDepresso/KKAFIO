@@ -176,9 +176,17 @@ def test_select_keep_ties_resolve_to_last_name(tmp_path):
 
 def test_every_dropdown_choice_is_a_working_strategy(tmp_path):
     small, big, mid = _files(tmp_path)
-    for label, key in rsc.KEEP_CHOICES:
-        rsc.select_keep([small, big, mid], key)           # must not raise
-    assert len({key for _, key in rsc.KEEP_CHOICES}) == len(rsc.KEEP_CHOICES)
+    from kkafio.core import i18n
+    try:
+        for language in i18n.SUPPORTED_LANGUAGES:         # the dialog maps label -> strategy,
+            i18n.set_language(language)                   # so labels must differ in every language
+            choices = rsc.keep_choices()
+            for label, key in choices:
+                rsc.select_keep([small, big, mid], key)   # must not raise
+            assert len({key for _, key in choices}) == len(choices)
+            assert len({label for label, _ in choices}) == len(choices), language
+    finally:
+        i18n.set_language(None)
 
 
 # ---------------------------------------------------------------------------
