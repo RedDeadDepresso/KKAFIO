@@ -960,7 +960,7 @@
       "label": "$option.ExceptionList.label",
       "description": "$option.ExceptionList.description",
       "placeholder": "BetterPenetration\\\nClo\\\nMyMod.zipmod\nAuthor.MyGuid",
-      "default": "BetterPenetration\\\nClo\\",
+      "default": "BetterPenetration\\\nClo\\\ncom.joan6694.dynamic_bone_collider",
       "pipeline_override": {
         "ExceptionList": "{exception_list}"
       }
@@ -1275,9 +1275,9 @@
       "group": ["content-management"],
       "option": [
         "InstallContentTypes",
-        "UseCache",
         "KeepStrategy",
         "DuplicateAction",
+        "UseCache",
         "CharaDir",
         "SceneDir",
         "CoordDir",
@@ -1297,8 +1297,8 @@
         "SideloaderModpack",
         "TelegramSources",
         "TelegramChatLinks",
-        "UseCache",
         "OpenReport",
+        "UseCache",
         "InputModsDir",
         "OutputModsDir",
         "CharaDir",
@@ -1350,7 +1350,7 @@
       "default_check": false,
       "description": "$task.GroupScenes.description",
       "group": ["scene-management"],
-      "option": ["SceneDir", "UseCache", "GroupScenesIncludeSubfolders"]
+      "option": ["SceneDir", "GroupScenesIncludeSubfolders", "UseCache"]
     },
     {
       "name": "GroupChara",
@@ -1362,10 +1362,10 @@
       "option": [
         "CharaDir",
         "GroupCharaIncludeSubfolders",
-        "UseCache",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
-        "GroupCharaPrompt"
+        "GroupCharaPrompt",
+        "UseCache"
       ]
     },
     {
@@ -1378,11 +1378,11 @@
       "option": [
         "CharaDir",
         "CoordDir",
-        "UseCache",
         "GroupCoordinatesIncludeSubfolders",
         "GroupCoordinatesClothesTolerance",
         "GroupCoordinatesIgnoreAccessories",
-        "GroupCoordinatesGroupByHair"
+        "GroupCoordinatesGroupByHair",
+        "UseCache"
       ]
     },
     {
@@ -1406,10 +1406,10 @@
         "SkipAlreadyRenamed",
         "UpdateMetadata",
         "RenameFiles",
-        "UseCache",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
-        "RenameCharaPrompt"
+        "RenameCharaPrompt",
+        "UseCache"
       ]
     },
     {
@@ -1426,8 +1426,8 @@
         "ArchiveFormat",
         "IncludeModpack",
         "IncludeCoordinates",
-        "UseCache",
         "AutoResolve",
+        "UseCache",
         "ModsDir",
         "CoordDir"
       ]
@@ -1443,8 +1443,8 @@
         "ContentPaths",
         "CheckSharedMods",
         "IncludeCoordinates",
-        "UseCache",
         "AutoResolve",
+        "UseCache",
         "ModsDir",
         "CharaDir",
         "SceneDir",
@@ -1462,8 +1462,8 @@
         "SimilarityMode",
         "CheckSharedMods",
         "IncludeCoordinates",
-        "UseCache",
         "AutoResolve",
+        "UseCache",
         "ModsDir",
         "CharaDir",
         "SceneDir",
