@@ -6,6 +6,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Changed
 
+- **Filter & Convert KKS Cards** — when Convert is off and both KK/KKSP and KKS cards are set to Keep, the task now only extracts archives instead of also scanning and classifying every PNG.
 - **Install Contents** — **File Conflicts** now defaults to `Rename`. With `Rename`, an existing file with identical content (xxhash) is skipped instead of being installed again under a timestamped name.
 - **Uninstall Contents** — a file is only deleted when its content is identical (xxhash) to the one being uninstalled; same-named files with different content are skipped.
 

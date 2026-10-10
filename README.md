@@ -145,7 +145,7 @@ Everything else — CLI output, log files, and error messages — is English-onl
   - **KK/KKSP Cards** _(Keep by default)_: what to do with every **KK / KKSP** card found — including any KKS card or scene just converted above. **Keep** leaves them where they are; **Move** moves them into `_KK_card_/`; **Delete** sends them to the Recycle Bin.
   - **KKS Cards** _(Keep by default)_: the same three choices, applied to the original **KKS** cards and scenes (never to their converted copies — those are covered by **KK/KKSP Cards**).
   - Scenes are identified by their scene version (KKS = `1.1.0.0` or newer), not by card markers. Scenes already in KK format are left alone regardless of the actions above.
-- **Optional:** **Extract Archives** _(on by default)_: extracts ZIP / RAR / 7z archives before filtering — this still works with both actions left at **Keep**, so the task is also useful purely as an archive-extraction step.
+- **Optional:** **Extract Archives** _(on by default)_: extracts ZIP / RAR / 7z archives before filtering — if **Convert KKS → KK** is off and both actions are left at **Keep**, the task only extracts archives (it doesn't scan the PNGs at all), so it's also useful purely as an archive-extraction step.
 - **Archive Password** _(`Skip` by default)_: `Skip` ignores password-protected archives; `Request Password` prompts you for one when an archive needs it.
 - An archive whose extraction folder (named after the archive, next to it) already exists is not extracted again.
 - Has a separate archive password setting from Install Contents.

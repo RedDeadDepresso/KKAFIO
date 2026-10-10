@@ -83,7 +83,33 @@ class FileManager:
         archive_list.sort(key=lambda x: x[1])
 
         return file_list, archive_list
-    
+
+    def find_archives(self, directory: Path | str) -> list[FileEntry]:
+        """Find only the archive files (.zip, .rar, .7z) under a directory.
+
+        Same rules as the archive list from `find_all_files` — extensions are
+        matched case-insensitively, a .zip that is really a mod (contains a
+        manifest.xml) is left out, and the result is sorted by size — but
+        without collecting or stat-ing the .png / .zipmod files, so it's the
+        cheaper choice when archives are all you need.
+
+        Returns:
+            A list of archive files (path, size, extension)
+        """
+        archive_extensions = {".rar", ".zip", ".7z"}
+        archive_list: list[FileEntry] = []
+
+        for file_path in Path(directory).glob('**/*'):
+            file_extension = file_path.suffix.lower()
+            if file_extension not in archive_extensions or not file_path.is_file():
+                continue
+            if file_extension == ".zip" and is_mod_archive(file_path):
+                continue
+            archive_list.append((file_path, file_path.stat().st_size, file_extension))
+
+        archive_list.sort(key=lambda x: x[1])
+        return archive_list
+
     def copy_and_paste(self, type: str, source_path: Path | str, destination_folder: str | Path):
         """Copy file from source to destination, handling file conflicts."""
         source_path = Path(source_path)

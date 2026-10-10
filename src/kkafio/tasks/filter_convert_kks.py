@@ -214,7 +214,7 @@ class FilterConvertKKS:
         """Extract every archive found under `path` into a folder named after
         it, skipping archives whose folder already exists. The extracted
         folders are left in place."""
-        _, archive_list = self.file_manager.find_all_files(path)
+        archive_list = self.file_manager.find_archives(path)
         if not archive_list:
             return
         logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
@@ -234,6 +234,19 @@ class FilterConvertKKS:
         # 1. Extract archives, if enabled.
         if self.extract_archive:
             self._extract_archives(path)
+
+        # Nothing to convert, move or delete: this run is extraction only, so
+        # skip scanning/classifying every PNG.
+        if (not self.convert
+                and self.kk_action == ACTION_KEEP
+                and self.kks_action == ACTION_KEEP):
+            if self.extract_archive:
+                logger.success("SCRIPT", "Convert is off and KK/KKS cards are set to Keep — "
+                                         "only extracted archives")
+            else:
+                logger.warning("SCRIPT", "Convert is off, KK/KKS cards are set to Keep and "
+                                         "Extract Archive is off — nothing to do")
+            return
 
         png_list = self.get_list(path)
         if not png_list:
