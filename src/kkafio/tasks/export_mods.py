@@ -1,8 +1,8 @@
 """
 export_mods.py — Find mods by GUID and copy them into an output folder.
 
-Typical use: paste the "Unresolvable mods" (or any other) section straight
-out of a Download Missing Mods report — lines like "  ! GaryuX.Chloe" — into
+Typical use: paste the "Failed mods" (or any other) section straight
+out of a Download Missing Mods report — lines like "  ✗ GaryuX.Chloe" — into
 the GUIDs field (the bullet is removed), and this task will locate each one (searching both the
 regular mods folder and any Sideloader Modpack subfolder) and copy it out,
 optionally renamed to [guid].zipmod so it's immediately obvious which file

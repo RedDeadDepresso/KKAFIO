@@ -129,34 +129,25 @@ class DownloadMissingMods(BaseTask):
             f"Queued for download           : {len(to_download)}",
             f"  — from BetterRepack         : {len(from_betterrepack)}",
             f"  — from Telegram             : {len(from_telegram)}",
-            f"  — unresolvable              : {len(unresolved)}",
             "",
             f"Downloaded successfully : {ok}",
-            f"Failed                  : {fail}",
+            f"Failed                  : {fail + len(unresolved)}",
             "",
         ]
 
-        if unresolved:
+        # Mods with no source found (not in the modpack index, no Telegram
+        # source) and mods whose download failed are reported together.
+        all_failed = set(unresolved) | set(failed_guids)
+        if all_failed:
             lines += [
                 "=" * 60,
-                "Unresolvable mods (not in modpack index, no Telegram source found):",
-                "These mods could not be downloaded automatically.",
-                "Search for them manually on the KKC mod index or game modding communities.",
+                f"Failed mods ({len(all_failed)}):",
+                "These mods could not be downloaded (no source found, or the download failed).",
+                "Check your internet connection and try again, or search for them manually",
+                "on the KKC mod index or game modding communities.",
                 "",
             ]
-            for guid in sorted(unresolved):
-                lines.append(f"  ! {guid}")
-            lines.append("")
-
-        if failed_guids:
-            lines += [
-                "=" * 60,
-                f"Failed downloads ({len(failed_guids)}):",
-                "These mods were found but could not be downloaded.",
-                "Check your internet connection and try again.",
-                "",
-            ]
-            for guid in sorted(failed_guids):
+            for guid in sorted(all_failed):
                 lines.append(f"  ✗ {guid}")
             lines.append("")
 
@@ -436,7 +427,7 @@ class DownloadMissingMods(BaseTask):
 
         if unresolved:
             logger.warning("DLMOD",
-                f"{len(unresolved)} GUID(s) unresolvable:")
+                f"{len(unresolved)} GUID(s) failed (no source found):")
             for guid in unresolved:
                 logger.warning("DLMOD", f"  {guid}")
 
@@ -769,8 +760,7 @@ class DownloadMissingMods(BaseTask):
         )
 
         logger.success("DLMOD",
-            f"Done — downloaded: {ok}, failed: {fail}, "
-            f"unresolved: {len(unresolved)}")
+            f"Done — downloaded: {ok}, failed: {fail + len(unresolved)}")
 
         # Open the report when anything is still missing or a download failed
         # (mods skipped on purpose via the Sideloader Modpack mode don't count).
