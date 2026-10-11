@@ -1,5 +1,6 @@
 """
-chara_key.py — Build the "name | personality | hair_color" identification
+chara_key.py — Build the "lastname | firstname | nickname | personality | hair_color"
+identification
 key used by both GroupChara and RenameChara to describe a chara card to an
 LLM and to match the LLM's JSON response back to the right file.
 
@@ -44,17 +45,26 @@ def hair_color(kc: KoikatuCharaData) -> tuple[int, int, int]:
     return (0, 0, 0)
 
 
+def _name_part(value) -> str:
+    """One name field as plain text, with any ' | ' separator look-alike removed
+    so a name can't be mistaken for a field boundary in the key."""
+    return str(value or "").replace("|", "/").strip()
+
+
 def make_key(kc: KoikatuCharaData) -> str:
-    """Stable, deterministic "name | personality | hair_color" key.
+    """Stable, deterministic "lastname | firstname | nickname | personality | hair_color" key.
 
     Used both when exporting cards to an LLM prompt and when matching the
     LLM's JSON response back to the file(s) it describes — the two sides
     must build byte-for-byte the same key for a given card, which is the
     whole reason this lives in one place instead of two.
     """
-    name            = kc._repr_name()
-    personality_idx = kc["Parameter"]["personality"]
+    param           = kc["Parameter"]
+    lastname        = _name_part(param["lastname"])
+    firstname       = _name_part(param["firstname"])
+    nickname        = _name_part(param["nickname"])
+    personality_idx = param["personality"]
     personality     = (PERSONALITIES[personality_idx]
                         if personality_idx < len(PERSONALITIES) else str(personality_idx))
     color           = get_simple_color_description(hair_color(kc))
-    return f"{name} | {personality} | {color} hair"
+    return f"{lastname} | {firstname} | {nickname} | {personality} | {color} hair"

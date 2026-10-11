@@ -3,7 +3,7 @@ group_chara.py — Group character cards into folders by series using an LLM.
 
 Workflow (all handled inside run()):
 1. export() scans the folder for KK chara PNGs and builds a JSON dict
-   {key: ""} where key encodes name + personality + hair colour. With the
+   {key: ""} where key encodes lastname + firstname + nickname + personality + hair colour. With the
    default (game) chara folders, both female/ and male/ are scanned.
 2. run() shows a native Copy/Paste dialog (src/kkafio/system/llm_dialog.py) with the
    prompt + JSON. The user copies it into their LLM, pastes the reply back
@@ -36,7 +36,7 @@ from kkafio.core.logger import logger
 
 PROMPT_TEMPLATE = """\
 You will receive a JSON object whose keys identify Koikatsu character card files.
-Each key has the format:  name | personality | hair_color
+Each key has the format:  lastname | firstname | nickname | personality | hair_color
 
 Your task: for every key, write the English name of the anime/game series the character \
 is from as the value.

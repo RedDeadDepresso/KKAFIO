@@ -2,7 +2,7 @@
 chara_key_cache.py — Remembers each chara card's identification key between runs.
 
 Group Characters and Rename Characters both need `make_key(card)` (the
-"name | personality | hair colour" string) for every PNG, and getting it means
+"lastname | firstname | nickname | personality | hair colour" string) for every PNG, and getting it means
 reading the whole file and fully parsing the character data — tens of MB per
 card. Group Characters even does that twice per run (once to export, once to
 move). This cache stores, per file, what was learned the last time:
@@ -35,7 +35,7 @@ CACHE_FILE = "kkafio_chara_key_cache.json"
 
 # Bump when make_key() changes what it returns for a card (or the entry layout
 # changes): caches written by an older version are then ignored, not trusted.
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 
 
 def _load(folder: Path) -> dict[str, dict]:

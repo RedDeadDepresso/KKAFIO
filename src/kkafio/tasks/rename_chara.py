@@ -6,8 +6,8 @@ Optionally also renames the PNG file on disk.
 
 LLM response format — values are dicts:
   {
-    "key | personality | hair": {"lastname": "Tohsaka", "firstname": "Rin", "nickname": "Rin"},
-    "unknown key | ...":        {"lastname": "", "firstname": "", "nickname": ""}
+    "key": {"lastname": "Tohsaka", "firstname": "Rin", "nickname": "Rin"},
+    "unknown key":        {"lastname": "", "firstname": "", "nickname": ""}
   }
 
 Caches (both in the scanned folder):
@@ -39,7 +39,7 @@ CACHE_FILENAME = "kkafio_rename_cache.json"
 
 PROMPT_TEMPLATE = """\
 You will receive a JSON object whose keys identify Koikatsu character card files.
-Each key has the format:  name | personality | hair_color
+Each key has the format:  lastname | firstname | nickname | personality | hair_color
 
 Your task: for every key fill in "lastname", "firstname", and "nickname" with the
 character's well-known English name.
