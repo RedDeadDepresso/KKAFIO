@@ -1,4 +1,4 @@
-"""pepper-scene-index: the {xxhash: author} index of Studio scenes.
+"""pepper-scene-index: the {xxhash: {"author", "year"}} index of Studio scenes.
 
 The index is published by https://github.com/RedDeadDepresso/pepper-scene-hasher.
 A copy is kept in CONFIG_DIR/config and only re-downloaded when the repo's
@@ -50,23 +50,40 @@ def _load_cached_index(index_path: Path) -> dict | None:
     return None
 
 
-def normalize_index(raw: dict) -> dict[str, str]:
-    """{xxhash: author} with lower-cased hashes and plain-string authors.
+def _parse_year(value) -> int | None:
+    """A usable year from an index value, or None (null, missing, bool, non-numeric)."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+    return None
 
-    Entries whose author can't be read (empty, not a string, or an object
-    without an "author"/"name" field) are dropped.
+
+def normalize_index(raw: dict) -> dict[str, dict]:
+    """{xxhash: {"author": str, "year": int | None}} with lower-cased hashes.
+
+    The index maps each hash to {"author": "...", "year": 2025}, where year may
+    be null. For leniency, a bare author string is also accepted (year None), and
+    an object may use "name" instead of "author". Entries whose author can't be
+    read (empty, not a string) are dropped.
     """
-    index: dict[str, str] = {}
+    index: dict[str, dict] = {}
     for key, value in raw.items():
+        year = None
         if isinstance(value, dict):
+            year = _parse_year(value.get("year"))
             value = value.get("author") or value.get("name")
         if isinstance(key, str) and isinstance(value, str) and value.strip():
-            index[key.strip().lower()] = value.strip()
+            index[key.strip().lower()] = {"author": value.strip(), "year": year}
     return index
 
 
-def load_scene_index(client=None, config_dir: Path | None = None) -> dict[str, str]:
-    """Return the {xxhash: author} scene index.
+def load_scene_index(client=None, config_dir: Path | None = None) -> dict[str, dict]:
+    """Return the {xxhash: {"author": str, "year": int | None}} scene index.
 
     The cached copy is used only if the commit saved next to it matches the
     repo's latest commit and it loads; otherwise the index is downloaded again

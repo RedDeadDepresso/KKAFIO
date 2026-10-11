@@ -29,25 +29,33 @@ class _Client:
         return _Resp([{"sha": self.sha}] if url == si.SCENE_INDEX_COMMITS_API else self.index)
 
 
+def _e(author, year=None):
+    return {"author": author, "year": year}
+
+
 def test_index_downloaded_only_when_commit_changes(tmp_path):
-    index = {"AAAA": "Author One"}
+    index = {"AAAA": {"author": "Author One", "year": 2025}}
     c = _Client("sha1", index)
-    assert si.load_scene_index(c, tmp_path) == {"aaaa": "Author One"}
+    assert si.load_scene_index(c, tmp_path) == {"aaaa": _e("Author One", 2025)}
     assert si.SCENE_INDEX_URL in c.urls
     assert (tmp_path / si.COMMIT_FILENAME).read_text() == "sha1"
 
-    same = _Client("sha1", {"BBBB": "Other"})            # same commit -> cached copy, no download
-    assert si.load_scene_index(same, tmp_path) == {"aaaa": "Author One"}
+    same = _Client("sha1", {"BBBB": {"author": "Other", "year": None}})            # same commit -> cached copy, no download
+    assert si.load_scene_index(same, tmp_path) == {"aaaa": _e("Author One", 2025)}
     assert si.SCENE_INDEX_URL not in same.urls
 
-    new = _Client("sha2", {"BBBB": "Other"})             # new commit -> re-download
-    assert si.load_scene_index(new, tmp_path) == {"bbbb": "Other"}
+    new = _Client("sha2", {"BBBB": {"author": "Other", "year": None}})             # new commit -> re-download
+    assert si.load_scene_index(new, tmp_path) == {"bbbb": _e("Other")}
     assert (tmp_path / si.COMMIT_FILENAME).read_text() == "sha2"
 
 
 def test_normalize_index_tolerates_odd_values():
-    raw = {"AB": "x", "cd": {"author": "y"}, "ef": "", "gh": 5, "ij": {"name": "z"}}
-    assert si.normalize_index(raw) == {"ab": "x", "cd": "y", "ij": "z"}
+    raw = {"AB": "x", "cd": {"author": "y", "year": 2024}, "ef": "", "gh": 5, "ij": {"name": "z", "year": None},
+           "kl": {"author": "w", "year": "2023"}, "mn": {"author": "v", "year": True}, "op": {"author": "u"}}
+    assert si.normalize_index(raw) == {
+        "ab": _e("x"), "cd": _e("y", 2024), "ij": _e("z"),
+        "kl": _e("w", 2023), "mn": _e("v"), "op": _e("u"),
+    }
 
 
 def test_author_folder_name():
@@ -60,7 +68,8 @@ def test_author_folder_name():
 def _task(folder: Path, **kw):
     cfg = mock.Mock()
     cfg.game_path = {}
-    cfg.group_scenes = {"SceneDir": str(folder), "UseCache": True, "IncludeSubfolders": False, **kw}
+    cfg.group_scenes = {"SceneDir": str(folder), "UseCache": True, "IncludeSubfolders": False,
+                        "SubgroupByYear": False, **kw}
     return gs.GroupScenes(cfg, None)
 
 
@@ -71,7 +80,7 @@ def test_scenes_in_index_move_to_author_folder(tmp_path):
     cf.write(tmp_path / "unknown.png", other)
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))           # not a scene -> untouched
     cf.write(tmp_path / "deep" / "s3.png", cf.scene_card([["d"]]))   # subfolder -> ignored by default
-    index = si.normalize_index({_digest(a).upper(): "Alice", _digest(b): "Bob/The:Builder"})
+    index = si.normalize_index({_digest(a).upper(): _e("Alice"), _digest(b): _e("Bob/The:Builder")})
 
     with mock.patch.object(gs, "load_scene_index", return_value=index):
         _task(tmp_path).run()
@@ -90,7 +99,7 @@ def test_scenes_in_index_move_to_author_folder(tmp_path):
 def test_rerun_is_a_noop_and_collisions_get_suffix(tmp_path):
     a = cf.scene_card([["a"]])
     cf.write(tmp_path / "s1.png", a)
-    index = {_digest(a): "Alice"}
+    index = {_digest(a): _e("Alice")}
     with mock.patch.object(gs, "load_scene_index", return_value=index):
         _task(tmp_path).run()
         _task(tmp_path).run()                                        # already in place
@@ -102,7 +111,7 @@ def test_rerun_is_a_noop_and_collisions_get_suffix(tmp_path):
 def test_include_subfolders_regroups_into_author_folder(tmp_path):
     a = cf.scene_card([["a"]])
     cf.write(tmp_path / "old" / "s1.png", a)
-    with mock.patch.object(gs, "load_scene_index", return_value={_digest(a): "Alice"}):
+    with mock.patch.object(gs, "load_scene_index", return_value={_digest(a): _e("Alice")}):
         _task(tmp_path, IncludeSubfolders=True, UseCache=False).run()
     assert (tmp_path / "Alice" / "s1.png").exists() and not (tmp_path / "old" / "s1.png").exists()
     assert not (tmp_path / PNG_CACHE_FILE).exists()                  # cache off -> none written
@@ -132,7 +141,7 @@ def test_cache_is_saved_after_moving_and_the_next_run_hashes_nothing(tmp_path):
     a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
     cf.write(tmp_path / "s1.png", a)
     cf.write(tmp_path / "s2.png", b)
-    index = {_digest(a): "Alice", _digest(b): "Bob"}
+    index = {_digest(a): _e("Alice"), _digest(b): _e("Bob")}
     with mock.patch.object(gs, "load_scene_index", return_value=index):
         _task(tmp_path).run()
         files = _cache_files(tmp_path)
@@ -149,7 +158,7 @@ def test_hashes_are_saved_before_the_moves_so_an_interrupted_run_keeps_them(tmp_
     a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
     cf.write(tmp_path / "s1.png", a)
     cf.write(tmp_path / "s2.png", b)
-    index = {_digest(a): "Alice", _digest(b): "Bob"}
+    index = {_digest(a): _e("Alice"), _digest(b): _e("Bob")}
     with mock.patch.object(gs, "load_scene_index", return_value=index), \
          mock.patch.object(gs.shutil, "move", side_effect=KeyboardInterrupt):   # stopped at the first move
         try:
@@ -165,7 +174,7 @@ def test_scenes_moved_before_an_interruption_are_cached_under_their_new_path(tmp
     a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
     cf.write(tmp_path / "s1.png", a)
     cf.write(tmp_path / "s2.png", b)
-    index = {_digest(a): "Alice", _digest(b): "Bob"}
+    index = {_digest(a): _e("Alice"), _digest(b): _e("Bob")}
     real_move, calls = gs.shutil.move, []
 
     def stop_on_second(src, dst):
@@ -190,8 +199,48 @@ def test_entries_for_files_that_were_not_scanned_survive_the_save(tmp_path):
     a = cf.scene_card([["a"]])
     cf.write(tmp_path / "s1.png", a)
     cf.write(tmp_path / "deep" / "s9.png", cf.scene_card([["z"]]))
-    with mock.patch.object(gs, "load_scene_index", return_value={_digest(a): "Alice"}):
+    with mock.patch.object(gs, "load_scene_index", return_value={_digest(a): _e("Alice")}):
         _task(tmp_path, IncludeSubfolders=True).run()                  # caches deep/s9.png too
         assert str(tmp_path / "deep" / "s9.png") in _cache_files(tmp_path)
         _task(tmp_path, IncludeSubfolders=False).run()                  # subfolders not scanned this time
     assert str(tmp_path / "deep" / "s9.png") in _cache_files(tmp_path)  # ...but their entries are kept
+
+
+# ---------------------------------------------------------------------------
+# subgroup by year
+# ---------------------------------------------------------------------------
+
+def test_subgroup_by_year_uses_year_or_unsorted_folder(tmp_path):
+    a, b, c = cf.scene_card([["a"]]), cf.scene_card([["b"]]), cf.scene_card([["c"]])
+    cf.write(tmp_path / "s1.png", a)
+    cf.write(tmp_path / "s2.png", b)
+    cf.write(tmp_path / "s3.png", c)
+    index = {_digest(a): _e("Alice", 2025), _digest(b): _e("Alice"), _digest(c): _e("Bob", 2020)}
+    with mock.patch.object(gs, "load_scene_index", return_value=index):
+        _task(tmp_path, SubgroupByYear=True).run()
+    assert (tmp_path / "Alice" / "2025" / "s1.png").exists()
+    assert (tmp_path / "Alice" / "Unsorted Years" / "s2.png").exists()
+    assert (tmp_path / "Bob" / "2020" / "s3.png").exists()
+    files = _cache_files(tmp_path)
+    assert str(tmp_path / "Alice" / "2025" / "s1.png") in files and str(tmp_path / "s1.png") not in files
+
+
+def test_subgroup_by_year_is_on_by_default_and_rerun_is_a_noop(tmp_path):
+    a = cf.scene_card([["a"]])
+    cf.write(tmp_path / "s1.png", a)
+    cfg = mock.Mock()
+    cfg.game_path = {}
+    cfg.group_scenes = {"SceneDir": str(tmp_path)}                    # no SubgroupByYear key
+    index = {_digest(a): _e("Alice", 2025)}
+    with mock.patch.object(gs, "load_scene_index", return_value=index):
+        gs.GroupScenes(cfg, None).run()
+        gs.GroupScenes(cfg, None).run()
+    assert [p.name for p in (tmp_path / "Alice" / "2025").iterdir()] == ["s1.png"]
+
+
+def test_subgroup_by_year_moves_scene_from_author_folder_into_year_folder(tmp_path):
+    a = cf.scene_card([["a"]])
+    cf.write(tmp_path / "Alice" / "s1.png", a)                        # previously grouped by author only
+    with mock.patch.object(gs, "load_scene_index", return_value={_digest(a): _e("Alice", 2024)}):
+        _task(tmp_path, SubgroupByYear=True, IncludeSubfolders=True).run()
+    assert (tmp_path / "Alice" / "2024" / "s1.png").exists() and not (tmp_path / "Alice" / "s1.png").exists()

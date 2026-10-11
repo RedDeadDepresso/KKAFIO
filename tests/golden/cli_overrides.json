@@ -4076,6 +4076,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "/cfg/scene",
+      "subgroup_by_year": true,
       "use_cache": false
      },
      "class": "GroupScenes",
@@ -4104,6 +4105,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "/cfg/scene",
+      "subgroup_by_year": true,
       "use_cache": false
      },
      "class": "GroupScenes",
@@ -4126,7 +4128,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--use-cache",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--subgroup-by-year"
   ],
   "result": {
    "events": [
@@ -4134,6 +4137,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -4156,7 +4160,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--no-use-cache",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--no-subgroup-by-year"
   ],
   "result": {
    "events": [
@@ -4164,6 +4169,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": false,
       "use_cache": false
      },
      "class": "GroupScenes",
@@ -11977,6 +11983,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12004,6 +12011,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12032,6 +12040,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12059,6 +12068,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "",
+      "subgroup_by_year": true,
       "use_cache": false
      },
      "class": "GroupScenes",
@@ -12087,6 +12097,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12115,6 +12126,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12142,6 +12154,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12170,6 +12183,7 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12192,7 +12206,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--use-cache",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--subgroup-by-year"
   ],
   "result": {
    "events": [
@@ -12200,6 +12215,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": true,
       "use_cache": true
      },
      "class": "GroupScenes",
@@ -12222,7 +12238,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--no-use-cache",
-   "--include-subfolders"
+   "--include-subfolders",
+   "--no-subgroup-by-year"
   ],
   "result": {
    "events": [
@@ -12230,6 +12247,7 @@
      "attrs": {
       "include_subfolders": true,
       "scene_dir_str": "S_scene_dir",
+      "subgroup_by_year": false,
       "use_cache": false
      },
      "class": "GroupScenes",

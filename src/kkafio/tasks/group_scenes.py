@@ -2,10 +2,12 @@
 group_scenes.py — Sort Studio scenes into per-author folders using the
 pepper-scene-index.
 
-The index maps a scene's XXH3-128 content hash to its author. Each scene PNG is
-hashed the same way Filter Duplicate Contents does (and shares its PNG hash
-cache, so scenes already hashed there aren't hashed again); scenes found in the
-index are moved to <scene folder>/<author>/.
+The index maps a scene's XXH3-128 content hash to {"author": ..., "year": ...}
+(year may be null). Each scene PNG is hashed the same way Filter Duplicate
+Contents does (and shares its PNG hash cache, so scenes already hashed there
+aren't hashed again); scenes found in the index are moved to
+<scene folder>/<author>/<year>/ (or <author>/Unsorted Years/ when the year is
+null), or just <scene folder>/<author>/ when "subgroup by year" is off.
 """
 
 import os
@@ -25,6 +27,8 @@ from kkafio.tasks.filter_duplicate_contents import (
 )
 
 TAG = "GRPSCN"
+
+UNSORTED_YEARS = "Unsorted Years"
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
@@ -46,6 +50,7 @@ class GroupScenes(BaseTask):
         self.scene_dir_str      : str  = cfg.get("SceneDir", "")
         self.use_cache          : bool = cfg.get("UseCache", True)
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
+        self.subgroup_by_year   : bool = cfg.get("SubgroupByYear", True)
 
     def _scene_dir(self) -> Path:
         if self.scene_dir_str.strip():
@@ -66,6 +71,7 @@ class GroupScenes(BaseTask):
         self.log_start(TAG, str(folder))
         logger.info(TAG, f"Use cache         : {self.use_cache}")
         logger.info(TAG, f"Include subfolders: {self.include_subfolders}")
+        logger.info(TAG, f"Subgroup by year  : {self.subgroup_by_year}")
         logger.line()
 
         index = load_scene_index()
@@ -129,10 +135,11 @@ class GroupScenes(BaseTask):
         moved = skipped = unknown = 0
         try:
             for path, digest in sorted(scenes):
-                author = index.get(digest.lower())
-                if author is None:
+                entry = index.get(digest.lower())
+                if entry is None:
                     unknown += 1
                     continue
+                author = entry["author"]
                 name = author_folder_name(author)
                 if not name:
                     logger.warning(TAG, f"{path.name}: unusable author name {author!r}")
@@ -140,8 +147,14 @@ class GroupScenes(BaseTask):
                     continue
 
                 dest_dir = folder / name
+                rel = f"{name}/"
+                if self.subgroup_by_year:
+                    year = entry.get("year")
+                    sub = str(year) if year is not None else UNSORTED_YEARS
+                    dest_dir = dest_dir / sub
+                    rel = f"{name}/{sub}/"
                 if path.parent == dest_dir:
-                    skipped += 1                      # already in the right author folder
+                    skipped += 1                      # already in the right folder
                     continue
                 dest = dest_dir / path.name
                 if dest.exists():
@@ -156,13 +169,13 @@ class GroupScenes(BaseTask):
                     logger.error(TAG, f"Could not move {path.name}: {e}")
                     skipped += 1
                     continue
-                logger.success(TAG, f"Moved {path.name} -> {name}/")
+                logger.success(TAG, f"Moved {path.name} -> {rel}")
                 moved += 1
                 # The move keeps mtime/size, so the cached hash stays valid under the new path.
                 moved_from.add(str(path))
-                entry = new_entries.pop(str(path), None)
-                if entry is not None:
-                    new_entries[str(dest)] = entry
+                cache_entry = new_entries.pop(str(path), None)
+                if cache_entry is not None:
+                    new_entries[str(dest)] = cache_entry
         finally:
             # Saved again once scenes have moved (even if the run was cut short), so the cache
             # has each moved scene under its new path and the next run doesn't re-hash it.

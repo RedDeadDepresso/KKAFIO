@@ -553,6 +553,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    off_help="Disable cache and hash every scene"),
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Also regroup scenes that are already in subfolders (overrides config)"),
+            Toggle("subgroup-by-year", key="SubgroupByYear",
+                   help="Move scenes into <author>/<year>/ (or <author>/Unsorted Years/ when the year "
+                        "is unknown) instead of just <author>/ (default: on)",
+                   off_help="Move scenes straight into the author folder"),
         ),
     ),
     TaskSpec(

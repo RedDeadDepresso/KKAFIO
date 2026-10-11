@@ -158,21 +158,21 @@ _TASK_DEFAULTS = {
     "CreateBackup": {"Enable": False, "OutputPath": "C:/KKAFIO/Backups", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
     "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True},
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Request"},
-    "FilterDuplicateContents": {"Enable": False, "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "UseCache": True, "Keep": "Oldest", "DuplicateAction": "Delete", "CharaDir": "", "SceneDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
-    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "UseCache": True, "OpenReport": True, "InputModsDir": "", "OutputModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "FilterDuplicateContents": {"Enable": False, "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "Keep": "Oldest", "DuplicateAction": "Delete", "UseCache": True, "CharaDir": "", "SceneDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
+    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OpenReport": True, "UseCache": True, "InputModsDir": "", "OutputModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "DeleteOriginalCards": True},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Rename", "ExtractArchive": True, "Password": "Request"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True},
-    "GroupScenes": {"Enable": False, "SceneDir": "", "UseCache": True, "IncludeSubfolders": False},
-    "GroupChara": {"Enable": False, "CharaDir": "", "IncludeSubfolders": False, "UseCache": True, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n"},
-    "GroupCoordinates": {"Enable": False, "CharaDir": "", "CoordDir": "", "UseCache": True, "IncludeSubfolders": False, "ClothesTolerance": "1", "IgnoreAccessories": True, "GroupByHair": True},
+    "GroupScenes": {"Enable": False, "SceneDir": "", "IncludeSubfolders": False, "SubgroupByYear": True, "UseCache": True},
+    "GroupChara": {"Enable": False, "CharaDir": "", "IncludeSubfolders": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from as the value.\n\nRules:\n- Values must be valid Windows folder names (no  \\ / : * ? \" < > |  characters).\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you are not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True},
+    "GroupCoordinates": {"Enable": False, "CharaDir": "", "CoordDir": "", "IncludeSubfolders": False, "ClothesTolerance": "1", "IgnoreAccessories": True, "GroupByHair": True, "UseCache": True},
     "UngroupCards": {"Enable": False, "InputPath": "", "Chara": True, "Scenes": True, "Coords": True, "DeleteEmptyFolders": True},
-    "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "UseCache": True, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's well-known English name.\n\nRules:\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- Use the name the character is commonly known by, not a literal transliteration.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n"},
-    "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CoordDir": ""},
-    "DeleteCards": {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
-    "ReviewSimilarChara": {"Enable": False, "Mode": "Similar cover", "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "AutoResolve": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  name | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's well-known English name.\n\nRules:\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- Use the name the character is commonly known by, not a literal transliteration.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- If you do not recognise the character or are not confident, leave all three\n  fields as empty strings \"\".\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True},
+    "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
+    "DeleteCards": {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "ReviewSimilarChara": {"Enable": False, "Mode": "Similar cover", "CheckSharedMods": True, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "ExportMods": {"Enable": False, "OutputPath": "C:/KKAFIO/Exported Mods", "Guids": "", "RenameToGuid": True, "UseCache": True, "ModsDir": ""},
-    "DeleteUnusedMods": {"Enable": False, "ExceptionList": "BetterPenetration\\\nClo\\", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
+    "DeleteUnusedMods": {"Enable": False, "ExceptionList": "BetterPenetration\\\nClo\\\ncom.joan6694.dynamic_bone_collider", "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
 }
 
 
@@ -215,9 +215,9 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
             cfg["Coords"] = "Coords" in selected
             cfg["Scenes"] = "Scenes" in selected
             cfg["Overlays"] = "Overlays" in selected
-        _set("UseCache", "UseCache")
         _set("Keep", "KeepStrategy")
         _set("DuplicateAction", "DuplicateAction")
+        _set("UseCache", "UseCache")
         _set("CharaDir", "CharaDir")
         _set("SceneDir", "SceneDir")
         _set("CoordDir", "CoordDir")
@@ -229,8 +229,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SideloaderModpack", "SideloaderModpack")
         _set("TelegramSources", "TelegramSources")
         _set("TelegramChatLinks", "TelegramChatLinks")
-        _set("UseCache", "UseCache")
         _set("OpenReport", "OpenReport")
+        _set("UseCache", "UseCache")
         _set("InputModsDir", "InputModsDir")
         _set("OutputModsDir", "OutputModsDir")
         _set("CharaDir", "CharaDir")
@@ -267,25 +267,26 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "GroupScenes":
         _set("SceneDir", "SceneDir")
-        _set("UseCache", "UseCache")
         _set("IncludeSubfolders", "GroupScenesIncludeSubfolders")
+        _set("SubgroupByYear", "GroupScenesSubgroupByYear")
+        _set("UseCache", "UseCache")
 
     elif task_name == "GroupChara":
         _set("CharaDir", "CharaDir")
         _set("IncludeSubfolders", "GroupCharaIncludeSubfolders")
-        _set("UseCache", "UseCache")
         _set("OpenLlmWebsite", "OpenLlmWebsite")
         _set("LlmWebsiteUrl", "LlmWebsiteUrl")
         _set("Prompt", "GroupCharaPrompt")
+        _set("UseCache", "UseCache")
 
     elif task_name == "GroupCoordinates":
         _set("CharaDir", "CharaDir")
         _set("CoordDir", "CoordDir")
-        _set("UseCache", "UseCache")
         _set("IncludeSubfolders", "GroupCoordinatesIncludeSubfolders")
         _set("ClothesTolerance", "GroupCoordinatesClothesTolerance")
         _set("IgnoreAccessories", "GroupCoordinatesIgnoreAccessories")
         _set("GroupByHair", "GroupCoordinatesGroupByHair")
+        _set("UseCache", "UseCache")
 
     elif task_name == "UngroupCards":
         _set("InputPath", "InputPath")
@@ -301,10 +302,10 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SkipAlreadyRenamed", "SkipAlreadyRenamed")
         _set("UpdateMetadata", "UpdateMetadata")
         _set("RenameFiles", "RenameFiles")
-        _set("UseCache", "UseCache")
         _set("OpenLlmWebsite", "OpenLlmWebsite")
         _set("LlmWebsiteUrl", "LlmWebsiteUrl")
         _set("Prompt", "RenameCharaPrompt")
+        _set("UseCache", "UseCache")
 
     elif task_name == "ArchiveCards":
         _set("OutputPath", "ArchiveOutputPath")
@@ -313,8 +314,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("Format", "ArchiveFormat")
         _set("IncludeModpack", "IncludeModpack")
         _set("IncludeCoordinates", "IncludeCoordinates")
-        _set("UseCache", "UseCache")
         _set("AutoResolve", "AutoResolve")
+        _set("UseCache", "UseCache")
         _set("ModsDir", "ModsDir")
         _set("CoordDir", "CoordDir")
 
@@ -322,8 +323,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("ContentPaths", "ContentPaths")
         _set("CheckSharedMods", "CheckSharedMods")
         _set("IncludeCoordinates", "IncludeCoordinates")
-        _set("UseCache", "UseCache")
         _set("AutoResolve", "AutoResolve")
+        _set("UseCache", "UseCache")
         _set("ModsDir", "ModsDir")
         _set("CharaDir", "CharaDir")
         _set("SceneDir", "SceneDir")
@@ -333,8 +334,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("Mode", "SimilarityMode")
         _set("CheckSharedMods", "CheckSharedMods")
         _set("IncludeCoordinates", "IncludeCoordinates")
-        _set("UseCache", "UseCache")
         _set("AutoResolve", "AutoResolve")
+        _set("UseCache", "UseCache")
         _set("ModsDir", "ModsDir")
         _set("CharaDir", "CharaDir")
         _set("SceneDir", "SceneDir")

@@ -348,13 +348,14 @@ https://t.me/kknowcc
 
 **16. Group Scenes**
 
-- Sorts your Studio scenes into per-author folders using the [pepper-scene-index](https://github.com/RedDeadDepresso/pepper-scene-hasher), a list that maps a scene's content hash (XXH3) to its author.
+- Sorts your Studio scenes into per-author folders using the [pepper-scene-index](https://github.com/RedDeadDepresso/pepper-scene-hasher), a list that maps a scene's content hash (XXH3) to its author and year (the year may be unknown).
 - Before sorting, KKAFIO checks the index repository's latest commit against the one saved in `pepper_scene_index_last_commit.txt` (in KKAFIO's config folder). Only when the commit is new does it download `pepper-scene-index.json` again; otherwise the saved copy is used, and if GitHub can't be reached the saved copy is used as a fallback.
-- Every scene found in the index is moved to `<scene folder>/<author>/`. Scenes that aren't in the index, and anything that isn't a scene, are left alone. Author names are cleaned up so they're valid folder names (characters like `/ : ? *` become `_`).
+- Every scene found in the index is moved to `<scene folder>/<author>/<year>/` (or `<scene folder>/<author>/Unsorted Years/` when the year is unknown). Scenes that aren't in the index, and anything that isn't a scene, are left alone. Author names are cleaned up so they're valid folder names (characters like `/ : ? *` become `_`).
 - **Custom Scene Directory** — blank by default, which means the game's Studio scene folder (`UserData/Studio/scene`).
 - **Use Cache** _(on by default)_ — scenes are hashed with the same cache that Filter Duplicate Contents uses (`kkafio_duplicate_png_cache.json` in the scene folder), so a scene hashed by either task isn't hashed again by the other. The cache is saved right after scanning and again once scenes have moved (a moved scene's entry follows it into its author folder), even if the run is stopped part-way, so the next run doesn't have to re-hash anything.
 - **Include Subfolders** _(off by default)_ — also regroup scenes that are already inside subfolders, moving them to `<scene folder>/<author>/`. When off, only scenes directly in the scene folder are moved. Scenes already in the right author folder are skipped.
-- If a file with the same name is already in the author folder, the moved scene gets a `_1`, `_2`, … suffix instead of overwriting it.
+- **Subgroup By Year** _(on by default)_ — puts each scene in a year subfolder inside its author folder. When off, scenes go straight into `<scene folder>/<author>/`.
+- If a file with the same name is already in the destination folder, the moved scene gets a `_1`, `_2`, … suffix instead of overwriting it.
 
 **17. Review Similar Characters**
 
@@ -560,6 +561,7 @@ kkafio_cli rename-chara    [--chara-dir DIR]
                            [--open-llm-website | --no-open-llm-website] [--llm-website-url URL]
 
 kkafio_cli group-scenes    [--scene-dir DIR] [--use-cache | --no-use-cache] [--include-subfolders]
+                           [--subgroup-by-year | --no-subgroup-by-year]
 kkafio_cli group-chara     [--chara-dir DIR] [--include-subfolders] [--use-cache | --no-use-cache]
                            [--open-llm-website | --no-open-llm-website] [--llm-website-url URL]
 
