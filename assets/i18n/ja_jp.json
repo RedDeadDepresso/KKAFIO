@@ -100,7 +100,7 @@
   "option.LlmWebsiteUrl.description": "「LLMサイトを開く」がオンのときに開くLLMサイト（例: https://chat.deepseek.com/）",
   "option.LlmWebsiteUrl.input.url.label": "URL",
   "option.RenameCharaPrompt.label": "リネームプロンプト",
-  "option.RenameCharaPrompt.description": "LLMに送信する指示に、キャラクターのJSONが続きます。このタスクを実行すると、コピー用に結合されたプロンプト＋JSONを表示するダイアログと、LLMの返信を送信するための「貼り付け」ボタンが表示されます。 ヒント：対象の言語を変更したい場合は、プロンプト内の「English name」という語句を以下のいずれかに置き換えてください（それ以外は英語のままにしてください。LLMは英語の指示の方が理解しやすい傾向があります）：\n• Japanese name using kanji（漢字を使った日本語名）\n• Korean name using hangul（ハングルを使った韓国語名）\n• Russian name using Cyrillic（キリル文字を使ったロシア語名）\n• Chinese name using simplified Chinese characters（簡体字を使った中国語名）\n• Chinese name using traditional Chinese characters（繁体字を使った中国語名）",
+  "option.RenameCharaPrompt.description": "LLMに送信する指示に、キャラクターのJSONが続きます。このタスクを実行すると、コピー用に結合されたプロンプト＋JSONを表示するダイアログと、LLMの返信を送信するための「貼り付け」ボタンが表示されます。 ヒント：対象の言語を変更したい場合は、プロンプト内の「English name」という語句を以下のいずれかに置き換えてください（それ以外は英語のままにしてください。LLMは英語の指示の方が理解しやすい傾向があります）：\n• Japanese name using kanji（漢字を使った日本語名）\n• Korean name using hangul（ハングルを使った韓国語名）\n• Russian name using Cyrillic（キリル文字を使ったロシア語名）\n• Chinese name using simplified Chinese characters（簡体字を使った中国語名）\n• Chinese name using traditional Chinese characters（繁体字を使った中国語名）\n\n「カードのメタデータを更新」を有効にする場合は、プロンプト冒頭の2つのルールを次の内容に置き換えることをお勧めします：\n- Use the name the character is commonly known by, not a literal transliteration.\n- If you do not recognise the character or are not confident, leave all three fields as empty strings \"\".",
   "option.SkipAlreadyRenamed.label": "リネーム済みをスキップ",
   "option.SkipAlreadyRenamed.description": "キャッシュ内の既知の翻訳済み名にファイル名が一致するカードをスキップする",
   "option.SkipAlreadyRenamed.case.Yes.label": "スキップ",

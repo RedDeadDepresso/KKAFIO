@@ -42,19 +42,20 @@ You will receive a JSON object whose keys identify Koikatsu character card files
 Each key has the format:  lastname | firstname | nickname | personality | hair_color
 
 Your task: for every key fill in "lastname", "firstname", and "nickname" with the
-character's well-known English name.
+character's English name.
 
 Rules:
+- Use a literal transliteration of the name as written on the card, not the name
+  the character is commonly known by.
+- Always fill in all three fields. If you do not recognise the character or are
+  not confident, give your best transliteration of the name on the card; never
+  leave them empty.
 - firstname = given name, lastname = family name, regardless of the order the
   name is written in the source material.
-- Use the name the character is commonly known by, not a literal
-  transliteration.
 - "nickname" can be a common short form or the same as firstname.
 - Use the personality and hair colour as additional hints to identify the character.
 - All values must be valid Windows filenames
   (no  \\ / : * ? " < > |  characters, no leading/trailing spaces or dots).
-- If you do not recognise the character or are not confident, leave all three
-  fields as empty strings "".
 - Return ONLY the completed JSON object — no explanation, no markdown fences,
   no extra text before or after.
 
