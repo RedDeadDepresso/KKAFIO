@@ -1,7 +1,9 @@
 """
 FilterConvertKKS
 ================
-Scans a folder for PNG character cards and Studio scenes, optionally
+Scans a folder for PNG character cards and Studio scenes (first extracting
+any archives in it, recursively — including archives nested inside other
+archives — like InstallContents does), optionally
 converts Koikatsu Sunshine (KKS) cards and scenes to Koikatsu (KK) format,
 then optionally sorts each type into its own folder or sends it to the
 Recycle Bin.
@@ -67,6 +69,7 @@ class FilterConvertKKS:
         self.kk_action        = self.config.filter_convert_kks.get("KKAction", ACTION_KEEP)
         self.kks_action       = self.config.filter_convert_kks.get("KKSAction", ACTION_KEEP)
         self.extract_archive  = self.config.filter_convert_kks.get("ExtractArchive", True)
+        self._reset_totals()
 
     # ------------------------------------------------------------------
     # Card-type helpers
@@ -164,99 +167,166 @@ class FilterConvertKKS:
             logger.error("SCRIPT", f"Could not move {src.name}: {e}")
             return None
 
+    # Category labels, in the order the final summary lists them.
+    _CATEGORIES = ("KKS card", "KK/KKSP card", "KKS scene", "converted KK scene")
+
+    def _reset_totals(self) -> None:
+        """Clear the counters accumulated across the recursion."""
+        self._totals: dict = {
+            "folders": 0,
+            "converted_cards": 0, "failed_cards": 0,
+            "converted_scenes": 0, "failed_scenes": 0,
+            # label -> {"found": n, "ok": n, "action": str, "dest": str}
+            "categories": {},
+        }
+
+    @staticmethod
+    def _action_message(label: str, action: str, dest_name: str,
+                        found: int, ok: int) -> tuple[str, str]:
+        """(log level, text) describing what an action did to `found` files
+        of one category, `ok` of which succeeded."""
+        failed = f"  ({found - ok} failed)" if ok < found else ""
+        if action == ACTION_KEEP:
+            return "success", f"[{found}] {label}(s) found (kept in place)"
+        if action == ACTION_MOVE:
+            return "success", f"[{ok}] {label}(s) -> [{dest_name}]{failed}"
+        if action == ACTION_DELETE:
+            return "success", f"[{ok}] {label}(s) sent to the Recycle Bin{failed}"
+        return "warning", f"Unknown action '{action}' for {label}(s) — leaving them in place"
+
     def _apply_action(self, cards: list[Path], action: str, base_path: Path,
                        dest_folder_name: str, label: str) -> None:
-        """Apply Keep/Move/Delete to a list of cards, logging one summary
-        line for the whole batch. `base_path` is always the top-level
-        folder this run scanned — not each card's own parent folder — so
-        every KK/KKSP (or KKS) card ends up in exactly one shared
-        `base_path/_KK_card_` (or `_KKS_card_`), including cards found
-        inside an extracted archive's subfolder. Anchoring on a card's own
-        parent instead would scatter cards into a different destination
-        folder per source subfolder."""
+        """Apply Keep/Move/Delete to a list of files, logging one summary
+        line for the whole batch and adding it to the run's totals.
+        `base_path` is always the top-level folder this run scanned — not
+        each file's own parent folder — so every KK/KKSP (or KKS) card ends
+        up in exactly one shared `base_path/_KK_card_` (or `_KKS_card_`),
+        including cards found inside an extracted archive's subfolder.
+        Anchoring on a card's own parent instead would scatter cards into a
+        different destination folder per source subfolder."""
         if not cards:
-            logger.success("SCRIPT", f"No {label} cards found")
+            logger.success("SCRIPT", f"No {label}(s) found")
             return
 
+        ok = 0
         if action == ACTION_KEEP:
-            logger.success("SCRIPT", f"[{len(cards)}] {label} card(s) found (kept in place)")
-            return
-
-        if action == ACTION_MOVE:
+            ok = len(cards)
+        elif action == ACTION_MOVE:
             dest_folder = base_path / dest_folder_name
             dest_folder.mkdir(exist_ok=True)
-            moved_ok = sum(1 for c in cards if self._safe_move(c, dest_folder) is not None)
-            logger.success("SCRIPT",
-                f"[{moved_ok}] {label} card(s) -> [{dest_folder_name}]"
-                + (f"  ({len(cards) - moved_ok} failed)" if moved_ok < len(cards) else ""))
-            return
-
-        if action == ACTION_DELETE:
-            deleted_ok = 0
+            ok = sum(1 for c in cards if self._safe_move(c, dest_folder) is not None)
+        elif action == ACTION_DELETE:
             for c in cards:
                 try:
                     send2trash(str(c))
-                    deleted_ok += 1
+                    ok += 1
                 except Exception as e:
                     logger.error("SCRIPT", f"Could not delete {c.name}: {e}")
-            logger.success("SCRIPT",
-                f"[{deleted_ok}] {label} card(s) sent to the Recycle Bin"
-                + (f"  ({len(cards) - deleted_ok} failed)" if deleted_ok < len(cards) else ""))
-            return
 
-        logger.warning("SCRIPT", f"Unknown action '{action}' for {label} cards — leaving them in place")
+        level, text = self._action_message(label, action, dest_folder_name, len(cards), ok)
+        getattr(logger, level)("SCRIPT", text)
 
-    # ------------------------------------------------------------------
-    # Archive extraction
-    # ------------------------------------------------------------------
+        entry = self._totals["categories"].setdefault(
+            label, {"found": 0, "ok": 0, "action": action, "dest": dest_folder_name})
+        entry["found"] += len(cards)
+        entry["ok"] += ok
 
-    def _extract_archives(self, path: Path) -> None:
-        """Extract every archive found under `path` into a folder named after
-        it, skipping archives whose folder already exists. The extracted
-        folders are left in place."""
-        archive_list = self.file_manager.find_archives(path)
-        if not archive_list:
-            return
-        logger.info("SCRIPT", f"Extracting {len(archive_list)} archive(s) before filtering")
-        for archive_path in archive_list:
-            self.file_manager.extract_archive(
-                archive_path, task_config=self.config.filter_convert_kks)
+    def _log_totals(self) -> None:
+        """Log the totals accumulated across every folder of the run."""
+        t = self._totals
+        logger.line()
+        logger.info("TOTAL", f"{t['folders']} folder(s) processed")
+        if self.convert:
+            if t["converted_cards"] or t["failed_cards"]:
+                logger.success("TOTAL", f"[{t['converted_cards']}] KKS card(s) converted to KK"
+                               + (f"  ({t['failed_cards']} failed)" if t["failed_cards"] else ""))
+            if t["converted_scenes"] or t["failed_scenes"]:
+                logger.success("TOTAL", f"[{t['converted_scenes']}] KKS scene(s) converted to KK"
+                               + (f"  ({t['failed_scenes']} failed)" if t["failed_scenes"] else ""))
+        any_found = False
+        for label in self._CATEGORIES:
+            entry = t["categories"].get(label)
+            if not entry:
+                continue
+            any_found = True
+            level, text = self._action_message(
+                label, entry["action"], entry["dest"], entry["found"], entry["ok"])
+            getattr(logger, level)("TOTAL", text)
+        if not any_found:
+            logger.success("TOTAL", "No KK/KKSP/KKS cards or KKS scenes found")
 
     # ------------------------------------------------------------------
     # Main
     # ------------------------------------------------------------------
 
-    def run(self) -> None:
-        path = Path(self.config.filter_convert_kks["InputPath"])
+    def run(self, folder_path: Path | None = None, base_path: Path | None = None) -> None:
+        """Process `folder_path`, then extract its archives and recurse into
+        each extracted folder (same shape as InstallContents.run).
 
-        validate_input_path("FILTER", path, default_path=DEFAULT_DOWNLOADS_PATH)
+        `base_path` is the top-level folder of the whole run. It's None on the
+        outermost call and passed down to every recursive call, so cards from
+        every extracted folder are sorted into one shared `_KK_card_` /
+        `_KKS_card_` under the top-level folder.
+        """
+        top_level = base_path is None
+        if folder_path is None:
+            folder_path = Path(self.config.filter_convert_kks["InputPath"])
+        folder_path = Path(folder_path)
+        if top_level:
+            validate_input_path("FILTER", folder_path, default_path=DEFAULT_DOWNLOADS_PATH)
+            base_path = folder_path
+            self._reset_totals()
 
-        # 1. Extract archives, if enabled.
-        if self.extract_archive:
-            self._extract_archives(path)
+        nothing_to_filter = (not self.convert
+                             and self.kk_action == ACTION_KEEP
+                             and self.kks_action == ACTION_KEEP)
 
-        # Nothing to convert, move or delete: this run is extraction only, so
+        # 1. Filter / convert this folder's cards and scenes. When there's
+        # nothing to convert, move or delete, the run is extraction only, so
         # skip scanning/classifying every PNG.
-        if (not self.convert
-                and self.kk_action == ACTION_KEEP
-                and self.kks_action == ACTION_KEEP):
-            if self.extract_archive:
-                logger.success("SCRIPT", "Convert is off and KK/KKS cards are set to Keep — "
-                                         "only extracted archives")
-            else:
-                logger.warning("SCRIPT", "Convert is off, KK/KKS cards are set to Keep and "
-                                         "Extract Archive is off — nothing to do")
-            return
+        if nothing_to_filter:
+            if top_level:
+                if self.extract_archive:
+                    logger.success("SCRIPT", "Convert is off and KK/KKS cards are set to Keep — "
+                                             "only extracting archives")
+                else:
+                    logger.warning("SCRIPT", "Convert is off, KK/KKS cards are set to Keep and "
+                                             "Extract Archive is off — nothing to do")
+                    return
+        else:
+            if top_level:
+                logger.info("SCRIPT", "KK: Koikatsu / KKSP: Koikatsu Special / KKS: Koikatsu Sunshine "
+                                      "(scenes are handled by version: KKS scene = 1.1.0.0+)")
+            foldername = folder_path.name
+            logger.line()
+            logger.info("FOLDER", foldername)
+            self._totals["folders"] += 1
+            self._process_folder(folder_path, base_path, top_level)
 
+        # 2. Extract this folder's archives and run on each extracted folder,
+        # which in turn extracts any archives nested inside it. Archives whose
+        # folder already exists are skipped (extract_archive returns None).
+        if self.extract_archive:
+            archives = self.file_manager.find_archives(folder_path)
+            if top_level and archives:
+                logger.info("SCRIPT", f"Extracting {len(archives)} archive(s)")
+            for archive in archives:
+                extract_path = self.file_manager.extract_archive(
+                    archive, task_config=self.config.filter_convert_kks)
+                if extract_path is None:
+                    continue
+                self.run(extract_path, base_path=base_path)
+
+        # 3. Once the whole tree is done, log the totals across all folders.
+        if top_level and not nothing_to_filter:
+            self._log_totals()
+
+    def _process_folder(self, path: Path, base_path: Path, top_level: bool) -> None:
         png_list = self.get_list(path)
         if not png_list:
-            logger.success("SCRIPT", "No PNG files found")
+            if top_level:
+                logger.success("SCRIPT", "No PNG files found")
             return
-
-        logger.info("SCRIPT", "KK: Koikatsu / KKSP: Koikatsu Special / KKS: Koikatsu Sunshine "
-                              "(scenes are handled by version: KKS scene = 1.1.0.0+)")
-        logger.line()
-        logger.info("FOLDER", str(path))
 
         kks_cards: list[Path] = []   # KKS character cards
         kk_cards:  list[Path] = []   # KK / KKSP character cards
@@ -282,8 +352,6 @@ class FilterConvertKKS:
                 logger.info(card_type.value, png.name)
                 kk_cards.append(png)
 
-        logger.line()
-
         # 2. Convert KKS -> KK, if enabled. Each converted copy is written
         # next to its source and joins kk_cards, so KKAction below applies
         # to it exactly like any other KK card.
@@ -295,6 +363,8 @@ class FilterConvertKKS:
                     if new_card not in kk_cards:  # a previous run's copy is already listed
                         kk_cards.append(new_card)
                     converted += 1
+            self._totals["converted_cards"] += converted
+            self._totals["failed_cards"] += len(kks_cards) - converted
             logger.success("SCRIPT", f"[{converted}] KKS card(s) converted to KK")
             if converted < len(kks_cards):
                 logger.warning("SCRIPT",
@@ -311,15 +381,17 @@ class FilterConvertKKS:
                 if new_scene is not None:
                     kk_scenes.append(new_scene)
                     converted += 1
+            self._totals["converted_scenes"] += converted
+            self._totals["failed_scenes"] += len(kks_scenes) - converted
             logger.success("SCRIPT", f"[{converted}] KKS scene(s) converted to KK")
             if converted < len(kks_scenes):
                 logger.warning("SCRIPT",
                     f"[{len(kks_scenes) - converted}] KKS scene(s) could not be converted")
 
         # 3. Run KKSAction / KKAction, unless left at Keep.
-        self._apply_action(kks_cards, self.kks_action, path, "_KKS_card_", "KKS")
-        self._apply_action(kk_cards,  self.kk_action,  path, "_KK_card_",  "KK/KKSP")
+        self._apply_action(kks_cards, self.kks_action, base_path, "_KKS_card_", "KKS card")
+        self._apply_action(kk_cards,  self.kk_action,  base_path, "_KK_card_",  "KK/KKSP card")
         if kks_scenes:
-            self._apply_action(kks_scenes, self.kks_action, path, "_KKS_card_", "KKS scene")
+            self._apply_action(kks_scenes, self.kks_action, base_path, "_KKS_card_", "KKS scene")
         if kk_scenes:
-            self._apply_action(kk_scenes,  self.kk_action,  path, "_KK_card_",  "converted KK scene")
+            self._apply_action(kk_scenes,  self.kk_action,  base_path, "_KK_card_",  "converted KK scene")

@@ -63,10 +63,10 @@ class InstallContents(ContentTypeResolver):
         should_extract = self.extract_archive and not skip_extract
         if should_extract:
             for archive in archive_list:
-                extract_path = self.file_manager.extract_archive(archive[0], self.config.install_contents)
+                extract_path = self.file_manager.extract_archive(archive, self.config.install_contents)
                 if extract_path is None:
                     continue
                 self.run(extract_path)
         elif archive_list:
-            names = ", ".join(Path(a[0]).name for a in archive_list)
+            names = ", ".join(a.name for a in archive_list)
             logger.info("SKIP", f"Archive extraction skipped: {names}")
