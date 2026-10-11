@@ -20,6 +20,7 @@ Caches (both in the scanned folder):
 from __future__ import annotations
 
 import json
+import re
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -118,6 +119,36 @@ def _rename_collides(png: Path, candidate: str, used: dict[str, int]) -> bool:
     return key != _fold(png.stem) and key in used
 
 
+_COLLISION_SUFFIX = re.compile(r"_\d+$")
+
+
+def _known_stems(cache: dict) -> set[str]:
+    """Case-folded file stems of every named character in the cache."""
+    stems = {_fold(_stem_for(v)) for v in cache.values() if _name_known(v)}
+    stems.discard("")
+    return stems
+
+
+def _already_renamed(stem: str, known_stems: set[str]) -> bool:
+    """True if a file stem is a known translated name, compared
+    case-insensitively, optionally followed by the `_<n>` suffix added when a
+    rename collides with an existing file (Alice_Smith, Alice_Smith_1, ...)."""
+    folded = _fold(stem)
+    return folded in known_stems or _COLLISION_SUFFIX.sub("", folded) in known_stems
+
+
+def _metadata_current(kc, last: str, first: str, nickname: str) -> bool:
+    """True if the card already carries exactly these names, so rewriting its
+    metadata would change nothing."""
+    try:
+        p = kc["Parameter"]
+        return (str(p["lastname"]).strip()  == last
+                and str(p["firstname"]).strip() == first
+                and str(p["nickname"]).strip()  == nickname)
+    except Exception:
+        return False
+
+
 def _name_known(d: dict) -> bool:
     return any(d.get(k, "").strip() for k in ("lastname", "firstname", "nickname"))
 
@@ -186,7 +217,7 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -
     cache: dict = {}
     for folder in folder_list:
         cache.update(_load_cache(folder))
-    known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
+    known_stems = _known_stems(cache)
     png_files   = [png for folder in folder_list for png in folder.rglob("*.png")]
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in "
                           + ", ".join(str(f) for f in folder_list))
@@ -195,7 +226,7 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -
 
     def _proc(png: Path):
         try:
-            if skip_already_renamed and png.stem in known_stems:
+            if skip_already_renamed and _already_renamed(png.stem, known_stems):
                 return png, "__skip__"
             fp = file_fp(png)
             hit, key = key_cache.lookup(png, fp)
@@ -288,7 +319,7 @@ def _process_folder(folder_path: Path, response: dict,
     _save_cache(folder_path, cache)
     logger.info("RENAME", f"Cache updated: {len(cache)} entries")
 
-    known_stems = {_stem_for(v) for v in cache.values() if _name_known(v)}
+    known_stems = _known_stems(cache)
     png_files   = list(folder_path.rglob("*.png"))
     logger.info("RENAME", f"Processing {len(png_files)} PNG file(s)")
 
@@ -314,7 +345,7 @@ def _process_folder(folder_path: Path, response: dict,
     key_cache = CharaKeyCache([folder_path], use_cache, "RENAME")
     try:
         for png in png_files:
-            if skip_already_renamed and png.stem in known_stems:
+            if skip_already_renamed and _already_renamed(png.stem, known_stems):
                 skipped += 1
                 continue
 
@@ -350,7 +381,26 @@ def _process_folder(folder_path: Path, response: dict,
             first    = nd.get("firstname", "").strip()
             nickname = nd.get("nickname", "").strip()
 
-            if update_metadata:
+            # With Skip Already Renamed on, a card whose metadata already holds
+            # these names isn't rewritten. This is what skips already-updated
+            # cards when only the metadata is being updated (file names don't
+            # change then, so the file-name check can't tell).
+            meta_current = False
+            if update_metadata and skip_already_renamed:
+                if kc is None:
+                    try:
+                        orig_type = get_card_type(png.read_bytes())
+                        kc = KoikatuCharaData.load(str(png))
+                    except Exception as e:
+                        logger.warning("RENAME", f"Could not read {png.name}: {e}")
+                        skipped += 1
+                        continue
+                meta_current = _metadata_current(kc, last, first, nickname)
+                if meta_current and not rename_files:
+                    skipped += 1
+                    continue
+
+            if update_metadata and not meta_current:
                 if kc is None:
                     # The key came from the cache, so the card hasn't been loaded: it has to be
                     # now, to rewrite its metadata.
