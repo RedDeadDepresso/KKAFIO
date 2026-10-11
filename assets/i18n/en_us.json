@@ -6,7 +6,7 @@
   "group.card-management.label": "Card Management",
   "group.chara-management.label": "Character Management",
   "group.scene-management.label": "Scene Management",
-  "group.coordinate-management.label": "[TODO] group.coordinate-management.label",
+  "group.coordinate-management.label": "Coordinate Management",
   "group.mod-management.label": "Mod Management",
   "option.GameType.label": "Game Type",
   "option.GameType.description": "Which Koikatsu game this configuration targets",

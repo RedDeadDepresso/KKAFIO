@@ -6,7 +6,7 @@
   "group.card-management.label": "卡片管理",
   "group.chara-management.label": "角色管理",
   "group.scene-management.label": "场景管理",
-  "group.coordinate-management.label": "[TODO] group.coordinate-management.label",
+  "group.coordinate-management.label": "服装管理",
   "group.mod-management.label": "模组管理",
   "option.GameType.label": "游戏类型",
   "option.GameType.description": "此配置针对的 Koikatsu 游戏版本",

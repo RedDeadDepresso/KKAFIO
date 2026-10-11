@@ -6,7 +6,7 @@
   "group.card-management.label": "카드 관리",
   "group.chara-management.label": "캐릭터 관리",
   "group.scene-management.label": "씬 관리",
-  "group.coordinate-management.label": "[TODO] group.coordinate-management.label",
+  "group.coordinate-management.label": "코디 관리",
   "group.mod-management.label": "모드 관리",
   "option.GameType.label": "게임 종류",
   "option.GameType.description": "이 구성이 대상으로 하는 코이카츠 게임 버전",

@@ -6,7 +6,7 @@
   "group.card-management.label": "Управление карточками",
   "group.chara-management.label": "Управление персонажами",
   "group.scene-management.label": "Управление сценами",
-  "group.coordinate-management.label": "[TODO] group.coordinate-management.label",
+  "group.coordinate-management.label": "Управление нарядами",
   "group.mod-management.label": "Управление модами",
   "option.GameType.label": "Тип игры",
   "option.GameType.description": "Версия Koikatsu, для которой предназначена эта конфигурация",
