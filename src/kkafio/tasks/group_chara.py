@@ -53,6 +53,47 @@ no extra text before or after.
 JSON to fill in:
 """
 
+MAL_PROMPT_NOTE = (
+    "Some values are already filled in with a suggestion from a MyAnimeList database. "
+    "Keep a suggestion if it is right, replace it if it is wrong. Leave unfilled values "
+    "as described above."
+)
+
+
+def _insert_note(prompt: str, note: str) -> str:
+    """Put `note` on its own line just above the prompt's last line (\"JSON to fill in:\"),
+    so a user-customised prompt keeps working. The caller appends the JSON afterwards."""
+    lines = prompt.rstrip("\n").split("\n")
+    return "\n".join(lines[:-1] + [note] + lines[-1:]) if len(lines) > 1 else note + "\n" + prompt
+
+
+def apply_mal_hints(json_str: str) -> tuple[str, dict[str, str]]:
+    """Split export()'s JSON using the MyAnimeList index.
+
+    Returns (json for the LLM, {key: series} resolved locally):
+      - confident match   -> resolved here, removed from the LLM's JSON
+      - ambiguous match   -> stays in the JSON, pre-filled with the best guess
+      - no match          -> stays in the JSON, empty, exactly as without MAL
+    The JSON is \"\" when everything was resolved locally.
+    """
+    from kkafio.cards import mal_index
+    if not json_str or not mal_index.available():
+        return json_str, {}
+    resolved: dict[str, str] = {}
+    to_send: dict[str, str] = {}
+    hinted = 0
+    for key, value in json.loads(json_str).items():
+        m = mal_index.lookup(key)
+        if m.tier == "confident" and m.best and m.best.series:
+            resolved[key] = m.best.series[0]
+        else:
+            to_send[key] = m.best.series[0] if (m.tier == "ambiguous" and m.best and m.best.series) else value
+            hinted += bool(to_send[key])
+    logger.info("GROUP", f"MAL index: {len(resolved)} resolved locally, {hinted} hinted, "
+                         f"{len(to_send) - hinted} sent without a hint")
+    return (json.dumps(to_send, indent=4, ensure_ascii=False) if to_send else ""), resolved
+
+
 # ---------------------------------------------------------------------------
 # Colour helper
 # ---------------------------------------------------------------------------
@@ -202,7 +243,8 @@ def _safe_folder_name(name: str) -> str:
 
 
 def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: bool = False,
-            use_cache: bool = True) -> None:
+            use_cache: bool = True, extra: dict[str, str] | None = None,
+            canonicalize: bool = False) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response.
 
     Each card is moved into <its own folder>/<series>/ — so with the game's
@@ -215,6 +257,11 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
     unchanged, and keep that cache in step with the moves (a moved card's entry follows
     it to its new folder) so the next run doesn't have to read the cards again.
+
+    extra: key -> series assignments already made locally (MAL index); the LLM's answer
+    wins where both have the key.
+    canonicalize: snap every series name to its canonical MyAnimeList franchise title
+    (unknown names are left as they are).
     """
     folder_list = _as_folder_list(folders)
 
@@ -226,10 +273,15 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
         clean = "\n".join(clean.splitlines()[:-1])
 
     try:
-        mapping: dict[str, str] = json.loads(clean)
+        mapping: dict[str, str] = json.loads(clean) if clean else {}
     except json.JSONDecodeError as e:
         logger.warning("GROUP", f"Could not parse response JSON: {e}")
         return
+    mapping = {**(extra or {}), **mapping}
+    if canonicalize:
+        from kkafio.cards import mal_index
+        mapping = {k: mal_index.canonical_series(v) if isinstance(v, str) else v
+                   for k, v in mapping.items()}
 
     # Build reverse map: key -> destination folder name (skip empty values)
     dest_map = {
@@ -328,6 +380,7 @@ class GroupChara(BaseTask):
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache           : bool = cfg.get("UseCache", True)
+        self.use_mal_hints       : bool = cfg.get("UseMalHints", True)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
@@ -342,15 +395,26 @@ class GroupChara(BaseTask):
         if not json_str:
             return
 
-        prompt_text = self.prompt.rstrip("\n") + "\n" + json_str
+        resolved: dict[str, str] = {}
+        prompt = self.prompt
+        if self.use_mal_hints:
+            json_str, resolved = apply_mal_hints(json_str)
+            if json_str and any(json.loads(json_str).values()):
+                prompt = _insert_note(prompt, MAL_PROMPT_NOTE)
 
-        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
-        if self.open_llm_website:
-            open_llm_website("GROUP", self.llm_website_url)
-        response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
-        if not response or not response.strip():
-            logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
-            return
+        response = ""
+        if json_str:
+            prompt_text = prompt.rstrip("\n") + "\n" + json_str
+
+            from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+            if self.open_llm_website:
+                open_llm_website("GROUP", self.llm_website_url)
+            response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
+            if not response or not response.strip():
+                logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
+                return
+        else:
+            logger.success("GROUP", "Every character was resolved from the MAL index — LLM not needed.")
 
         process(folders, response, include_subfolders=self.include_subfolders,
-                use_cache=self.use_cache)
+                use_cache=self.use_cache, extra=resolved, canonicalize=self.use_mal_hints)

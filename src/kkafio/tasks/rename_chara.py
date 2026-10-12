@@ -45,11 +45,11 @@ Your task: for every key fill in "lastname", "firstname", and "nickname" with th
 character's English name.
 
 Rules:
-- Use a literal transliteration of the name as written on the card, not the name
-  the character is commonly known by.
-- Always fill in all three fields. If you do not recognise the character or are
-  not confident, give your best transliteration of the name on the card; never
-  leave them empty.
+- Use the English name the character is commonly known by (the romanisation used
+  on MyAnimeList / official releases), not a literal reading of the card.
+- If you do not recognise the character or are not confident, fall back to your
+  best transliteration of the name written on the card.
+- Always fill in all three fields; never leave them empty.
 - firstname = given name, lastname = family name, regardless of the order the
   name is written in the source material.
 - "nickname" can be a common short form or the same as firstname.
@@ -160,6 +160,55 @@ def _stem_for(d: dict) -> str:
     if last and first:
         return f"{last}_{first}"
     return last or first or ""
+
+
+# ---------------------------------------------------------------------------
+# MyAnimeList hints
+# ---------------------------------------------------------------------------
+
+MAL_PROMPT_NOTE = (
+    "Some entries are already filled in with a name from a MyAnimeList database. "
+    "Keep it if it is right, correct it if it is wrong."
+)
+
+
+def _insert_note(prompt: str, note: str) -> str:
+    """Put `note` on its own line just above the prompt's last line (\"JSON to fill in:\")."""
+    lines = prompt.rstrip("\n").split("\n")
+    return "\n".join(lines[:-1] + [note] + lines[-1:]) if len(lines) > 1 else note + "\n" + prompt
+
+
+def _mal_names(c) -> dict[str, str]:
+    """A MAL candidate as the names dict this task works with. MAL stores the commonly
+    known romanisation, which is what the prompt asks for; nickname = given name."""
+    return {"lastname": c.lastname, "firstname": c.firstname, "nickname": c.firstname}
+
+
+def apply_mal_hints(json_str: str) -> tuple[str, dict[str, dict]]:
+    """Split export()'s JSON using the MyAnimeList index.
+
+    Returns (json for the LLM, {key: names} resolved locally). Confident matches are
+    answered here and removed from the LLM's JSON; ambiguous ones stay, pre-filled with
+    the best guess; unknown ones stay untouched. The JSON is \"\" when nothing is left.
+    """
+    from kkafio.cards import mal_index
+    if not json_str or not mal_index.available():
+        return json_str, {}
+    resolved: dict[str, dict] = {}
+    to_send: dict[str, dict] = {}
+    hinted = 0
+    for key, value in json.loads(json_str).items():
+        m = mal_index.lookup(key)
+        if m.tier == "confident" and m.best:
+            resolved[key] = _mal_names(m.best)
+        elif m.tier == "ambiguous" and m.best:
+            to_send[key] = _mal_names(m.best)
+            hinted += 1
+        else:
+            to_send[key] = value
+    logger.info("RENAME", f"MAL index: {len(resolved)} resolved locally, {hinted} hinted, "
+                          f"{len(to_send) - hinted} sent without a hint")
+    return (json.dumps(to_send, indent=4, ensure_ascii=False) if to_send else ""), resolved
 
 
 # ---------------------------------------------------------------------------
@@ -286,8 +335,12 @@ def process(folders, json_str: str,
             skip_already_renamed: bool = True,
             update_metadata: bool = True,
             rename_files: bool = False,
-            use_cache: bool = True) -> None:
+            use_cache: bool = True,
+            extra: dict[str, dict] | None = None) -> None:
     """Apply the LLM's JSON response to every card in the given folder(s).
+
+    extra: key -> names already resolved locally (MAL index); merged under the LLM's
+    answer, which wins where both have the key.
 
     use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
     unchanged, and keep that cache in step with what is done to the cards (a renamed
@@ -301,10 +354,11 @@ def process(folders, json_str: str,
         clean = "\n".join(clean.splitlines()[:-1])
 
     try:
-        response: dict = json.loads(clean)
+        response: dict = json.loads(clean) if clean else {}
     except json.JSONDecodeError as e:
         logger.warning("RENAME", f"Could not parse response JSON: {e}")
         return
+    response = {**(extra or {}), **response}
 
     for folder_path in folder_list:
         _process_folder(folder_path, response, skip_already_renamed,
@@ -517,6 +571,7 @@ class RenameChara(BaseTask):
         self.rename_files         : bool = cfg.get("RenameFiles", True)
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache            : bool = cfg.get("UseCache", True)
+        self.use_mal_hints        : bool = cfg.get("UseMalHints", True)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
@@ -531,18 +586,30 @@ class RenameChara(BaseTask):
         if not json_str:
             return
 
-        prompt_text = self.prompt.rstrip("\n") + "\n" + json_str
+        resolved: dict[str, dict] = {}
+        prompt = self.prompt
+        if self.use_mal_hints:
+            json_str, resolved = apply_mal_hints(json_str)
+            if json_str and any(_name_known(v) for v in json.loads(json_str).values()):
+                prompt = _insert_note(prompt, MAL_PROMPT_NOTE)
 
-        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
-        if self.open_llm_website:
-            open_llm_website("RENAME", self.llm_website_url)
-        response = llm_dialog(t("dialog.llm.rename_title"), prompt_text)
-        if not response or not response.strip():
-            logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
-            return
+        response = ""
+        if json_str:
+            prompt_text = prompt.rstrip("\n") + "\n" + json_str
+
+            from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+            if self.open_llm_website:
+                open_llm_website("RENAME", self.llm_website_url)
+            response = llm_dialog(t("dialog.llm.rename_title"), prompt_text)
+            if not response or not response.strip():
+                logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
+                return
+        else:
+            logger.success("RENAME", "Every character was resolved from the MAL index — LLM not needed.")
 
         process(folders, response,
                 skip_already_renamed=self.skip_already_renamed,
                 update_metadata=self.update_metadata,
                 rename_files=self.rename_files,
-                use_cache=self.use_cache)
+                use_cache=self.use_cache,
+                extra=resolved)

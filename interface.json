@@ -526,7 +526,7 @@
       "name": "prompt",
       "label": "$option.RenameCharaPrompt.label",
       "description": "$option.RenameCharaPrompt.description",
-      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's English name.\n\nRules:\n- Use a literal transliteration of the name as written on the card, not the name the character is commonly known by.\n- Always fill in all three fields. If you do not recognise the character or are not confident,\n  give your best transliteration of the name on the card; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n",
+      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the character's English name.\n\nRules:\n- Use the English name the character is commonly known by (the romanisation used on MyAnimeList / official releases), not a literal reading of the card.\n- If you do not recognise the character or are not confident, fall back to your best transliteration of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- All values must be valid Windows filenames\n  (no  \\ / : * ? \" < > |  characters, no leading/trailing spaces or dots).\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n",
       "pipeline_override": {
         "Prompt": "{prompt}"
       }
@@ -1104,6 +1104,28 @@
         }
       ]
     },
+    "UseMalHints": {
+      "type": "switch",
+      "label": "$option.UseMalHints.label",
+      "description": "$option.UseMalHints.description",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.UseMalHints.case.Yes.label",
+          "pipeline_override": {
+            "UseMalHints": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.UseMalHints.case.No.label",
+          "pipeline_override": {
+            "UseMalHints": false
+          }
+        }
+      ]
+    },
     "ContentPaths": {
       "type": "file_list",
       "name": "content_paths",
@@ -1392,7 +1414,8 @@
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "GroupCharaPrompt",
-        "UseCache"
+        "UseCache",
+        "UseMalHints"
       ]
     },
     {
@@ -1436,7 +1459,8 @@
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "RenameCharaPrompt",
-        "UseCache"
+        "UseCache",
+        "UseMalHints"
       ]
     },
     {
