@@ -15,6 +15,7 @@ to figure out where a given piece of state actually lives on disk.
 | [03 — interface.json](03-interface-json.md) | The schema that defines every task and option: structure, option types, quirks, and fields that look load-bearing but aren't. |
 | [04 — The MXU GUI](04-mxu-gui.md) | What MXU is, what's forked vs. KKAFIO-specific in this GUI, and how the Rust/TypeScript side talks to the Python CLI. |
 | [05 — Configuration](05-configuration.md) | Every config/cache/session file KKAFIO reads or writes: where it lives, its structure, and when it's used. |
+| [06 — Gacha index format](06-gacha-index-format.md) | The downloadable gacha character index used by Group/Rename Characters (format, caching, priority over MAL). |
 
 ## The two repositories
 

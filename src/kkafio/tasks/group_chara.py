@@ -54,7 +54,7 @@ JSON to fill in:
 """
 
 MAL_PROMPT_NOTE = (
-    "Some values are already filled in with a suggestion from a MyAnimeList database. "
+    "Some values are already filled in with a suggestion from a character database. "
     "Keep a suggestion if it is right, replace it if it is wrong. Leave unfilled values "
     "as described above."
 )
@@ -67,8 +67,8 @@ def _insert_note(prompt: str, note: str) -> str:
     return "\n".join(lines[:-1] + [note] + lines[-1:]) if len(lines) > 1 else note + "\n" + prompt
 
 
-def apply_mal_hints(json_str: str) -> tuple[str, dict[str, str]]:
-    """Split export()'s JSON using the MyAnimeList index.
+def apply_index_hints(json_str: str) -> tuple[str, dict[str, str]]:
+    """Split export()'s JSON using the character indexes (gacha first, then MyAnimeList).
 
     Returns (json for the LLM, {key: series} resolved locally):
       - confident match   -> resolved here, removed from the LLM's JSON
@@ -76,20 +76,20 @@ def apply_mal_hints(json_str: str) -> tuple[str, dict[str, str]]:
       - no match          -> stays in the JSON, empty, exactly as without MAL
     The JSON is \"\" when everything was resolved locally.
     """
-    from kkafio.cards import mal_index
-    if not json_str or not mal_index.available():
+    from kkafio.cards import char_index
+    if not json_str or not char_index.available():
         return json_str, {}
     resolved: dict[str, str] = {}
     to_send: dict[str, str] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        m = mal_index.lookup(key)
+        m = char_index.lookup(key)
         if m.tier == "confident" and m.best and m.best.series:
             resolved[key] = m.best.series[0]
         else:
             to_send[key] = m.best.series[0] if (m.tier == "ambiguous" and m.best and m.best.series) else value
             hinted += bool(to_send[key])
-    logger.info("GROUP", f"MAL index: {len(resolved)} resolved locally, {hinted} hinted, "
+    logger.info("GROUP", f"Character index: {len(resolved)} resolved locally, {hinted} hinted, "
                          f"{len(to_send) - hinted} sent without a hint")
     return (json.dumps(to_send, indent=4, ensure_ascii=False) if to_send else ""), resolved
 
@@ -258,9 +258,9 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     unchanged, and keep that cache in step with the moves (a moved card's entry follows
     it to its new folder) so the next run doesn't have to read the cards again.
 
-    extra: key -> series assignments already made locally (MAL index); the LLM's answer
+    extra: key -> series assignments already made locally (gacha / MAL index); the LLM's answer
     wins where both have the key.
-    canonicalize: snap every series name to its canonical MyAnimeList franchise title
+    canonicalize: snap every series name to its canonical gacha-game or MyAnimeList title
     (unknown names are left as they are).
     """
     folder_list = _as_folder_list(folders)
@@ -279,8 +279,8 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
         return
     mapping = {**(extra or {}), **mapping}
     if canonicalize:
-        from kkafio.cards import mal_index
-        mapping = {k: mal_index.canonical_series(v) if isinstance(v, str) else v
+        from kkafio.cards import char_index
+        mapping = {k: char_index.canonical_series(v) if isinstance(v, str) else v
                    for k, v in mapping.items()}
 
     # Build reverse map: key -> destination folder name (skip empty values)
@@ -398,7 +398,9 @@ class GroupChara(BaseTask):
         resolved: dict[str, str] = {}
         prompt = self.prompt
         if self.use_mal_hints:
-            json_str, resolved = apply_mal_hints(json_str)
+            from kkafio.cards import char_index
+            char_index.refresh("GROUP")
+            json_str, resolved = apply_index_hints(json_str)
             if json_str and any(json.loads(json_str).values()):
                 prompt = _insert_note(prompt, MAL_PROMPT_NOTE)
 
@@ -414,7 +416,7 @@ class GroupChara(BaseTask):
                 logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
                 return
         else:
-            logger.success("GROUP", "Every character was resolved from the MAL index — LLM not needed.")
+            logger.success("GROUP", "Every character was resolved from the character index — LLM not needed.")
 
         process(folders, response, include_subfolders=self.include_subfolders,
                 use_cache=self.use_cache, extra=resolved, canonicalize=self.use_mal_hints)

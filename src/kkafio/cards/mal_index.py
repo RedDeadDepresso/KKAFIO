@@ -62,6 +62,7 @@ class Candidate:
 class Match:
     tier: str                           # "confident" | "ambiguous" | "none"
     candidates: tuple[Candidate, ...] = ()
+    source: str = "mal"                # which index answered: "gacha" | "mal"
 
     @property
     def best(self) -> Candidate | None:

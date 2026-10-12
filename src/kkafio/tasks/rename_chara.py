@@ -163,11 +163,11 @@ def _stem_for(d: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
-# MyAnimeList hints
+# Character-index hints (gacha index, then MyAnimeList)
 # ---------------------------------------------------------------------------
 
 MAL_PROMPT_NOTE = (
-    "Some entries are already filled in with a name from a MyAnimeList database. "
+    "Some entries are already filled in with a name from a character database. "
     "Keep it if it is right, correct it if it is wrong."
 )
 
@@ -178,35 +178,35 @@ def _insert_note(prompt: str, note: str) -> str:
     return "\n".join(lines[:-1] + [note] + lines[-1:]) if len(lines) > 1 else note + "\n" + prompt
 
 
-def _mal_names(c) -> dict[str, str]:
-    """A MAL candidate as the names dict this task works with. MAL stores the commonly
-    known romanisation, which is what the prompt asks for; nickname = given name."""
+def _index_names(c) -> dict[str, str]:
+    """An index candidate as the names dict this task works with. The indexes store the
+    commonly known romanisation, which is what the prompt asks for; nickname = given name."""
     return {"lastname": c.lastname, "firstname": c.firstname, "nickname": c.firstname}
 
 
-def apply_mal_hints(json_str: str) -> tuple[str, dict[str, dict]]:
-    """Split export()'s JSON using the MyAnimeList index.
+def apply_index_hints(json_str: str) -> tuple[str, dict[str, dict]]:
+    """Split export()'s JSON using the character indexes (gacha first, then MyAnimeList).
 
     Returns (json for the LLM, {key: names} resolved locally). Confident matches are
     answered here and removed from the LLM's JSON; ambiguous ones stay, pre-filled with
     the best guess; unknown ones stay untouched. The JSON is \"\" when nothing is left.
     """
-    from kkafio.cards import mal_index
-    if not json_str or not mal_index.available():
+    from kkafio.cards import char_index
+    if not json_str or not char_index.available():
         return json_str, {}
     resolved: dict[str, dict] = {}
     to_send: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        m = mal_index.lookup(key)
+        m = char_index.lookup(key)
         if m.tier == "confident" and m.best:
-            resolved[key] = _mal_names(m.best)
+            resolved[key] = _index_names(m.best)
         elif m.tier == "ambiguous" and m.best:
-            to_send[key] = _mal_names(m.best)
+            to_send[key] = _index_names(m.best)
             hinted += 1
         else:
             to_send[key] = value
-    logger.info("RENAME", f"MAL index: {len(resolved)} resolved locally, {hinted} hinted, "
+    logger.info("RENAME", f"Character index: {len(resolved)} resolved locally, {hinted} hinted, "
                           f"{len(to_send) - hinted} sent without a hint")
     return (json.dumps(to_send, indent=4, ensure_ascii=False) if to_send else ""), resolved
 
@@ -339,7 +339,7 @@ def process(folders, json_str: str,
             extra: dict[str, dict] | None = None) -> None:
     """Apply the LLM's JSON response to every card in the given folder(s).
 
-    extra: key -> names already resolved locally (MAL index); merged under the LLM's
+    extra: key -> names already resolved locally (gacha / MAL index); merged under the LLM's
     answer, which wins where both have the key.
 
     use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
@@ -589,7 +589,9 @@ class RenameChara(BaseTask):
         resolved: dict[str, dict] = {}
         prompt = self.prompt
         if self.use_mal_hints:
-            json_str, resolved = apply_mal_hints(json_str)
+            from kkafio.cards import char_index
+            char_index.refresh("RENAME")
+            json_str, resolved = apply_index_hints(json_str)
             if json_str and any(_name_known(v) for v in json.loads(json_str).values()):
                 prompt = _insert_note(prompt, MAL_PROMPT_NOTE)
 
@@ -605,7 +607,7 @@ class RenameChara(BaseTask):
                 logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
                 return
         else:
-            logger.success("RENAME", "Every character was resolved from the MAL index — LLM not needed.")
+            logger.success("RENAME", "Every character was resolved from the character index — LLM not needed.")
 
         process(folders, response,
                 skip_already_renamed=self.skip_already_renamed,

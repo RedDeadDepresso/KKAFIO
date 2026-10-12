@@ -531,10 +531,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                         "(default: on)",
                    off_help="Disable cache and read every card"),
             Toggle("use-mal-hints", key="UseMalHints",
-                   help="Use the MyAnimeList index (assets/data/kkafio_mal_index.json) to answer obvious "
-                        "characters locally, pre-fill suggestions for the LLM and normalise series names "
-                        "(default: on; does nothing if the index file is missing)",
-                   off_help="Don't use the MyAnimeList index"),
+                   help="Use the gacha-game index (downloaded, higher priority) and the MyAnimeList index "
+                        "(assets/data/kkafio_mal_index.json) to answer obvious characters locally, "
+                        "pre-fill suggestions for the LLM and normalise series names "
+                        "(default: on; does nothing if neither index is available)",
+                   off_help="Don't use the gacha / MyAnimeList indexes"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),
@@ -582,10 +583,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                         "(default: on)",
                    off_help="Disable cache and read every card"),
             Toggle("use-mal-hints", key="UseMalHints",
-                   help="Use the MyAnimeList index (assets/data/kkafio_mal_index.json) to answer obvious "
-                        "characters locally, pre-fill suggestions for the LLM and normalise series names "
-                        "(default: on; does nothing if the index file is missing)",
-                   off_help="Don't use the MyAnimeList index"),
+                   help="Use the gacha-game index (downloaded, higher priority) and the MyAnimeList index "
+                        "(assets/data/kkafio_mal_index.json) to answer obvious characters locally, "
+                        "pre-fill suggestions for the LLM and normalise series names "
+                        "(default: on; does nothing if neither index is available)",
+                   off_help="Don't use the gacha / MyAnimeList indexes"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),

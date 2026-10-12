@@ -129,8 +129,8 @@ KEYS = {
 }
 
 
-def test_group_apply_mal_hints(index):
-    out, resolved = group_chara.apply_mal_hints(json.dumps(KEYS))
+def test_group_apply_index_hints(index):
+    out, resolved = group_chara.apply_index_hints(json.dumps(KEYS))
     sent = json.loads(out)
     assert resolved == {"Tohsaka | Rin |  | Pure Heart | black hair": "Fate/stay night"}
     assert sent["Rin |  |  | Pure Heart | black hair"] == "Fate/stay night"   # pre-filled hint (most popular bare "Rin")
@@ -139,7 +139,7 @@ def test_group_apply_mal_hints(index):
 
 
 def test_group_everything_resolved_means_no_llm_json(index):
-    out, resolved = group_chara.apply_mal_hints(
+    out, resolved = group_chara.apply_index_hints(
         json.dumps({"Tohsaka | Rin |  | Pure Heart | black hair": ""}))
     assert out == "" and len(resolved) == 1
 
@@ -150,9 +150,9 @@ def test_group_process_merges_extra_and_canonicalizes(index, tmp_path):
                         use_cache=False)
 
 
-def test_rename_apply_mal_hints(index):
+def test_rename_apply_index_hints(index):
     keys = {k: dict(rename_chara._EMPTY_NAME) for k in KEYS}
-    out, resolved = rename_chara.apply_mal_hints(json.dumps(keys))
+    out, resolved = rename_chara.apply_index_hints(json.dumps(keys))
     sent = json.loads(out)
     assert resolved["Tohsaka | Rin |  | Pure Heart | black hair"] == {
         "lastname": "Tohsaka", "firstname": "Rin", "nickname": "Rin"}
@@ -164,7 +164,7 @@ def test_apply_is_noop_without_index(tmp_path):
     mal_index.set_index_path(tmp_path / "missing.json")
     try:
         s = json.dumps(KEYS)
-        assert group_chara.apply_mal_hints(s) == (s, {})
+        assert group_chara.apply_index_hints(s) == (s, {})
     finally:
         mal_index.set_index_path(ROOT / "assets" / "data" / mal_index.INDEX_FILE)
 
