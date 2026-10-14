@@ -19,11 +19,12 @@ from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
+from kkafio.cards.hint_language import DEFAULT_LANGUAGE, localized
 from kkafio.cards.mal_index import DOMINANCE, Candidate, Match, split_key
 from kkafio.cards.mal_text import name_parts, norm
 from kkafio.core.logger import logger
 
-INDEX_URL = "https://reddeaddepresso.github.io/kkafio-gacha-index/gacha_index.json"
+INDEX_URL = "https://reddeaddepresso.github.io/gacha-character-scraper/gacha_character_index.json"
 INDEX_FILE = "kkafio_gacha_index.json"
 INDEX_VERSION = 1
 SOURCE = "gacha"
@@ -46,34 +47,48 @@ def _path() -> Path:
     return CONFIG_DIR / "config" / INDEX_FILE
 
 
+def _per_language(value) -> dict[str, str]:
+    """A title / name object as {language code: text}."""
+    return {str(k).lower().replace("-", "_"): str(v) for k, v in value.items() if v}
+
+
+@dataclass(frozen=True)
+class _Char:
+    names: dict[str, str]                  # language -> "Last, First" (or a mononym)
+    series: tuple[int, ...]                # indexes into _Built.series, most associated first
+    score: int
+    mononym: bool                          # known by a single name (in the default language)
+
+
 @dataclass(frozen=True)
 class _Built:
-    chars: tuple[Candidate, ...]
+    chars: tuple[_Char, ...]
     names: dict[str, tuple[int, ...]]      # norm(name form / alias) -> char indexes
-    series: tuple[str, ...]
+    series: tuple[dict[str, str], ...]     # language -> title
     series_alias: dict[str, int]           # norm(title / alias) -> series index
     alias_keys: tuple[str, ...]
 
 
 def _build(data: dict) -> _Built:
-    titles = tuple(str(s["title"]) for s in data["series"])
+    titles = tuple(_per_language(s["title"]) for s in data["series"])
     series_alias: dict[str, int] = {}
     for i, s in enumerate(data["series"]):
-        for form in (s["title"], *s.get("aliases", ())):
+        for form in (*titles[i].values(), *s.get("aliases", ())):
             k = norm(form)
             if k:
                 series_alias.setdefault(k, i)
 
-    chars: list[Candidate] = []
+    chars: list[_Char] = []
     names: dict[str, list[int]] = {}
     for ci, c in enumerate(data["chars"]):
-        name = str(c["name"])
-        last, first = name_parts(name)
-        chars.append(Candidate(name, last, first,
-                               tuple(titles[i] for i in c["series"]),
-                               int(c.get("score", 0))))
-        forms = {norm(name), norm(last + first), norm(first + last),
-                 *(norm(a) for a in c.get("aliases", ()))}
+        by_lang = _per_language(c["name"])
+        chars.append(_Char(by_lang, tuple(int(i) for i in c["series"]), int(c.get("score", 0)),
+                           not name_parts(localized(by_lang, DEFAULT_LANGUAGE))[0]))
+        forms: set[str] = set()
+        for name in by_lang.values():
+            last, first = name_parts(name)
+            forms |= {norm(name), norm(last + first), norm(first + last)}
+        forms |= {norm(a) for a in c.get("aliases", ())}
         forms.discard("")
         for f in forms:
             names.setdefault(f, []).append(ci)
@@ -96,8 +111,21 @@ def available() -> bool:
     return _load() is not None
 
 
-def lookup(key: str) -> Match:
-    """Find gacha characters for a make_key() string.
+def supports(lang: str) -> bool:
+    """True if any title or name in the index is in `lang` (it falls back to English otherwise)."""
+    idx = _load()
+    return bool(idx) and (any(lang in s for s in idx.series) or any(lang in c.names for c in idx.chars))
+
+
+def _candidate(idx: _Built, c: _Char, lang: str | None) -> Candidate:
+    name = localized(c.names, lang)
+    last, first = name_parts(name)
+    return Candidate(name, last, first, tuple(localized(idx.series[i], lang) for i in c.series), c.score)
+
+
+def lookup(key: str, lang: str | None = None) -> Match:
+    """Find gacha characters for a make_key() string; names and series come back in `lang`
+    (English where the index has nothing in it).
 
     "confident" needs a single candidate (or one dominating the next by DOMINANCE x
     score) AND either both name fields on the card or a character the index itself knows
@@ -112,21 +140,23 @@ def lookup(key: str) -> Match:
     forms = {norm(last + first), norm(first + last)} if full else {norm(last or first or nick)}
     forms.discard("")
 
-    seen: dict[int, Candidate] = {}
+    seen: dict[int, _Char] = {}
     for f in forms:
         for ci in idx.names.get(f, ()):
             seen.setdefault(ci, idx.chars[ci])
     if not seen:
         return _NONE
-    cands = sorted(seen.values(), key=lambda c: -c.score)
-    unique = len(cands) == 1 or cands[0].score >= DOMINANCE * max(cands[1].score, 1)
-    if unique and (full or not cands[0].lastname):
-        return Match("confident", tuple(cands[:1]), SOURCE)
-    return Match("ambiguous", tuple(cands[:3]), SOURCE)
+    ranked = sorted(seen.values(), key=lambda c: -c.score)
+    unique = len(ranked) == 1 or ranked[0].score >= DOMINANCE * max(ranked[1].score, 1)
+    cands = tuple(_candidate(idx, c, lang) for c in ranked[:3])
+    if unique and (full or ranked[0].mononym):
+        return Match("confident", cands[:1], SOURCE)
+    return Match("ambiguous", cands, SOURCE)
 
 
-def snap_series(name: str, cutoff: float = 0.9) -> str | None:
-    """Canonical gacha series title for an LLM-supplied name, or None if not recognised."""
+def snap_series(name: str, lang: str | None = None, cutoff: float = 0.9) -> str | None:
+    """Canonical gacha series title, in `lang`, for an LLM-supplied name in any language;
+    None if not recognised."""
     idx = _load()
     if not idx or not name or not name.strip():
         return None
@@ -135,7 +165,7 @@ def snap_series(name: str, cutoff: float = 0.9) -> str | None:
     if hit is None:
         close = get_close_matches(k, idx.alias_keys, n=1, cutoff=cutoff)
         hit = idx.series_alias[close[0]] if close else None
-    return idx.series[hit] if hit is not None else None
+    return localized(idx.series[hit], lang) if hit is not None else None
 
 
 # ---------------------------------------------------------------------------

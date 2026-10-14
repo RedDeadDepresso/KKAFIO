@@ -16,11 +16,12 @@ from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
+from kkafio.cards.hint_language import localized
 from kkafio.cards.mal_text import name_parts, norm
 from kkafio.core.paths import ASSETS_DATA_DIR
 
 INDEX_FILE = "kkafio_mal_index.json"
-INDEX_VERSION = 2
+INDEX_VERSION = 1
 
 # A single hit is "confident" only if it beats the runner-up's score by this factor.
 DOMINANCE = 5
@@ -51,7 +52,7 @@ def available() -> bool:
 
 @dataclass(frozen=True)
 class Candidate:
-    name: str            # as stored by MAL, e.g. "Tohsaka, Rin"
+    name: str            # in the hint language, "Last, First" form, e.g. "Tohsaka, Rin"
     lastname: str
     firstname: str
     series: tuple[str, ...]   # franchises, most popular first
@@ -79,8 +80,20 @@ def split_key(key: str) -> tuple[str, str, str]:
     return parts[0], parts[1], parts[2]
 
 
-def lookup(key: str) -> Match:
-    """Find MAL characters for a make_key() string.
+def _text(idx: dict, values: list[str], lang: str | None) -> str:
+    """One entry of a per-language list (positional, in the order of idx["langs"])."""
+    return localized(dict(zip(idx["langs"], values)), lang)
+
+
+def supports(lang: str) -> bool:
+    """True if the index holds any text in `lang` (it falls back to English otherwise)."""
+    idx = _load()
+    return bool(idx) and lang in idx["langs"]
+
+
+def lookup(key: str, lang: str | None = None) -> Match:
+    """Find MAL characters for a make_key() string; names and series come back in `lang`
+    (English where the index has nothing in it).
 
     "confident" needs BOTH name fields on the card and a single candidate (or one that
     dominates the next by DOMINANCE x score). A one-field name ("Rin") can never be
@@ -102,9 +115,11 @@ def lookup(key: str) -> Match:
         for ci in idx["names"].get(f, ()):
             if ci in seen:
                 continue
-            name, series_ids, score = idx["chars"][ci]
+            names, series_ids, score = idx["chars"][ci]
+            name = _text(idx, names, lang)
             l, fi = name_parts(name)
-            seen[ci] = Candidate(name, l, fi, tuple(idx["series"][i] for i in series_ids), score)
+            seen[ci] = Candidate(name, l, fi,
+                                 tuple(_text(idx, idx["series"][i], lang) for i in series_ids), score)
     if not seen:
         return _NONE
     cands = sorted(seen.values(), key=lambda c: -c.score)
@@ -119,8 +134,9 @@ def _title_keys() -> list[str]:
     return list(idx["aliases"]) if idx else []
 
 
-def canonical_series(name: str, cutoff: float = 0.9) -> str:
-    """Snap an LLM-supplied series name to the canonical franchise title.
+def canonical_series(name: str, lang: str | None = None, cutoff: float = 0.9) -> str:
+    """Snap an LLM-supplied series name (in any language) to the canonical franchise
+    title in `lang`.
 
     Exact (normalised) match first, then a strict fuzzy match; anything unrecognised is
     returned untouched so a series MAL doesn't know still works.
@@ -133,4 +149,4 @@ def canonical_series(name: str, cutoff: float = 0.9) -> str:
     if hit is None:
         close = get_close_matches(k, _title_keys(), n=1, cutoff=cutoff)
         hit = idx["aliases"][close[0]] if close else None
-    return idx["series"][hit] if hit is not None else name
+    return _text(idx, idx["series"][hit], lang) if hit is not None else name

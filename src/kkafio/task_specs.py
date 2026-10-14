@@ -69,6 +69,11 @@ def _pause_if_context_menu(args: argparse.Namespace) -> None:
         input("\nPress Enter to close...")
 
 
+def _hint_language_choices() -> list[str]:
+    from kkafio.cards.hint_language import choices
+    return choices()
+
+
 _CONTEXT_MENU_HELP = (
     "Internal flag set by the context menu (via kkafio_setup.bat): coalesces multiple "
     "simultaneous Explorer-selection invocations (one per selected file) "
@@ -530,12 +535,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
                         "(default: on)",
                    off_help="Disable cache and read every card"),
-            Toggle("use-mal-hints", key="UseMalHints",
-                   help="Use the gacha-game index (downloaded, higher priority) and the MyAnimeList index "
-                        "(assets/data/kkafio_mal_index.json) to answer obvious characters locally, "
-                        "pre-fill suggestions for the LLM and normalise series names "
-                        "(default: on; does nothing if neither index is available)",
-                   off_help="Don't use the gacha / MyAnimeList indexes"),
+            Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
+                  choices=_hint_language_choices(),
+                  help="Language of the hints from the gacha-game / MyAnimeList character indexes "
+                       "(they answer obvious characters locally, pre-fill suggestions for the LLM and "
+                       "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
+                       "language from the prompt (default), or one of the languages in assets/i18n"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),
@@ -582,12 +587,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
                         "(default: on)",
                    off_help="Disable cache and read every card"),
-            Toggle("use-mal-hints", key="UseMalHints",
-                   help="Use the gacha-game index (downloaded, higher priority) and the MyAnimeList index "
-                        "(assets/data/kkafio_mal_index.json) to answer obvious characters locally, "
-                        "pre-fill suggestions for the LLM and normalise series names "
-                        "(default: on; does nothing if neither index is available)",
-                   off_help="Don't use the gacha / MyAnimeList indexes"),
+            Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
+                  choices=_hint_language_choices(),
+                  help="Language of the hints from the gacha-game / MyAnimeList character indexes "
+                       "(they answer obvious characters locally, pre-fill suggestions for the LLM and "
+                       "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
+                       "language from the prompt (default), or one of the languages in assets/i18n"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),

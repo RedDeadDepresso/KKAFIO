@@ -205,10 +205,6 @@
   "option.UseCache.description": "Use cached mod/card scan results to speed up processing",
   "option.UseCache.case.Yes.label": "Use Cache",
   "option.UseCache.case.No.label": "Rescan",
-  "option.UseMalHints.label": "Use Character Index",
-  "option.UseMalHints.description": "Use the gacha-game index (downloaded, higher priority) and the bundled MyAnimeList index to answer obvious characters locally, pre-fill suggestions for the LLM and normalise series names. Does nothing if neither index is available",
-  "option.UseMalHints.case.Yes.label": "Use Index",
-  "option.UseMalHints.case.No.label": "LLM Only",
   "option.ContentPaths.label": "Character / Coordinate / Scene Cards",
   "option.ContentPaths.description": "Select character cards, coordinate cards, or Studio scene PNG files to operate on",
   "option.IncludeCoordinates.label": "Include Coordinates",
@@ -271,5 +267,15 @@
   "preset.ExportInstalledContents.label": "📤 Export Installed Contents",
   "preset.ExportInstalledContents.description": "Archive cards with their mods bundled in and export additional mods by GUID, ready to share your installed content with other players",
   "preset.AllTasks.label": "⚡ All Tasks",
-  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu"
+  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu",
+  "option.HintsLanguage.label": "Hints Language",
+  "option.HintsLanguage.description": "Language of the hints from the gacha-game index (downloaded, higher priority) and the bundled MyAnimeList index, which answer obvious characters locally, pre-fill suggestions for the LLM and normalise series names. No: don't use the indexes. Detect: read the language from the prompt (a language's own characters, or its English name such as Korean). Text an index has no translation for stays in English",
+  "option.HintsLanguage.case.no.label": "No hints",
+  "option.HintsLanguage.case.detect.label": "Detect from prompt",
+  "option.HintsLanguage.case.en_us.label": "English",
+  "option.HintsLanguage.case.zh_cn.label": "简体中文",
+  "option.HintsLanguage.case.zh_tw.label": "繁體中文",
+  "option.HintsLanguage.case.ja_jp.label": "日本語",
+  "option.HintsLanguage.case.ko_kr.label": "한국어",
+  "option.HintsLanguage.case.ru_ru.label": "Русский"
 }

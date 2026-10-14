@@ -31,6 +31,7 @@ from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_ch
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
+from kkafio.cards import hint_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
@@ -54,6 +55,7 @@ Rules:
   name is written in the source material.
 - "nickname" can be a common short form or the same as firstname.
 - Use the personality and hair colour as additional hints to identify the character.
+- Some entries may already be filled in with a name from a character database. Keep it if it is right, correct it if it is wrong.
 - All values must be valid Windows filenames
   (no  \\ / : * ? " < > |  characters, no leading/trailing spaces or dots).
 - Return ONLY the completed JSON object — no explanation, no markdown fences,
@@ -166,26 +168,15 @@ def _stem_for(d: dict) -> str:
 # Character-index hints (gacha index, then MyAnimeList)
 # ---------------------------------------------------------------------------
 
-MAL_PROMPT_NOTE = (
-    "Some entries are already filled in with a name from a character database. "
-    "Keep it if it is right, correct it if it is wrong."
-)
-
-
-def _insert_note(prompt: str, note: str) -> str:
-    """Put `note` on its own line just above the prompt's last line (\"JSON to fill in:\")."""
-    lines = prompt.rstrip("\n").split("\n")
-    return "\n".join(lines[:-1] + [note] + lines[-1:]) if len(lines) > 1 else note + "\n" + prompt
-
-
 def _index_names(c) -> dict[str, str]:
     """An index candidate as the names dict this task works with. The indexes store the
-    commonly known romanisation, which is what the prompt asks for; nickname = given name."""
+    commonly known name in each language; nickname = given name."""
     return {"lastname": c.lastname, "firstname": c.firstname, "nickname": c.firstname}
 
 
-def apply_index_hints(json_str: str) -> tuple[str, dict[str, dict]]:
+def apply_index_hints(json_str: str, lang: str | None = None) -> tuple[str, dict[str, dict]]:
     """Split export()'s JSON using the character indexes (gacha first, then MyAnimeList).
+    Names come back in the hint language `lang` (English where an index has none).
 
     Returns (json for the LLM, {key: names} resolved locally). Confident matches are
     answered here and removed from the LLM's JSON; ambiguous ones stay, pre-filled with
@@ -198,7 +189,7 @@ def apply_index_hints(json_str: str) -> tuple[str, dict[str, dict]]:
     to_send: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        m = char_index.lookup(key)
+        m = char_index.lookup(key, lang)
         if m.tier == "confident" and m.best:
             resolved[key] = _index_names(m.best)
         elif m.tier == "ambiguous" and m.best:
@@ -571,7 +562,7 @@ class RenameChara(BaseTask):
         self.rename_files         : bool = cfg.get("RenameFiles", True)
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache            : bool = cfg.get("UseCache", True)
-        self.use_mal_hints        : bool = cfg.get("UseMalHints", True)
+        self.hints_language        : str  = cfg.get("HintsLanguage", hint_language.DETECT)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
@@ -588,12 +579,13 @@ class RenameChara(BaseTask):
 
         resolved: dict[str, dict] = {}
         prompt = self.prompt
-        if self.use_mal_hints:
+        hint_lang = hint_language.resolve(self.hints_language, self.prompt, "RENAME")
+        if hint_lang:
             from kkafio.cards import char_index
             char_index.refresh("RENAME")
-            json_str, resolved = apply_index_hints(json_str)
-            if json_str and any(_name_known(v) for v in json.loads(json_str).values()):
-                prompt = _insert_note(prompt, MAL_PROMPT_NOTE)
+            if not char_index.supports(hint_lang):
+                logger.info("RENAME", f"The character indexes have no {hint_lang} text — hints are in English.")
+            json_str, resolved = apply_index_hints(json_str, hint_lang)
 
         response = ""
         if json_str:

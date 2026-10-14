@@ -26,6 +26,7 @@ from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_ch
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
+from kkafio.cards import hint_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
@@ -46,6 +47,7 @@ Rules:
 - Use the official title of the series.
 - If a character appears in multiple series, use the one they are most associated with.
 - Use the personality and hair colour as additional hints to identify the character.
+- Some values may already be filled in with a suggestion from a character database. Keep a suggestion if it is right, replace it if it is wrong.
 - If you are not sure or the character is an original creation, leave the value as an empty string "".
 - Return ONLY the completed JSON object — no explanation, no markdown code fences, \
 no extra text before or after.
@@ -53,22 +55,9 @@ no extra text before or after.
 JSON to fill in:
 """
 
-MAL_PROMPT_NOTE = (
-    "Some values are already filled in with a suggestion from a character database. "
-    "Keep a suggestion if it is right, replace it if it is wrong. Leave unfilled values "
-    "as described above."
-)
-
-
-def _insert_note(prompt: str, note: str) -> str:
-    """Put `note` on its own line just above the prompt's last line (\"JSON to fill in:\"),
-    so a user-customised prompt keeps working. The caller appends the JSON afterwards."""
-    lines = prompt.rstrip("\n").split("\n")
-    return "\n".join(lines[:-1] + [note] + lines[-1:]) if len(lines) > 1 else note + "\n" + prompt
-
-
-def apply_index_hints(json_str: str) -> tuple[str, dict[str, str]]:
+def apply_index_hints(json_str: str, lang: str | None = None) -> tuple[str, dict[str, str]]:
     """Split export()'s JSON using the character indexes (gacha first, then MyAnimeList).
+    Series names come back in the hint language `lang` (English where an index has none).
 
     Returns (json for the LLM, {key: series} resolved locally):
       - confident match   -> resolved here, removed from the LLM's JSON
@@ -83,7 +72,7 @@ def apply_index_hints(json_str: str) -> tuple[str, dict[str, str]]:
     to_send: dict[str, str] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        m = char_index.lookup(key)
+        m = char_index.lookup(key, lang)
         if m.tier == "confident" and m.best and m.best.series:
             resolved[key] = m.best.series[0]
         else:
@@ -244,7 +233,7 @@ def _safe_folder_name(name: str) -> str:
 
 def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: bool = False,
             use_cache: bool = True, extra: dict[str, str] | None = None,
-            canonicalize: bool = False) -> None:
+            hint_language: str | None = None) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response.
 
     Each card is moved into <its own folder>/<series>/ — so with the game's
@@ -260,8 +249,8 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
 
     extra: key -> series assignments already made locally (gacha / MAL index); the LLM's answer
     wins where both have the key.
-    canonicalize: snap every series name to its canonical gacha-game or MyAnimeList title
-    (unknown names are left as they are).
+    hint_language: snap every series name to its canonical gacha-game or MyAnimeList title in
+    this language (unknown names are left as they are). None: leave the names alone.
     """
     folder_list = _as_folder_list(folders)
 
@@ -278,9 +267,9 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
         logger.warning("GROUP", f"Could not parse response JSON: {e}")
         return
     mapping = {**(extra or {}), **mapping}
-    if canonicalize:
+    if hint_language:
         from kkafio.cards import char_index
-        mapping = {k: char_index.canonical_series(v) if isinstance(v, str) else v
+        mapping = {k: char_index.canonical_series(v, hint_language) if isinstance(v, str) else v
                    for k, v in mapping.items()}
 
     # Build reverse map: key -> destination folder name (skip empty values)
@@ -380,7 +369,7 @@ class GroupChara(BaseTask):
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache           : bool = cfg.get("UseCache", True)
-        self.use_mal_hints       : bool = cfg.get("UseMalHints", True)
+        self.hints_language      : str  = cfg.get("HintsLanguage", hint_language.DETECT)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
@@ -397,12 +386,13 @@ class GroupChara(BaseTask):
 
         resolved: dict[str, str] = {}
         prompt = self.prompt
-        if self.use_mal_hints:
+        hint_lang = hint_language.resolve(self.hints_language, self.prompt, "GROUP")
+        if hint_lang:
             from kkafio.cards import char_index
             char_index.refresh("GROUP")
-            json_str, resolved = apply_index_hints(json_str)
-            if json_str and any(json.loads(json_str).values()):
-                prompt = _insert_note(prompt, MAL_PROMPT_NOTE)
+            if not char_index.supports(hint_lang):
+                logger.info("GROUP", f"The character indexes have no {hint_lang} text — hints are in English.")
+            json_str, resolved = apply_index_hints(json_str, hint_lang)
 
         response = ""
         if json_str:
@@ -419,4 +409,4 @@ class GroupChara(BaseTask):
             logger.success("GROUP", "Every character was resolved from the character index — LLM not needed.")
 
         process(folders, response, include_subfolders=self.include_subfolders,
-                use_cache=self.use_cache, extra=resolved, canonicalize=self.use_mal_hints)
+                use_cache=self.use_cache, extra=resolved, hint_language=hint_lang)
