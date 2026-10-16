@@ -18,16 +18,19 @@ field can be forced with --map FIELD=COLUMN (use --show-columns to see the heade
 Output (assets/data/kkafio_mal_index.json, version 1):
   {
     "version": 1,
-    "langs":   ["en_us", "ja_jp"],                       # language of each position below
-    "series":  [["Fate/stay night", "フェイト/ステイナイト"], ...],   # franchise titles per language
+    "langs":   ["en_us", "ja_jp", "zh_cn", "zh_tw"],     # language of each position below
+    "series":  [["Fate/stay night", "フェイト/ステイナイト", "命运/停留之夜", "..."], ...],  # per language
     "aliases": {"<norm title>": <series idx>, ...},      # every anime title -> franchise
-    "chars":   [[["Tohsaka, Rin", "遠坂, 凛"], [series idx, ...], score], ...],
+    "chars":   [[["Tohsaka, Rin", "遠坂, 凛", "", ""], [series idx, ...], score], ...],
     "names":   {"<norm name form>": [<chars idx>, ...]}  # every language, both orders, full name
   }
 
 Names are "Last, First". English is MAL's romaji. Japanese ("ja_jp") is only written when
 the CSVs have the columns for it (anime `title_japanese`, or the id + `title_japanese` CSV
-given as --japanese-titles; characters `alternate_name`). That CSV's `title_english`, where
+given as --japanese-titles; characters `alternate_name`). With --japanese-titles the
+script also fetches bangumi-data (BANGUMI_URL), an anime database, and adds Japanese
+(where missing) and Chinese ("zh_cn", "zh_tw") series titles by MAL id; it has no
+characters, so character names are only English and, from `alternate_name`, Japanese. That CSV's `title_english`, where
 not empty, is the English series title; otherwise the anime CSV's title is used; a
 text missing in a language is "" and the lookup falls back to English.
 
@@ -44,6 +47,7 @@ import csv
 import json
 import re
 import sys
+import urllib.request
 from pathlib import Path
 
 # Make `import kkafio` work when run as a plain script from the repo root.
@@ -177,6 +181,42 @@ def _character_ids(cell: str | None) -> list[str]:
     return _ID_RE.findall(cell)          # malformed JSON: still salvage the ids
 
 
+BANGUMI_URL = "https://unpkg.com/bangumi-data@0.3/dist/data.json"
+BANGUMI_LANGS = {"ja_jp": "ja", "zh_cn": "zh-Hans", "zh_tw": "zh-Hant"}   # our code -> bangumi-data key
+
+
+def fetch_bangumi(url: str = BANGUMI_URL) -> dict[str, dict[str, str]]:
+    """bangumi-data (an anime database with titles in Japanese / Chinese): {MAL id: {language
+    code: title}}. It has anime only, not characters, so it adds series titles. Returns {}
+    (with a warning) if it can't be fetched."""
+    print("fetching", url)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "KKAFIO build_mal_index"})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            data = json.load(r)
+    except Exception as e:                      # offline, blocked, bad JSON ...
+        print(f"WARNING: could not fetch bangumi-data ({e}); skipping it.")
+        return {}
+    out: dict[str, dict[str, str]] = {}
+    for item in data.get("items", ()):
+        mal_ids = [_id(str(s.get("id"))) for s in item.get("sites", ()) if s.get("site") == "mal"]
+        if not mal_ids:
+            continue
+        tr = item.get("titleTranslate") or {}
+        titles: dict[str, str] = {}
+        for code, key in BANGUMI_LANGS.items():
+            t = (tr.get(key) or [""])[0]
+            if code == "ja_jp" and not t and item.get("lang") == "ja":
+                t = item.get("title") or ""          # the original title
+            if t.strip():
+                titles[code] = t.strip()
+        for mid in mal_ids:
+            if titles:
+                out.setdefault(mid, titles)
+    print(f"bangumi-data: {len(out)} anime with a MAL id")
+    return out
+
+
 def _id(value: str | None) -> str:
     """A MAL id as a comparable string ("52" == "52.0")."""
     v = (value or "").strip()
@@ -236,8 +276,16 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
                 en_titles[mal_id] = e
         print(f"japanese titles: {len(ja_titles)}  english titles: {len(en_titles)}")
 
-    # Languages: English always; Japanese when the CSVs have the columns for it.
-    langs = ["en_us"] + (["ja_jp"] if am["anime_title_ja"] or ja_titles or cm["char_kanji"] else [])
+    # With a Japanese titles CSV, also pull Japanese / Chinese series titles from bangumi-data.
+    bangumi = fetch_bangumi() if japanese_csv else {}
+
+    # Languages: English always; Japanese when the CSVs have the columns for it; Chinese
+    # (and Japanese) when bangumi-data was fetched. Japanese is always position 1.
+    langs = ["en_us"]
+    if bangumi or am["anime_title_ja"] or ja_titles or cm["char_kanji"]:
+        langs.append("ja_jp")
+    if bangumi:
+        langs += ["zh_cn", "zh_tw"]
     print("languages:", langs)
 
     # --- anime -> franchise, aliases, and the inverted character -> anime link ---------
@@ -260,6 +308,7 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
     print(f"favorites: {len(favorites)}")
 
     aliases: dict[str, int] = {}
+    mal_series: dict[str, int] = {}          # MAL anime id -> series idx
     char_series: dict[str, set[int]] = {}    # char id -> series idx it appears in
 
     for row in a_rows:
@@ -276,6 +325,8 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
         title_ja = (row.get(am["anime_title_ja"]) or "").strip() if am["anime_title_ja"] else ""
         title_ja = title_ja or ja_titles.get(mal_id, "")
         i = sidx(franchise_title(titles[0]), franchise_title(title_ja) if title_ja else "")
+        if mal_id:
+            mal_series[mal_id] = i
         for t in titles + syn + ([title_ja] if title_ja else []):
             aliases.setdefault(norm(t), i)
             aliases.setdefault(norm(franchise_title(t)), i)
@@ -285,6 +336,15 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
         for s_ in titles_:
             if s_:
                 aliases.setdefault(norm(s_), i)
+
+    # Titles from bangumi-data (Japanese where the CSVs had none, Chinese), also as aliases.
+    for mal_id, i in mal_series.items():
+        for code, title in bangumi.get(mal_id, {}).items():
+            title = franchise_title(title)
+            pos = langs.index(code)
+            if not series[i][pos]:
+                series[i][pos] = title
+            aliases.setdefault(norm(title), i)
 
     # A series' prominence = the favorites of its characters; it orders each character's series.
     series_pop = [0] * len(series)
@@ -307,7 +367,8 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
         ordered = sorted(appearances, key=lambda i: -series_pop[i])[:3]
         ci = len(chars)
         kanji = japanese_name(row.get(cm["char_kanji"]) or "") if cm["char_kanji"] else ""
-        chars.append([[raw] + ([kanji] if len(langs) > 1 else []), ordered, score])
+        chars.append([[raw] + ([kanji] + [""] * (len(langs) - 2) if len(langs) > 1 else []),
+                      ordered, score])
 
         last, first = name_parts(raw)
         forms = {norm(raw), norm(last + first), norm(first + last)}
@@ -335,7 +396,8 @@ def main() -> None:
                          "popularity score is its favorites")
     ap.add_argument("--japanese-titles", type=Path, default=None, metavar="CSV",
                     help="extra CSV with a MAL id column (mal_id) and title_japanese, joined to the "
-                         "anime CSV by id; use it when the anime CSV has no Japanese titles")
+                         "anime CSV by id; use it when the anime CSV has no Japanese titles. Also fetches "
+                         "bangumi-data for Japanese / Chinese series titles")
     ap.add_argument("--output", type=Path, default=OUTPUT)
     ap.add_argument("--map", action="append", default=[], metavar="FIELD=COLUMN",
                     help="force a column, e.g. --map fav_count=Favorites")
