@@ -25,18 +25,25 @@ Output (assets/data/kkafio_mal_index.json, version 1):
     "names":   {"<norm name form>": [<chars idx>, ...]}  # every language, both orders, full name
   }
 
-Names are "Last, First". English is MAL's romaji. Japanese ("ja_jp") is only written when
-the CSVs have the columns for it (anime `title_japanese`, or the id + `title_japanese` CSV
-given as --japanese-titles; characters `alternate_name`). With --japanese-titles the
-script also fetches bangumi-data (BANGUMI_URL), an anime database, and adds Japanese
-(where missing) and Chinese ("zh_cn", "zh_tw") series titles by MAL id; it has no
-characters, so character names are only English and, from `alternate_name`, Japanese. That CSV's `title_english`, where
-not empty, is the English series title; otherwise the anime CSV's title is used; a
-text missing in a language is "" and the lookup falls back to English.
+Names are "Last, First". English is MAL's romaji. Text missing in a language is "" and the
+lookup falls back to English.
+
+Japanese ("ja_jp"): anime `title_japanese`, or the id + `title_japanese` CSV given as
+--japanese-titles (its `title_english`, where not empty, is also the English series title,
+else the anime CSV's title is used); characters' `alternate_name`.
+
+Chinese ("zh_cn", "zh_tw"):
+  - series titles: with --japanese-titles the script fetches bangumi-data (BANGUMI_URL), an
+    anime database, and adds Japanese (where missing) and Chinese titles by MAL id;
+  - character names: --bangumi-characters (the Archive's character.jsonlines) matches
+    bangumi characters to MAL ones by their Japanese name and adds the 简体中文名.
+  OpenCC fills the Traditional side from the Simplified (or the reverse for a series title
+  that only has Traditional): pip install OpenCC
 
 Usage:
   python tools/build_mal_index.py --characters chars.csv --anime anime.csv --favorites fav.csv --show-columns
   python tools/build_mal_index.py --characters chars.csv --anime anime.csv --favorites fav.csv
+  python tools/build_mal_index.py ... --bangumi-characters character.jsonlines   # Chinese names
   python tools/build_mal_index.py ... --japanese-titles japanese.csv   # mal_id + title_japanese (+ title_english)
 """
 
@@ -52,6 +59,7 @@ from pathlib import Path
 
 # Make `import kkafio` work when run as a plain script from the repo root.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from kkafio.cards.mal_index import DOMINANCE  # noqa: E402
 from kkafio.cards.mal_text import norm, name_parts  # noqa: E402
 
 csv.field_size_limit(10_000_000)  # description columns can be huge
@@ -181,6 +189,42 @@ def _character_ids(cell: str | None) -> list[str]:
     return _ID_RE.findall(cell)          # malformed JSON: still salvage the ids
 
 
+_HAN_OR_KANA = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]")
+_converters: dict[str, object] = {}
+
+
+def _opencc(config: str):
+    """An OpenCC converter ("s2t": Simplified -> Traditional, "t2s": the reverse)."""
+    if config not in _converters:
+        try:
+            from opencc import OpenCC
+        except ImportError:
+            sys.exit("OpenCC is needed for the Chinese titles / names: pip install OpenCC")
+        try:
+            _converters[config] = OpenCC(config)
+        except Exception:
+            _converters[config] = OpenCC(config + ".json")
+    return _converters[config]
+
+
+def to_traditional(text: str) -> str:
+    return _opencc("s2t").convert(text)
+
+
+def to_simplified(text: str) -> str:
+    return _opencc("t2s").convert(text)
+
+
+def chinese_name(raw: str) -> str:
+    """bangumi's Chinese name -> "Last, First" where it can be told. A transliterated
+    foreign name is written Given·Family ("鲁路修·兰佩路基"), so it is reversed
+    ("兰佩路基, 鲁路修"); a name without "·" (a Chinese / Japanese one) stays whole."""
+    parts = [p.strip() for p in re.split(r"[·・]", raw or "") if p.strip()]
+    if len(parts) < 2:
+        return parts[0] if parts else ""
+    return f"{'·'.join(parts[1:])}, {parts[0]}"
+
+
 BANGUMI_URL = "https://unpkg.com/bangumi-data@0.3/dist/data.json"
 BANGUMI_LANGS = {"ja_jp": "ja", "zh_cn": "zh-Hans", "zh_tw": "zh-Hant"}   # our code -> bangumi-data key
 
@@ -210,11 +254,77 @@ def fetch_bangumi(url: str = BANGUMI_URL) -> dict[str, dict[str, str]]:
                 t = item.get("title") or ""          # the original title
             if t.strip():
                 titles[code] = t.strip()
+        if "zh_cn" in titles and "zh_tw" not in titles:       # fill the other script with OpenCC
+            titles["zh_tw"] = to_traditional(titles["zh_cn"])
+        elif "zh_tw" in titles and "zh_cn" not in titles:
+            titles["zh_cn"] = to_simplified(titles["zh_tw"])
         for mid in mal_ids:
             if titles:
                 out.setdefault(mid, titles)
     print(f"bangumi-data: {len(out)} anime with a MAL id")
     return out
+
+
+def _infobox_value(infobox: str, field: str) -> str:
+    m = re.search(rf"^\|{field}[ \t]*=[ \t]*([^\r\n]*)", infobox, re.M)
+    v = m.group(1).strip() if m else ""
+    return "" if v.startswith(("{", "|")) else v
+
+
+def _infobox_alias(infobox: str, key: str) -> str:
+    """One entry of the 别名 list, e.g. [日文名|ルルーシュ・ヴィ・ブリタニア]."""
+    m = re.search(rf"\[{key}\|([^\]\r\n]*)\]", infobox)
+    return m.group(1).strip() if m else ""
+
+
+def merge_bangumi_characters(path: Path, chars: list[list], names: dict[str, list[int]],
+                             langs: list[str]) -> None:
+    """Add Chinese names from bangumi's Archive character.jsonlines (one JSON object per
+    line, streamed). A bangumi character is matched to a MAL one by its Japanese `name`
+    (must contain kana or Han characters, or English names like "Scout" would collide),
+    confirmed or narrowed by the infobox's 日文名 / 英文名 / 罗马字 / 纯假名. The match is used
+    only if it is a single character, or one whose favorites score dominates the rest by
+    DOMINANCE; the 简体中文名 becomes "zh_cn" and its OpenCC conversion "zh_tw"."""
+    pos_cn, pos_tw = langs.index("zh_cn"), langs.index("zh_tw")
+    seen = matched = ambiguous = 0
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            seen += 1
+            row = json.loads(line)
+            ja = (row.get("name") or "").strip()
+            if not _HAN_OR_KANA.search(ja):
+                continue
+            box = row.get("infobox") or ""
+            zh = chinese_name(_infobox_value(box, "简体中文名"))
+            if not zh:
+                continue
+            main = set(names.get(norm(ja), ()))
+            if not main:
+                continue
+            cands = main
+            for key in ("日文名", "英文名", "罗马字", "纯假名"):
+                extra = set(names.get(norm(_infobox_alias(box, key)), ())) if _infobox_alias(box, key) else set()
+                if cands & extra and len(cands) > 1:
+                    cands = cands & extra         # a second name narrows the candidates
+            ranked = sorted(cands, key=lambda i: -chars[i][2])
+            if len(ranked) > 1 and chars[ranked[0]][2] < DOMINANCE * max(chars[ranked[1]][2], 1):
+                ambiguous += 1
+                continue
+            ci = ranked[0]
+            if chars[ci][0][pos_cn]:
+                continue                            # already filled by an earlier bangumi row
+            tw = chinese_name(to_traditional(_infobox_value(box, "简体中文名")))
+            chars[ci][0][pos_cn], chars[ci][0][pos_tw] = zh, tw
+            matched += 1
+            for name in (zh, tw):
+                last, first = name_parts(name)
+                for f in {norm(name), norm(last + first), norm(first + last)} - {""}:
+                    bucket = names.setdefault(f, [])
+                    if ci not in bucket:
+                        bucket.append(ci)
+    print(f"bangumi characters: {seen} read, {matched} matched, {ambiguous} ambiguous (skipped)")
 
 
 def _id(value: str | None) -> str:
@@ -225,7 +335,8 @@ def _id(value: str | None) -> str:
 
 def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
           forced: dict[str, str], show_only: bool = False,
-          japanese_csv: Path | None = None) -> dict | None:
+          japanese_csv: Path | None = None,
+          bangumi_characters: Path | None = None) -> dict | None:
     c_head, c_rows = _read(chars_csv)
     a_head, a_rows = _read(anime_csv)
     f_head, f_rows = _read(favorites_csv)
@@ -277,14 +388,16 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
         print(f"japanese titles: {len(ja_titles)}  english titles: {len(en_titles)}")
 
     # With a Japanese titles CSV, also pull Japanese / Chinese series titles from bangumi-data.
+    if japanese_csv or bangumi_characters:
+        _opencc("s2t")                            # fail early if OpenCC is missing
     bangumi = fetch_bangumi() if japanese_csv else {}
 
     # Languages: English always; Japanese when the CSVs have the columns for it; Chinese
     # (and Japanese) when bangumi-data was fetched. Japanese is always position 1.
     langs = ["en_us"]
-    if bangumi or am["anime_title_ja"] or ja_titles or cm["char_kanji"]:
+    if bangumi or bangumi_characters or am["anime_title_ja"] or ja_titles or cm["char_kanji"]:
         langs.append("ja_jp")
-    if bangumi:
+    if bangumi or bangumi_characters:
         langs += ["zh_cn", "zh_tw"]
     print("languages:", langs)
 
@@ -381,6 +494,9 @@ def build(chars_csv: Path, anime_csv: Path, favorites_csv: Path,
         for f in forms:
             names.setdefault(f, []).append(ci)
 
+    if bangumi_characters:
+        merge_bangumi_characters(bangumi_characters, chars, names, langs)
+
     print(f"series: {len(series)}  aliases: {len(aliases)}  characters kept: {len(chars)}"
           f"  name keys: {len(names)}")
     return {"version": 1, "langs": langs, "series": series, "aliases": aliases,
@@ -398,6 +514,9 @@ def main() -> None:
                     help="extra CSV with a MAL id column (mal_id) and title_japanese, joined to the "
                          "anime CSV by id; use it when the anime CSV has no Japanese titles. Also fetches "
                          "bangumi-data for Japanese / Chinese series titles")
+    ap.add_argument("--bangumi-characters", type=Path, default=None, metavar="JSONLINES",
+                    help="character.jsonlines from https://github.com/bangumi/Archive; adds Chinese "
+                         "(zh_cn, and zh_tw via OpenCC) character names to the matching characters")
     ap.add_argument("--output", type=Path, default=OUTPUT)
     ap.add_argument("--map", action="append", default=[], metavar="FIELD=COLUMN",
                     help="force a column, e.g. --map fav_count=Favorites")
@@ -405,7 +524,8 @@ def main() -> None:
     args = ap.parse_args()
 
     forced = dict(m.split("=", 1) for m in args.map)
-    index = build(args.characters, args.anime, args.favorites, forced, show_only=args.show_columns, japanese_csv=args.japanese_titles)
+    index = build(args.characters, args.anime, args.favorites, forced, show_only=args.show_columns, japanese_csv=args.japanese_titles,
+                  bangumi_characters=args.bangumi_characters)
     if index is None:
         return
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -55,7 +55,11 @@ Rules:
   name is written in the source material.
 - "nickname" can be a common short form or the same as firstname.
 - Use the personality and hair colour as additional hints to identify the character.
-- Some entries may already be filled in with a name from a character database. Keep it if it is right, correct it if it is wrong.
+- An entry may have a "hints" list: up to 5 candidate characters from a character
+  database, written "Last, First (Series)", most popular first. They are only name
+  matches and can be wrong: use the one that fits the personality and hair colour (take
+  its name as written), and ignore the list if none does. Do not repeat "hints" in
+  your answer.
 - All values must be valid Windows filenames
   (no  \\ / : * ? " < > |  characters, no leading/trailing spaces or dots).
 - Return ONLY the completed JSON object — no explanation, no markdown fences,
@@ -168,38 +172,24 @@ def _stem_for(d: dict) -> str:
 # Character-index hints (gacha index, then MyAnimeList)
 # ---------------------------------------------------------------------------
 
-def _index_names(c) -> dict[str, str]:
-    """An index candidate as the names dict this task works with. The indexes store the
-    commonly known name in each language; nickname = given name."""
-    return {"lastname": c.lastname, "firstname": c.firstname, "nickname": c.firstname}
+def add_index_hints(json_str: str, lang: str) -> str:
+    """Add a "hints" list to every entry of export()'s JSON for the LLM.
 
-
-def apply_index_hints(json_str: str, lang: str | None = None) -> tuple[str, dict[str, dict]]:
-    """Split export()'s JSON using the character indexes (gacha first, then MyAnimeList).
-    Names come back in the hint language `lang` (English where an index has none).
-
-    Returns (json for the LLM, {key: names} resolved locally). Confident matches are
-    answered here and removed from the LLM's JSON; ambiguous ones stay, pre-filled with
-    the best guess; unknown ones stay untouched. The JSON is \"\" when nothing is left.
-    """
+    "hints" lists up to 5 candidate characters from the character indexes (gacha first, then
+    MyAnimeList) as "Last, First (Series)", most popular first, in the hint language `lang`
+    (English where an index has none). Every card is sent; nothing is decided locally, and
+    a card the indexes don't know gets an empty list."""
     from kkafio.cards import char_index
     if not json_str or not char_index.available():
-        return json_str, {}
-    resolved: dict[str, dict] = {}
-    to_send: dict[str, dict] = {}
+        return json_str
+    out: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        m = char_index.lookup(key, lang)
-        if m.tier == "confident" and m.best:
-            resolved[key] = _index_names(m.best)
-        elif m.tier == "ambiguous" and m.best:
-            to_send[key] = _index_names(m.best)
-            hinted += 1
-        else:
-            to_send[key] = value
-    logger.info("RENAME", f"Character index: {len(resolved)} resolved locally, {hinted} hinted, "
-                          f"{len(to_send) - hinted} sent without a hint")
-    return (json.dumps(to_send, indent=4, ensure_ascii=False) if to_send else ""), resolved
+        h = char_index.hints(key, lang)
+        hinted += bool(h)
+        out[key] = {**value, "hints": h}
+    logger.info("RENAME", f"Character index: {hinted} of {len(out)} character(s) have hints")
+    return json.dumps(out, indent=4, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
@@ -326,12 +316,8 @@ def process(folders, json_str: str,
             skip_already_renamed: bool = True,
             update_metadata: bool = True,
             rename_files: bool = False,
-            use_cache: bool = True,
-            extra: dict[str, dict] | None = None) -> None:
+            use_cache: bool = True) -> None:
     """Apply the LLM's JSON response to every card in the given folder(s).
-
-    extra: key -> names already resolved locally (gacha / MAL index); merged under the LLM's
-    answer, which wins where both have the key.
 
     use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
     unchanged, and keep that cache in step with what is done to the cards (a renamed
@@ -349,7 +335,6 @@ def process(folders, json_str: str,
     except json.JSONDecodeError as e:
         logger.warning("RENAME", f"Could not parse response JSON: {e}")
         return
-    response = {**(extra or {}), **response}
 
     for folder_path in folder_list:
         _process_folder(folder_path, response, skip_already_renamed,
@@ -577,7 +562,6 @@ class RenameChara(BaseTask):
         if not json_str:
             return
 
-        resolved: dict[str, dict] = {}
         prompt = self.prompt
         hint_lang = hint_language.resolve(self.hints_language, self.prompt, "RENAME")
         if hint_lang:
@@ -585,25 +569,20 @@ class RenameChara(BaseTask):
             char_index.refresh("RENAME")
             if not char_index.supports(hint_lang):
                 logger.info("RENAME", f"The character indexes have no {hint_lang} text — hints are in English.")
-            json_str, resolved = apply_index_hints(json_str, hint_lang)
+            json_str = add_index_hints(json_str, hint_lang)
 
-        response = ""
-        if json_str:
-            prompt_text = prompt.rstrip("\n") + "\n" + json_str
+        prompt_text = prompt.rstrip("\n") + "\n" + json_str
 
-            from kkafio.system.llm_dialog import llm_dialog, open_llm_website
-            if self.open_llm_website:
-                open_llm_website("RENAME", self.llm_website_url)
-            response = llm_dialog(t("dialog.llm.rename_title"), prompt_text)
-            if not response or not response.strip():
-                logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
-                return
-        else:
-            logger.success("RENAME", "Every character was resolved from the character index — LLM not needed.")
+        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+        if self.open_llm_website:
+            open_llm_website("RENAME", self.llm_website_url)
+        response = llm_dialog(t("dialog.llm.rename_title"), prompt_text)
+        if not response or not response.strip():
+            logger.warning("RENAME", "Dialog cancelled or empty response — nothing to do.")
+            return
 
         process(folders, response,
                 skip_already_renamed=self.skip_already_renamed,
                 update_metadata=self.update_metadata,
                 rename_files=self.rename_files,
-                use_cache=self.use_cache,
-                extra=resolved)
+                use_cache=self.use_cache)

@@ -2,9 +2,9 @@
 mal_index.py — Look characters and series up in the MyAnimeList index (built by
 tools/build_mal_index.py from the Kaggle MAL datasets).
 
-Used by Group Characters and Rename Characters to (1) answer unambiguous characters
-locally, (2) pre-fill a suggestion for ambiguous ones, and (3) snap the LLM's series
-name to one canonical franchise title. Everything degrades to "no help" when the index
+Used by Group Characters and Rename Characters to (1) give the LLM up to MAX_HINTS
+candidate characters ("hints") for every card and (2) snap the LLM's series name to one
+canonical franchise title. Everything degrades to "no help" when the index
 file is missing, so the tasks behave exactly as before without it.
 """
 
@@ -23,7 +23,10 @@ from kkafio.core.paths import ASSETS_DATA_DIR
 INDEX_FILE = "kkafio_mal_index.json"
 INDEX_VERSION = 1
 
-# A single hit is "confident" only if it beats the runner-up's score by this factor.
+MAX_HINTS = 5          # candidates handed to the LLM per card
+
+# The Bangumi merge in tools/build_mal_index.py takes one of several same-named characters
+# only if it beats the runner-up's score by this factor.
 DOMINANCE = 5
 
 _index_path: Path = ASSETS_DATA_DIR / INDEX_FILE
@@ -56,21 +59,12 @@ class Candidate:
     lastname: str
     firstname: str
     series: tuple[str, ...]   # franchises, most popular first
-    score: int           # Members of the character's most popular anime (popularity proxy)
-
-
-@dataclass(frozen=True)
-class Match:
-    tier: str                           # "confident" | "ambiguous" | "none"
-    candidates: tuple[Candidate, ...] = ()
-    source: str = "mal"                # which index answered: "gacha" | "mal"
+    score: int           # favorites (popularity)
 
     @property
-    def best(self) -> Candidate | None:
-        return self.candidates[0] if self.candidates else None
-
-
-_NONE = Match("none")
+    def hint(self) -> str:
+        """The candidate as one line for the LLM: "Tohsaka, Rin (Fate/stay night)"."""
+        return f"{self.name} ({self.series[0]})" if self.series else self.name
 
 
 def split_key(key: str) -> tuple[str, str, str]:
@@ -91,20 +85,14 @@ def supports(lang: str) -> bool:
     return bool(idx) and lang in idx["langs"]
 
 
-def lookup(key: str, lang: str | None = None) -> Match:
-    """Find MAL characters for a make_key() string; names and series come back in `lang`
-    (English where the index has nothing in it).
-
-    "confident" needs BOTH name fields on the card and a single candidate (or one that
-    dominates the next by DOMINANCE x score). A one-field name ("Rin") can never be
-    confident — it's a hint at best.
-    """
+def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:
+    """MAL characters whose name matches a make_key() string, most popular first; names and
+    series come back in `lang` (English where the index has nothing in it)."""
     idx = _load()
     if not idx:
-        return _NONE
+        return ()
     last, first, nick = split_key(key)
-    full = bool(last and first)
-    if full:
+    if last and first:
         forms = {norm(last + first), norm(first + last)}
     else:
         forms = {norm(last or first or nick)}
@@ -120,12 +108,7 @@ def lookup(key: str, lang: str | None = None) -> Match:
             l, fi = name_parts(name)
             seen[ci] = Candidate(name, l, fi,
                                  tuple(_text(idx, idx["series"][i], lang) for i in series_ids), score)
-    if not seen:
-        return _NONE
-    cands = sorted(seen.values(), key=lambda c: -c.score)
-    if full and (len(cands) == 1 or cands[0].score >= DOMINANCE * max(cands[1].score, 1)):
-        return Match("confident", tuple(cands[:1]))
-    return Match("ambiguous", tuple(cands[:3]))
+    return tuple(sorted(seen.values(), key=lambda c: -c.score)[:limit])
 
 
 @lru_cache(maxsize=1)

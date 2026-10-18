@@ -19,8 +19,8 @@ from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
-from kkafio.cards.hint_language import DEFAULT_LANGUAGE, localized
-from kkafio.cards.mal_index import DOMINANCE, Candidate, Match, split_key
+from kkafio.cards.hint_language import localized
+from kkafio.cards.mal_index import MAX_HINTS, Candidate, split_key
 from kkafio.cards.mal_text import name_parts, norm
 from kkafio.core.logger import logger
 
@@ -30,7 +30,6 @@ INDEX_VERSION = 1
 SOURCE = "gacha"
 
 _index_path: Path | None = None
-_NONE = Match("none", source=SOURCE)
 
 
 def set_index_path(path: Path | None) -> None:
@@ -57,7 +56,6 @@ class _Char:
     names: dict[str, str]                  # language -> "Last, First" (or a mononym)
     series: tuple[int, ...]                # indexes into _Built.series, most associated first
     score: int
-    mononym: bool                          # known by a single name (in the default language)
 
 
 @dataclass(frozen=True)
@@ -82,8 +80,7 @@ def _build(data: dict) -> _Built:
     names: dict[str, list[int]] = {}
     for ci, c in enumerate(data["chars"]):
         by_lang = _per_language(c["name"])
-        chars.append(_Char(by_lang, tuple(int(i) for i in c["series"]), int(c.get("score", 0)),
-                           not name_parts(localized(by_lang, DEFAULT_LANGUAGE))[0]))
+        chars.append(_Char(by_lang, tuple(int(i) for i in c["series"]), int(c.get("score", 0))))
         forms: set[str] = set()
         for name in by_lang.values():
             last, first = name_parts(name)
@@ -123,35 +120,22 @@ def _candidate(idx: _Built, c: _Char, lang: str | None) -> Candidate:
     return Candidate(name, last, first, tuple(localized(idx.series[i], lang) for i in c.series), c.score)
 
 
-def lookup(key: str, lang: str | None = None) -> Match:
-    """Find gacha characters for a make_key() string; names and series come back in `lang`
-    (English where the index has nothing in it).
-
-    "confident" needs a single candidate (or one dominating the next by DOMINANCE x
-    score) AND either both name fields on the card or a character the index itself knows
-    by a single name ("Ganyu"). A one-field card name ("Rin") against a character that
-    has a family name is only ever a hint.
-    """
+def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:
+    """Gacha characters whose name matches a make_key() string, most popular first; names
+    and series come back in `lang` (English where the index has nothing in it)."""
     idx = _load()
     if not idx:
-        return _NONE
+        return ()
     last, first, nick = split_key(key)
-    full = bool(last and first)
-    forms = {norm(last + first), norm(first + last)} if full else {norm(last or first or nick)}
+    forms = {norm(last + first), norm(first + last)} if last and first else {norm(last or first or nick)}
     forms.discard("")
 
     seen: dict[int, _Char] = {}
     for f in forms:
         for ci in idx.names.get(f, ()):
             seen.setdefault(ci, idx.chars[ci])
-    if not seen:
-        return _NONE
-    ranked = sorted(seen.values(), key=lambda c: -c.score)
-    unique = len(ranked) == 1 or ranked[0].score >= DOMINANCE * max(ranked[1].score, 1)
-    cands = tuple(_candidate(idx, c, lang) for c in ranked[:3])
-    if unique and (full or ranked[0].mononym):
-        return Match("confident", cands[:1], SOURCE)
-    return Match("ambiguous", cands, SOURCE)
+    ranked = sorted(seen.values(), key=lambda c: -c.score)[:limit]
+    return tuple(_candidate(idx, c, lang) for c in ranked)
 
 
 def snap_series(name: str, lang: str | None = None, cutoff: float = 0.9) -> str | None:

@@ -538,7 +538,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
                   choices=_hint_language_choices(),
                   help="Language of the hints from the gacha-game / MyAnimeList character indexes "
-                       "(they answer obvious characters locally, pre-fill suggestions for the LLM and "
+                       "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
                        "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
                        "language from the prompt (default), or one of the languages in assets/i18n"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
@@ -590,7 +590,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
                   choices=_hint_language_choices(),
                   help="Language of the hints from the gacha-game / MyAnimeList character indexes "
-                       "(they answer obvious characters locally, pre-fill suggestions for the LLM and "
+                       "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
                        "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
                        "language from the prompt (default), or one of the languages in assets/i18n"),
             Toggle("open-llm-website", key="OpenLlmWebsite",

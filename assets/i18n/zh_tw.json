@@ -269,7 +269,7 @@
   "preset.AllTasks.label": "⚡ 全部任務",
   "preset.AllTasks.description": "包含所有可用任務，便於設定右鍵選單",
   "option.HintsLanguage.label": "Hints Language",
-  "option.HintsLanguage.description": "Language of the hints from the gacha-game index (downloaded, higher priority) and the bundled MyAnimeList index, which answer obvious characters locally, pre-fill suggestions for the LLM and normalise series names. No: don't use the indexes. Detect: read the language from the prompt (a language's own characters, or its English name such as Korean). Text an index has no translation for stays in English",
+  "option.HintsLanguage.description": "Language of the hints from the gacha-game index (downloaded, higher priority) and the bundled MyAnimeList index. Every card sent to the LLM gets a \"hints\" list of up to 5 candidate characters, written \"Last, First (Series)\", and series names are normalised to the canonical title. Nothing is decided locally. No: don't use the indexes. Detect: read the language from the prompt (a language's own characters, or its English name such as Korean). Text an index has no translation for stays in English",
   "option.HintsLanguage.case.no.label": "No hints",
   "option.HintsLanguage.case.detect.label": "Detect from prompt",
   "option.HintsLanguage.case.en_us.label": "English",

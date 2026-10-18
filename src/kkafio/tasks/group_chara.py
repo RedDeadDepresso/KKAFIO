@@ -40,47 +40,44 @@ You will receive a JSON object whose keys identify Koikatsu character card files
 Each key has the format:  lastname | firstname | nickname | personality | hair_color
 
 Your task: for every key, write the English name of the anime/game series the character \
-is from as the value.
+is from.
+
+A value is either an empty string "" or an object {"series": "", "hints": [...]}. "hints" \
+lists up to 5 candidate characters from a character database, written \
+"Last, First (Series)", most popular first. They are only name matches and can be wrong: \
+use the one that fits the personality and hair colour, and ignore the list if none does.
 
 Rules:
 - Values must be valid Windows folder names (no  \\ / : * ? " < > |  characters).
 - Use the official title of the series.
 - If a character appears in multiple series, use the one they are most associated with.
 - Use the personality and hair colour as additional hints to identify the character.
-- Some values may already be filled in with a suggestion from a character database. Keep a suggestion if it is right, replace it if it is wrong.
 - If you are not sure or the character is an original creation, leave the value as an empty string "".
-- Return ONLY the completed JSON object — no explanation, no markdown code fences, \
-no extra text before or after.
+- Return ONLY a JSON object that maps every key to the series name as a plain string \
+(do not repeat "hints") — no explanation, no markdown code fences, no extra text \
+before or after.
 
 JSON to fill in:
 """
 
-def apply_index_hints(json_str: str, lang: str | None = None) -> tuple[str, dict[str, str]]:
-    """Split export()'s JSON using the character indexes (gacha first, then MyAnimeList).
-    Series names come back in the hint language `lang` (English where an index has none).
+def add_index_hints(json_str: str, lang: str) -> str:
+    """Turn export()'s {key: ""} into {key: {"series": "", "hints": [...]}} for the LLM.
 
-    Returns (json for the LLM, {key: series} resolved locally):
-      - confident match   -> resolved here, removed from the LLM's JSON
-      - ambiguous match   -> stays in the JSON, pre-filled with the best guess
-      - no match          -> stays in the JSON, empty, exactly as without MAL
-    The JSON is \"\" when everything was resolved locally.
-    """
+    "hints" lists up to 5 candidate characters from the character indexes (gacha first, then
+    MyAnimeList) as "Last, First (Series)", most popular first, in the hint language `lang`
+    (English where an index has none). Every card is sent; nothing is decided locally, and
+    a card the indexes don't know gets an empty list."""
     from kkafio.cards import char_index
     if not json_str or not char_index.available():
-        return json_str, {}
-    resolved: dict[str, str] = {}
-    to_send: dict[str, str] = {}
+        return json_str
+    out: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        m = char_index.lookup(key, lang)
-        if m.tier == "confident" and m.best and m.best.series:
-            resolved[key] = m.best.series[0]
-        else:
-            to_send[key] = m.best.series[0] if (m.tier == "ambiguous" and m.best and m.best.series) else value
-            hinted += bool(to_send[key])
-    logger.info("GROUP", f"Character index: {len(resolved)} resolved locally, {hinted} hinted, "
-                         f"{len(to_send) - hinted} sent without a hint")
-    return (json.dumps(to_send, indent=4, ensure_ascii=False) if to_send else ""), resolved
+        h = char_index.hints(key, lang)
+        hinted += bool(h)
+        out[key] = {"series": value, "hints": h}
+    logger.info("GROUP", f"Character index: {hinted} of {len(out)} character(s) have hints")
+    return json.dumps(out, indent=4, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +229,7 @@ def _safe_folder_name(name: str) -> str:
 
 
 def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: bool = False,
-            use_cache: bool = True, extra: dict[str, str] | None = None,
+            use_cache: bool = True,
             hint_language: str | None = None) -> None:
     """Move chara PNGs into series subfolders based on the LLM JSON response.
 
@@ -247,8 +244,6 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     unchanged, and keep that cache in step with the moves (a moved card's entry follows
     it to its new folder) so the next run doesn't have to read the cards again.
 
-    extra: key -> series assignments already made locally (gacha / MAL index); the LLM's answer
-    wins where both have the key.
     hint_language: snap every series name to its canonical gacha-game or MyAnimeList title in
     this language (unknown names are left as they are). None: leave the names alone.
     """
@@ -262,11 +257,13 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
         clean = "\n".join(clean.splitlines()[:-1])
 
     try:
-        mapping: dict[str, str] = json.loads(clean) if clean else {}
+        raw = json.loads(clean) if clean else {}
     except json.JSONDecodeError as e:
         logger.warning("GROUP", f"Could not parse response JSON: {e}")
         return
-    mapping = {**(extra or {}), **mapping}
+    # A value is the series name; an LLM that echoed {"series": ..., "hints": ...} is fine too.
+    mapping: dict[str, str] = {k: v.get("series", "") if isinstance(v, dict) else v
+                               for k, v in raw.items()}
     if hint_language:
         from kkafio.cards import char_index
         mapping = {k: char_index.canonical_series(v, hint_language) if isinstance(v, str) else v
@@ -384,7 +381,6 @@ class GroupChara(BaseTask):
         if not json_str:
             return
 
-        resolved: dict[str, str] = {}
         prompt = self.prompt
         hint_lang = hint_language.resolve(self.hints_language, self.prompt, "GROUP")
         if hint_lang:
@@ -392,21 +388,17 @@ class GroupChara(BaseTask):
             char_index.refresh("GROUP")
             if not char_index.supports(hint_lang):
                 logger.info("GROUP", f"The character indexes have no {hint_lang} text — hints are in English.")
-            json_str, resolved = apply_index_hints(json_str, hint_lang)
+            json_str = add_index_hints(json_str, hint_lang)
 
-        response = ""
-        if json_str:
-            prompt_text = prompt.rstrip("\n") + "\n" + json_str
+        prompt_text = prompt.rstrip("\n") + "\n" + json_str
 
-            from kkafio.system.llm_dialog import llm_dialog, open_llm_website
-            if self.open_llm_website:
-                open_llm_website("GROUP", self.llm_website_url)
-            response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
-            if not response or not response.strip():
-                logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
-                return
-        else:
-            logger.success("GROUP", "Every character was resolved from the character index — LLM not needed.")
+        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+        if self.open_llm_website:
+            open_llm_website("GROUP", self.llm_website_url)
+        response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
+        if not response or not response.strip():
+            logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
+            return
 
         process(folders, response, include_subfolders=self.include_subfolders,
-                use_cache=self.use_cache, extra=resolved, hint_language=hint_lang)
+                use_cache=self.use_cache, hint_language=hint_lang)

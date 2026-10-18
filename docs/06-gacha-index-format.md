@@ -38,9 +38,16 @@ Every language's text and every alias is searchable whatever the hint language.
 - `chars[].series` indexes into `series`, most associated first. `score` is a popularity
   proxy used to rank candidates.
 - `aliases` should include the native-script name (cards usually carry Japanese names).
-  Note that an alias of just the given name makes a one-field card ambiguous, not
-  confident, which is intentional.
-- A one-field card name is only treated as confident for a mononym entry.
 
-Priority (`kkafio.cards.char_index.lookup`): gacha confident, MAL confident, gacha
-ambiguous, MAL ambiguous. Series names are snapped gacha-first, then MAL.
+## How it is used
+
+Nothing is resolved locally. Every card sent to the LLM gets a `hints` list: up to 5
+characters whose name matches the card (`kkafio.cards.char_index.lookup`), written
+`"Last, First (Series)"` in the hint language. The two indexes' scores aren't comparable,
+so the lists are merged, not sorted: an index whose best candidate dominates its others
+(5x the runner-up's `score`, or the only one) goes first, gacha before MAL, then the rest
+alternate gacha / MAL, each most popular first. The same name + series from both is
+listed once. Group Characters sends `{"key": {"series": "", "hints": [...]}}`, Rename
+Characters adds `"hints"` next to `lastname` / `firstname` / `nickname`; the LLM answers
+without them. Series names in the answer are then snapped to the canonical title, gacha
+titles first, then MAL franchises.
