@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from kkafio.cards import char_index, gacha_index, mal_index
+from kkafio.cards import char_index, gacha_index, agv_index
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,7 +67,7 @@ def test_gacha_beats_mal_and_falls_back(gacha):
     m = char_index.lookup("Tohsaka | Rin |  | x | y")
     assert (m.source, m.best.series) == ("gacha", ("Fate/Grand Order",))
     # Not in the gacha index -> MAL answers.
-    if mal_index.available():
+    if agv_index.available():
         m = char_index.lookup("Yuuki | Asuna |  | x | y")
         assert m.source == "mal"
     # Series snapping tries gacha first, then MAL, then gives the name back.
@@ -76,10 +76,10 @@ def test_gacha_beats_mal_and_falls_back(gacha):
 
 
 def test_confident_mal_beats_ambiguous_gacha(gacha, monkeypatch):
-    amb = mal_index.Match("ambiguous", (mal_index.Candidate("X", "", "X", ("S",), 1),), "gacha")
-    sure = mal_index.Match("confident", (mal_index.Candidate("Y, Z", "Y", "Z", ("T",), 1),))
+    amb = agv_index.Match("ambiguous", (agv_index.Candidate("X", "", "X", ("S",), 1),), "gacha")
+    sure = agv_index.Match("confident", (agv_index.Candidate("Y, Z", "Y", "Z", ("T",), 1),))
     monkeypatch.setattr(gacha_index, "lookup", lambda k: amb)
-    monkeypatch.setattr(mal_index, "lookup", lambda k: sure)
+    monkeypatch.setattr(agv_index, "lookup", lambda k: sure)
     assert char_index.lookup("k").best.series == ("T",)
 
 

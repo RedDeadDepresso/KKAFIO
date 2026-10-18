@@ -144,6 +144,27 @@ download (`src/kkafio/tasks/download_missing_mods.py`, `load_kkc_mod_index()`):
 
 Both files are safe to delete; the next run downloads a fresh copy.
 
+### `agv_character_index.json` and `agv_character_index_last_commit.txt` — MAL character index cache
+
+Live directly under `CONFIG_DIR` (not inside `config/`): `%APPDATA%/KKAFIO/agv_character_index.json`.
+
+`agv_character_index.json` is the MyAnimeList character / series index (format version 1) used for the
+`hints` that **Group Characters** and **Rename Characters** send to the LLM. It is built and published by
+[agv-character-scraper](https://github.com/RedDeadDepresso/agv-character-scraper) at
+`https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json`.
+`agv_character_index_last_commit.txt` holds the SHA of that repo's latest commit at the time the index was
+downloaded. It is refreshed when those tasks run with *Hints Language* set to anything but `no`
+(`src/kkafio/cards/agv_index.py`, `refresh()`), the same way as the KKC mod index:
+
+1. The latest commit of `RedDeadDepresso/agv-character-scraper` is fetched from the GitHub API.
+2. If it matches the SHA in `agv_character_index_last_commit.txt` and the cached index loads, it is used.
+3. Otherwise the index is downloaded again (a file that isn't version 1 is rejected and the cached copy
+   stays) and both files are rewritten.
+4. If the commit can't be checked (e.g. offline or rate-limited), the cached index is used if one exists;
+   without one, the tasks run without MAL hints.
+
+Both files are safe to delete; the next run downloads a fresh copy.
+
 ### `download_history.json` — Download Contents dedup
 
 Lives directly under `CONFIG_DIR` (not inside `config/`):

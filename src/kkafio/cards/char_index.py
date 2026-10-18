@@ -2,31 +2,32 @@
 char_index.py — The character lookup Group Characters and Rename Characters use.
 
 Combines the gacha-game index (gacha_index, higher priority) with the MyAnimeList index
-(mal_index). Both degrade to "no help" when unavailable, so this does too.
+(agv_index). Both degrade to "no help" when unavailable, so this does too.
 """
 
 from __future__ import annotations
 
 from itertools import zip_longest
 
-from kkafio.cards import gacha_index, mal_index
-from kkafio.cards.mal_index import DOMINANCE, MAX_HINTS, Candidate
+from kkafio.cards import gacha_index, agv_index
+from kkafio.cards.agv_index import DOMINANCE, MAX_HINTS, Candidate
 
 __all__ = ["Candidate", "MAX_HINTS", "available", "supports", "refresh", "lookup", "hints", "canonical_series"]
 
 
 def available() -> bool:
-    return gacha_index.available() or mal_index.available()
+    return gacha_index.available() or agv_index.available()
 
 
 def supports(lang: str) -> bool:
     """True if either index holds text in `lang`; otherwise its hints come back in English."""
-    return gacha_index.supports(lang) or mal_index.supports(lang)
+    return gacha_index.supports(lang) or agv_index.supports(lang)
 
 
 def refresh(tag: str) -> None:
-    """Update the downloadable (gacha) index. Never raises; offline just uses the cache."""
+    """Update the downloadable (gacha and MAL) indexes. Never raises; offline just uses the caches."""
     gacha_index.refresh(tag)
+    agv_index.refresh(tag)
 
 
 def _dominant(cands: list[Candidate]) -> bool:
@@ -43,7 +44,7 @@ def lookup(key: str, lang: str | None = None) -> tuple[Candidate, ...]:
     way neither index can crowd the other out of the list. The same name + series from
     both indexes is listed once.
     """
-    lists = [list(gacha_index.lookup(key, lang)), list(mal_index.lookup(key, lang))]
+    lists = [list(gacha_index.lookup(key, lang)), list(agv_index.lookup(key, lang))]
     ordered: list[Candidate] = [lst.pop(0) for lst in lists if _dominant(lst)]
     ordered += [c for pair in zip_longest(*lists) for c in pair if c is not None]
 
@@ -65,4 +66,4 @@ def hints(key: str, lang: str | None = None) -> list[str]:
 def canonical_series(name: str, lang: str | None = None) -> str:
     """Snap a series name (in any language) to its canonical title in `lang`: gacha titles
     first, then MAL franchises; anything neither knows is returned untouched."""
-    return gacha_index.snap_series(name, lang) or mal_index.canonical_series(name, lang)
+    return gacha_index.snap_series(name, lang) or agv_index.canonical_series(name, lang)

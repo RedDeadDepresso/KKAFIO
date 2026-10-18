@@ -1,7 +1,7 @@
 """
-mal_text.py — Pure text helpers shared by tools/build_mal_index.py (which writes the
-MyAnimeList index) and kkafio.cards.mal_index (which reads it). Kept in one place so
-both sides normalise names byte-for-byte the same way.
+agv_text.py — Pure text helpers used by kkafio.cards.agv_index (which reads the MyAnimeList index).
+The agv-character-scraper repo (which writes the index) holds an identical copy — keep the
+two in sync so both sides normalise names byte-for-byte the same way.
 """
 
 from __future__ import annotations

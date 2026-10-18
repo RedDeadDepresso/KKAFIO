@@ -5,7 +5,7 @@ The index is built from popular gacha characters' wiki pages by a separate repo 
 published on GitHub Pages (see docs/06-gacha-index-format.md for the file format). It is
 downloaded on demand and cached in CONFIG_DIR/config, the same way kkc_mod_index.json is.
 
-It has the same shape of API as kkafio.cards.mal_index (available / lookup /
+It has the same shape of API as kkafio.cards.agv_index (available / lookup /
 canonical_series) so kkafio.cards.char_index can consult both, gacha first. Everything
 degrades to "no help" when the index can't be downloaded and isn't cached.
 """
@@ -20,8 +20,8 @@ from functools import lru_cache
 from pathlib import Path
 
 from kkafio.cards.hint_language import localized
-from kkafio.cards.mal_index import MAX_HINTS, Candidate, split_key
-from kkafio.cards.mal_text import name_parts, norm
+from kkafio.cards.agv_index import MAX_HINTS, Candidate, split_key
+from kkafio.cards.agv_text import name_parts, norm
 from kkafio.core.logger import logger
 
 INDEX_URL = "https://reddeaddepresso.github.io/gacha-character-scraper/gacha_character_index.json"
