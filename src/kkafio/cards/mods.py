@@ -25,17 +25,17 @@ _SIDELOADER_MODPACK = "Sideloader Modpack"
 
 MODS_CACHE_FILE  = "kkafio_mods_cache.json"
 
-MODPACK_INDEX_FILE_KK  = "kkafio_modpack_index_kk.json"
+MODPACK_INDEX_FILE_KK  = "modpack_index_kk.json"
 
-MODPACK_INDEX_FILE_KKS = "kkafio_modpack_index_kks.json"
+MODPACK_INDEX_FILE_KKS = "modpack_index_kks.json"
 
 
 @cache
 def load_modpack_index(game_type: str = GameType.KOIKATSU.value) -> dict[str, str] | None:
     """Load the pre-built Sideloader Modpack GUID index for the given game type.
 
-    Uses kkafio_modpack_index_kks.json for KoikatsuSunshine,
-    and kkafio_modpack_index_kk.json for all other variants.
+    Uses modpack_index_kks.json for KoikatsuSunshine,
+    and modpack_index_kk.json for all other variants.
 
     Looked up at assets/<index_file> next to the running exe / script (this
     is always where it's shipped with the release — see docs/01-project-
@@ -239,7 +239,7 @@ def scan_mods(mods_dir: Path, required: set[str],
               game_type: str = GameType.KOIKATSU.value) -> dict[str, Path]:
     """Scan mods_dir for zipmods providing the required GUIDs.
 
-    Fast path: if kkafio_modpack_index.json exists, GUIDs found there are
+    Fast path: if modpack_index.json exists, GUIDs found there are
     resolved instantly (no file I/O per zipmod). GUIDs not in the index are
     resolved by scanning local non-modpack folders.
 

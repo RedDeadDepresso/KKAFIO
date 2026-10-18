@@ -10,7 +10,7 @@ Each PNG under the folder that is a coordinate card is identified by its outfit 
 same one Group Coordinates compares), so a default coordinate is still recognised after it was
 renamed, moved or copied, whatever its picture. Other PNGs in the folder are skipped.
 
-Output (assets/data/kkafio_default_clothes.json):
+Output (assets/data/default_clothes.json):
   {
     "generated":   "2025-01-01T12:00:00",
     "sources":     ["C:/KK/default clothes"],

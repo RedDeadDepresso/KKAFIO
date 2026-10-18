@@ -63,11 +63,11 @@ COORD_CACHE_VERSION = 4
 # Default clothes (a costume pack's stock outfits, say) say nothing about whose outfit it is, so
 # a coordinate card that is a default coordinate is left alone by Group Coordinates. They are
 # recognised by their outfit digest (see outfit_digest), so a renamed or copied file is still
-# one. The digests come from assets/data/kkafio_default_clothes.json, written by
+# one. The digests come from assets/data/default_clothes.json, written by
 # tools/build_default_clothes.py from a folder of default coordinates; without that file no
 # coordinate is a default one.
 
-DEFAULT_CLOTHES_FILE = "kkafio_default_clothes.json"
+DEFAULT_CLOTHES_FILE = "default_clothes.json"
 
 
 @functools.cache

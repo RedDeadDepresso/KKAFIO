@@ -20,7 +20,7 @@ from kkafio.cards.hint_language import localized
 from kkafio.cards.mal_text import name_parts, norm
 from kkafio.core.paths import ASSETS_DATA_DIR
 
-INDEX_FILE = "kkafio_mal_index.json"
+INDEX_FILE = "mal_index.json"
 INDEX_VERSION = 1
 
 MAX_HINTS = 5          # candidates handed to the LLM per card

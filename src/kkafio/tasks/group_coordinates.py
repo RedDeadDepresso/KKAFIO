@@ -26,7 +26,7 @@ each wear as their own (two cards of one character, say) are grouped into
 the one who wears hers in far more of her outfits wins (see mod_matcher); otherwise it is left
 alone.
 
-Coordinates that are default coordinates (listed in assets/data/kkafio_default_clothes.json,
+Coordinates that are default coordinates (listed in assets/data/default_clothes.json,
 built with tools/build_default_clothes.py from a folder of them) are left alone by every pass:
 they are neither matched nor moved, and don't take part in grouping.
 

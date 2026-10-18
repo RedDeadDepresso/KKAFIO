@@ -15,7 +15,7 @@ of the characters in them, so the most prominent series comes first.
 Column names are looked up by ALIASES below, the detected mapping is printed, and any
 field can be forced with --map FIELD=COLUMN (use --show-columns to see the headers).
 
-Output (assets/data/kkafio_mal_index.json, version 1):
+Output (assets/data/mal_index.json, version 1):
   {
     "version": 1,
     "langs":   ["en_us", "ja_jp", "zh_cn", "zh_tw"],     # language of each position below
@@ -64,7 +64,7 @@ from kkafio.cards.mal_text import norm, name_parts  # noqa: E402
 
 csv.field_size_limit(10_000_000)  # description columns can be huge
 
-OUTPUT = Path(__file__).resolve().parents[1] / "assets" / "data" / "kkafio_mal_index.json"
+OUTPUT = Path(__file__).resolve().parents[1] / "assets" / "data" / "mal_index.json"
 
 # field -> candidate header names, compared case-insensitively
 ALIASES: dict[str, list[str]] = {

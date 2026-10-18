@@ -9,7 +9,7 @@ unchanged are reused from the previous index without being opened. Only new
 or changed zipmods are scanned. Adding a handful of mods to a large Sideloader
 Modpack takes seconds instead of minutes.
 
-Output (kkafio_modpack_index_kk.json or kkafio_modpack_index_kks.json):
+Output (modpack_index_kk.json or modpack_index_kks.json):
   {
     "generated": "2025-01-01T12:00:00",
     "mods_dir":  "C:/KK/mods",
@@ -182,13 +182,13 @@ def main():
     ap.add_argument("--game-type", "-g", default="kk", choices=["kk", "kks"],
                     help="Game type: kk (Koikatsu/KoikatsuParty) or kks (KoikatsuSunshine)")
     ap.add_argument("--output", "-o", default=None, metavar="PATH",
-                    help="Output JSON path (default: <mods_folder>/kkafio_modpack_index_<type>.json)")
+                    help="Output JSON path (default: <mods_folder>/modpack_index_<type>.json)")
     ap.add_argument("--full", action="store_true",
                     help="Force a full rescan, ignoring the previous index")
     args = ap.parse_args()
 
     mods_dir     = Path(args.mods_dir).resolve()
-    default_name = f"kkafio_modpack_index_{args.game_type}.json"
+    default_name = f"modpack_index_{args.game_type}.json"
     output       = Path(args.output).resolve() if args.output else mods_dir / default_name
 
     if not mods_dir.exists():
