@@ -7,6 +7,9 @@ All notable changes to KKAFIO are documented in this file.
 ### Changed
 
 - **Group Characters / Rename Characters** — the character indexes no longer resolve anything locally. Every card sent to the LLM now carries a `hints` list of up to 5 candidates written `"Last, First (Series)"` (Group: `{"key": {"series": "", "hints": [...]}}`; Rename: `"hints"` beside the name fields), and the default prompts explain it. The LLM is always asked, so a run no longer finishes without it.
+- **Group Characters / Rename Characters** — the character index now also contains VTubers (series `VTubers`, from the VTuber database), and the default prompts tell the LLM that a character may be a VTuber: Group Characters uses `VTubers` as the series, Rename Characters takes the name as written in the hint.
+- **Group Characters / Rename Characters** — the default prompts now tell the LLM to search the web for a character it does not recognise before falling back (Rename: transliteration; Group: empty series).
+- **Group Characters / Rename Characters** — the default prompts no longer spell out the Windows file name rules (names are sanitised in code anyway) and now tell the LLM to translate a chosen hint into English when it is not already in English.
 - **Filter & Convert KKS Cards** — when Convert is off and both KK/KKSP and KKS cards are set to Keep, the task now only extracts archives instead of also scanning and classifying every PNG.
 - **Install Contents** — **File Conflicts** now defaults to `Rename`. With `Rename`, an existing file with identical content (xxhash) is skipped instead of being installed again under a timestamped name.
 - **Uninstall Contents** — a file is only deleted when its content is identical (xxhash) to the one being uninstalled; same-named files with different content are skipped.

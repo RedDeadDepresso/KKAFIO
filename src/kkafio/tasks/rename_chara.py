@@ -48,8 +48,9 @@ character's English name.
 Rules:
 - Use the English name the character is commonly known by (the romanisation used
   on MyAnimeList / official releases), not a literal reading of the card.
-- If you do not recognise the character or are not confident, fall back to your
-  best transliteration of the name written on the card.
+- If you do not recognise the character or are not confident, search the web for
+  it if you can. If you still do not know, fall back to your best transliteration
+  of the name written on the card.
 - Always fill in all three fields; never leave them empty.
 - firstname = given name, lastname = family name, regardless of the order the
   name is written in the source material.
@@ -58,10 +59,11 @@ Rules:
 - An entry may have a "hints" list: up to 5 candidate characters from a character
   database, written "Last, First (Series)", most popular first. They are only name
   matches and can be wrong: use the one that fits the personality and hair colour (take
-  its name as written), and ignore the list if none does. Do not repeat "hints" in
+  its name from it), and ignore the list if none does. Do not repeat "hints" in
   your answer.
-- All values must be valid Windows filenames
-  (no  \\ / : * ? " < > |  characters, no leading/trailing spaces or dots).
+- Some characters may be VTubers (virtual YouTubers); their hints are written with the series
+  "VTubers". Use the name from the hint.
+- If you use a hint whose name is not in English, translate it into English.
 - Return ONLY the completed JSON object — no explanation, no markdown fences,
   no extra text before or after.
 

@@ -13,8 +13,9 @@ def _index(chars=None):
     return {
         "version": 1,
         "langs": ["en_us", "ja_jp"],
-        "series": [["Fate/stay night", "フェイト/ステイナイト"], ["Sword Art Online", ""]],
-        "aliases": {norm("Fate/stay night"): 0, norm("Fate/stay night: Unlimited Blade Works"): 0,
+        "series": [["Fate/stay night", "フェイト/ステイナイト"], ["Sword Art Online", ""],
+                   ["", "カウボーイビバップ"]],          # no English title
+        "aliases": {norm("Cowboy Bebop"): 2, norm("カウボーイビバップ"): 2, norm("Fate/stay night"): 0, norm("Fate/stay night: Unlimited Blade Works"): 0,
                     norm("Sword Art Online"): 1, norm("Sword Art Online II"): 1},
         "chars": chars if chars is not None else [
             [["Tohsaka, Rin", "遠坂, 凛"], [0], 50000],
@@ -69,6 +70,16 @@ def test_canonical_series(index_file):
     assert agv_index.canonical_series("Sword Art Online II") == "Sword Art Online"
     assert agv_index.canonical_series("Some Eroge Not On MAL") == "Some Eroge Not On MAL"
     assert agv_index.canonical_series("") == ""
+
+
+def test_canonical_series_never_switches_language(index_file):
+    # the index has no English title for this series: an English answer stays English
+    assert agv_index.canonical_series("Cowboy Bebop", "en_us") == "Cowboy Bebop"
+    assert agv_index.canonical_series("cowboy bebop") == "cowboy bebop"            # default language is English
+    assert agv_index.canonical_series("Cowboy Bebop", "ja_jp") == "カウボーイビバップ"   # a title exists in ja_jp
+    assert agv_index.canonical_series("カウボーイビバップ", "en_us") == "カウボーイビバップ"
+    # a title in the requested language is still the canonical one
+    assert agv_index.canonical_series("fate stay night", "en_us") == "Fate/stay night"
 
 
 def test_missing_index_degrades(tmp_path):

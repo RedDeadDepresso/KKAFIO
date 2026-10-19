@@ -48,11 +48,13 @@ lists up to 5 candidate characters from a character database, written \
 use the one that fits the personality and hair colour, and ignore the list if none does.
 
 Rules:
-- Values must be valid Windows folder names (no  \\ / : * ? " < > |  characters).
 - Use the official title of the series.
 - If a character appears in multiple series, use the one they are most associated with.
+- Some characters may be VTubers (virtual YouTubers). Use "VTubers" as the series for them.
+- If you use a hint whose series is not in English, translate it into English.
 - Use the personality and hair colour as additional hints to identify the character.
-- If you are not sure or the character is an original creation, leave the value as an empty string "".
+- If you do not recognise a character and can search the web, look it up online first.
+- If you are still not sure or the character is an original creation, leave the value as an empty string "".
 - Return ONLY a JSON object that maps every key to the series name as a plain string \
 (do not repeat "hints") — no explanation, no markdown code fences, no extra text \
 before or after.

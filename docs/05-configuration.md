@@ -144,11 +144,12 @@ download (`src/kkafio/tasks/download_missing_mods.py`, `load_kkc_mod_index()`):
 
 Both files are safe to delete; the next run downloads a fresh copy.
 
-### `agv_character_index.json` and `agv_character_index_last_commit.txt` — MAL character index cache
+### `agv_character_index.json` and `agv_character_index_last_commit.txt` — AGV character index cache
 
 Live directly under `CONFIG_DIR` (not inside `config/`): `%APPDATA%/KKAFIO/agv_character_index.json`.
 
-`agv_character_index.json` is the MyAnimeList character / series index (format version 1) used for the
+`agv_character_index.json` is the character / series index (format version 1; anime and visual novel / JRPG
+games from the Bangumi Archive) used for the
 `hints` that **Group Characters** and **Rename Characters** send to the LLM. It is built and published by
 [agv-character-scraper](https://github.com/RedDeadDepresso/agv-character-scraper) at
 `https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json`.

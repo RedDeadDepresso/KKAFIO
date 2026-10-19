@@ -1,7 +1,7 @@
 """
-agv_index.py — Look characters and series up in the MyAnimeList index (built from the
-Kaggle MAL datasets by https://github.com/RedDeadDepresso/agv-character-scraper and
-published on GitHub Pages).
+agv_index.py — Look characters and series up in the AGV index (anime and visual novel / JRPG
+games, built from the Bangumi Archive by https://github.com/RedDeadDepresso/agv-character-scraper
+and published on GitHub Pages).
 
 The index is downloaded on demand and cached as agv_character_index.json in CONFIG_DIR
 (the per-user KKAFIO folder, e.g. %APPDATA%/KKAFIO). It is only downloaded again when the
@@ -23,7 +23,7 @@ from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
-from kkafio.cards.hint_language import localized
+from kkafio.cards.hint_language import DEFAULT_LANGUAGE, localized
 from kkafio.cards.agv_text import name_parts, norm
 from kkafio.core.logger import logger
 
@@ -35,8 +35,8 @@ INDEX_VERSION = 1
 
 MAX_HINTS = 5          # candidates handed to the LLM per card
 
-# The Bangumi merge in the index builder (agv-character-scraper) takes one of several same-named characters
-# only if it beats the runner-up's score by this factor.
+# A first candidate counts as unambiguous (see char_index) if its score is at least this many
+# times the runner-up's.
 DOMINANCE = 5
 
 _index_path: Path | None = None
@@ -140,7 +140,8 @@ def canonical_series(name: str, lang: str | None = None, cutoff: float = 0.9) ->
     title in `lang`.
 
     Exact (normalised) match first, then a strict fuzzy match; anything unrecognised is
-    returned untouched so a series MAL doesn't know still works.
+    returned untouched so a series the index doesn't know still works. A series the index
+    has no title for in `lang` is returned untouched too (never a title in another language).
     """
     idx = _load()
     if not idx or not name or not name.strip():
@@ -150,7 +151,11 @@ def canonical_series(name: str, lang: str | None = None, cutoff: float = 0.9) ->
     if hit is None:
         close = get_close_matches(k, _title_keys(), n=1, cutoff=cutoff)
         hit = idx["aliases"][close[0]] if close else None
-    return _text(idx, idx["series"][hit], lang) if hit is not None else name
+    if hit is None:
+        return name
+    # The index may have no title in `lang` (_text would then fall back to another language,
+    # e.g. Japanese for an English answer): the LLM's own name is the better result then.
+    return dict(zip(idx["langs"], idx["series"][hit])).get(lang or DEFAULT_LANGUAGE) or name
 
 
 # ---------------------------------------------------------------------------

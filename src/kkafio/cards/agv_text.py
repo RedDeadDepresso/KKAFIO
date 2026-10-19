@@ -1,5 +1,5 @@
 """
-agv_text.py — Pure text helpers used by kkafio.cards.agv_index (which reads the MyAnimeList index).
+agv_text.py — Pure text helpers used by kkafio.cards.agv_index (which reads the AGV index).
 The agv-character-scraper repo (which writes the index) holds an identical copy — keep the
 two in sync so both sides normalise names byte-for-byte the same way.
 """
