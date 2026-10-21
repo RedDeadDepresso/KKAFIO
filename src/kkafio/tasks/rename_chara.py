@@ -29,7 +29,7 @@ from kkloader import KoikatuCharaData
 
 from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
-from kkafio.cards.chara_key import make_key
+from kkafio.cards.chara_key import birthday, make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
 from kkafio.cards import hint_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
@@ -262,15 +262,16 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -
             if skip_already_renamed and _already_renamed(png.stem, known_stems):
                 return png, "__skip__"
             fp = file_fp(png)
-            hit, key = key_cache.lookup(png, fp)
+            hit, key = key_cache.lookup(png, fp, birth=True)
             if hit:
                 return png, key           # None: not a chara card
             raw = png.read_bytes()
             if get_card_type(raw) not in CHARA_CARD_TYPES:
                 key_cache.put(png, fp, None)
                 return png, None
-            key = make_key(KoikatuCharaData.load(str(png)))
-            key_cache.put(png, fp, key)
+            kc = KoikatuCharaData.load(str(png))
+            key = make_key(kc)
+            key_cache.put(png, fp, key, birthday(kc))
             return png, key
         except Exception as e:
             return png, f"__error__{e}"
@@ -386,7 +387,7 @@ def _process_folder(folder_path: Path, response: dict,
             orig_type = None
             try:
                 fp = file_fp(png)
-                hit, key = key_cache.lookup(png, fp)
+                hit, key = key_cache.lookup(png, fp, birth=True)
                 if not hit:
                     raw = png.read_bytes()
                     orig_type = get_card_type(raw)
@@ -396,7 +397,7 @@ def _process_folder(folder_path: Path, response: dict,
                         continue
                     kc  = KoikatuCharaData.load(str(png))
                     key = make_key(kc)
-                    key_cache.put(png, fp, key)
+                    key_cache.put(png, fp, key, birthday(kc))
                 elif key is None:
                     skipped += 1          # cached as "not a chara card"
                     continue

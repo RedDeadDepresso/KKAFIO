@@ -51,6 +51,17 @@ def _name_part(value) -> str:
     return str(value or "").replace("|", "/").strip()
 
 
+def birthday(kc: KoikatuCharaData) -> tuple[int | None, int | None]:
+    """(birthMonth, birthDay) of a loaded chara card; None for a field the card lacks."""
+    def _int(name: str) -> int | None:
+        try:
+            value = kc["Parameter"][name]
+        except (KeyError, IndexError, TypeError):
+            return None
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+    return _int("birthMonth"), _int("birthDay")
+
+
 def make_key(kc: KoikatuCharaData) -> str:
     """Stable, deterministic "lastname | firstname | nickname | personality | hair_color" key.
 

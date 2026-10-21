@@ -7,9 +7,11 @@ reading the whole file and fully parsing the character data — tens of MB per
 card. Group Characters even does that twice per run (once to export, once to
 move). This cache stores, per file, what was learned the last time:
 
-    {"<path>": {"fp": [mtime, size], "key": "<key>" | null}}
+    {"<path>": {"fp": [mtime, size], "key": "<key>" | null, "birth": [month, day]}}
 
-`key` is null for a PNG that isn't a chara card, so those aren't re-read either.
+`key` is null for a PNG that isn't a chara card, so those aren't re-read either. `birth` is the
+card's birthMonth / birthDay (each an integer or null), kept apart from the key. Both tasks
+always record it; an entry from before that existed is simply read once more.
 An entry is only trusted while the file's [mtime, size] still match, so any edit
 to a card makes it be read again.
 
@@ -76,28 +78,49 @@ class CharaKeyCache:
 
     # -- reading ------------------------------------------------------------
 
-    def lookup(self, path: Path, fp: list[int] | None = None) -> tuple[bool, str | None]:
+    def lookup(self, path: Path, fp: list[int] | None = None,
+               birth: bool = False) -> tuple[bool, str | None]:
         """(True, key) if `path` is cached and unchanged — `key` is None for a PNG that
-        isn't a chara card. (False, None) if it has to be read."""
+        isn't a chara card. (False, None) if it has to be read. With `birth=True` a chara
+        card cached without its birthday counts as a miss (see `birth_of`)."""
         if not self.enabled:
             return False, None
         entry = self._data.get(str(path))
-        if entry is not None and "key" in entry and entry.get("fp") == (fp if fp is not None else file_fp(path)):
+        if (entry is not None and "key" in entry
+                and entry.get("fp") == (fp if fp is not None else file_fp(path))
+                and (not birth or entry["key"] is None or self._birth(entry) is not None)):
             self.hits += 1
             return True, entry["key"]
         self.misses += 1
         return False, None
 
+    @staticmethod
+    def _birth(entry: dict) -> tuple[int | None, int | None] | None:
+        b = entry.get("birth")
+        if isinstance(b, (list, tuple)) and len(b) == 2:
+            return tuple(v if isinstance(v, int) and not isinstance(v, bool) else None for v in b)
+        return None
+
+    def birth_of(self, path: Path) -> tuple[int | None, int | None] | None:
+        """(birthMonth, birthDay) recorded for `path`, or None if none was recorded."""
+        entry = self._data.get(str(path)) if self.enabled else None
+        return self._birth(entry) if entry else None
+
     # -- recording what was learned -------------------------------------------
 
-    def put(self, path: Path, fp: list[int], key: str | None) -> None:
+    def put(self, path: Path, fp: list[int], key: str | None,
+            birth: tuple[int | None, int | None] | None = None) -> None:
         if self.enabled:
-            self._data[str(path)] = {"fp": list(fp), "key": key}
+            entry = {"fp": list(fp), "key": key}
+            if birth is not None:
+                entry["birth"] = list(birth)
+            self._data[str(path)] = entry
             self._dirty = True
 
     def updated(self, path: Path, key: str) -> None:
-        """`path` was rewritten by us (metadata update): record its new key under its new fingerprint."""
-        self.put(path, file_fp(path), key)
+        """`path` was rewritten by us (metadata update): record its new key under its new
+        fingerprint. The birthday isn't something we change, so it is carried over."""
+        self.put(path, file_fp(path), key, self.birth_of(path))
 
     def moved(self, old: Path, new: Path) -> None:
         """`old` was moved/renamed to `new`: its entry follows it. A move keeps mtime and

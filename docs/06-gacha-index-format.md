@@ -20,7 +20,7 @@ merged with is downloaded separately from agv-character-scraper, see `docs/05-co
   ],
   "chars": [
     {"name": {"en_us": "Kamisato, Ayaka", "ja_jp": "神里, 綾華"}, "series": [0], "score": 90,
-     "aliases": ["神里綾華", "Ayaka"]}
+     "aliases": ["神里綾華", "Ayaka"], "birthMonth": 9, "birthDay": 28}
   ]
 }
 ```
@@ -38,9 +38,14 @@ Every language's text and every alias is searchable whatever the hint language.
   either order.
 - `chars[].series` indexes into `series`, most associated first. `score` is a popularity
   proxy used to rank candidates.
+- `birthMonth` and `birthDay` are optional integers (month 1-12, day 1-31) on a `chars` entry; leave them out when
+  unknown. A value that isn't an integer is ignored. The format version stays 1.
 - `aliases` should include the native-script name (cards usually carry Japanese names).
 
 ## How it is used
+
+Group Characters' **Resolve Locally** compares a card's `birthMonth` / `birthDay` with these fields to pick one of
+several name matches (see the README); the hints sent to the LLM don't contain them.
 
 Nothing is resolved locally. Every card sent to the LLM gets a `hints` list: up to 5
 characters whose name matches the card (`kkafio.cards.char_index.lookup`), written

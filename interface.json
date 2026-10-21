@@ -630,6 +630,28 @@
         }
       ]
     },
+    "GroupCharaResolveLocally": {
+      "type": "switch",
+      "label": "$option.GroupCharaResolveLocally.label",
+      "description": "$option.GroupCharaResolveLocally.description",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.GroupCharaResolveLocally.case.Yes.label",
+          "pipeline_override": {
+            "ResolveLocally": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.GroupCharaResolveLocally.case.No.label",
+          "pipeline_override": {
+            "ResolveLocally": false
+          }
+        }
+      ]
+    },
     "GroupScenesIncludeSubfolders": {
       "type": "switch",
       "label": "$option.GroupScenesIncludeSubfolders.label",
@@ -1436,7 +1458,8 @@
         "LlmWebsiteUrl",
         "GroupCharaPrompt",
         "UseCache",
-        "HintsLanguage"
+        "HintsLanguage",
+        "GroupCharaResolveLocally"
       ]
     },
     {

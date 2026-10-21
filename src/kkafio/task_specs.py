@@ -593,6 +593,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
                        "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
                        "language from the prompt (default), or one of the languages in assets/i18n"),
+            Toggle("resolve-locally", key="ResolveLocally",
+                   help="Assign the series without the LLM when the hints name exactly one character, or "
+                        "one of several with the card's birth month and day (needs --hints-language other "
+                        "than 'no'; default: off)",
+                   off_help="Send every card to the LLM"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),

@@ -7,6 +7,7 @@ Combines the gacha-game index (gacha_index, higher priority) with the MyAnimeLis
 
 from __future__ import annotations
 
+from dataclasses import replace
 from itertools import zip_longest
 
 from kkafio.cards import gacha_index, agv_index
@@ -35,8 +36,8 @@ def _dominant(cands: list[Candidate]) -> bool:
     return bool(cands) and (len(cands) == 1 or cands[0].score >= DOMINANCE * max(cands[1].score, 1))
 
 
-def lookup(key: str, lang: str | None = None) -> tuple[Candidate, ...]:
-    """Up to MAX_HINTS candidates for a make_key() string, names and series in `lang`.
+def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:
+    """Up to `limit` (MAX_HINTS) candidates for a make_key() string, names and series in `lang`.
 
     The two indexes' scores are not comparable, so they are merged rather than sorted: an
     index whose best candidate clearly dominates its own others goes first (gacha before
@@ -44,18 +45,21 @@ def lookup(key: str, lang: str | None = None) -> tuple[Candidate, ...]:
     way neither index can crowd the other out of the list. The same name + series from
     both indexes is listed once.
     """
-    lists = [list(gacha_index.lookup(key, lang)), list(agv_index.lookup(key, lang))]
+    lists = [list(gacha_index.lookup(key, lang, limit)), list(agv_index.lookup(key, lang, limit))]
     ordered: list[Candidate] = [lst.pop(0) for lst in lists if _dominant(lst)]
     ordered += [c for pair in zip_longest(*lists) for c in pair if c is not None]
 
     out: list[Candidate] = []
-    seen: set[str] = set()
+    where: dict[str, int] = {}
     for cand in ordered:
         k = cand.hint.casefold()
-        if k not in seen:
-            seen.add(k)
+        if k not in where:
+            where[k] = len(out)
             out.append(cand)
-    return tuple(out[:MAX_HINTS])
+        elif out[where[k]].birth_month is None and cand.birth_month is not None:
+            # the same character from the other index: keep the birthday if only that one has it
+            out[where[k]] = replace(out[where[k]], birth_month=cand.birth_month, birth_day=cand.birth_day)
+    return tuple(out[:limit])
 
 
 def hints(key: str, lang: str | None = None) -> list[str]:

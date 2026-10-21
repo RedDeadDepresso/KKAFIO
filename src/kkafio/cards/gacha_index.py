@@ -19,8 +19,8 @@ from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
-from kkafio.cards.hint_language import localized
-from kkafio.cards.agv_index import MAX_HINTS, Candidate, split_key
+from kkafio.cards.hint_language import DEFAULT_LANGUAGE, localized
+from kkafio.cards.agv_index import MAX_HINTS, Candidate, optional_int, split_key
 from kkafio.cards.agv_text import name_parts, norm
 from kkafio.core.logger import logger
 
@@ -56,6 +56,8 @@ class _Char:
     names: dict[str, str]                  # language -> "Last, First" (or a mononym)
     series: tuple[int, ...]                # indexes into _Built.series, most associated first
     score: int
+    birth_month: int | None = None
+    birth_day: int | None = None
 
 
 @dataclass(frozen=True)
@@ -80,7 +82,8 @@ def _build(data: dict) -> _Built:
     names: dict[str, list[int]] = {}
     for ci, c in enumerate(data["chars"]):
         by_lang = _per_language(c["name"])
-        chars.append(_Char(by_lang, tuple(int(i) for i in c["series"]), int(c.get("score", 0))))
+        chars.append(_Char(by_lang, tuple(int(i) for i in c["series"]), int(c.get("score", 0)),
+                           optional_int(c.get("birthMonth")), optional_int(c.get("birthDay"))))
         forms: set[str] = set()
         for name in by_lang.values():
             last, first = name_parts(name)
@@ -117,7 +120,9 @@ def supports(lang: str) -> bool:
 def _candidate(idx: _Built, c: _Char, lang: str | None) -> Candidate:
     name = localized(c.names, lang)
     last, first = name_parts(name)
-    return Candidate(name, last, first, tuple(localized(idx.series[i], lang) for i in c.series), c.score)
+    native = bool(c.series) and bool(idx.series[c.series[0]].get(lang or DEFAULT_LANGUAGE))
+    return Candidate(name, last, first, tuple(localized(idx.series[i], lang) for i in c.series), c.score,
+                     c.birth_month, c.birth_day, native)
 
 
 def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:

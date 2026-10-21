@@ -78,11 +78,20 @@ class Candidate:
     firstname: str
     series: tuple[str, ...]   # franchises, most popular first
     score: int           # favorites (popularity)
+    birth_month: int | None = None   # optional: 1-12, when the index has it
+    birth_day: int | None = None     # optional: 1-31, when the index has it
+    series_native: bool = True       # False: the first series has no title in the requested language
+                                     # (`series` then holds its fallback-language title)
 
     @property
     def hint(self) -> str:
         """The candidate as one line for the LLM: "Tohsaka, Rin (Fate/stay night)"."""
         return f"{self.name} ({self.series[0]})" if self.series else self.name
+
+
+def optional_int(value) -> int | None:
+    """An optional integer index field (birthMonth / birthDay): None when absent or not an integer."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
 def split_key(key: str) -> tuple[str, str, str]:
@@ -121,11 +130,15 @@ def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[C
         for ci in idx["names"].get(f, ()):
             if ci in seen:
                 continue
-            names, series_ids, score = idx["chars"][ci]
+            names, series_ids, score, *birth = idx["chars"][ci]      # birth: optional [month, day]
             name = _text(idx, names, lang)
             l, fi = name_parts(name)
+            month, day = (optional_int(v) for v in (birth + [None, None])[:2])
+            native = bool(series_ids) and bool(
+                dict(zip(idx["langs"], idx["series"][series_ids[0]])).get(lang or DEFAULT_LANGUAGE))
             seen[ci] = Candidate(name, l, fi,
-                                 tuple(_text(idx, idx["series"][i], lang) for i in series_ids), score)
+                                 tuple(_text(idx, idx["series"][i], lang) for i in series_ids), score,
+                                 month, day, native)
     return tuple(sorted(seen.values(), key=lambda c: -c.score)[:limit])
 
 

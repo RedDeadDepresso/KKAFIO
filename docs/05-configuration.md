@@ -164,6 +164,10 @@ downloaded. It is refreshed when those tasks run with *Hints Language* set to an
 4. If the commit can't be checked (e.g. offline or rate-limited), the cached index is used if one exists;
    without one, the tasks run without MAL hints.
 
+An entry of `chars` is `[names, series ids, score]`, optionally followed by `birthMonth` and `birthDay` (integers,
+month 1-12 and day 1-31): `[names, series ids, score, 9, 28]`. Both may be left out, and `null` stands for an unknown
+one (`[names, series ids, score, null, 28]`). The format version stays 1.
+
 Both files are safe to delete; the next run downloads a fresh copy.
 
 ### `download_history.json` — Download Contents dedup
