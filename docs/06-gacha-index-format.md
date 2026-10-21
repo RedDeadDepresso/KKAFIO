@@ -8,7 +8,7 @@ characters' wiki pages) and published on GitHub Pages at
 
 KKAFIO downloads it when **Group Characters** / **Rename Characters** run with
 *Hints Language* set to anything but `no`, caches it as `<config>/config/kkafio_gacha_index.json`, and
-revalidates with an ETag (a 304 costs no download). Offline, the cached copy is used. (The MyAnimeList index it is
+revalidates with an ETag (a 304 costs no download). Offline, the cached copy is used. (The anime, games, vtubers index it is
 merged with is downloaded separately from agv-character-scraper, see `docs/05-configuration.md`.)
 
 ```json
@@ -51,9 +51,9 @@ Nothing is resolved locally. Every card sent to the LLM gets a `hints` list: up 
 characters whose name matches the card (`kkafio.cards.char_index.lookup`), written
 `"Last, First (Series)"` in the hint language. The two indexes' scores aren't comparable,
 so the lists are merged, not sorted: an index whose best candidate dominates its others
-(5x the runner-up's `score`, or the only one) goes first, gacha before MAL, then the rest
-alternate gacha / MAL, each most popular first. The same name + series from both is
+(5x the runner-up's `score`, or the only one) goes first, gacha before the anime, games, vtubers index, then the rest
+alternate gacha / anime, games, vtubers, each most popular first. The same name + series from both is
 listed once. Group Characters sends `{"key": {"series": "", "hints": [...]}}`, Rename
 Characters adds `"hints"` next to `lastname` / `firstname` / `nickname`; the LLM answers
 without them. Series names in the answer are then snapped to the canonical title, gacha
-titles first, then MAL franchises.
+titles first, then the anime, games, vtubers index's series.

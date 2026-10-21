@@ -1,7 +1,7 @@
 """
 char_index.py — The character lookup Group Characters and Rename Characters use.
 
-Combines the gacha-game index (gacha_index, higher priority) with the MyAnimeList index
+Combines the gacha-game index (gacha_index, higher priority) with the anime, games, vtubers index
 (agv_index). Both degrade to "no help" when unavailable, so this does too.
 """
 
@@ -13,7 +13,10 @@ from itertools import zip_longest
 from kkafio.cards import gacha_index, agv_index
 from kkafio.cards.agv_index import DOMINANCE, MAX_HINTS, Candidate
 
-__all__ = ["Candidate", "MAX_HINTS", "available", "supports", "refresh", "lookup", "hints", "canonical_series"]
+__all__ = ["Candidate", "MAX_HINTS", "RESOLVE_CANDIDATES", "available", "supports", "refresh", "lookup",
+           "decide", "narrow", "hints", "canonical_series"]
+
+RESOLVE_CANDIDATES = 50      # how many index matches Resolve Locally weighs (the LLM hints only show 5)
 
 
 def available() -> bool:
@@ -26,7 +29,7 @@ def supports(lang: str) -> bool:
 
 
 def refresh(tag: str) -> None:
-    """Update the downloadable (gacha and MAL) indexes. Never raises; offline just uses the caches."""
+    """Update the downloadable (gacha and anime, games, vtubers) indexes. Never raises; offline just uses the caches."""
     gacha_index.refresh(tag)
     agv_index.refresh(tag)
 
@@ -41,7 +44,7 @@ def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[C
 
     The two indexes' scores are not comparable, so they are merged rather than sorted: an
     index whose best candidate clearly dominates its own others goes first (gacha before
-    MAL), then the rest alternate gacha / MAL, each index's list most popular first. That
+    the anime, games, vtubers index), then the rest alternate gacha / anime, games, vtubers, each index's list most popular first. That
     way neither index can crowd the other out of the list. The same name + series from
     both indexes is listed once.
     """
@@ -62,6 +65,31 @@ def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[C
     return tuple(out[:limit])
 
 
+def decide(cands, birth: tuple[int | None, int | None]) -> Candidate | None:
+    """The one candidate that is the card's character, or None if it can't be told.
+
+    A single candidate is the character whatever the birthday; among several it is the one whose
+    birthMonth and birthDay are the card's (none, or more than one, matching decides nothing)."""
+    if len(cands) == 1:
+        return cands[0]
+    matched = [c for c in cands if birth[0] is not None and birth == (c.birth_month, c.birth_day)]
+    return matched[0] if len(matched) == 1 else None
+
+
+def narrow(key: str, births, lang: str | None = None) -> list[Candidate]:
+    """The candidates that are the character of every card with this key (`births`: their
+    (birthMonth, birthDay)s), or [] if any of those cards can't be decided."""
+    cands = lookup(key, lang, limit=RESOLVE_CANDIDATES)
+    out: list[Candidate] = []
+    for birth in births:
+        c = decide(cands, birth) if cands else None
+        if c is None:
+            return []
+        if c not in out:
+            out.append(c)
+    return out
+
+
 def hints(key: str, lang: str | None = None) -> list[str]:
     """`lookup` as the strings handed to the LLM, e.g. ["Tohsaka, Rin (Fate/stay night)"]."""
     return [c.hint for c in lookup(key, lang)]
@@ -69,5 +97,5 @@ def hints(key: str, lang: str | None = None) -> list[str]:
 
 def canonical_series(name: str, lang: str | None = None) -> str:
     """Snap a series name (in any language) to its canonical title in `lang`: gacha titles
-    first, then MAL franchises; anything neither knows is returned untouched."""
+    first, then the anime, games, vtubers index's series; anything neither knows is returned untouched."""
     return gacha_index.snap_series(name, lang) or agv_index.canonical_series(name, lang)

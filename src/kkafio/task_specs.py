@@ -537,10 +537,15 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    off_help="Disable cache and read every card"),
             Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
                   choices=_hint_language_choices(),
-                  help="Language of the hints from the gacha-game / MyAnimeList character indexes "
+                  help="Language of the hints from the gacha-game / anime, games, vtubers character indexes "
                        "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
                        "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
                        "language from the prompt (default), or one of the languages in assets/i18n"),
+            Toggle("resolve-locally", key="ResolveLocally",
+                   help="Hint the LLM with only the matching character when the indexes name exactly one "
+                        "for a card, or one of several with the card's birth month and day (needs "
+                        "--hints-language other than 'no'; default: off)",
+                   off_help="Hint the LLM with every match"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),
@@ -589,7 +594,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    off_help="Disable cache and read every card"),
             Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
                   choices=_hint_language_choices(),
-                  help="Language of the hints from the gacha-game / MyAnimeList character indexes "
+                  help="Language of the hints from the gacha-game / anime, games, vtubers character indexes "
                        "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
                        "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
                        "language from the prompt (default), or one of the languages in assets/i18n"),

@@ -113,7 +113,7 @@ def supports(lang: str) -> bool:
 
 
 def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:
-    """MAL characters whose name matches a make_key() string, most popular first; names and
+    """Anime, games, vtubers index characters whose name matches a make_key() string, most popular first; names and
     series come back in `lang` (English where the index has nothing in it)."""
     idx = _load()
     if not idx:
@@ -216,13 +216,13 @@ def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
             pass
 
         if latest and saved == latest and available():
-            logger.info(tag, "MAL character index is up to date (cached).")
+            logger.info(tag, "Anime, games, vtubers character index is up to date (cached).")
             return True
         if latest is None:
             if available():
-                logger.warning(tag, "Could not check for MAL index updates — using the cached copy.")
+                logger.warning(tag, "Could not check for anime, games, vtubers index updates — using the cached copy.")
             return available()
-        logger.info(tag, "MAL character index is new or outdated — downloading...")
+        logger.info(tag, "Anime, games, vtubers character index is new or outdated — downloading...")
 
         try:
             r = client.get(INDEX_URL)
@@ -237,17 +237,17 @@ def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
             os.replace(tmp, path)
             commit_path.write_text(latest, encoding="utf-8")
         except Exception as e:
-            logger.warning(tag, f"Could not download the MAL character index: {e}"
+            logger.warning(tag, f"Could not download the anime, games, vtubers character index: {e}"
                                 + (" — using the cached copy." if available() else ""))
             return available()
 
         _load.cache_clear()
         _title_keys.cache_clear()
         idx = _load()
-        logger.info(tag, f"MAL character index downloaded: {len(idx['chars']) if idx else 0} characters.")
+        logger.info(tag, f"Anime, games, vtubers character index downloaded: {len(idx['chars']) if idx else 0} characters.")
         return available()
     except Exception as e:      # never let an index problem break a task
-        logger.warning(tag, f"MAL character index update failed: {e}")
+        logger.warning(tag, f"Anime, games, vtubers character index update failed: {e}")
         return available()
     finally:
         if own_client and client is not None:

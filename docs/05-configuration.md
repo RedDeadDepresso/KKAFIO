@@ -162,7 +162,7 @@ downloaded. It is refreshed when those tasks run with *Hints Language* set to an
 3. Otherwise the index is downloaded again (a file that isn't version 1 is rejected and the cached copy
    stays) and both files are rewritten.
 4. If the commit can't be checked (e.g. offline or rate-limited), the cached index is used if one exists;
-   without one, the tasks run without MAL hints.
+   without one, the tasks run without anime, games, vtubers hints.
 
 An entry of `chars` is `[names, series ids, score]`, optionally followed by `birthMonth` and `birthDay` (integers,
 month 1-12 and day 1-31): `[names, series ids, score, 9, 28]`. Both may be left out, and `null` stands for an unknown

@@ -47,7 +47,7 @@ character's English name.
 
 Rules:
 - Use the English name the character is commonly known by (the romanisation used
-  on MyAnimeList / official releases), not a literal reading of the card.
+  in official releases), not a literal reading of the card.
 - If you do not recognise the character or are not confident, search the web for
   it if you can. If you still do not know, fall back to your best transliteration
   of the name written on the card.
@@ -171,23 +171,24 @@ def _stem_for(d: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Character-index hints (gacha index, then MyAnimeList)
+# Character-index hints (gacha index, then the anime, games, vtubers index)
 # ---------------------------------------------------------------------------
 
-def add_index_hints(json_str: str, lang: str) -> str:
+def add_index_hints(json_str: str, lang: str, narrowed: dict | None = None) -> str:
     """Add a "hints" list to every entry of export()'s JSON for the LLM.
 
-    "hints" lists up to 5 candidate characters from the character indexes (gacha first, then
-    MyAnimeList) as "Last, First (Series)", most popular first, in the hint language `lang`
-    (English where an index has none). Every card is sent; nothing is decided locally, and
-    a card the indexes don't know gets an empty list."""
+    "hints" lists up to 5 candidate characters from the character indexes (gacha first, then the
+    anime, games, vtubers index) as "Last, First (Series)", most popular first, in the hint language `lang`
+    (English where an index has none). Every card is sent, and a card the indexes don't know
+    gets an empty list. `narrowed` (from Resolve Locally) maps a key to the only candidates to
+    list for it, instead of everything the indexes have under that name."""
     from kkafio.cards import char_index
     if not json_str or not char_index.available():
         return json_str
     out: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        h = char_index.hints(key, lang)
+        h = [c.hint for c in narrowed[key]] if narrowed and key in narrowed else char_index.hints(key, lang)
         hinted += bool(h)
         out[key] = {**value, "hints": h}
     logger.info("RENAME", f"Character index: {hinted} of {len(out)} character(s) have hints")
@@ -243,9 +244,13 @@ def _as_folder_list(folders) -> list[Path]:
     return [Path(f) for f in folders]
 
 
-def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -> str:
+def export(folders, skip_already_renamed: bool = True, use_cache: bool = True,
+           birthdays: dict | None = None) -> str:
     """Scan one or more chara folders and return the JSON of characters still
-    to translate (names already in any folder's cache are left out)."""
+    to translate (names already in any folder's cache are left out).
+
+    birthdays: if given (an empty dict), filled with {key: {(birthMonth, birthDay), ...}} for the
+    characters returned."""
     folder_list = _as_folder_list(folders)
     cache: dict = {}
     for folder in folder_list:
@@ -260,21 +265,21 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -
     def _proc(png: Path):
         try:
             if skip_already_renamed and _already_renamed(png.stem, known_stems):
-                return png, "__skip__"
+                return png, "__skip__", None
             fp = file_fp(png)
             hit, key = key_cache.lookup(png, fp, birth=True)
             if hit:
-                return png, key           # None: not a chara card
+                return png, key, key_cache.birth_of(png)      # key None: not a chara card
             raw = png.read_bytes()
             if get_card_type(raw) not in CHARA_CARD_TYPES:
                 key_cache.put(png, fp, None)
-                return png, None
+                return png, None, None
             kc = KoikatuCharaData.load(str(png))
-            key = make_key(kc)
-            key_cache.put(png, fp, key, birthday(kc))
-            return png, key
+            key, birth = make_key(kc), birthday(kc)
+            key_cache.put(png, fp, key, birth)
+            return png, key, birth
         except Exception as e:
-            return png, f"__error__{e}"
+            return png, f"__error__{e}", None
 
     workers = min(32, (os.cpu_count() or 4) * 2)
     to_translate: dict = {}
@@ -282,7 +287,7 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for future in as_completed({ex.submit(_proc, p): p for p in png_files}):
-            png, result = future.result()
+            png, result, birth = future.result()
             if result == "__skip__":
                 skipped += 1
             elif result is None:
@@ -293,6 +298,8 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True) -
                 cached = cache.get(result)
                 if not (cached and _name_known(cached)):
                     to_translate[result] = dict(_EMPTY_NAME)
+                    if birthdays is not None:
+                        birthdays.setdefault(result, set()).add(birth or (None, None))
 
     if skipped:
         logger.info("RENAME", f"Skipped {skipped} already-renamed file(s)")
@@ -551,6 +558,7 @@ class RenameChara(BaseTask):
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache            : bool = cfg.get("UseCache", True)
         self.hints_language        : str  = cfg.get("HintsLanguage", hint_language.DETECT)
+        self.resolve_locally       : bool = cfg.get("ResolveLocally", False)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
@@ -560,19 +568,35 @@ class RenameChara(BaseTask):
         self.log_start("RENAME", ", ".join(str(f) for f in folders))
         logger.info("RENAME", f"Use cache: {self.use_cache}")
 
+        prompt = self.prompt
+        hint_lang = hint_language.resolve(self.hints_language, self.prompt, "RENAME")
+        resolve = self.resolve_locally
+        if resolve and not hint_lang:
+            logger.info("RENAME", "Resolve Locally needs the character indexes (Hints Language is "
+                                  "'no') — every hint list stays complete.")
+            resolve = False
+        logger.info("RENAME", f"Resolve locally: {resolve}")
+
+        birthdays: dict | None = {} if resolve else None
         json_str = export(folders, skip_already_renamed=self.skip_already_renamed,
-                          use_cache=self.use_cache)
+                          use_cache=self.use_cache, birthdays=birthdays)
         if not json_str:
             return
 
-        prompt = self.prompt
-        hint_lang = hint_language.resolve(self.hints_language, self.prompt, "RENAME")
         if hint_lang:
             from kkafio.cards import char_index
             char_index.refresh("RENAME")
             if not char_index.supports(hint_lang):
                 logger.info("RENAME", f"The character indexes have no {hint_lang} text — hints are in English.")
-            json_str = add_index_hints(json_str, hint_lang)
+            narrowed: dict = {}
+            if resolve and char_index.available():
+                for key, births in birthdays.items():
+                    found = char_index.narrow(key, births, hint_lang)
+                    if found:
+                        narrowed[key] = found
+                logger.info("RENAME", f"Resolve locally: {len(narrowed)} of {len(birthdays)} character(s) "
+                                      f"hinted with only the matching candidate")
+            json_str = add_index_hints(json_str, hint_lang, narrowed)
 
         prompt_text = prompt.rstrip("\n") + "\n" + json_str
 

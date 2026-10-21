@@ -22,7 +22,7 @@ def norm(s: str) -> str:
 
 
 def name_parts(raw: str) -> tuple[str, str]:
-    """MAL display name -> (lastname, firstname).
+    """Index display name -> (lastname, firstname).
 
     "Tohsaka, Rin" -> ("Tohsaka", "Rin"); "Saber" -> ("", "Saber");
     "Rin Tohsaka" (no comma) -> ("Tohsaka", "Rin").

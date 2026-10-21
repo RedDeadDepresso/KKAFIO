@@ -1,4 +1,4 @@
-"""Gacha index: lookup rules, priority over MAL, and the download/cache step."""
+"""Gacha index: lookup rules, priority over the anime, games, vtubers index, and the download/cache step."""
 
 import json
 from pathlib import Path
@@ -59,23 +59,23 @@ def test_snap_series(gacha):
     assert gacha_index.snap_series("Not A Game") is None
 
 
-def test_gacha_beats_mal_and_falls_back(gacha):
-    # MAL also knows a confident "Rin Tohsaka"; the gacha index has the same card as Fate/Grand Order.
+def test_gacha_beats_agv_and_falls_back(gacha):
+    # The anime, games, vtubers index also knows a confident "Rin Tohsaka"; the gacha index has the same card as Fate/Grand Order.
     d = dict(DATA, chars=DATA["chars"] + [{"name": "Tohsaka, Rin", "series": [1], "score": 50}])
     gacha.write_text(json.dumps(d), encoding="utf-8")
     gacha_index.set_index_path(gacha)
     m = char_index.lookup("Tohsaka | Rin |  | x | y")
     assert (m.source, m.best.series) == ("gacha", ("Fate/Grand Order",))
-    # Not in the gacha index -> MAL answers.
+    # Not in the gacha index -> the anime, games, vtubers index answers.
     if agv_index.available():
         m = char_index.lookup("Yuuki | Asuna |  | x | y")
         assert m.source == "mal"
-    # Series snapping tries gacha first, then MAL, then gives the name back.
+    # Series snapping tries gacha first, then the anime, games, vtubers index, then gives the name back.
     assert char_index.canonical_series("原神") == "Genshin Impact"
-    assert char_index.canonical_series("Some Eroge Not On MAL") == "Some Eroge Not On MAL"
+    assert char_index.canonical_series("Some Eroge Not In Any Index") == "Some Eroge Not In Any Index"
 
 
-def test_confident_mal_beats_ambiguous_gacha(gacha, monkeypatch):
+def test_confident_agv_beats_ambiguous_gacha(gacha, monkeypatch):
     amb = agv_index.Match("ambiguous", (agv_index.Candidate("X", "", "X", ("S",), 1),), "gacha")
     sure = agv_index.Match("confident", (agv_index.Candidate("Y, Z", "Y", "Z", ("T",), 1),))
     monkeypatch.setattr(gacha_index, "lookup", lambda k: amb)

@@ -221,3 +221,50 @@ def test_a_cache_entry_from_before_birthdays_is_read_once_more(tmp_path):
         assert FakeCard.parsed == 1
         group_chara.export(tmp_path)
         assert FakeCard.parsed == 1
+
+
+# ---------------------------------------------------------------------------
+# Rename Characters' Resolve Locally: only the matching candidate is hinted
+# ---------------------------------------------------------------------------
+
+from kkafio.tasks import rename_chara
+
+
+def test_narrow_returns_the_decided_candidates_or_nothing():
+    sao, fate = _cand("Rin", ["SAO"], 9, 28), _cand("Rin", ["Fate"], 2, 2)
+    with index({"one": [fate], "two": [sao, fate], "none": []}):
+        assert char_index.narrow("one", {(5, 5)}, "en_us") == [fate]             # single: any birthday
+        assert char_index.narrow("two", {(9, 28)}, "en_us") == [sao]
+        assert char_index.narrow("two", {(9, 28), (2, 2)}, "en_us") == [sao, fate] or \
+            char_index.narrow("two", {(9, 28), (2, 2)}, "en_us") == [fate, sao]   # each card decided
+        assert char_index.narrow("two", {(9, 28), (7, 7)}, "en_us") == []        # one card undecided
+        assert char_index.narrow("none", {(9, 28)}, "en_us") == []
+
+
+def test_rename_hints_use_only_the_narrowed_candidates(tmp_path):
+    keep = _cand("Tohsaka, Rin", ["Fate"], 2, 3)
+    with mock.patch.object(char_index, "available", lambda: True), \
+            mock.patch.object(char_index, "hints", lambda key, lang=None: ["a", "b", "c"]):
+        out = json.loads(rename_chara.add_index_hints(
+            json.dumps({"x": {"lastname": ""}, "y": {"lastname": ""}}), "en_us", {"x": [keep]}))
+    assert out["x"]["hints"] == [keep.hint] and out["y"]["hints"] == ["a", "b", "c"]
+
+
+def test_rename_export_collects_the_birthdays_of_the_characters_it_returns(tmp_path):
+    _card(tmp_path, "a", "Rin", 9, 28)
+    _card(tmp_path, "b", "Rin", 1, 1)
+    _card(tmp_path, "c", "Saber", 5, 5)
+    with ExitStack() as st:
+        FakeCard.parsed = 0
+        st.enter_context(mock.patch.object(rename_chara, "KoikatuCharaData", FakeCard))
+        st.enter_context(mock.patch.object(rename_chara, "make_key", _fake_key))
+        st.enter_context(mock.patch.object(rename_chara, "get_card_type",
+                                           lambda raw: KK if raw.startswith(b"CHARA|") else None))
+        births: dict = {}
+        out = json.loads(rename_chara.export(tmp_path, birthdays=births))
+        assert set(out) == {"Rin | calm | black hair", "Saber | calm | black hair"}
+        assert births == {"Rin | calm | black hair": {(9, 28), (1, 1)}, "Saber | calm | black hair": {(5, 5)}}
+        FakeCard.parsed = 0
+        again: dict = {}
+        rename_chara.export(tmp_path, birthdays=again)                           # from the cache
+        assert FakeCard.parsed == 0 and again == births

@@ -521,6 +521,28 @@
         "LlmWebsiteUrl": "{url}"
       }
     },
+    "RenameCharaResolveLocally": {
+      "type": "switch",
+      "label": "$option.RenameCharaResolveLocally.label",
+      "description": "$option.RenameCharaResolveLocally.description",
+      "default_case": "No",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.RenameCharaResolveLocally.case.Yes.label",
+          "pipeline_override": {
+            "ResolveLocally": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.RenameCharaResolveLocally.case.No.label",
+          "pipeline_override": {
+            "ResolveLocally": false
+          }
+        }
+      ]
+    },
     "RenameCharaPrompt": {
       "type": "textarea",
       "name": "prompt",
@@ -1504,7 +1526,8 @@
         "LlmWebsiteUrl",
         "RenameCharaPrompt",
         "UseCache",
-        "HintsLanguage"
+        "HintsLanguage",
+        "RenameCharaResolveLocally"
       ]
     },
     {

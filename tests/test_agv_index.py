@@ -1,4 +1,4 @@
-"""MAL character index: runtime lookup on a tiny hand-made index, and the download /
+"""Anime, games, vtubers character index: runtime lookup on a tiny hand-made index, and the download /
 commit-check cache (the index itself is built and published by agv-character-scraper)."""
 
 import json
@@ -68,7 +68,7 @@ def test_canonical_series(index_file):
     assert agv_index.canonical_series("fate stay night") == "Fate/stay night"
     assert agv_index.canonical_series("Fate/stay night: Unlimited Blade Works") == "Fate/stay night"
     assert agv_index.canonical_series("Sword Art Online II") == "Sword Art Online"
-    assert agv_index.canonical_series("Some Eroge Not On MAL") == "Some Eroge Not On MAL"
+    assert agv_index.canonical_series("Some Eroge Not In Any Index") == "Some Eroge Not In Any Index"
     assert agv_index.canonical_series("") == ""
 
 

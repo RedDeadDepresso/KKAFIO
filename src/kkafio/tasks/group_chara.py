@@ -71,8 +71,8 @@ def add_index_hints(json_str: str, lang: str,
                     narrowed: dict[str, list[Candidate]] | None = None) -> str:
     """Turn export()'s {key: ""} into {key: {"series": "", "hints": [...]}} for the LLM.
 
-    "hints" lists up to 5 candidate characters from the character indexes (gacha first, then
-    MyAnimeList) as "Last, First (Series)", most popular first, in the hint language `lang`
+    "hints" lists up to 5 candidate characters from the character indexes (gacha first, then the
+    anime, games, vtubers index) as "Last, First (Series)", most popular first, in the hint language `lang`
     (English where an index has none). Every card is sent, and a card the indexes don't know
     gets an empty list. `narrowed` (from resolve_locally) maps a key to the only candidates
     to list for it, instead of everything the indexes have under that name."""
@@ -94,7 +94,6 @@ def add_index_hints(json_str: str, lang: str,
 # ---------------------------------------------------------------------------
 
 Birth = tuple[Optional[int], Optional[int]]          # (birthMonth, birthDay) of a card
-RESOLVE_CANDIDATES = 50      # how many index matches to weigh (the LLM hints only show 5)
 
 
 def resolve_locally(cards: dict[str, set[Birth]], lang: str,
@@ -119,23 +118,19 @@ def resolve_locally(cards: dict[str, set[Birth]], lang: str,
     resolved: dict[tuple[str, Birth], str] = {}
     narrowed: dict[str, list[Candidate]] = {}
     for key, births in cards.items():
-        cands = char_index.lookup(key, lang, limit=RESOLVE_CANDIDATES)
+        cands = char_index.lookup(key, lang, limit=char_index.RESOLVE_CANDIDATES)
         if not cands:
             continue
         undecided_full = False
         picked: list[Candidate] = []
         for birth in births:
-            if len(cands) == 1:
-                matched = list(cands)
-            else:
-                matched = [c for c in cands
-                           if birth[0] is not None and birth == (c.birth_month, c.birth_day)]
-            if len(matched) != 1 or not matched[0].series:
+            c = char_index.decide(cands, birth)
+            if c is None or not c.series:
                 undecided_full = True
-            elif matched[0].series_native:
-                resolved[(key, birth)] = matched[0].series[0]
-            elif matched[0] not in picked:
-                picked.append(matched[0])
+            elif c.series_native:
+                resolved[(key, birth)] = c.series[0]
+            elif c not in picked:
+                picked.append(c)
         if picked and not undecided_full:
             narrowed[key] = picked
     return resolved, narrowed
@@ -319,7 +314,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     unchanged, and keep that cache in step with the moves (a moved card's entry follows
     it to its new folder) so the next run doesn't have to read the cards again.
 
-    hint_language: snap every series name to its canonical gacha-game or MyAnimeList title in
+    hint_language: snap every series name to its canonical gacha-game or anime, games, vtubers index title in
     this language (unknown names are left as they are). None: leave the names alone.
 
     local: {(key, (birthMonth, birthDay)): series} from resolve_locally(). A card with such an
