@@ -11,6 +11,10 @@ Once it finishes, everything is moved back into the input folder (same relative
 layout), the "[zip]" folder is removed, and — if enabled — the originals that
 now have a compressed "[zip]" copy next to them are sent to the bin.
 
+Cards already named "<name>[zip].png" (left by an earlier run) are renamed to
+"<name>[zip].png.bak" while the tool runs, so it doesn't compress them again, and
+renamed back afterwards, whether or not the run succeeded.
+
 KoiCardTexTool itself isn't bundled with KKAFIO — if it isn't found where
 configured, this task downloads and extracts the release build automatically
 before running it.
@@ -43,6 +47,9 @@ ZIP_SUFFIX = "[zip]"
 # Marker KoiCardTexTool drops in its output folder; it must NOT be moved into
 # the input folder, because folders carrying it are never used as tool input.
 OUT_MARKER = ".koicardtex-outdir"
+
+# Extra extension put on an existing "<name>[zip].png" while the tool runs.
+BAK_SUFFIX = ".bak"
 
 # SHA-256 of the release zip above, pinned so a compromised/replaced GitHub
 # release asset (or a MITM without TLS pinning) is caught instead of silently
@@ -140,6 +147,48 @@ class CompressCardsTextures(BaseTask):
         payload = data[png_end:]
         return get_card_type(payload) != CardType.UNKNOWN or is_coordinate(payload)
 
+    @staticmethod
+    def _backup_zip_cards(input_path: Path) -> list[Path]:
+        """Rename every existing "<name>[zip].png" under `input_path` to "<name>[zip].png.bak"
+        so KoiCardTexTool leaves it alone. Returns the .bak paths that were made."""
+        backed_up: list[Path] = []
+        for png in sorted(input_path.rglob("*.png")):
+            if not png.is_file() or not png.stem.endswith(ZIP_SUFFIX):
+                continue
+            bak = png.with_name(png.name + BAK_SUFFIX)
+            try:
+                png.replace(bak)      # a .bak left behind by an interrupted run is overwritten
+                backed_up.append(bak)
+            except OSError as e:
+                logger.warning("KOITEX", f"Could not rename {png.name} to {bak.name}: {e}")
+        if backed_up:
+            logger.info("KOITEX", f"Set aside {len(backed_up)} existing {ZIP_SUFFIX} card(s) "
+                                  f"as {BAK_SUFFIX} while the tool runs")
+        return backed_up
+
+    @staticmethod
+    def _restore_zip_cards(backed_up: list[Path]) -> None:
+        """Undo _backup_zip_cards(). If a card with the original name now exists (the tool just
+        produced a fresh one), that fresh copy wins and the old .bak is dropped, as the merge
+        into the input folder always overwrote an older copy."""
+        restored = replaced = 0
+        for bak in backed_up:
+            if not bak.exists():
+                continue
+            png = bak.with_name(bak.name[:-len(BAK_SUFFIX)])
+            try:
+                if png.exists():
+                    bak.unlink()
+                    replaced += 1
+                else:
+                    bak.replace(png)
+                    restored += 1
+            except OSError as e:
+                logger.error("KOITEX", f"Could not restore {png.name} from {bak.name}: {e}")
+        if backed_up:
+            logger.info("KOITEX", f"Restored {restored} {ZIP_SUFFIX} card(s)"
+                                  + (f"; {replaced} replaced by a fresh compressed copy" if replaced else ""))
+
     def _merge_output_into_input(self, input_path: Path, output_path: Path) -> bool:
         """Move every file from the "[zip]" output folder into the input folder
         (same relative layout; an existing file is overwritten), then delete
@@ -198,25 +247,11 @@ class CompressCardsTextures(BaseTask):
                 continue
 
             # Guard against deleting the original for a compressed output
-            # that never finished writing, is corrupt, or (oddly) isn't
-            # actually smaller — any of those mean KoiCardTexTool didn't
-            # produce a usable replacement, so the original must be kept.
+            # that never finished writing or is corrupt — KoiCardTexTool
+            # didn't produce a usable replacement, so the original is kept.
             if not self._is_valid_card(compressed):
                 logger.warning("KOITEX",
                     f"  Skipping delete — compressed file looks invalid: {compressed.name}")
-                skipped_invalid += 1
-                continue
-            try:
-                comp_size = compressed.stat().st_size
-                orig_size = original_path.stat().st_size
-            except OSError as e:
-                logger.warning("KOITEX", f"  Skipping delete — could not stat: {e}")
-                skipped_invalid += 1
-                continue
-            if comp_size <= 0 or comp_size >= orig_size:
-                logger.warning("KOITEX",
-                    f"  Skipping delete — compressed file isn't smaller "
-                    f"({comp_size} >= {orig_size} bytes): {compressed.name}")
                 skipped_invalid += 1
                 continue
 
@@ -228,7 +263,7 @@ class CompressCardsTextures(BaseTask):
                 logger.error("KOITEX", f"Could not delete {original_path.name}: {e}")
         logger.info("KOITEX",
             f"Compressed cards found: {checked}  Originals deleted: {deleted}"
-            + (f"  skipped (invalid/not smaller): {skipped_invalid}" if skipped_invalid else ""))
+            + (f"  skipped (invalid): {skipped_invalid}" if skipped_invalid else ""))
         logger.line()
 
     def run(self) -> None:
@@ -255,40 +290,46 @@ class CompressCardsTextures(BaseTask):
         logger.info("KOITEX", f"Delete originals: {self.delete_original}")
         logger.line()
 
-        cmd = [str(exe_path), "batch", str(input_path), str(output_path), f"suffix={ZIP_SUFFIX}"]
-
+        # Existing "<name>[zip].png" cards are set aside so the tool skips them; they come
+        # back afterwards even if the run fails.
+        backed_up = self._backup_zip_cards(input_path)
         try:
-            process = popen_text(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            )
-        except Exception as e:
-            logger.error("KOITEX", f"Could not run KoiCardTexTool: {e}")
-            raise
+            cmd = [str(exe_path), "batch", str(input_path), str(output_path), f"suffix={ZIP_SUFFIX}"]
 
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-            if line.strip():
-                logger.info("KoiCardTexTool", line.strip())
+            try:
+                process = popen_text(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                )
+            except Exception as e:
+                logger.error("KOITEX", f"Could not run KoiCardTexTool: {e}")
+                raise
 
-        process.wait()
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                if line.strip():
+                    logger.info("KoiCardTexTool", line.strip())
 
-        # Exit code 1 means at least one card failed as it may not be possible to compress it
-        if process.returncode not in [0, 1]:
-            logger.error("KOITEX", f"KoiCardTexTool exited with code {process.returncode}")
-            if self.delete_original:
-                logger.warning("KOITEX",
-                    "Skipping original-card deletion — KoiCardTexTool did not exit "
-                    "successfully, so its output cannot be trusted.")
-            raise TaskFailedError(
-                f"CompressCardsTextures: KoiCardTexTool exited with code {process.returncode}")
+            process.wait()
 
-        logger.success("KOITEX", "Compression complete")
+            # Exit code 1 means at least one card failed as it may not be possible to compress it
+            if process.returncode not in [0, 1]:
+                logger.error("KOITEX", f"KoiCardTexTool exited with code {process.returncode}")
+                if self.delete_original:
+                    logger.warning("KOITEX",
+                        "Skipping original-card deletion — KoiCardTexTool did not exit "
+                        "successfully, so its output cannot be trusted.")
+                raise TaskFailedError(
+                    f"CompressCardsTextures: KoiCardTexTool exited with code {process.returncode}")
 
-        # Bring the compressed cards back next to the originals and drop the
-        # temporary "[zip]" folder, then (optionally) bin the originals.
-        self._merge_output_into_input(input_path, output_path)
+            logger.success("KOITEX", "Compression complete")
+
+            # Bring the compressed cards back next to the originals and drop the
+            # temporary "[zip]" folder, then (optionally) bin the originals.
+            self._merge_output_into_input(input_path, output_path)
+        finally:
+            self._restore_zip_cards(backed_up)
 
         if self.delete_original:
             self._delete_originals(input_path)

@@ -6,6 +6,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Changed
 
+- **Compress Cards Textures:** existing `<name>[zip].png` cards are renamed to `.png.bak` while KoiCardTexTool runs and renamed back afterwards (also when the run fails). **Delete Original Cards** no longer keeps an original whose compressed copy isn't smaller; a valid compressed copy is enough.
 - **Group Characters / Rename Characters** — the character indexes no longer resolve anything locally. Every card sent to the LLM now carries a `hints` list of up to 5 candidates written `"Last, First (Series)"` (Group: `{"key": {"series": "", "hints": [...]}}`; Rename: `"hints"` beside the name fields), and the default prompts explain it. The LLM is always asked, so a run no longer finishes without it.
 - **Group Characters / Rename Characters** — the character index now also contains VTubers (series `VTubers`, from the VTuber database), and the default prompts tell the LLM that a character may be a VTuber: Group Characters uses `VTubers` as the series, Rename Characters takes the name as written in the hint.
 - **Group Characters / Rename Characters** — the default prompts now tell the LLM to search the web for a character it does not recognise before falling back (Rename: transliteration; Group: empty series).
