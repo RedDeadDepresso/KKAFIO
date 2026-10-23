@@ -31,7 +31,7 @@ from kkafio.core.paths import CONFIG_DIR
 from kkafio.system.password_dialog import password_dialog
 
 SESSION_FILE    = CONFIG_DIR / "config" / "pixiv_session.json"
-PIXIV_LOGIN_URL = "https://www.pixiv.net/login"
+PIXIV_LOGIN_URL = "https://accounts.pixiv.net/login"
 ENV_VAR         = "PIXIV_PHPSESSID"
 
 # A PHPSESSID looks like "12345678_AbCdEf0123...": the numeric user id, an
@@ -76,7 +76,7 @@ def _save(session: str) -> None:
 
 
 def _prompt() -> str | None:
-    """Open pixiv.net/login and ask the user to paste the cookie."""
+    """Open accounts.pixiv.net/login and ask the user to paste the cookie."""
     logger.info("PXVSES",
         "Opening pixiv.net — log in, then copy the PHPSESSID cookie value.")
     webbrowser.open(PIXIV_LOGIN_URL)

@@ -90,6 +90,13 @@ uses the KKC mod index above). Validated against
 prompted to paste a fresh cookie via a native dialog
 (`src/kkafio/system/password_dialog.py`) and the file is overwritten.
 
+### Gofile environment variables
+
+**Download Contents** needs no stored configuration for `gofile.io` links (a guest
+account is created per run). Optional environment variables: `GOFILE_TOKEN` (use a
+real account's token) and `GOFILE_SALT` (override the website-token salt when gofile
+rotates it; the symptom of a stale salt is an `error-notPremium` error).
+
 ### `config/pixiv_session.json` — pixiv.net session
 
 ```json

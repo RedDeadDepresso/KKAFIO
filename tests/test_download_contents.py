@@ -53,7 +53,7 @@ def test_pixiv_url_parsing_and_normalisation():
     assert P("https://www.pixiv.net/ja/artworks/151074285") == ("artwork", "151074285", "")
     assert P("https://www.pixiv.net/member.php?id=123") == ("user", "123", "artworks")
     assert P("https://www.pixiv.net/en/users/85712366/bookmarks/artworks") is None
-    assert P("https://www.pixiv.net/en/tags/koikatsu") is None
+    assert P("https://www.pixiv.net/en/ranking.php?mode=daily") is None
 
     # bare users/ID becomes users/ID/artworks
     assert dc._normalize_pixiv_url("https://www.pixiv.net/en/users/85712366") \
@@ -221,3 +221,236 @@ def test_pixiv_directive_and_link_page(tmp_path, monkeypatch):
     assert run(base + "?p=3") == 4             # ?p= in the link -> that page only
     assert run(base + "?p=3", 1, 1) == 48      # directive beats ?p=
     assert run(base, 2, None) == 52            # page 2 to the end
+
+
+# ---------------------------------------------------------------------------
+# pixiv search
+# ---------------------------------------------------------------------------
+
+SEARCH_URL = ("https://www.pixiv.net/search?q=%E3%82%AD%E3%83%A3%E3%83%A9%E9%85%8D%E5%B8%83%28"
+              "%E3%82%B3%E3%82%A4%E3%82%AB%E3%83%84%29%20%E5%8E%9F%E7%A5%9E"
+              "&s_mode=tag&type=artwork&ai_type=1&r=1")
+KEYWORD = "キャラ配布(コイカツ) 原神"
+
+
+def test_pixiv_search_url_parsing():
+    assert dc._parse_pixiv_url(SEARCH_URL) == ("search", KEYWORD, "artworks")
+    assert dc._parse_pixiv_url("https://www.pixiv.net/en/search?q=a&type=illust") == ("search", "a", "illustrations")
+    assert dc._parse_pixiv_url("https://www.pixiv.net/search?q=a&type=manga") == ("search", "a", "manga")
+    assert dc._parse_pixiv_url("https://www.pixiv.net/search?q=a&type=novel") is None
+    assert dc._parse_pixiv_url("https://www.pixiv.net/search") is None
+    assert dc._parse_pixiv_url("https://www.pixiv.net/en/tags/%E5%8E%9F%E7%A5%9E/illustrations") \
+        == ("search", "原神", "illustrations")
+    assert dc._pixiv_url_page(SEARCH_URL + "&p=4") == 4
+
+
+def test_pixiv_search_request_keeps_filters():
+    endpoint, params = dc._pixiv_search_request(SEARCH_URL + "&p=9", 3)
+    assert endpoint == "/search/artworks/" + "%E3%82%AD%E3%83%A3%E3%83%A9%E9%85%8D%E5%B8%83%28" \
+        "%E3%82%B3%E3%82%A4%E3%82%AB%E3%83%84%29%20%E5%8E%9F%E7%A5%9E"
+    d = dict(params)
+    assert d["word"] == KEYWORD and d["p"] == "3"          # page argument beats ?p=9
+    assert d["s_mode"] == "tag" and d["ai_type"] == "1" and d["r"] == "1"
+    assert d["type"] == "all" and d["order"] == "date_d" and d["mode"] == "all"
+    assert [k for k, _ in params].count("p") == 1
+    _, p2 = dc._pixiv_search_request("https://www.pixiv.net/search?q=x&type=illust&order=date&mode=r18", 1)
+    assert dict(p2)["order"] == "date" and dict(p2)["mode"] == "r18" and dict(p2)["type"] == "illust"
+
+
+def _fake_search_client(pages_of_works, size_of):
+    """pages_of_works: {page: [(id, w, h, pageCount)]}; size_of: {id: [(w, h)]}."""
+    import httpx
+    calls = {"search": [], "pages": []}
+
+    class _Resp:
+        def __init__(self, body): self._b = body
+        def raise_for_status(self): pass
+        def json(self): return {"error": False, "message": "", "body": self._b}
+
+    class _Client:
+        async def get(self, url):
+            u = httpx.URL(url)
+            if "/ajax/search/" in u.path:
+                q = dict(u.params)
+                calls["search"].append(q)
+                data = [{"id": str(i), "width": w, "height": h, "pageCount": n}
+                        for i, w, h, n in pages_of_works.get(int(q["p"]), [])]
+                data.insert(0, {"isAdContainer": True})            # ad entry without an id
+                return _Resp({"illustManga": {"data": data if len(data) > 1 else [], "total": 1}})
+            aid = u.path.split("/")[-2]
+            calls["pages"].append(aid)
+            return _Resp([{"urls": {"original": f"https://i.pximg.net/img-original/{aid}_p{i}.png"},
+                           "width": w, "height": h} for i, (w, h) in enumerate(size_of[aid])])
+    return _Client(), calls
+
+
+def test_pixiv_search_page_skips_single_page_mismatches_without_extra_requests():
+    client, calls = _fake_search_client(
+        {1: [(1, 252, 352, 1), (2, 1000, 1000, 1), (3, 320, 180, 1), (4, 800, 600, 2)]},
+        {"1": [(252, 352)], "3": [(320, 180)], "4": [(800, 600), (504, 704)]})
+    urls, failed, empty = asyncio.run(dc._get_pixiv_search_page_urls(client, SEARCH_URL, 1))
+    assert not empty and failed == 0
+    assert sorted(calls["pages"]) == ["1", "3", "4"]       # work 2 never hit /pages
+    assert sorted(urls) == [f"https://i.pximg.net/img-original/{n}.png" for n in ("1_p0", "3_p0", "4_p1")]
+    assert asyncio.run(dc._get_pixiv_search_page_urls(client, SEARCH_URL, 2))[2] is True
+
+
+def test_pixiv_search_paging_and_no_match_pages_do_not_stop_run(tmp_path, monkeypatch):
+    # pages 1-4 have results but nothing matches; page 5 has a card; page 6 is empty
+    works = {p: [(p * 10, 1000, 1000, 1)] for p in range(1, 5)}
+    works[5] = [(50, 252, 352, 1)]
+    client, calls = _fake_search_client(works, {"50": [(252, 352)]})
+    got: list[str] = []
+
+    async def fake_download_files(c, urls, directory, name_fn, history, skip):
+        got.extend(urls); return len(urls), 0, 0
+
+    monkeypatch.setattr(dc, "_download_files", fake_download_files)
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+
+    run = lambda s, e: asyncio.run(dc._download_pixiv_search(
+        client, SEARCH_URL, Path(tmp_path), {}, True, s, e))
+
+    assert run(1, None) == (1, 0, 0)                        # "| all" runs through 4 empty-match pages
+    assert got == ["https://i.pximg.net/img-original/50_p0.png"]
+    assert [c["p"] for c in calls["search"]] == ["1", "2", "3", "4", "5", "6"]
+
+    calls["search"].clear()
+    run(None, None)                                         # no directive -> page 1 only
+    assert [c["p"] for c in calls["search"]] == ["1"]
+    calls["search"].clear()
+    asyncio.run(dc._download_pixiv_search(client, SEARCH_URL + "&p=5", Path(tmp_path), {}, True, None, None))
+    assert [c["p"] for c in calls["search"]] == ["5"]       # ?p= in the link
+
+
+# ---------------------------------------------------------------------------
+# gofile
+# ---------------------------------------------------------------------------
+
+def test_gofile_url_parsing():
+    P = dc._parse_gofile_url
+    assert P("https://gofile.io/d/AbC123") == ("AbC123", None)
+    assert P("https://gofile.io/d/AbC123/") == ("AbC123", None)
+    assert P("https://gofile.io/f/AbC-123") == ("AbC-123", None)
+    assert P("https://gofile.io/d/AbC123?password=hunter2") == ("AbC123", "hunter2")
+    assert P("https://gofile.io/d/AbC123#password=hunter2") == ("AbC123", "hunter2")
+    assert P("https://gofile.io/") is None and P("https://gofile.io/contents/x") is None
+    assert dc._is_gofile_url("https://gofile.io/d/x") and dc._is_gofile_url("https://www.gofile.io/d/x")
+    assert not dc._is_gofile_url("https://notgofile.io/d/x")
+    assert not dc._is_gofile_url("https://example.com/?u=gofile.io")
+
+
+def test_gofile_website_token_matches_megaloader_formula(monkeypatch):
+    import hashlib
+    monkeypatch.delenv("GOFILE_SALT", raising=False)
+    monkeypatch.setattr(dc.time, "time", lambda: 14400 * 7 + 5)
+    expect = hashlib.sha256(
+        f"{dc.GOFILE_USER_AGENT}::en-US::tok::7::9844d94d963d30".encode()).hexdigest()
+    assert dc._gofile_website_token("tok") == expect
+    monkeypatch.setenv("GOFILE_SALT", "newsalt")
+    assert dc._gofile_website_token("tok") != expect
+
+
+def _gofile_mock_client(tree, record, fail_status=None):
+    """httpx client on a MockTransport emulating the gofile API + file servers."""
+    import httpx
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        u = request.url
+        record.append((request.method, str(u), dict(request.headers)))
+        if u.host == "api.gofile.io" and u.path == "/accounts":
+            return httpx.Response(200, json={"status": "ok", "data": {"token": "GUEST"}})
+        if u.host == "api.gofile.io" and u.path.startswith("/contents/"):
+            if fail_status:
+                return httpx.Response(404, json={"status": fail_status, "data": {}})
+            node = tree[u.path.rsplit("/", 1)[1]]
+            return httpx.Response(200, json={"status": "ok", "data": node})
+        if u.host.startswith("store"):
+            return httpx.Response(200, content=b"data:" + u.path.encode())
+        return httpx.Response(404)
+
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler),
+                             headers={"User-Agent": dc.GOFILE_USER_AGENT}, follow_redirects=True)
+
+
+def _gf_file(fid, name):
+    return {"type": "file", "id": fid, "name": name,
+            "link": f"https://store1.gofile.io/download/web/{fid}/{name.replace(' ', '%20')}"}
+
+
+def test_gofile_folder_download_end_to_end(tmp_path, monkeypatch):
+    monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    monkeypatch.delenv("GOFILE_SALT", raising=False)
+    tree = {
+        "ROOT": {"name": "pack", "children": {
+            "f1": _gf_file("f1", "card one.png"),
+            "d1": {"type": "folder", "id": "SUB", "name": "extras"},
+        }},
+        "SUB": {"name": "extras", "children": {"f2": _gf_file("f2", "card one.png")}},  # same name!
+    }
+    record: list = []
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+
+    async def go():
+        client = _gofile_mock_client(tree, record)
+        try:
+            return await dc._download_gofile(client, "https://gofile.io/d/ROOT", Path(tmp_path), {}, True)
+        finally:
+            await client.aclose()
+
+    assert asyncio.run(go()) == (2, 0, 0)
+    assert (Path(tmp_path) / "card one.png").read_bytes().startswith(b"data:")
+    assert (Path(tmp_path) / "extras" / "card one.png").exists()       # no overwrite
+
+    api = [r for r in record if r[1].startswith("https://api.gofile.io/contents/ROOT")][0]
+    assert api[2]["authorization"] == "Bearer GUEST"
+    assert len(api[2]["x-website-token"]) == 64 and api[2]["x-bl"] == "en-US"
+    assert api[2]["user-agent"] == dc.GOFILE_USER_AGENT
+    assert sum(1 for r in record if r[1].endswith("/accounts")) == 1    # one guest account per client
+    dl = [r for r in record if r[1].startswith("https://store1.gofile.io")]
+    assert dl and all("accountToken=GUEST" in r[2].get("cookie", "") for r in dl)
+    # the cookie is scoped to .gofile.io: sent to gofile hosts, never anywhere else
+    import httpx
+    jar = httpx.Cookies(); jar.set("accountToken", "GUEST", domain=dc.GOFILE_DOMAIN)
+    other = httpx.Request("GET", "https://example.com/x"); jar.set_cookie_header(other)
+    assert "cookie" not in other.headers
+
+
+def test_gofile_password_is_sent_hashed(tmp_path, monkeypatch):
+    import hashlib
+    monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    record: list = []
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    tree = {"ROOT": {"name": "x", "children": {"f": _gf_file("f", "a.png")}}}
+
+    async def go():
+        client = _gofile_mock_client(tree, record)
+        try:
+            return await dc._download_gofile(
+                client, "https://gofile.io/d/ROOT?password=secret", Path(tmp_path), {}, True)
+        finally:
+            await client.aclose()
+
+    assert asyncio.run(go()) == (1, 0, 0)
+    assert "password=" + hashlib.sha256(b"secret").hexdigest() in \
+        [r for r in record if "/contents/ROOT" in r[1]][0][1]
+
+
+def test_gofile_api_errors_become_clear_messages(tmp_path, monkeypatch):
+    monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    import pytest
+    for status, fragment in (("error-notFound", "not found"), ("error-passwordRequired", "password"),
+                             ("error-notPremium", "GOFILE_SALT")):
+        async def go():
+            client = _gofile_mock_client({}, [], fail_status=status)
+            try:
+                return await dc._download_gofile(client, "https://gofile.io/d/X", Path(tmp_path), {}, True)
+            finally:
+                await client.aclose()
+        with pytest.raises(RuntimeError, match=fragment):
+            asyncio.run(go())
+
+
+def test_resolve_filename_decodes_percent_escapes():
+    class _R: headers = {}
+    assert dc._resolve_filename(_R(), "https://store1.gofile.io/download/web/id/card%20one.png", "x") == "card one.png"

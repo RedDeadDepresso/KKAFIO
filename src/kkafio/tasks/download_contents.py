@@ -4,9 +4,13 @@ download_contents.py — Download Koikatsu character cards from web sources.
 Supports:
   https://db.bepis.moe          — card pages (/view/) and listing pages
   https://koikatsucards.com     — card pages (/contents/) and listing pages
-  https://www.pixiv.net         — artworks (/artworks/ID) and whole galleries
-                                  (/users/ID, /users/ID/illustrations); only
+  https://www.pixiv.net         — artworks (/artworks/ID), galleries
+                                  (/users/ID, /users/ID/illustrations) and
+                                  searches (/search?q=...); only
                                   images that look like KK cards/scenes are kept
+  https://gofile.io             — folders (/d/ID); every file is downloaded,
+                                  subfolders into subdirectories; a password can
+                                  be given as ?password=...
 
 Input line formats (| is the separator — safe because URLs never contain |):
   https://...                   plain URL — single card page or one listing page
@@ -24,11 +28,13 @@ as does a link that already ends in ?p=2; with neither, the whole gallery is rea
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 import re
+import time
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse, urljoin
+from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse, urlunparse, urljoin
 
 from kkafio.tasks.base_task import BaseTask
 from kkafio.core.logger import logger
@@ -102,11 +108,11 @@ def _retry_delay(exc: Exception, attempt: int) -> float:
     return float(min(2 ** attempt, 30))
 
 
-async def _get_with_retry(client, url: str):
+async def _get_with_retry(client, url: str, headers: dict | None = None):
     """GET `url`, raise_for_status, retrying transient failures with backoff."""
     for attempt in range(1, RETRY_ATTEMPTS + 1):
         try:
-            r = await client.get(url)
+            r = await (client.get(url, headers=headers) if headers else client.get(url))
             r.raise_for_status()
             return r
         except Exception as exc:
@@ -243,7 +249,7 @@ def _resolve_filename(response, url: str, default_name: str) -> str:
                 name = part[9:].strip().strip('"').strip("'")
                 if name:
                     return Path(name).name
-    path_part = Path(urlparse(url).path).name
+    path_part = Path(unquote(urlparse(url).path)).name
     if path_part and path_part not in (".", "/"):
         return path_part
     return default_name
@@ -387,6 +393,12 @@ async def _download_pages(
             logger.info("DLOAD", f"  Page {page} is empty — stopping.")
             break
 
+        if not file_urls and card_fail == 0:
+            # Results exist but none are downloadable (e.g. pixiv search hits
+            # that all fail the size filter) — not an error, keep paging.
+            logger.info("DLOAD", f"  Page {page}: nothing to download.")
+            bad_pages = 0
+            continue
         if not file_urls:
             bad_pages += 1
             logger.warning("DLOAD",
@@ -635,7 +647,8 @@ def _parse_pixiv_url(url: str) -> tuple[str, str, str] | None:
     """Classify a pixiv link.
 
     Returns ("artwork", artwork_id, "") or ("user", user_id, scope) where scope
-    is "artworks" (illustrations + manga), "illustrations" or "manga".
+    is "artworks" (illustrations + manga), "illustrations" or "manga", or
+    ("search", keyword, scope) for a search / tag page.
     A bare /users/ID means /users/ID/artworks. Returns None for anything else.
     """
     parts = urlparse(url)
@@ -651,8 +664,21 @@ def _parse_pixiv_url(url: str) -> tuple[str, str, str] | None:
             return "user", segs[1], scope
         return None                          # /bookmarks, /following, ...
 
-    # Legacy links
     query = dict(parse_qsl(parts.query))
+
+    # Search: /search?q=KEYWORD&type=artwork|illust|manga&...
+    if segs == ["search"] and query.get("q"):
+        scope = {"artwork": "artworks", "illust": "illustrations", "manga": "manga"}.get(
+            query.get("type", "artwork"))
+        return ("search", query["q"], scope) if scope else None
+    # Tag page: /tags/KEYWORD[/artworks|illustrations|manga]
+    if len(segs) >= 2 and segs[0] == "tags":
+        scope = segs[2] if len(segs) >= 3 else "artworks"
+        if scope in ("artworks", "illustrations", "manga"):
+            return "search", unquote(segs[1]), scope
+        return None
+
+    # Legacy links
     if segs and segs[0] == "member.php" and query.get("id", "").isdigit():
         return "user", query["id"], "artworks"
     if segs and segs[0] == "member_illust.php" and query.get("illust_id", "").isdigit():
@@ -691,6 +717,8 @@ def _normalize_pixiv_url(url: str) -> str | None:
     kind, ident, scope = parsed
     if kind == "artwork":
         return f"{PIXIV_URL}/en/artworks/{ident}"
+    if kind == "search":
+        return url
     return f"{PIXIV_URL}/en/users/{ident}/{scope}"
 
 
@@ -756,6 +784,104 @@ async def _pixiv_user_artwork_ids(client, user_id: str, scope: str) -> list[str]
     return sorted(set(ids), key=int, reverse=True)
 
 
+# Web search params -> /ajax/search path + "type" value.
+_PIXIV_SEARCH_ENDPOINT = {
+    "artworks":      ("artworks",      "all"),
+    "illustrations": ("illustrations", "illust"),
+    "manga":         ("manga",         "manga"),
+}
+# Params the request builder sets itself; everything else in the link (the
+# filters: s_mode, mode, order, ai_type, scd/ecd, wlt/wgt, tool, ...) is kept.
+_PIXIV_SEARCH_OWN_PARAMS = {"q", "word", "p", "page", "type", "lang"}
+
+
+def _pixiv_search_request(url: str, page: int) -> tuple[str, list[tuple[str, str]]]:
+    """Build the /ajax/search endpoint + params for a search link and page,
+    carrying over every filter query parameter of the link unchanged."""
+    kind, keyword, scope = _parse_pixiv_url(url)
+    path, type_ = _PIXIV_SEARCH_ENDPOINT[scope]
+    pairs = [(k, v) for k, v in parse_qsl(urlparse(url).query, keep_blank_values=True)
+             if k not in _PIXIV_SEARCH_OWN_PARAMS]
+    present = {k for k, _ in pairs}
+    for key, default in (("order", "date_d"), ("mode", "all"), ("s_mode", "s_tag")):
+        if key not in present:
+            pairs.append((key, default))
+    pairs += [("word", keyword), ("type", type_), ("p", str(page)), ("lang", "en")]
+    return f"/search/{path}/{quote(keyword, safe='')}", pairs
+
+
+def _pixiv_search_items(body) -> list[dict]:
+    """The work list of a search response (its key depends on the endpoint)."""
+    if isinstance(body, dict):
+        for key in ("illustManga", "illust", "manga", "artworks"):
+            section = body.get(key)
+            if isinstance(section, dict) and isinstance(section.get("data"), list):
+                return [w for w in section["data"]
+                        if isinstance(w, dict) and str(w.get("id", "")).isdigit()]
+    return []
+
+
+async def _get_pixiv_search_page_urls(client, url: str, page: int) -> tuple[list[str], int, bool]:
+    """Returns (file_urls, card_failures, listing_empty) for one search page.
+
+    The search results already carry the first image's size, so a single-page
+    work that fails the filter is dropped without another request; every other
+    work is checked through /pages like a gallery work.
+    """
+    endpoint, params = _pixiv_search_request(url, page)
+    body = await _pixiv_api(client, endpoint, params)
+    works = _pixiv_search_items(body)
+    if not works:
+        return [], 0, True
+
+    to_check: list[str] = []
+    for w in works:
+        single = w.get("pageCount") == 1
+        if single and not _pixiv_size_matches(w.get("width"), w.get("height")):
+            continue
+        to_check.append(str(w["id"]))
+    logger.info("DLOAD",
+        f"  {len(works)} work(s) on page {page}, {len(to_check)} to check "
+        f"({len(works) - len(to_check)} dropped by size).")
+
+    sem = asyncio.Semaphore(PIXIV_META_CONCURRENCY)
+
+    async def _resolve(artwork_id: str):
+        async with sem:
+            return await _pixiv_artwork_images(client, artwork_id)
+
+    results = await asyncio.gather(*[_resolve(a) for a in to_check], return_exceptions=True)
+    urls: list[str] = []
+    failed = 0
+    for artwork_id, res in zip(to_check, results, strict=True):
+        if isinstance(res, BaseException):
+            if not isinstance(res, Exception):
+                raise res                          # Cancelled / KeyboardInterrupt
+            failed += 1
+            logger.error("DLOAD", f"  Could not read artwork {artwork_id}: {res}")
+        else:
+            urls += res[0]
+    return urls, failed, False
+
+
+async def _download_pixiv_search(
+    client, url: str, directory: Path, history: dict, skip: bool,
+    page_start: int | None, page_end: int | None,
+) -> tuple[int, int, int]:
+    """Search results are paged (60 per page) like the other listing sources:
+    ``| N`` / ``| N | M`` / ``| all`` pick the pages; without a directive the
+    link's own ``?p=N`` (else page 1) is read — a search can be huge, so
+    "everything" has to be asked for with ``| all``."""
+    if page_start is None:
+        page_start = page_end = _pixiv_url_page(url) or 1
+    logger.info("DLOAD",
+        f"Scraping pixiv search (page {page_start}): {url}" if page_end == page_start else
+        f"Scraping pixiv search (pages {page_start}–{'end' if page_end is None else page_end}): {url}")
+    return await _download_pages(
+        client, url, directory, history, skip, page_start, page_end,
+        _get_pixiv_search_page_urls, _pixiv_default_name)
+
+
 async def _download_pixiv(
     client, url: str, directory: Path, history: dict, skip: bool,
     page_start: int | None = None, page_end: int | None = None,
@@ -769,9 +895,13 @@ async def _download_pixiv(
     parsed = _parse_pixiv_url(url)
     if parsed is None:
         logger.error("DLOAD",
-            f"Unsupported pixiv link (use /artworks/ID or /users/ID): {url}")
+            f"Unsupported pixiv link (use /artworks/ID, /users/ID or a /search link): {url}")
         return 0, 0, 1
     kind, ident, scope = parsed
+
+    if kind == "search":
+        return await _download_pixiv_search(
+            client, url, directory, history, skip, page_start, page_end)
 
     if kind == "artwork":
         logger.info("DLOAD", f"Scraping pixiv artwork: {ident}")
@@ -836,6 +966,204 @@ async def _download_pixiv(
         f"  {kept} image(s) matched 320x180 / 252x352-ratio, "
         f"{filtered} filtered out by size.")
     return total_ok, total_skip, total_fail
+
+
+# ---------------------------------------------------------------------------
+# Gofile
+# ---------------------------------------------------------------------------
+#
+# Same method as megaloader's Gofile plugin: a guest account token from
+# POST /accounts, then GET /contents/<id> signed with a "website token". The
+# token is a sha256 over the user agent, language, account token, a 4-hour
+# time bucket and a salt that gofile ships (obfuscated) in its wt.js and
+# rotates every few months. If requests start failing with "error-notPremium"
+# the salt is stale: set the GOFILE_SALT environment variable to the new one
+# (megaloader tracks it too). GOFILE_TOKEN may hold the token of a real
+# account instead of using a throw-away guest account.
+
+GOFILE_API         = "https://api.gofile.io"
+GOFILE_DOMAIN      = ".gofile.io"
+GOFILE_SALT        = "9844d94d963d30"
+GOFILE_TIME_BUCKET = 14400            # seconds
+GOFILE_LANG        = "en-US"
+# The website token hashes this exact user agent, so the client must send it.
+GOFILE_USER_AGENT  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+GOFILE_PAGE_SIZE   = 1000
+GOFILE_MAX_DEPTH   = 8                # nested folder levels followed
+
+
+def _is_gofile_url(url: str) -> bool:
+    return (urlparse(url).hostname or "").lower() in ("gofile.io", "www.gofile.io")
+
+
+def _parse_gofile_url(url: str) -> tuple[str, str | None] | None:
+    """(content_id, password) of a gofile.io/d/ID or /f/ID link, else None.
+
+    A folder password can be given as ``?password=...`` or ``#password=...``.
+    """
+    parts = urlparse(url)
+    m = re.match(r"^/(?:d|f)/([\w-]+)/?$", parts.path)
+    if not m:
+        return None
+    opts = dict(parse_qsl(parts.query)) | dict(parse_qsl(parts.fragment))
+    return m.group(1), opts.get("password") or None
+
+
+def _gofile_website_token(api_token: str) -> str:
+    bucket = int(time.time() // GOFILE_TIME_BUCKET)
+    salt = os.environ.get("GOFILE_SALT") or GOFILE_SALT
+    raw = f"{GOFILE_USER_AGENT}::{GOFILE_LANG}::{api_token}::{bucket}::{salt}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _gofile_status_message(status: str | None) -> str:
+    return {
+        "error-notFound": "Gofile content not found (deleted or expired).",
+        "error-passwordRequired":
+            "This Gofile folder is password protected — add ?password=... to the link.",
+        "error-passwordWrong": "Wrong Gofile folder password.",
+        "error-notPremium":
+            "Gofile rejected the request (error-notPremium). The website-token salt is "
+            "probably out of date: set the GOFILE_SALT environment variable to the "
+            "current value (see megaloader's gofile plugin).",
+    }.get(status or "", f"Gofile API error: {status}")
+
+
+def _gofile_safe_name(name: str, fallback: str) -> str:
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name).strip(" .")
+    return name or fallback
+
+
+async def _gofile_token(client) -> str:
+    """The account token: GOFILE_TOKEN, a token already used by this client,
+    or a fresh guest account. It is also set as the accountToken cookie, which
+    gofile's file servers want on the download requests."""
+    token = os.environ.get("GOFILE_TOKEN") or client.cookies.get("accountToken", domain=GOFILE_DOMAIN)
+    if not token:
+        r = await client.post(f"{GOFILE_API}/accounts")
+        r.raise_for_status()
+        data = r.json()
+        if data.get("status") != "ok":
+            raise RuntimeError(_gofile_status_message(data.get("status")))
+        token = (data.get("data") or {}).get("token")
+        if not isinstance(token, str) or not token:
+            raise RuntimeError("Gofile guest account response carries no token.")
+    client.cookies.set("accountToken", token, domain=GOFILE_DOMAIN)
+    return token
+
+
+async def _gofile_api(client, path: str, params: dict, api_token: str):
+    """GET a signed gofile API endpoint and return its "data"."""
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "X-Website-Token": _gofile_website_token(api_token),
+        "X-BL": GOFILE_LANG,
+        "Origin": "https://gofile.io",
+        "Referer": "https://gofile.io/",
+    }
+    try:
+        r = await _get_with_retry(client, f"{GOFILE_API}{path}?{urlencode(params)}", headers)
+    except Exception as exc:
+        # Gofile reports "not found" / "password" problems as HTTP errors with
+        # a JSON {"status": "error-..."} body — turn those into a clear message.
+        try:
+            status = exc.response.json().get("status")          # type: ignore[attr-defined]
+        except Exception:
+            status = None
+        if status:
+            raise RuntimeError(_gofile_status_message(status)) from exc
+        raise
+    data = r.json()
+    if data.get("status") != "ok":
+        raise RuntimeError(_gofile_status_message(data.get("status")))
+    return data.get("data")
+
+
+async def _gofile_walk(
+    client, content_id: str, api_token: str, pw_hash: str | None,
+    rel: tuple[str, ...], depth: int, out: list[tuple[tuple[str, ...], list[str]]],
+) -> None:
+    """Collect (relative folder, file links) for a folder and its subfolders."""
+    files: list[str] = []
+    subfolders: list[tuple[str, str]] = []
+    seen_ids: set[str] = set()
+    page = 1
+    while True:
+        params = {"contentFilter": "", "sortField": "name", "sortDirection": "1",
+                  "pageSize": str(GOFILE_PAGE_SIZE), "page": str(page)}
+        if pw_hash:
+            params["password"] = pw_hash
+        data = await _gofile_api(client, f"/contents/{content_id}", params, api_token)
+        if not isinstance(data, dict):
+            raise RuntimeError("Unexpected Gofile response (expected an object).")
+        children = data.get("children")
+        children = children if isinstance(children, dict) else {}
+
+        new = 0
+        for child_id, entry in children.items():
+            if not isinstance(entry, dict) or child_id in seen_ids:
+                continue
+            seen_ids.add(child_id)
+            new += 1
+            kind = entry.get("type")
+            if kind == "file" and isinstance(entry.get("link"), str) and entry["link"]:
+                files.append(entry["link"])
+            elif kind == "folder":
+                sub_id = str(entry.get("id") or child_id)
+                subfolders.append((sub_id, str(entry.get("name") or sub_id)))
+        if len(children) < GOFILE_PAGE_SIZE or new == 0 or page >= 100:
+            break
+        page += 1
+
+    if not seen_ids and not pw_hash:
+        logger.warning("DLOAD", "  No files found (a password may be required).")
+    out.append((rel, files))
+
+    for sub_id, sub_name in subfolders:
+        if depth >= GOFILE_MAX_DEPTH:
+            logger.warning("DLOAD", f"  Folder nesting too deep, skipping: {sub_name}")
+            continue
+        await _gofile_walk(client, sub_id, api_token, pw_hash,
+                           rel + (_gofile_safe_name(sub_name, sub_id),), depth + 1, out)
+
+
+async def _download_gofile(
+    client, url: str, directory: Path, history: dict, skip: bool,
+) -> tuple[int, int, int]:
+    """Returns (succeeded, skipped, failed). Files of the linked folder go
+    straight into `directory`; files of nested folders into subfolders named
+    after them, so same-named files never overwrite each other."""
+    parsed = _parse_gofile_url(url)
+    if parsed is None:
+        logger.error("DLOAD", f"Unsupported Gofile link (use gofile.io/d/ID): {url}")
+        return 0, 0, 1
+    content_id, password = parsed
+    logger.info("DLOAD", f"Scraping Gofile: {content_id}")
+
+    api_token = await _gofile_token(client)
+    pw_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
+
+    folders: list[tuple[tuple[str, ...], list[str]]] = []
+    await _gofile_walk(client, content_id, api_token, pw_hash, (), 0, folders)
+    logger.info("DLOAD", f"  Found {sum(len(f) for _, f in folders)} file(s).")
+
+    total_ok = total_skip = total_fail = 0
+    for rel, file_urls in folders:
+        if not file_urls:
+            continue
+        target = directory.joinpath(*rel)
+        target.mkdir(parents=True, exist_ok=True)
+        ok, skipped, fail = await _download_files(
+            client, file_urls, target, _gofile_default_name, history, skip)
+        total_ok   += ok
+        total_skip += skipped
+        total_fail += fail
+        _save_history(history)
+    return total_ok, total_skip, total_fail
+
+
+def _gofile_default_name(url: str) -> str:
+    return Path(unquote(urlparse(url).path)).name
 
 
 # ---------------------------------------------------------------------------
@@ -915,7 +1243,8 @@ class DownloadContents(BaseTask):
                                     cookie_domain="koikatsucards.com") as kk_client, \
                        _make_client(cookies=pixiv_cookies,
                                     cookie_domain=PIXIV_COOKIE_DOMAIN,
-                                    extra_headers={"Referer": PIXIV_URL + "/"}) as pixiv_client:
+                                    extra_headers={"Referer": PIXIV_URL + "/"}) as pixiv_client, \
+                       _make_client(extra_headers={"User-Agent": GOFILE_USER_AGENT}) as gofile_client:
                 for url_str, page_start, page_end in urls:
                     ok = skipped = fail = 0
                     try:
@@ -938,9 +1267,15 @@ class DownloadContents(BaseTask):
                             ok, skipped, fail = await _download_pixiv(
                                 pixiv_client, url_str, output_dir, history, self.skip_downloaded,
                                 page_start=page_start, page_end=page_end)
+                        elif _is_gofile_url(url_str):
+                            if page_start is not None:
+                                logger.info("DLOAD",
+                                    "  Page directive is ignored for Gofile links.")
+                            ok, skipped, fail = await _download_gofile(
+                                gofile_client, url_str, output_dir, history, self.skip_downloaded)
                         else:
                             logger.error("DLOAD",
-                                f"Unsupported URL (must be db.bepis.moe, koikatsucards.com or pixiv.net): {url_str}")
+                                f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net or gofile.io): {url_str}")
                             fail = 1
                     except Exception as exc:
                         # One bad URL must not abort the remaining ones.
