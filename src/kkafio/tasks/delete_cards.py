@@ -5,7 +5,6 @@ delete_cards.py — Send character cards, coordinate cards (or Studio scenes)
 
 
 
-import os
 from pathlib import Path
 
 from send2trash import send2trash
@@ -14,52 +13,10 @@ from kkafio.tasks.base_task import BaseTask
 from kkafio.cards.mods import build_mods_cache, load_modpack_index, resolve_paths
 from kkafio.cards.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
-from kkafio.cards.png_guids import (
-    collect_chara_guids_by_file, collect_coord_guids_by_file, collect_scene_guids_by_file,
-)
+from kkafio.cards.shared_mods import find_guids_in_use, keep_unshared, path_key
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
-
-
-def _path_key(p: Path | str) -> str:
-    """Canonical string for comparing paths regardless of case (Windows),
-    symlinks/junctions, or relative segments. Both the scanned cards and the
-    exclusion set must go through this, otherwise a card can fail to exclude
-    itself just because its folder was configured with different casing."""
-    return os.path.normcase(os.path.realpath(str(p)))
-
-
-def _collect_guids_in_use(chara_dirs: list[Path], scene_dirs: list[Path],
-                          coord_dirs: list[Path],
-                          exclude: set[Path], use_cache: bool = False) -> set[str]:
-    """Return the union of every mod GUID referenced by every chara card in
-    chara_dirs, every scene in scene_dirs, and every coordinate card in
-    coord_dirs, EXCLUDING every file in `exclude` (the cards being deleted
-    *and* any coordinate cards bundled for deletion with them). Used by
-    CheckSharedMods to make sure a zipmod isn't deleted out from under a
-    character/scene/coordinate that isn't being touched.
-
-    The full per-file GUID cache for each folder is always built/reused —
-    including the file(s) in `exclude` — and those files' own GUIDs are
-    dropped from the union afterward, so the same on-disk cache can be reused
-    no matter where the cards being deleted live.
-    """
-    guids: set[str] = set()
-    exclude_keys = {_path_key(p) for p in exclude}
-
-    for dirs, collect_by_file in (
-        (chara_dirs, collect_chara_guids_by_file),
-        (scene_dirs, collect_scene_guids_by_file),
-        (coord_dirs, collect_coord_guids_by_file),
-    ):
-        by_file = collect_by_file(dirs, use_cache=use_cache)
-        for path_str, file_guids in by_file.items():
-            if _path_key(path_str) in exclude_keys:
-                continue
-            guids.update(file_guids)
-
-    return guids
 
 
 class DeleteCards(BaseTask):
@@ -214,13 +171,9 @@ class DeleteCards(BaseTask):
 
         kept_shared = 0
         if guids_in_use_elsewhere is not None:
-            for guid in list(guid_map.keys()):
-                if guid in guids_in_use_elsewhere:
-                    logger.info("DELETE",
-                        f"    Keeping {guid_map[guid].name} — still used by another "
-                        "installed character/scene")
-                    del guid_map[guid]
-                    kept_shared += 1
+            free = set(keep_unshared({p: g for g, p in guid_map.items()}, guids_in_use_elsewhere, "DELETE"))
+            kept_shared = len(guid_map) - len(free)
+            guid_map = {g: p for g, p in guid_map.items() if p in free}
 
         logger.info("DELETE",
             f"  Zipmods found: {len(guid_map)}  "
@@ -264,32 +217,13 @@ class DeleteCards(BaseTask):
 
         guids_in_use_elsewhere: set[str] | None = None
         if self.check_shared_mods:
-            game_path  = self.config.game_path
-            if self.chara_dirs_override:
-                chara_dirs = [Path(d) for d in self.chara_dirs_override]
-            elif self.chara_dir_str:
-                chara_dirs = [Path(self.chara_dir_str)]
-            else:
-                chara_dirs = [d for d in (game_path.get("charaFemale"), game_path.get("charaMale")) if d]
-            if self.scene_dir_str:
-                scene_dirs = [Path(self.scene_dir_str)]
-            else:
-                scene_dirs = [game_path["scene"]] if "scene" in game_path else []
-            if self.coord_dir_str:
-                coord_dirs = [Path(self.coord_dir_str)]
-            else:
-                coord_dirs = [game_path["coordinate"]] if "coordinate" in game_path else []
             # Every card AND bundled coordinate about to be deleted — their own
             # GUIDs must not count as "still in use elsewhere".
             exclude = {f for plan in plans for f in plan["files"]}
-
-            logger.line()
-            logger.info("DELETE",
-                "Checking for shared mods across chara/scene/coordinate folders before deleting...")
-            guids_in_use_elsewhere = _collect_guids_in_use(chara_dirs, scene_dirs, coord_dirs,
-                                                            exclude, use_cache=self.use_cache)
-            logger.info("DELETE",
-                f"Found {len(guids_in_use_elsewhere)} GUID(s) still referenced elsewhere")
+            chara_dirs = self.chara_dirs_override or ([self.chara_dir_str] if self.chara_dir_str else None)
+            guids_in_use_elsewhere = find_guids_in_use(
+                "DELETE", self.config.game_path, self.use_cache, exclude, chara_dirs,
+                self.scene_dir_str or None, self.coord_dir_str or None)
 
         # Phase 2 — resolve mods and delete.
         handled: set[str] = set()   # a coordinate can be bundled by several cards
@@ -297,14 +231,14 @@ class DeleteCards(BaseTask):
             self.log_start("DELETE")
             logger.info("DELETE", f"Deleting: {plan['content_path'].name}")
             files = plan["files"] + self._resolve_mods(plan, guids_in_use_elsewhere)
-            files = [f for f in files if _path_key(f) not in handled]
+            files = [f for f in files if path_key(f) not in handled]
             deleted = 0
 
             logger.info("DELETE", f"  Sending {len(files)} file(s) to bin:")
             for f in files:
                 try:
                     send2trash(str(f))
-                    handled.add(_path_key(f))
+                    handled.add(path_key(f))
                     logger.removed("DELETE", f.name)
                     deleted += 1
                 except Exception as e:

@@ -1450,7 +1450,12 @@
       "default_check": false,
       "description": "$task.UninstallContents.description",
       "group": ["content-management"],
-      "option": ["DownloadsInputPath", "InstallContentTypes"]
+      "option": [
+        "DownloadsInputPath",
+        "InstallContentTypes",
+        "CheckSharedMods",
+        "UseCache"
+      ]
     },
     {
       "name": "GroupScenes",

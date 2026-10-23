@@ -198,6 +198,13 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--input", "-i", key="InputPath", coerce=Path, metavar="DIR", default=None,
                   help="Folder to scan (default: UninstallContents.InputPath from config)"),
             *_content_type_toggles("chara", "mods", "coords", "scenes", "overlays"),
+            Toggle("check-shared-mods", key="CheckSharedMods",
+                   help="Before removing a zipmod, verify no remaining character/scene/coordinate "
+                        "still uses it (default: on)",
+                   off_help="Skip the shared-mod check — faster, but may remove mods other cards still need"),
+            Toggle("use-cache", key="UseCache",
+                   help="Reuse the mod and card GUID caches for the shared-mod check (overrides config)",
+                   off_help="Disable cache and do a full scan (overrides config)"),
         ),
     ),
 
