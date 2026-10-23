@@ -1481,12 +1481,12 @@
       "option": [
         "CharaDir",
         "GroupCharaIncludeSubfolders",
+        "HintsLanguage",
+        "GroupCharaResolveLocally",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "GroupCharaPrompt",
-        "UseCache",
-        "HintsLanguage",
-        "GroupCharaResolveLocally"
+        "UseCache"
       ]
     },
     {
@@ -1527,12 +1527,12 @@
         "SkipAlreadyRenamed",
         "UpdateMetadata",
         "RenameFiles",
+        "HintsLanguage",
+        "RenameCharaResolveLocally",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "RenameCharaPrompt",
-        "UseCache",
-        "HintsLanguage",
-        "RenameCharaResolveLocally"
+        "UseCache"
       ]
     },
     {
