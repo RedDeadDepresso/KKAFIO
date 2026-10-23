@@ -73,6 +73,8 @@
   "dialog.password.tfa_body": "В вашем аккаунте включена двухфакторная аутентификация.\nВведите пароль 2FA:",
   "dialog.password.kkd_title": "Cookie сессии koikatsucards.com",
   "dialog.password.kkd_body": "Войдите на koikatsucards.com, затем:\n1. Откройте DevTools (инструменты разработчика) в браузере (F12)\n2. Chrome/Edge: Application (Приложение) → Storage (Хранилище) → Cookies (Файлы cookie) → https://koikatsucards.com\n    Firefox: Storage → Cookies → https://koikatsucards.com\n3. Найдите «kkd_session» и скопируйте его Value (значение)\n\nВставьте значение ниже:",
+  "dialog.password.pixiv_title": "Cookie сессии pixiv.net",
+  "dialog.password.pixiv_body": "Войдите на pixiv.net, затем:\n1. Откройте DevTools (инструменты разработчика) в браузере (F12)\n2. Chrome/Edge: Application (Приложение) → Storage (Хранилище) → Cookies (Файлы cookie) → https://www.pixiv.net\n    Firefox: Storage → Cookies → https://www.pixiv.net\n3. Найдите «PHPSESSID» и скопируйте его Value (значение)\n\nВставьте значение ниже (Отмена — продолжить без входа; работы R-18 будут недоступны):",
   "dialog.password.archive_title": "Введите пароль",
   "dialog.password.archive_body": "Ошибка при обработке архива {archive}. Возможно, он защищён паролем?",
   "dialog.password.archive_retry": "Неверный пароль, либо {archive} повреждён. Введите пароль ещё раз или нажмите «Отмена»."

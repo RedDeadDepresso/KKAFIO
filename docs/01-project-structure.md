@@ -85,6 +85,7 @@ KKAFIO-dev/
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── kkd_session.py           # koikatsucards.com session cookie management
+│   │   ├── pixiv_session.py         # pixiv.net PHPSESSID cookie management
 │   │   ├── telegram_config.py       # Telegram API credential storage
 │   │   ├── telegram_links.py        # Parsing Telegram links / the chat list (pure string handling)
 │   │   ├── telegram_mods.py         # Searching Telegram chats and downloading mods (teleget)

@@ -90,6 +90,20 @@ uses the KKC mod index above). Validated against
 prompted to paste a fresh cookie via a native dialog
 (`src/kkafio/system/password_dialog.py`) and the file is overwritten.
 
+### `config/pixiv_session.json` — pixiv.net session
+
+```json
+{ "session": "<PHPSESSID cookie value>" }
+```
+
+Written/read by `src/kkafio/services/pixiv_session.py`. Used by **Download Contents**
+for `pixiv.net` links. Lookup order: the `PIXIV_PHPSESSID` environment variable,
+this file, then a native dialog. The value is only checked for its shape
+(`<user id>_<token>`); there is no online validation. A missing session is not
+an error — public works still download, only R-18 / restricted ones need it —
+so cancelling the dialog continues without a login. The cookie is scoped to
+`.pixiv.net` and never sent to the image host (`i.pximg.net`).
+
 ### `config/telegram.json` — Telegram API credentials
 
 ```json

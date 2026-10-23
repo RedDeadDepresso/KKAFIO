@@ -112,7 +112,7 @@ Everything else — CLI output, log files, and error messages — is English-onl
 
 **2. Download Contents**
 
-- Downloads character cards from [db.bepis.moe](https://db.bepis.moe) and [koikatsucards.com](https://koikatsucards.com).
+- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com) and [pixiv.net](https://www.pixiv.net).
 - **Output Directory** defaults to `C:/KKAFIO/Downloads`.
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
 - **Pagination formats** (use `|` as separator):
@@ -133,6 +133,9 @@ Everything else — CLI output, log files, and error messages — is English-onl
   - On first use (or when the session expires), KKAFIO opens [koikatsucards.com/login](https://koikatsucards.com/login) in your browser and shows a dialog asking you to paste the `kkd_session` cookie value from DevTools (F12 → Application → Storage → Cookies → koikatsucards.com in Chrome/Edge; Storage → Cookies → koikatsucards.com in Firefox).
   - The session is validated against `koikatsucards.com/api/session` before use. If it is expired, you are prompted for a new one automatically.
   - The session is stored in `%APPDATA%/KKAFIO/config/kkd_session.json`. It does not need to be entered in the GUI settings.
+- **pixiv.net** — accepts `https://www.pixiv.net/en/artworks/ID`, `https://www.pixiv.net/en/users/ID/illustrations` and `https://www.pixiv.net/en/users/ID` (a bare user link is read as `users/ID/artworks`, i.e. illustrations + manga; `/manga` is also accepted). Galleries are paged like the site (48 works per page, newest first): `| 2`, `| 1 | 3`, `| 3 | 1` (reverse) and `| all` work as above, and a link that already ends in `?p=2` (e.g. `.../users/85712366/illustrations?p=2`) reads just that page. With neither, the whole gallery is read. Combined with **Skip already downloaded**, a small window such as `| 1 | 2` lets you pick up only new works on later runs. Page boundaries follow work order (newest first), which matches pixiv's own pages unless works were recently added or removed.
+  - **Only matching images are downloaded:** exactly 320x180 (scene thumbnails) or any size with the 252x352 aspect ratio (character / coordinate cards). The size is read from pixiv's API before downloading, so everything else is skipped without being fetched.
+  - **PHPSESSID cookie** — like koikatsucards.com, KKAFIO opens [pixiv.net/login](https://www.pixiv.net/login) and shows a dialog asking for the `PHPSESSID` cookie value (DevTools → Application/Storage → Cookies → https://www.pixiv.net). It is stored in `%APPDATA%/KKAFIO/config/pixiv_session.json`; the `PIXIV_PHPSESSID` environment variable also works. It is only needed for R-18 / restricted works: cancelling the dialog continues without a login. To enter a new one, delete `pixiv_session.json`.
 
 **3. Filter & Convert KKS Cards**
 
