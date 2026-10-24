@@ -1004,6 +1004,12 @@ GOFILE_LANG        = "en-US"
 GOFILE_USER_AGENT  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 GOFILE_PAGE_SIZE   = 1000
 GOFILE_MAX_DEPTH   = 8                # nested folder levels followed
+GOFILE_STATE_FILE  = CONFIG_DIR / "gofile_state.json"   # guest token + last rejection, kept between runs
+GOFILE_TOKEN_TTL   = 10800            # reuse a guest account this long (s); gofile allows ~6h
+GOFILE_PARALLEL    = 4                # files downloaded at once from gofile
+GOFILE_BUSY_BASE   = 5                # first wait when a storage server is busy (s), then doubling
+GOFILE_BUSY_MAX    = 60
+GOFILE_BUSY_LIMIT  = 6                # busy answers tolerated per file before giving up
 
 
 def _is_gofile_url(url: str) -> bool:
@@ -1148,8 +1154,9 @@ async def _gofile_ensure_secret(client) -> str:
     from gofile's script (cached). Raises RuntimeError if neither is available."""
     cache = _gofile_secret_cache
     now = time.time()
-    since = now - cache["rejected_at"]
-    if cache["rejected_at"] and since < GOFILE_REJECTION_COOLDOWN:
+    rejected_at = max(cache["rejected_at"], float(_gofile_load_state().get("rejected_at") or 0))
+    since = now - rejected_at
+    if rejected_at and since < GOFILE_REJECTION_COOLDOWN:
         raise RuntimeError(
             "Gofile refused the last request as wrongly signed, and repeating that "
             f"gets this address blocked — waiting {GOFILE_REJECTION_COOLDOWN - since:.0f}s "
@@ -1182,9 +1189,33 @@ async def _gofile_ensure_secret(client) -> str:
     return cache["secret"]
 
 
+def _gofile_load_state() -> dict:
+    try:
+        data = json.loads(GOFILE_STATE_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _gofile_save_state(**updates) -> None:
+    """Merge `updates` into the state file (best effort: it is only an optimisation)."""
+    try:
+        state = _gofile_load_state()
+        state.update(updates)
+        GOFILE_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = GOFILE_STATE_FILE.with_name(GOFILE_STATE_FILE.name + ".part")
+        tmp.write_text(json.dumps(state), encoding="utf-8")
+        os.replace(tmp, GOFILE_STATE_FILE)
+    except OSError as e:
+        logger.warning("DLOAD", f"  Could not save Gofile state: {e}")
+
+
 def _gofile_signature_rejected() -> None:
-    """Drop the secret and start the cooldown (the next try re-reads the script)."""
-    _gofile_secret_cache.update(secret="", until=0.0, rejected_at=time.time())
+    """Drop the secret and start the cooldown (the next try re-reads the script).
+    The cooldown is also written to disk, so restarting the app doesn't end it."""
+    now = time.time()
+    _gofile_secret_cache.update(secret="", until=0.0, rejected_at=now)
+    _gofile_save_state(rejected_at=now)
 
 
 def _gofile_website_token(api_token: str, secret: str) -> str:
@@ -1193,12 +1224,25 @@ def _gofile_website_token(api_token: str, secret: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+class GofileStatusError(RuntimeError):
+    """A Gofile API error status, kept so callers can react to specific ones."""
+
+    def __init__(self, message: str, status: str | None):
+        super().__init__(message)
+        self.status = status
+
+
+_GOFILE_STALE_TOKEN_STATUSES = ("error-token", "error-wrongToken")
+
+
 def _gofile_status_message(status: str | None) -> str:
     return {
         "error-notFound": "Gofile content not found (deleted or expired).",
         "error-passwordRequired":
             "This Gofile folder is password protected — add ?password=... to the link.",
         "error-passwordWrong": "Wrong Gofile folder password.",
+        "error-token": "Gofile rejected the account token.",
+        "error-wrongToken": "Gofile rejected the account token.",
         "error-notPremium":
             "Gofile rejected the request signature (error-notPremium). The signing secret "
             "read from gofile's script was refused; it will be read again after a short "
@@ -1212,10 +1256,17 @@ def _gofile_safe_name(name: str, fallback: str) -> str:
 
 
 async def _gofile_token(client) -> str:
-    """The account token: GOFILE_TOKEN, a token already used by this client,
-    or a fresh guest account. It is also set as the accountToken cookie, which
-    gofile's file servers want on the download requests."""
+    """The account token: GOFILE_TOKEN, one already used by this client, a guest
+    account kept from an earlier run (they stay valid for hours, and minting
+    them in bulk is something gofile watches for), or a fresh guest account.
+    It is also set as the accountToken cookie, which gofile's file servers want
+    on the download requests."""
     token = os.environ.get("GOFILE_TOKEN") or client.cookies.get("accountToken", domain=GOFILE_DOMAIN)
+    if not token:
+        state = _gofile_load_state()
+        saved = state.get("token")
+        if isinstance(saved, str) and saved and time.time() - float(state.get("token_at") or 0) < GOFILE_TOKEN_TTL:
+            token = saved
     if not token:
         r = await client.post(f"{GOFILE_API}/accounts")
         r.raise_for_status()
@@ -1225,8 +1276,18 @@ async def _gofile_token(client) -> str:
         token = (data.get("data") or {}).get("token")
         if not isinstance(token, str) or not token:
             raise RuntimeError("Gofile guest account response carries no token.")
+        _gofile_save_state(token=token, token_at=time.time())
     client.cookies.set("accountToken", token, domain=GOFILE_DOMAIN)
     return token
+
+
+def _gofile_forget_token(client) -> None:
+    """Drop a token gofile no longer accepts, so the next _gofile_token mints one."""
+    _gofile_save_state(token="", token_at=0)
+    try:
+        client.cookies.delete("accountToken", domain=GOFILE_DOMAIN)
+    except Exception:
+        pass
 
 
 async def _gofile_api(client, path: str, params: dict, api_token: str):
@@ -1251,22 +1312,22 @@ async def _gofile_api(client, path: str, params: dict, api_token: str):
         if status == "error-notPremium":
             _gofile_signature_rejected()
         if status:
-            raise RuntimeError(_gofile_status_message(status)) from exc
+            raise GofileStatusError(_gofile_status_message(status), status) from exc
         raise
     data = r.json()
     if data.get("status") != "ok":
         if data.get("status") == "error-notPremium":
             _gofile_signature_rejected()
-        raise RuntimeError(_gofile_status_message(data.get("status")))
+        raise GofileStatusError(_gofile_status_message(data.get("status")), data.get("status"))
     return data.get("data")
 
 
 async def _gofile_walk(
     client, content_id: str, api_token: str, pw_hash: str | None,
-    rel: tuple[str, ...], depth: int, out: list[tuple[tuple[str, ...], list[str]]],
+    rel: tuple[str, ...], depth: int, out: list[tuple[tuple[str, ...], list[tuple[str, list[str]]]]],
 ) -> None:
     """Collect (relative folder, file links) for a folder and its subfolders."""
-    files: list[str] = []
+    files: list[tuple[str, list[str]]] = []
     subfolders: list[tuple[str, str]] = []
     seen_ids: set[str] = set()
     page = 1
@@ -1289,7 +1350,9 @@ async def _gofile_walk(
             new += 1
             kind = entry.get("type")
             if kind == "file" and isinstance(entry.get("link"), str) and entry["link"]:
-                files.append(entry["link"])
+                servers = entry.get("servers")
+                files.append((entry["link"], [x for x in servers if isinstance(x, str) and x]
+                              if isinstance(servers, list) else []))
             elif kind == "folder":
                 sub_id = str(entry.get("id") or child_id)
                 subfolders.append((sub_id, str(entry.get("name") or sub_id)))
@@ -1325,23 +1388,132 @@ async def _download_gofile(
     api_token = await _gofile_token(client)
     pw_hash = hashlib.sha256(password.encode()).hexdigest() if password else None
 
-    folders: list[tuple[tuple[str, ...], list[str]]] = []
-    await _gofile_walk(client, content_id, api_token, pw_hash, (), 0, folders)
+    folders: list[tuple[tuple[str, ...], list[tuple[str, list[str]]]]] = []
+    try:
+        await _gofile_walk(client, content_id, api_token, pw_hash, (), 0, folders)
+    except GofileStatusError as e:
+        # A token kept from an earlier run may have expired: mint one, once.
+        if e.status not in _GOFILE_STALE_TOKEN_STATUSES or os.environ.get("GOFILE_TOKEN"):
+            raise
+        logger.info("DLOAD", "  Gofile account token expired — creating a new guest account.")
+        _gofile_forget_token(client)
+        api_token = await _gofile_token(client)
+        folders.clear()
+        await _gofile_walk(client, content_id, api_token, pw_hash, (), 0, folders)
     logger.info("DLOAD", f"  Found {sum(len(f) for _, f in folders)} file(s).")
 
-    total_ok = total_skip = total_fail = 0
-    for rel, file_urls in folders:
-        if not file_urls:
+    sem = asyncio.Semaphore(GOFILE_PARALLEL)
+
+    async def _one(link: str, servers: list[str], target: Path):
+        async with sem:
+            return await _download_gofile_file(client, link, servers, target, history, skip)
+
+    jobs = []
+    for rel, files in folders:
+        if not files:
             continue
         target = directory.joinpath(*rel)
         target.mkdir(parents=True, exist_ok=True)
-        ok, skipped, fail = await _download_files(
-            client, file_urls, target, _gofile_default_name, history, skip)
-        total_ok   += ok
-        total_skip += skipped
-        total_fail += fail
-        _save_history(history)
-    return total_ok, total_skip, total_fail
+        jobs += [_one(link, servers, target) for link, servers in files]
+
+    ok = skipped = failed = 0
+    for coro in asyncio.as_completed(jobs):
+        link, err, was_skipped = await coro
+        if err:
+            failed += 1
+            logger.error("DLOAD", f"  Failed: {link} — {err}")
+        elif was_skipped:
+            skipped += 1
+        else:
+            ok += 1
+    _save_history(history)
+    return ok, skipped, failed
+
+
+class _GofileBusy(Exception):
+    """A storage server answered with a web page instead of the file."""
+
+
+def _gofile_mirrors(link: str, servers: list[str]) -> list[str]:
+    """The link, then the same path on each other storage server holding the file."""
+    parts = urlparse(link)
+    out = [link]
+    for server in servers:
+        mirror = urlunparse(parts._replace(netloc=f"{server}.gofile.io"))
+        if mirror not in out:
+            out.append(mirror)
+    return out
+
+
+async def _download_gofile_file(
+    client, link: str, servers: list[str], directory: Path,
+    history: dict[str, str], skip_downloaded: bool,
+) -> tuple[str, Exception | None, bool]:
+    """Download one gofile file. Returns (link, error, was_skipped).
+
+    A busy storage server doesn't refuse: it redirects to gofile's web page,
+    which arrives as a 200 of HTML. That must not be saved as the file (and
+    recorded as downloaded). Instead the next mirror is tried after a growing
+    wait; those waits don't use up the retry budget, but are capped.
+    """
+    if skip_downloaded and link in history:
+        logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[link]).name}")
+        return link, None, True
+
+    mirrors = _gofile_mirrors(link, servers)
+    default_name = _gofile_default_name(link)
+    headers = {"Referer": "https://gofile.io/"}
+    busy = 0
+    attempt = 1
+    while attempt <= RETRY_ATTEMPTS:
+        url = mirrors[busy % len(mirrors)]
+        part: Path | None = None
+        completed = False
+        try:
+            import aiofiles
+            async with client.stream("GET", url, headers=headers) as response:
+                response.raise_for_status()
+                filename = _resolve_filename(response, url, default_name)
+                if ("text/html" in response.headers.get("content-type", "").lower()
+                        and Path(filename).suffix.lower() not in (".html", ".htm")):
+                    raise _GofileBusy()
+                dest = directory / filename
+                part = dest.with_name(dest.name + ".part")
+                logger.info("DLOAD", f"Downloading: {filename}")
+                async with aiofiles.open(part, "wb") as f:
+                    async for chunk in response.aiter_bytes(chunk_size=65536):
+                        await f.write(chunk)
+            os.replace(part, dest)
+            completed = True
+            history[link] = str(dest)
+            return link, None, False
+        except _GofileBusy:
+            busy += 1
+            if busy > GOFILE_BUSY_LIMIT:
+                return link, RuntimeError(
+                    "gofile's storage server kept answering with a web page instead of the file "
+                    "(it is busy); try again later"), False
+            wait = min(GOFILE_BUSY_BASE * 2 ** (busy - 1), GOFILE_BUSY_MAX)
+            logger.warning("DLOAD",
+                f"  {default_name} — storage server busy; waiting {wait}s then trying "
+                f"{'another server' if len(mirrors) > 1 else 'again'} ({busy}/{GOFILE_BUSY_LIMIT})")
+            await asyncio.sleep(wait)
+        except Exception as exc:
+            if attempt < RETRY_ATTEMPTS and _is_transient(exc):
+                delay = _retry_delay(exc, attempt)
+                logger.warning("DLOAD",
+                    f"  {link} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
+                await asyncio.sleep(delay)
+                attempt += 1
+                continue
+            return link, exc, False
+        finally:
+            if part is not None and not completed:
+                try:
+                    part.unlink(missing_ok=True)
+                except OSError:
+                    pass
+    return link, RuntimeError("retries exhausted"), False  # not reached
 
 
 def _gofile_default_name(url: str) -> str:

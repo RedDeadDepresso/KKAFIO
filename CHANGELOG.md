@@ -17,6 +17,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Added
 
+- **Download Contents** — gofile hardening (after an IP ban from signing requests with an outdated secret): a busy storage server's web page is no longer saved as the file — KKAFIO waits (5s, doubling, up to 6 times) and tries the file's other storage servers; the guest account token and the signature-rejection cooldown are kept in `gofile_state.json` between runs (a token gofile no longer accepts is replaced once automatically); gofile files download 4 at a time instead of 10.
 - **Download Contents** — Google Drive support for public links: single files (`/file/d/ID`, `open?id=`, `uc?id=`; large files pass Google's confirmation page, method from HeapLeach) and folders (`/drive/folders/ID`, read through the public embedded folder view, subfolders followed; Google Docs/Sheets skipped).
 - **Download Contents** — mega.nz support (ported from HeapLeach): file links (`/file/ID#KEY`), folder links (`/folder/ID#KEY`, optionally `/file/NODE`) and the legacy `#!`/`#F!` shapes. Names are decrypted and files are AES-CTR decrypted while downloading; nested folders go into subfolders. Needs the new `cryptography` dependency.
 - **Download Contents** — the gofile signing secret is now read from gofile's own script (`/js/wt.obf.js`) instead of being pinned, so rotations no longer break gofile downloads; `GOFILE_SALT` remains as an override, and a rejected signature pauses signed requests for 15 minutes.

@@ -342,7 +342,8 @@ def test_gofile_url_parsing():
 
 
 @pytest.fixture(autouse=True)
-def _reset_gofile_secret_cache():
+def _reset_gofile_secret_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(dc, "GOFILE_STATE_FILE", tmp_path / "gofile_state.json")   # never touch the real one
     dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
     yield
     dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
@@ -471,6 +472,140 @@ def test_gofile_api_errors_become_clear_messages(tmp_path, monkeypatch):
         with pytest.raises(RuntimeError, match=fragment):
             asyncio.run(go())
         dc._gofile_secret_cache["rejected_at"] = 0.0     # a rejection starts a cooldown
+
+
+def test_gofile_cooldown_survives_a_restart(monkeypatch):
+    import pytest
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
+    dc._gofile_signature_rejected()
+    dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0)     # a fresh process: memory is empty
+    with pytest.raises(RuntimeError, match="wrongly signed"):
+        asyncio.run(dc._gofile_ensure_secret(None))
+    dc._gofile_save_state(rejected_at=0)                                       # cooldown over
+    assert asyncio.run(dc._gofile_ensure_secret(None)) == "testsecret"
+
+
+def test_gofile_guest_token_is_kept_between_runs(monkeypatch):
+    import httpx
+    monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    posts = []
+
+    def handler(req: httpx.Request):
+        posts.append(req.url.path)
+        return httpx.Response(200, json={"status": "ok", "data": {"token": f"tok{len(posts)}"}})
+
+    async def run():
+        c = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            return await dc._gofile_token(c)
+        finally:
+            await c.aclose()
+
+    assert asyncio.run(run()) == "tok1"
+    assert asyncio.run(run()) == "tok1"            # a new client (= a new run) reuses it
+    assert len(posts) == 1
+    dc._gofile_save_state(token_at=0)              # expired
+    assert asyncio.run(run()) == "tok2"
+
+
+def _gofile_file_client(handler):
+    import httpx
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+
+
+def test_gofile_busy_server_html_is_not_saved_and_next_server_is_tried(tmp_path, monkeypatch):
+    import httpx
+    sleeps = []
+
+    async def fake_sleep(t):
+        sleeps.append(t)
+
+    monkeypatch.setattr(dc.asyncio, "sleep", fake_sleep)
+    hosts = []
+
+    def handler(req: httpx.Request):
+        hosts.append(req.url.host)
+        if req.url.host == "store1.gofile.io":
+            return httpx.Response(200, text="<html>gofile web page</html>", headers={"content-type": "text/html"})
+        return httpx.Response(200, content=b"REAL", headers={"content-type": "application/octet-stream"})
+
+    async def go():
+        c = _gofile_file_client(handler)
+        try:
+            h = {}
+            r = await dc._download_gofile_file(c, "https://store1.gofile.io/download/web/abc/card.png",
+                                               ["store1", "store2"], Path(tmp_path), h, True)
+            return r, h
+        finally:
+            await c.aclose()
+
+    (link, err, skipped), history = asyncio.run(go())
+    assert err is None and not skipped
+    assert hosts == ["store1.gofile.io", "store2.gofile.io"]
+    assert sleeps == [dc.GOFILE_BUSY_BASE]
+    assert (Path(tmp_path) / "card.png").read_bytes() == b"REAL"       # the page was never written
+    assert history[link].endswith("card.png")
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_gofile_busy_forever_gives_up_without_saving_anything(tmp_path, monkeypatch):
+    import httpx
+
+    async def fake_sleep(t):
+        pass
+
+    monkeypatch.setattr(dc.asyncio, "sleep", fake_sleep)
+    n = {"calls": 0}
+
+    def handler(req: httpx.Request):
+        n["calls"] += 1
+        return httpx.Response(200, text="<html></html>", headers={"content-type": "text/html"})
+
+    async def go():
+        c = _gofile_file_client(handler)
+        try:
+            h = {}
+            return await dc._download_gofile_file(c, "https://store1.gofile.io/download/web/abc/card.png",
+                                                  [], Path(tmp_path), h, True), h
+        finally:
+            await c.aclose()
+
+    (link, err, skipped), history = asyncio.run(go())
+    assert err is not None and "busy" in str(err) and history == {}
+    assert n["calls"] == dc.GOFILE_BUSY_LIMIT + 1
+    assert not list(Path(tmp_path).iterdir())
+
+
+def test_gofile_stale_saved_token_is_replaced_once(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    dc._gofile_save_state(token="oldtok", token_at=__import__("time").time())
+    seen = []
+
+    def handler(req: httpx.Request):
+        if req.url.host == "api.gofile.io" and req.url.path == "/accounts":
+            return httpx.Response(200, json={"status": "ok", "data": {"token": "newtok"}})
+        if req.url.host == "api.gofile.io":
+            tok = req.headers["authorization"].split()[-1]
+            seen.append(tok)
+            if tok == "oldtok":
+                return httpx.Response(401, json={"status": "error-wrongToken"})
+            return httpx.Response(200, json={"status": "ok", "data": {"type": "folder", "children": {
+                "1": {"type": "file", "id": "1", "name": "a.png", "link": "https://store1.gofile.io/download/web/1/a.png"}}}})
+        return httpx.Response(200, content=b"X", headers={"content-type": "application/octet-stream"})
+
+    async def go():
+        c = _gofile_file_client(handler)
+        try:
+            return await dc._download_gofile(c, "https://gofile.io/d/AbC123", Path(tmp_path), {}, True)
+        finally:
+            await c.aclose()
+
+    assert asyncio.run(go()) == (1, 0, 0)
+    assert seen == ["oldtok", "newtok"]
+    assert dc._gofile_load_state()["token"] == "newtok"
 
 
 def test_gofile_rejection_starts_a_cooldown(monkeypatch):
