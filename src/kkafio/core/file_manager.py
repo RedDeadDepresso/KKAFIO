@@ -531,6 +531,18 @@ class FileManager:
         if self._run_7zip_extract(archive_path, extract_path):
             return extract_path
         
+        # Try the community password index (kk-password-scraper) before
+        # bothering the user.
+        from kkafio.services.password_index import get_known_passwords
+
+        known = get_known_passwords(archive_name)
+        if known:
+            logger.info("ARCHIVE", f"Trying {len(known)} known password(s) for {archive_name}")
+            for known_password in known:
+                if self._run_7zip_extract(archive_path, extract_path, password=known_password):
+                    logger.info("ARCHIVE", f"Known password worked for {archive_name}")
+                    return extract_path
+
         if task_config.get("Password") != "Request":
             logger.error("ARCHIVE", archive_name)
             return None
