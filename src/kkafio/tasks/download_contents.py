@@ -8,6 +8,15 @@ Supports:
                                   (/users/ID, /users/ID/illustrations) and
                                   searches (/search?q=...); only
                                   images that look like KK cards/scenes are kept
+  https://pawchive.pw           — post searches (/posts?q=...), creators
+                                  (/<service>/user/ID) and single posts
+                                  (/<service>/user/ID/post/ID). Every file and
+                                  attachment of a post is downloaded (a PNG only
+                                  if it is 320x180 / 252x352-ratio), and the mega,
+                                  gofile and Google Drive links in the post text
+                                  are followed. The listings are paged 50 posts at a
+                                  time (?o=), with the usual | N / | N | M / | all
+                                  directives; without one only page 1 is read
   https://gofile.io             — folders (/d/ID); every file is downloaded,
                                   subfolders into subdirectories; a password can
                                   be given as ?password=...
@@ -2238,6 +2247,518 @@ async def _download_gdrive(
 
 
 # ---------------------------------------------------------------------------
+# Pawchive
+# ---------------------------------------------------------------------------
+#
+# pawchive.pw archives creator posts (patreon, fanbox, ...) and exposes a JSON
+# API next to the website. The link pasted by the user is turned into the
+# matching API endpoint:
+#
+#   https://pawchive.pw/posts[?q=...]                    -> /api/v1/posts[?q=...]
+#   https://pawchive.pw/<service>/user/<id>              -> /api/v1/<service>/user/<id>
+#   https://pawchive.pw/<service>/user/<id>/post/<post>  -> /api/v1/<service>/user/<id>/post/<post>
+#
+# The two listings return a JSON list of posts, 50 per page, paged with the
+# "o" offset query parameter (page N is o=(N-1)*50). A single post comes back
+# as one object. Every post is processed the same way:
+#
+#   * its "file" and "attachments" are downloaded from the node host they name
+#     (node 2 -> https://n2.pawchive.pw/data<path>; a PNG is only
+#     kept when it is 320x180 or has the 252x352 ratio, like pixiv images --
+#     the size is read from the first bytes, so non-matching PNGs are aborted
+#     after the first chunk);
+#   * its "content" is searched for mega.nz, gofile.io and Google Drive links,
+#     which are handed to the matching downloader with the link unchanged
+#     (query parameters such as ?password= are kept).
+
+PAWCHIVE_URL       = "https://pawchive.pw"
+PAWCHIVE_API_URL   = f"{PAWCHIVE_URL}/api/v1"
+PAWCHIVE_DATA_URL  = f"{PAWCHIVE_URL}/data"     # fallback when an entry has no "node"
+PAWCHIVE_NODE_URL  = "https://n{node}.pawchive.pw/data"   # files live on the host named by "node"
+PAWCHIVE_PAGE_SIZE = 50                         # posts per listing page (the "o" step)
+PAWCHIVE_PARALLEL  = 4                          # files downloaded at once
+_PAWCHIVE_HEAD_BYTES = 32                       # bytes needed to read a PNG's size
+
+
+def _is_pawchive_url(url: str) -> bool:
+    return (urlparse(url).hostname or "").lower() in ("pawchive.pw", "www.pawchive.pw")
+
+
+def _parse_pawchive_url(url: str) -> tuple[str, str, str, str] | None:
+    """Classify a pawchive link.
+
+    Returns ("posts", "", "", "") for the posts listing / search,
+    ("user", service, user_id, "") for a creator's posts or
+    ("post", service, user_id, post_id) for a single post; None for anything
+    else. An already-converted ``/api/v1/...`` link is accepted too.
+    """
+    segs = [unquote(s) for s in urlparse(url).path.split("/") if s]
+    if segs[:2] == ["api", "v1"]:
+        segs = segs[2:]
+    if segs == ["posts"]:
+        return "posts", "", "", ""
+    if len(segs) in (3, 4) and segs[1] == "user" and (len(segs) == 3 or segs[3] == "posts"):
+        return "user", segs[0], segs[2], ""
+    if len(segs) == 5 and segs[1] == "user" and segs[3] == "post":
+        return "post", segs[0], segs[2], segs[4]
+    return None
+
+
+def _pawchive_api_url(url: str, page: int | None = None) -> str:
+    """The API endpoint for a pawchive link.
+
+    Listings keep every query parameter of the link (search text, tags, ...)
+    except ``o``, which is set from `page` (1-based). A single post takes no
+    query.
+    """
+    parsed = _parse_pawchive_url(url)
+    if parsed is None:
+        raise ValueError(f"Unsupported pawchive link: {url}")
+    kind, service, user, post = parsed
+    if kind == "posts":
+        path = "/posts"
+    elif kind == "user":
+        path = f"/{quote(service, safe='')}/user/{quote(user, safe='')}"
+    else:
+        return (f"{PAWCHIVE_API_URL}/{quote(service, safe='')}/user/"
+                f"{quote(user, safe='')}/post/{quote(post, safe='')}")
+
+    pairs = [(k, v) for k, v in parse_qsl(urlparse(url).query, keep_blank_values=True)
+             if k != "o"]
+    if page is not None:
+        if page < 1:
+            raise ValueError(f"Page numbers start at 1 (got {page}).")
+        pairs.append(("o", str((page - 1) * PAWCHIVE_PAGE_SIZE)))
+    query = urlencode(pairs)
+    return f"{PAWCHIVE_API_URL}{path}" + (f"?{query}" if query else "")
+
+
+def _pawchive_url_page(url: str) -> int | None:
+    """The page a link's own ``?o=`` offset points at, or None."""
+    value = dict(parse_qsl(urlparse(url).query)).get("o", "")
+    if not value.isdigit():
+        return None
+    if int(value) % PAWCHIVE_PAGE_SIZE:
+        logger.warning("DLOAD",
+            f"  o={value} is not a multiple of {PAWCHIVE_PAGE_SIZE}; "
+            f"reading the page that contains it.")
+    return int(value) // PAWCHIVE_PAGE_SIZE + 1
+
+
+def _pawchive_posts_from(body) -> list[dict]:
+    """The posts of an API response: a list (listings), a single post object,
+    or an object wrapping them ({"post": {...}} / {"posts": [...]}).
+
+    Raises ValueError for any other shape (an error object, say), so it is
+    reported instead of mistaken for "no more posts".
+    """
+    if isinstance(body, list):
+        items = body
+    elif isinstance(body, dict) and isinstance(body.get("post"), dict):
+        items = [body["post"]]
+    elif isinstance(body, dict) and isinstance(body.get("posts"), list):
+        items = body["posts"]
+    elif isinstance(body, dict) and "id" in body:
+        items = [body]
+    else:
+        raise ValueError(f"Unexpected response from pawchive: {str(body)[:200]}")
+    return [p for p in items if isinstance(p, dict)]
+
+
+def _pawchive_filename(name, path: str) -> str:
+    """A safe local file name for a file/attachment entry."""
+    path_name = Path(path.replace("\\", "/")).name
+    base = _gofile_safe_name(Path(str(name or "").replace("\\", "/")).name, "")
+    if not base:
+        return _gofile_safe_name(path_name, "file")
+    if not Path(base).suffix and Path(path_name).suffix:
+        base += Path(path_name).suffix           # name lost its extension
+    return base
+
+
+def _pawchive_post_files(post: dict) -> list[dict]:
+    """The downloadable files of a post: its main "file" and every
+    attachment, each once (the first attachment often repeats the main file).
+
+    Returns dicts with url, name, path and check_size (True for PNGs, which
+    are only kept when they look like a KK card/scene).
+    """
+    entries = []
+    if isinstance(post.get("file"), dict):
+        entries.append(post["file"])
+    entries += [a for a in (post.get("attachments") or []) if isinstance(a, dict)]
+
+    files: list[dict] = []
+    seen: set[str] = set()
+    for entry in entries:
+        path = entry.get("path")
+        if not isinstance(path, str) or not path.strip():
+            continue
+        path = path.strip()
+        if path.startswith(("http://", "https://")):
+            url = path
+        else:
+            node = str(entry.get("node") or "").strip()
+            base = PAWCHIVE_NODE_URL.format(node=node) if node.isdigit() else PAWCHIVE_DATA_URL
+            url = base + (path if path.startswith("/") else "/" + path)
+        if url in seen:
+            continue
+        seen.add(url)
+        name = _pawchive_filename(entry.get("name"), path)
+        is_png = Path(name).suffix.lower() == ".png" or Path(path).suffix.lower() == ".png"
+        files.append({"url": url, "name": name, "path": path, "check_size": is_png})
+    return files
+
+
+# A link in the post text: scheme and "www." are optional (people often type
+# "mega.nz/file/..."), and the host must start at a word boundary so
+# "evilmega.nz" never matches. Everything up to whitespace / a quote / a tag
+# bracket belongs to the link, so its query string and #fragment (the Mega
+# key!) are kept.
+_PAWCHIVE_LINK_RE = re.compile(
+    r"""(?<![\w.-])(?:https?://)?(?:[\w-]+\.)*?"""
+    r"""(?:mega\.nz|mega\.co\.nz|gofile\.io|drive\.google\.com|"""
+    r"""drive\.usercontent\.google\.com|docs\.google\.com/uc)"""
+    r"""(?:[/?#][^\s"'<>]*)?""",
+    re.IGNORECASE,
+)
+_PAWCHIVE_LINK_TRAILING = ".,;:!?)]}>*\u2026"
+
+
+def _pawchive_link_usable(url: str) -> bool:
+    """True if `url` is a supported host AND has something to download (a bare
+    "mega.nz" or drive home page does not)."""
+    if _is_gofile_url(url):
+        return _parse_gofile_url(url) is not None
+    if _is_mega_url(url):
+        parts = urlparse(url)
+        return len([s for s in parts.path.split("/") if s]) >= 2 or bool(parts.fragment)
+    if _is_gdrive_url(url):
+        return _parse_gdrive_url(url) is not None
+    return False
+
+
+def _pawchive_content_links(content) -> list[str]:
+    """Mega, Gofile and Google Drive links found in a post's content, in order
+    of appearance and without duplicates, each exactly as written (query and
+    fragment included).
+
+    Link text is often a shortened copy of the real href, or lacks the query
+    string the href has; a link that is only the beginning of another found
+    link is therefore dropped in favour of the longer one.
+    """
+    if not isinstance(content, str) or not content:
+        return []
+    import html
+    text = html.unescape(content)
+
+    found: list[str] = []
+    for m in _PAWCHIVE_LINK_RE.finditer(text):
+        link = m.group(0).rstrip(_PAWCHIVE_LINK_TRAILING)
+        if not re.match(r"https?://", link, re.IGNORECASE):
+            link = "https://" + link
+        if _pawchive_link_usable(link) and link not in found:
+            found.append(link)
+    return [a for a in found if not any(b != a and b.startswith(a) for b in found)]
+
+
+def _pawchive_unique_name(item: dict, directory: Path, history: dict, taken: set[str]) -> str:
+    """The local name for a file. Pawchive names are not unique ("000.png" in
+    every post), so a name that is already used -- on disk or by another file
+    of this run -- gets the start of the file's content hash (the last part of
+    its path) added. A file downloaded before keeps the name it got."""
+    previous = history.get(item["url"])
+    if previous and Path(previous).parent == directory:
+        name = Path(previous).name
+        taken.add(name.lower())
+        return name
+
+    name = item["name"]
+    if name.lower() in taken or (directory / name).exists():
+        stem, suffix = Path(name).stem, Path(name).suffix
+        tag = Path(item["path"]).stem[:8] or "dup"
+        name = f"{stem}_{tag}{suffix}"
+        n = 2
+        while name.lower() in taken or (directory / name).exists():
+            name = f"{stem}_{tag}_{n}{suffix}"
+            n += 1
+    taken.add(name.lower())
+    return name
+
+
+def _pawchive_png_matches(path: Path) -> bool:
+    """True when the PNG at `path` is 320x180 or has the 252x352 ratio. The
+    size is read with imagesize, which only looks at the file header."""
+    import imagesize
+    try:
+        width, height = imagesize.get(str(path))
+    except Exception:
+        return False
+    return _pixiv_size_matches(width, height)
+
+
+async def _download_pawchive_file(
+    client, item: dict, directory: Path, name: str,
+    history: dict[str, str], skip_downloaded: bool,
+) -> tuple[str, Exception | None, str]:
+    """Download one pawchive file. Returns (url, error, status) with status
+    "ok", "skipped" (already in the history) or "filtered" (a PNG that is not
+    a KK card/scene size; aborted after its first chunk, nothing is kept)."""
+    url = item["url"]
+    if skip_downloaded and url in history:
+        logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
+        return url, None, "skipped"
+
+    dest = directory / name
+    check = bool(item["check_size"])
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        # Same ".part" scheme as _download_file: a failed, cancelled or
+        # filtered transfer never leaves anything under the final name.
+        part: Path | None = None
+        completed = False
+        try:
+            import aiofiles
+            verdict: bool | None = None        # None until the PNG header is checked
+            async with client.stream("GET", url) as response:
+                response.raise_for_status()
+                part = dest.with_name(dest.name + ".part")
+                received = 0
+                if not check:
+                    logger.info("DLOAD", f"Downloading: {name}")
+                async with aiofiles.open(part, "wb") as f:
+                    async for chunk in response.aiter_bytes(chunk_size=65536):
+                        await f.write(chunk)
+                        if check and verdict is None:
+                            received += len(chunk)
+                            if received >= _PAWCHIVE_HEAD_BYTES:
+                                await f.flush()
+                                verdict = _pawchive_png_matches(part)
+                                if not verdict:
+                                    break
+                                logger.info("DLOAD", f"Downloading: {name}")
+                    if check and verdict is None:      # whole file shorter than a header
+                        await f.flush()
+                        verdict = _pawchive_png_matches(part)
+            if check and not verdict:
+                return url, None, "filtered"
+            os.replace(part, dest)
+            completed = True
+            history[url] = str(dest)
+            return url, None, "ok"
+        except Exception as exc:
+            if attempt < RETRY_ATTEMPTS and _is_transient(exc):
+                delay = _retry_delay(exc, attempt)
+                logger.warning("DLOAD",
+                    f"  {url} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
+                await asyncio.sleep(delay)
+                continue
+            return url, exc, "ok"
+        finally:
+            if part is not None and not completed:
+                try:
+                    part.unlink(missing_ok=True)
+                except OSError:
+                    pass
+    return url, RuntimeError("retries exhausted"), "ok"   # not reached
+
+
+async def _download_pawchive_link(
+    link: str, externals: dict, directory: Path, history: dict, skip: bool,
+) -> tuple[int, int, int]:
+    """Hand a link found in a post to the downloader for its host. `externals`
+    maps "gofile" / "mega" / "gdrive" to their HTTP clients."""
+    if _is_gofile_url(link):
+        kind, fn = "gofile", _download_gofile
+    elif _is_mega_url(link):
+        kind, fn = "mega", _download_mega
+    elif _is_gdrive_url(link):
+        kind, fn = "gdrive", _download_gdrive
+    else:
+        logger.error("DLOAD", f"  Unsupported link in post: {link}")
+        return 0, 0, 1
+    client = externals.get(kind)
+    if client is None:
+        logger.error("DLOAD", f"  No {kind} client available for: {link}")
+        return 0, 0, 1
+    return await fn(client, link, directory, history, skip)
+
+
+class _PawchiveRun:
+    """What one pawchive link has seen so far, so a file or link repeated in
+    several posts (re-uploads, the same mega folder in every post of a
+    series) is only handled once."""
+
+    def __init__(self, externals: dict | None):
+        self.externals = externals or {}
+        self.files: set[str] = set()
+        self.links: set[str] = set()
+        self.ok = self.skipped = self.failed = self.filtered = 0
+
+
+async def _pawchive_process_posts(
+    client, posts: list[dict], directory: Path, history: dict, skip: bool, run: _PawchiveRun,
+) -> None:
+    """Download the files and the linked mega/gofile/gdrive content of posts."""
+    jobs: list[tuple[dict, str]] = []
+    links: list[str] = []
+    taken: set[str] = set()
+
+    for post in posts:
+        files = [f for f in _pawchive_post_files(post) if f["url"] not in run.files]
+        run.files.update(f["url"] for f in files)
+        post_links = [l for l in _pawchive_content_links(post.get("content"))
+                      if l not in run.links]
+        run.links.update(post_links)
+        if files or post_links:
+            logger.info("DLOAD",
+                f"  Post {post.get('id', '?')}: {str(post.get('title') or '').strip()[:60]!r} "
+                f"— {len(files)} file(s), {len(post_links)} link(s)")
+        jobs += [(f, _pawchive_unique_name(f, directory, history, taken)) for f in files]
+        links += post_links
+
+    if jobs:
+        sem = asyncio.Semaphore(PAWCHIVE_PARALLEL)
+
+        async def _one(item: dict, name: str):
+            async with sem:
+                return await _download_pawchive_file(client, item, directory, name,
+                                                     history, skip)
+
+        for coro in asyncio.as_completed([_one(i, n) for i, n in jobs]):
+            url, err, status = await coro
+            if err:
+                run.failed += 1
+                logger.error("DLOAD", f"  Failed: {url} — {err}")
+            elif status == "skipped":
+                run.skipped += 1
+            elif status == "filtered":
+                run.filtered += 1
+            else:
+                run.ok += 1
+
+    # One link at a time: mega meters transfer per address and gofile is
+    # sensitive about request bursts.
+    for link in links:
+        logger.info("DLOAD", f"  Link: {link}")
+        try:
+            ok, skipped, failed = await _download_pawchive_link(
+                link, run.externals, directory, history, skip)
+        except Exception as exc:
+            # One bad link must not stop the rest of the posts.
+            logger.error("DLOAD", f"  Failed: {link} — {exc}")
+            ok = skipped = 0
+            failed = 1
+        run.ok += ok
+        run.skipped += skipped
+        run.failed += failed
+
+
+async def _download_pawchive_pages(
+    client, url: str, directory: Path, history: dict, skip: bool,
+    page_start: int, page_end: int | None, run: _PawchiveRun,
+) -> None:
+    """Read listing pages page_start..page_end (None = until empty; reverse
+    when page_start > page_end) and process the posts of each."""
+    bad_pages = 0
+    seen_ids: set[str] = set()
+
+    if page_end is None:
+        page_iter = iter(range(page_start, 10 ** 9))
+        forward = True
+    else:
+        step = 1 if page_end >= page_start else -1
+        page_iter = iter(range(page_start, page_end + step, step))
+        forward = step == 1
+
+    for page in page_iter:
+        if page < 1:
+            logger.warning("DLOAD", f"  Page {page} does not exist (pages start at 1) — skipped.")
+            continue
+        logger.info("DLOAD", f"  Page {page}...")
+        try:
+            r = await _get_with_retry(client, _pawchive_api_url(url, page))
+            posts = _pawchive_posts_from(r.json())
+        except Exception as exc:
+            # Not "end of results": we can't tell, so count it and go on.
+            run.failed += 1
+            bad_pages += 1
+            logger.error("DLOAD", f"  Page {page} failed: {exc}")
+            if bad_pages >= MAX_CONSECUTIVE_BAD_PAGES:
+                logger.error("DLOAD",
+                    f"  {bad_pages} pages in a row failed — stopping. Re-run later to resume.")
+                break
+            continue
+        bad_pages = 0
+
+        if not posts:
+            if forward:
+                logger.info("DLOAD", f"  Page {page} is empty — stopping.")
+                break
+            # Reverse range: an empty page just means we started past the end.
+            logger.info("DLOAD", f"  Page {page} is empty — skipped.")
+            continue
+
+        ids = {str(p.get("id")) for p in posts}
+        if ids <= seen_ids:
+            logger.info("DLOAD", f"  Page {page} repeats earlier results — stopping.")
+            break
+        seen_ids |= ids
+
+        await _pawchive_process_posts(client, posts, directory, history, skip, run)
+        _save_history(history)   # checkpoint after every page
+
+
+async def _download_pawchive(
+    client, url: str, directory: Path, history: dict, skip: bool,
+    page_start: int | None = None, page_end: int | None = None,
+    externals: dict | None = None,
+) -> tuple[int, int, int]:
+    """Returns (succeeded, skipped, failed).
+
+    `externals` maps "gofile" / "mega" / "gdrive" to the clients used for the
+    links found in post content. For the two listings the page directive
+    (``| N``, ``| N | M``, ``| all``) or, without one, the link's own ``?o=``
+    picks the pages; with neither only page 1 is read (a listing can hold
+    millions of posts, so everything has to be asked for with ``| all``).
+    A single post ignores the directive.
+    """
+    parsed = _parse_pawchive_url(url)
+    if parsed is None:
+        logger.error("DLOAD",
+            "Unsupported pawchive link (use /posts, /<service>/user/ID or "
+            f"/<service>/user/ID/post/ID): {url}")
+        return 0, 0, 1
+    kind = parsed[0]
+    run = _PawchiveRun(externals)
+
+    if kind == "post":
+        api_url = _pawchive_api_url(url)
+        logger.info("DLOAD", f"Scraping pawchive post: {api_url}")
+        r = await _get_with_retry(client, api_url)
+        await _pawchive_process_posts(client, _pawchive_posts_from(r.json()),
+                                      directory, history, skip, run)
+    else:
+        if page_start is None:
+            page_start = page_end = _pawchive_url_page(url) or 1
+        what = "search" if kind == "posts" else "creator"
+        if page_end == page_start:
+            logger.info("DLOAD",
+                f"Scraping pawchive {what} (page {page_start}): "
+                f"{_pawchive_api_url(url, max(page_start, 1))}")
+        else:
+            logger.info("DLOAD",
+                f"Scraping pawchive {what} (pages {page_start}–"
+                f"{'end' if page_end is None else page_end}): {_pawchive_api_url(url)}")
+        await _download_pawchive_pages(
+            client, url, directory, history, skip, page_start, page_end, run)
+
+    if run.filtered:
+        logger.info("DLOAD",
+            f"  {run.filtered} PNG(s) skipped: not 320x180 / 252x352-ratio.")
+    return run.ok, run.skipped, run.failed
+
+
+# ---------------------------------------------------------------------------
 # Main task class
 # ---------------------------------------------------------------------------
 
@@ -2317,11 +2838,23 @@ class DownloadContents(BaseTask):
                                     extra_headers={"Referer": PIXIV_URL + "/"}) as pixiv_client, \
                        _make_client(extra_headers={"User-Agent": GOFILE_USER_AGENT}) as gofile_client, \
                        _make_client() as mega_client, \
-                       _make_client() as gdrive_client:
+                       _make_client() as gdrive_client, \
+                       _make_client() as pawchive_client:
+                # Hosts of the links found inside pawchive posts.
+                pawchive_externals = {
+                    "gofile": gofile_client, "mega": mega_client, "gdrive": gdrive_client,
+                }
                 for url_str, page_start, page_end in urls:
                     ok = skipped = fail = 0
                     try:
-                        if BEPIS_URL in url_str:
+                        # Matched by host first: a pawchive search may carry
+                        # another site's address in its query string.
+                        if _is_pawchive_url(url_str):
+                            ok, skipped, fail = await _download_pawchive(
+                                pawchive_client, url_str, output_dir, history,
+                                self.skip_downloaded, page_start=page_start,
+                                page_end=page_end, externals=pawchive_externals)
+                        elif BEPIS_URL in url_str:
                             ok, skipped, fail = await _download_bepis(
                                 bepis_client, url_str, output_dir, history, self.skip_downloaded,
                                 page_start=page_start, page_end=page_end
@@ -2360,7 +2893,7 @@ class DownloadContents(BaseTask):
                                 gdrive_client, url_str, output_dir, history, self.skip_downloaded)
                         else:
                             logger.error("DLOAD",
-                                f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, gofile.io, mega.nz or drive.google.com): {url_str}")
+                                f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, mega.nz or drive.google.com): {url_str}")
                             fail = 1
                     except Exception as exc:
                         # One bad URL must not abort the remaining ones.

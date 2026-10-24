@@ -940,3 +940,467 @@ def test_gdrive_folder_listing_and_download(tmp_path, monkeypatch):
 def test_resolve_filename_decodes_percent_escapes():
     class _R: headers = {}
     assert dc._resolve_filename(_R(), "https://store1.gofile.io/download/web/id/card%20one.png", "x") == "card one.png"
+
+
+# ---------------------------------------------------------------------------
+# pawchive
+# ---------------------------------------------------------------------------
+
+def test_pawchive_url_parsing():
+    P = dc._parse_pawchive_url
+    assert P("https://pawchive.pw/posts") == ("posts", "", "", "")
+    assert P("https://pawchive.pw/posts?q=koikatsu&o=50") == ("posts", "", "", "")
+    assert P("https://pawchive.pw/patreon/user/58585170") == ("user", "patreon", "58585170", "")
+    assert P("https://pawchive.pw/patreon/user/58585170/") == ("user", "patreon", "58585170", "")
+    assert P("https://pawchive.pw/patreon/user/58585170/post/173280929") \
+        == ("post", "patreon", "58585170", "173280929")
+    # already an API link
+    assert P("https://pawchive.pw/api/v1/posts") == ("posts", "", "", "")
+    assert P("https://pawchive.pw/api/v1/fanbox/user/9/posts") == ("user", "fanbox", "9", "")
+    # not supported
+    assert P("https://pawchive.pw/") is None
+    assert P("https://pawchive.pw/patreon/user/1/profile") is None
+    assert P("https://pawchive.pw/creators") is None
+
+
+def test_pawchive_host_is_not_confused_with_other_hosts():
+    assert dc._is_pawchive_url("https://pawchive.pw/posts")
+    assert dc._is_pawchive_url("https://www.pawchive.pw/posts")
+    assert not dc._is_pawchive_url("https://evilpawchive.pw/posts")
+    assert not dc._is_pawchive_url("https://db.bepis.moe/koikatsu?q=pawchive.pw")
+
+
+def test_pawchive_api_url_conversion():
+    A = dc._pawchive_api_url
+    assert A("https://pawchive.pw/posts") == "https://pawchive.pw/api/v1/posts"
+    assert A("https://pawchive.pw/patreon/user/58585170") \
+        == "https://pawchive.pw/api/v1/patreon/user/58585170"
+    assert A("https://pawchive.pw/patreon/user/58585170/post/173280929") \
+        == "https://pawchive.pw/api/v1/patreon/user/58585170/post/173280929"
+
+    # page N -> o=(N-1)*50
+    assert A("https://pawchive.pw/posts", 1) == "https://pawchive.pw/api/v1/posts?o=0"
+    assert A("https://pawchive.pw/posts", 2).endswith("?o=50")
+    assert A("https://pawchive.pw/patreon/user/1", 3).endswith("/user/1?o=100")
+
+    # query parameters are kept (repeated ones too); the link's own o is replaced
+    url = A("https://pawchive.pw/posts?q=chara+card&tag=a&tag=b&o=200", 2)
+    assert url == "https://pawchive.pw/api/v1/posts?q=chara+card&tag=a&tag=b&o=50"
+    # a single post takes no query
+    assert "?" not in A("https://pawchive.pw/patreon/user/1/post/2?foo=bar")
+
+    for bad in (0, -1):
+        try:
+            A("https://pawchive.pw/posts", bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("page < 1 must be rejected")
+
+
+def test_pawchive_link_offset_to_page():
+    assert dc._pawchive_url_page("https://pawchive.pw/posts") is None
+    assert dc._pawchive_url_page("https://pawchive.pw/posts?o=0") == 1
+    assert dc._pawchive_url_page("https://pawchive.pw/posts?o=100") == 3
+    assert dc._pawchive_url_page("https://pawchive.pw/posts?o=abc") is None
+
+
+def test_pawchive_response_shapes():
+    P = dc._pawchive_posts_from
+    assert P([{"id": "1"}, {"id": "2"}, "junk"]) == [{"id": "1"}, {"id": "2"}]
+    assert P([]) == []
+    assert P({"id": "1", "title": "x"}) == [{"id": "1", "title": "x"}]        # single post
+    assert P({"post": {"id": "1"}, "attachments": []}) == [{"id": "1"}]      # wrapped
+    assert P({"posts": [{"id": "1"}]}) == [{"id": "1"}]
+    for bad in ({"error": "nope"}, "text", None, 5):
+        try:
+            P(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"{bad!r} must be reported, not read as 'no posts'")
+
+
+def test_pawchive_post_files():
+    post = {
+        "file": {"name": "000.png", "node": 2, "path": "/7c/9b/7c9bc148.png"},
+        "attachments": [
+            {"name": "000.png", "node": 2, "path": "/7c/9b/7c9bc148.png"},   # repeat of file
+            {"name": "excelwalter.rar", "node": 2, "path": "/18/fb/18fb6c9e.rar"},
+            {"name": "noext", "path": "/aa/bb/aabb.zip"},                    # extension from path
+            {"name": "x.zip"},                                               # no path: ignored
+            "junk",
+        ],
+    }
+    files = dc._pawchive_post_files(post)
+    assert [f["url"] for f in files] == [
+        "https://n2.pawchive.pw/data/7c/9b/7c9bc148.png",
+        "https://n2.pawchive.pw/data/18/fb/18fb6c9e.rar",
+        "https://pawchive.pw/data/aa/bb/aabb.zip",         # no node: main host
+    ]
+    assert [f["name"] for f in files] == ["000.png", "excelwalter.rar", "noext.zip"]
+    assert [f["check_size"] for f in files] == [True, False, False]   # only PNGs are size-checked
+
+    # the "node" of an entry picks the host the file is served from
+    node_post = {"file": {"name": "a.png", "node": 2, "path": "/7c/9b/a.png"},
+                 "attachments": [{"name": "b.rar", "node": "13", "path": "/18/fb/b.rar"},
+                                 {"name": "c.rar", "node": "bad", "path": "/18/fb/c.rar"}]}
+    assert [f["url"] for f in dc._pawchive_post_files(node_post)] == [
+        "https://n2.pawchive.pw/data/7c/9b/a.png",
+        "https://n13.pawchive.pw/data/18/fb/b.rar",
+        "https://pawchive.pw/data/18/fb/c.rar",      # no usable node: main host
+    ]
+
+    assert dc._pawchive_post_files({"file": {}, "attachments": []}) == []
+    assert dc._pawchive_post_files({"file": None, "attachments": None}) == []
+    assert dc._pawchive_post_files({}) == []
+    # path separators in a name never escape the download folder
+    f = dc._pawchive_post_files({"file": {"name": "../../evil.rar", "path": "/a/b/c.rar"}})[0]
+    assert f["name"] == "evil.rar"
+
+
+def test_pawchive_content_links():
+    key = "KeyKeyKeyKeyKeyKeyKeyKeyKeyKeyKeyKey123"
+    content = (
+        f'<p>Download: <a href="https://mega.nz/file/AbCdEfGh#{key}">'
+        f'https://mega.nz/file/AbCdEfGh#KeyKey…</a></p>'
+        '<p>gofile: https://gofile.io/d/Xy12Zz?password=hunter2.</p>'
+        '<p><a href="https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing&amp;x=1">d</a>'
+        ' https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp</p>'
+        '<p>mirror: mega.nz/folder/Zz9Yy8Xx#abcdefghijklmnopqrstuv<br>'
+        'evilmega.nz/file/abc#def https://docs.google.com/document/d/1AbCdEfGhIjKlMnOp/edit '
+        'https://mega.nz/ https://gofile.io https://example.com/x</p>'
+    )
+    assert dc._pawchive_content_links(content) == [
+        f"https://mega.nz/file/AbCdEfGh#{key}",          # fragment kept, shortened text dropped
+        "https://gofile.io/d/Xy12Zz?password=hunter2",   # query kept, sentence dot removed
+        "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing&x=1",  # &amp; decoded
+        "https://mega.nz/folder/Zz9Yy8Xx#abcdefghijklmnopqrstuv",   # scheme added
+    ]
+    assert dc._pawchive_content_links("") == []
+    assert dc._pawchive_content_links(None) == []
+    assert dc._pawchive_content_links("<p></p>") == []
+    # the same link twice is one link; legacy mega and uc links are recognised
+    text = "https://mega.nz/#!AbCdEfGh!key https://mega.nz/#!AbCdEfGh!key https://drive.google.com/uc?id=1AbCdEfGhIjKlMnOp&export=download"
+    assert dc._pawchive_content_links(text) == [
+        "https://mega.nz/#!AbCdEfGh!key",
+        "https://drive.google.com/uc?id=1AbCdEfGhIjKlMnOp&export=download",
+    ]
+
+
+def test_pawchive_unique_names(tmp_path):
+    (tmp_path / "000.png").write_bytes(b"old")
+    a = {"url": "u1", "name": "000.png", "path": "/aa/bb/aaaaaaaaaaaa.png"}
+    b = {"url": "u2", "name": "000.png", "path": "/cc/dd/bbbbbbbbbbbb.png"}
+    c = {"url": "u3", "name": "pack.rar", "path": "/ee/ff/cccccccc.rar"}
+    d = {"url": "u4", "name": "pack.rar", "path": "/ee/ff/cccccccc.rar"}   # same hash twice
+    taken: set[str] = set()
+    names = [dc._pawchive_unique_name(x, Path(tmp_path), {}, taken) for x in (a, b, c, d)]
+    assert names[0] == "000_aaaaaaaa.png"           # exists on disk
+    assert names[1] == "000_bbbbbbbb.png"
+    assert names[2] == "pack.rar"                   # first one keeps its name
+    assert names[3] == "pack_cccccccc.rar"          # same name in this run
+    assert len(set(n.lower() for n in names)) == 4
+
+    # a file downloaded before keeps the name it got, even though it exists
+    (tmp_path / "pack.rar").write_bytes(b"x")
+    hist = {"u3": str(tmp_path / "pack.rar")}
+    assert dc._pawchive_unique_name(c, Path(tmp_path), hist, set()) == "pack.rar"
+
+
+# --- a fake pawchive server -------------------------------------------------
+
+def _png(width: int, height: int, extra: int = 500) -> bytes:
+    import struct
+    return (b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR"
+            + struct.pack(">II", width, height) + b"\x08\x06\x00\x00\x00" + b"\0\0\0\0"
+            + b"x" * extra)
+
+
+class _PawResp:
+    def __init__(self, body=b"", data=None, chunk=65536, status_error=None):
+        self._body, self._data, self._chunk, self._err = body, data, chunk, status_error
+
+    def raise_for_status(self):
+        if self._err:
+            raise RuntimeError(self._err)
+
+    def json(self):
+        return self._data
+
+    async def aiter_bytes(self, chunk_size=65536):
+        for i in range(0, len(self._body), self._chunk):
+            yield self._body[i:i + self._chunk]
+
+
+class _PawStream:
+    def __init__(self, resp): self._r = resp
+    async def __aenter__(self): return self._r
+    async def __aexit__(self, *exc): return False
+
+
+class _PawClient:
+    """pages: {offset: [posts]} for listings; singles: {post_id: post};
+    blobs: {url: bytes}. Records every API call and every file fetch."""
+
+    def __init__(self, pages=None, singles=None, blobs=None, chunk=65536):
+        self.pages, self.singles, self.blobs, self.chunk = pages or {}, singles or {}, blobs or {}, chunk
+        self.api_calls: list[str] = []
+        self.fetched: list[str] = []
+
+    async def get(self, url):
+        from urllib.parse import parse_qsl, urlparse
+        self.api_calls.append(url)
+        parts = urlparse(url)
+        if "/post/" in parts.path:
+            return _PawResp(data=self.singles[parts.path.rsplit("/", 1)[-1]])
+        offset = int(dict(parse_qsl(parts.query)).get("o", "0"))
+        return _PawResp(data=self.pages.get(offset, []))
+
+    def stream(self, method, url):
+        self.fetched.append(url)
+        if url not in self.blobs:
+            return _PawStream(_PawResp(status_error="404 Not Found"))
+        return _PawStream(_PawResp(body=self.blobs[url], chunk=self.chunk))
+
+
+def _data(path): return "https://pawchive.pw/data" + path
+
+
+def test_pawchive_png_size_filter_and_downloads(tmp_path):
+    card, scene, big, odd = "/01/aa/card.png", "/02/bb/scene.png", "/03/cc/big.png", "/04/dd/not.png"
+    posts = [{
+        "id": "1", "title": "t", "content": "",
+        "file": {"name": "card.png", "path": card},
+        "attachments": [
+            {"name": "scene.png", "path": scene},
+            {"name": "big.png", "path": big},               # 1920x1080: rejected
+            {"name": "broken.png", "path": odd},            # not a PNG at all: rejected
+            {"name": "mods.rar", "path": "/05/ee/mods.rar"},   # not a PNG: no check
+        ],
+    }]
+    blobs = {
+        _data(card): _png(252, 352), _data(scene): _png(320, 180), _data(big): _png(1920, 1080),
+        _data(odd): b"this is not a png" * 20, _data("/05/ee/mods.rar"): b"Rar!" * 100,
+    }
+    # chunk=7 makes the first chunks shorter than a PNG header
+    client = _PawClient(blobs=blobs, chunk=7)
+    history: dict = {}
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+
+    assert (run.ok, run.skipped, run.failed, run.filtered) == (3, 0, 0, 2)
+    assert sorted(p.name for p in Path(tmp_path).iterdir()) == ["card.png", "mods.rar", "scene.png"]
+    assert (Path(tmp_path) / "mods.rar").read_bytes() == b"Rar!" * 100
+    assert set(history) == {_data(card), _data(scene), _data("/05/ee/mods.rar")}   # rejects not recorded
+    assert not list(Path(tmp_path).glob("*.part"))                  # nothing half-written is left
+
+
+def test_pawchive_png_ratio_is_accepted_and_abort_is_early(tmp_path):
+    scaled, huge = "/01/aa/scaled.png", "/02/bb/huge.png"
+    blobs = {_data(scaled): _png(504, 704), _data(huge): _png(4000, 3000, extra=300_000)}
+    posts = [{"id": "1", "file": {"name": "scaled.png", "path": scaled},
+              "attachments": [{"name": "huge.png", "path": huge}]}]
+
+    consumed = []
+
+    class _Counting(_PawClient):
+        def stream(self, method, url):
+            s = super().stream(method, url)
+            orig = s._r.aiter_bytes
+
+            async def counted(chunk_size=65536):
+                async for c in orig(chunk_size):
+                    consumed.append((url, len(c)))
+                    yield c
+            s._r.aiter_bytes = counted
+            return s
+
+    client = _Counting(blobs=blobs, chunk=1000)
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    assert (run.ok, run.filtered) == (1, 1)                         # 504x704 has the card ratio
+    # the 300 KB rejected PNG was abandoned after its first chunk
+    assert sum(n for u, n in consumed if u == _data(huge)) <= 1000
+
+
+def test_pawchive_failed_file_is_counted_and_others_continue(tmp_path):
+    posts = [{"id": "1", "file": {"name": "gone.rar", "path": "/00/00/gone.rar"},
+              "attachments": [{"name": "ok.rar", "path": "/00/00/ok.rar"}]}]
+    client = _PawClient(blobs={_data("/00/00/ok.rar"): b"data"})
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    assert (run.ok, run.failed) == (1, 1)
+    assert [p.name for p in Path(tmp_path).iterdir()] == ["ok.rar"]
+
+
+def test_pawchive_skip_downloaded_uses_history(tmp_path):
+    posts = [{"id": "1", "file": {"name": "a.rar", "path": "/00/00/a.rar"}}]
+    client = _PawClient(blobs={_data("/00/00/a.rar"): b"data"})
+    history = {_data("/00/00/a.rar"): str(tmp_path / "a.rar")}
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    assert (run.ok, run.skipped) == (0, 1) and client.fetched == []
+
+    run = dc._PawchiveRun(None)          # skip off: fetched again
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, False, run))
+    assert (run.ok, run.skipped) == (1, 0) and client.fetched == [_data("/00/00/a.rar")]
+
+
+def _patch_externals(monkeypatch):
+    calls: list[tuple[str, str]] = []
+
+    def make(kind):
+        async def fake(client, url, directory, history, skip):
+            calls.append((kind, url))
+            assert client == kind                      # the right client is used for each host
+            return 1, 0, 0
+        return fake
+
+    monkeypatch.setattr(dc, "_download_gofile", make("gofile"))
+    monkeypatch.setattr(dc, "_download_mega", make("mega"))
+    monkeypatch.setattr(dc, "_download_gdrive", make("gdrive"))
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    return calls
+
+
+EXTERNALS = {"gofile": "gofile", "mega": "mega", "gdrive": "gdrive"}
+
+
+def test_pawchive_listing_pages_until_empty(tmp_path, monkeypatch):
+    calls = _patch_externals(monkeypatch)
+    pages = {
+        0: [{"id": "3", "title": "a", "file": {"name": "a.rar", "path": "/00/00/a.rar"},
+             "content": '<a href="https://mega.nz/file/AbCdEfGh#KEY1">x</a>'}],
+        50: [{"id": "2", "title": "b", "attachments": [{"name": "b.zip", "path": "/00/00/b.zip"}],
+              "content": "https://gofile.io/d/Xy12Zz?password=pw https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing"}],
+        # offset 100 is empty -> end
+    }
+    client = _PawClient(pages=pages, blobs={_data("/00/00/a.rar"): b"a", _data("/00/00/b.zip"): b"b"})
+    res = asyncio.run(dc._download_pawchive(
+        client, "https://pawchive.pw/posts?q=chara", Path(tmp_path), {}, True,
+        page_start=1, page_end=None, externals=EXTERNALS))
+
+    assert client.api_calls == [
+        "https://pawchive.pw/api/v1/posts?q=chara&o=0",
+        "https://pawchive.pw/api/v1/posts?q=chara&o=50",
+        "https://pawchive.pw/api/v1/posts?q=chara&o=100",
+    ]
+    assert res == (5, 0, 0)       # 2 files + 3 links
+    assert sorted(calls) == sorted([
+        ("mega", "https://mega.nz/file/AbCdEfGh#KEY1"),
+        ("gofile", "https://gofile.io/d/Xy12Zz?password=pw"),                           # query kept
+        ("gdrive", "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing"),
+    ])
+    assert sorted(p.name for p in Path(tmp_path).iterdir()) == ["a.rar", "b.zip"]
+
+
+def test_pawchive_default_reads_one_page_and_link_offset_is_honoured(tmp_path, monkeypatch):
+    _patch_externals(monkeypatch)
+    full = {o: [{"id": str(o + 1)}] for o in (0, 50, 100)}
+
+    c1 = _PawClient(pages=full)
+    asyncio.run(dc._download_pawchive(c1, "https://pawchive.pw/patreon/user/9",
+                                      Path(tmp_path), {}, True, externals=EXTERNALS))
+    assert c1.api_calls == ["https://pawchive.pw/api/v1/patreon/user/9?o=0"]
+
+    c2 = _PawClient(pages=full)
+    asyncio.run(dc._download_pawchive(c2, "https://pawchive.pw/patreon/user/9?o=100",
+                                      Path(tmp_path), {}, True, externals=EXTERNALS))
+    assert c2.api_calls == ["https://pawchive.pw/api/v1/patreon/user/9?o=100"]
+
+    c3 = _PawClient(pages=full)         # "| 2 | 3" -> offsets 50 and 100
+    asyncio.run(dc._download_pawchive(c3, "https://pawchive.pw/patreon/user/9",
+                                      Path(tmp_path), {}, True, page_start=2, page_end=3,
+                                      externals=EXTERNALS))
+    assert [u.rsplit("o=", 1)[1] for u in c3.api_calls] == ["50", "100"]
+
+
+def test_pawchive_reverse_range_survives_an_empty_first_page(tmp_path, monkeypatch):
+    _patch_externals(monkeypatch)
+    client = _PawClient(pages={0: [{"id": "1"}], 50: [{"id": "2"}]})   # page 3 (o=100) is empty
+    asyncio.run(dc._download_pawchive(client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
+                                      page_start=3, page_end=1, externals=EXTERNALS))
+    assert [u.rsplit("o=", 1)[1] for u in client.api_calls] == ["100", "50", "0"]
+
+
+def test_pawchive_repeated_pages_stop_an_open_ended_run(tmp_path, monkeypatch):
+    _patch_externals(monkeypatch)
+
+    class _Clamping(_PawClient):          # a server that keeps serving the last page
+        async def get(self, url):
+            self.api_calls.append(url)
+            return _PawResp(data=[{"id": "1"}])
+
+    client = _Clamping()
+    asyncio.run(dc._download_pawchive(client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
+                                      page_start=1, page_end=None, externals=EXTERNALS))
+    assert len(client.api_calls) == 2     # page 2 repeated page 1 -> stop
+
+
+def test_pawchive_bad_response_is_a_failed_page_not_the_end(tmp_path, monkeypatch):
+    _patch_externals(monkeypatch)
+
+    class _Erroring(_PawClient):
+        async def get(self, url):
+            self.api_calls.append(url)
+            return _PawResp(data={"error": "rate limited"})
+
+    client = _Erroring()
+    ok, skipped, failed = asyncio.run(dc._download_pawchive(
+        client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
+        page_start=1, page_end=None, externals=EXTERNALS))
+    assert (ok, skipped) == (0, 0) and failed == dc.MAX_CONSECUTIVE_BAD_PAGES
+    assert len(client.api_calls) == dc.MAX_CONSECUTIVE_BAD_PAGES
+
+
+def test_pawchive_single_post(tmp_path, monkeypatch):
+    calls = _patch_externals(monkeypatch)
+    post = {"id": "173280929", "user": "58585170", "service": "patreon", "title": "t",
+            "content": "<p>https://mega.nz/folder/Zz9Yy8Xx#abcdefghijklmnopqrstuv</p>",
+            "file": {"name": "000.png", "path": "/01/aa/c.png"},
+            "attachments": [{"name": "c.rar", "path": "/01/aa/c.rar"}]}
+    client = _PawClient(singles={"173280929": post},
+                        blobs={_data("/01/aa/c.png"): _png(252, 352), _data("/01/aa/c.rar"): b"zz"})
+    res = asyncio.run(dc._download_pawchive(
+        client, "https://pawchive.pw/patreon/user/58585170/post/173280929",
+        Path(tmp_path), {}, True, page_start=5, page_end=5, externals=EXTERNALS))   # directive ignored
+    assert client.api_calls == ["https://pawchive.pw/api/v1/patreon/user/58585170/post/173280929"]
+    assert res == (3, 0, 0)
+    assert calls == [("mega", "https://mega.nz/folder/Zz9Yy8Xx#abcdefghijklmnopqrstuv")]
+
+    # the wrapped shape works the same
+    client = _PawClient(singles={"1": {"post": {"id": "1", "attachments": [{"name": "d.rar", "path": "/d.rar"}]}}},
+                        blobs={_data("/d.rar"): b"d"})
+    assert asyncio.run(dc._download_pawchive(
+        client, "https://pawchive.pw/fanbox/user/2/post/1", Path(tmp_path), {}, True,
+        externals=EXTERNALS)) == (1, 0, 0)
+
+
+def test_pawchive_same_file_and_link_in_many_posts_is_handled_once(tmp_path, monkeypatch):
+    calls = _patch_externals(monkeypatch)
+    post = lambda i: {"id": str(i), "file": {"name": "a.rar", "path": "/00/00/a.rar"},
+                      "content": "https://gofile.io/d/Xy12Zz"}
+    client = _PawClient(blobs={_data("/00/00/a.rar"): b"a"})
+    run = dc._PawchiveRun(EXTERNALS)
+    asyncio.run(dc._pawchive_process_posts(client, [post(1), post(2)], Path(tmp_path), {}, True, run))
+    assert client.fetched == [_data("/00/00/a.rar")] and len(calls) == 1
+    assert (run.ok, run.failed) == (2, 0)            # 1 file + 1 link
+
+
+def test_pawchive_failing_link_does_not_stop_the_rest(tmp_path, monkeypatch):
+    _patch_externals(monkeypatch)
+
+    async def boom(client, url, directory, history, skip):
+        raise RuntimeError("mega: quota")
+
+    monkeypatch.setattr(dc, "_download_mega", boom)
+    posts = [{"id": "1", "content": "https://mega.nz/file/AbCdEfGh#KEY https://gofile.io/d/Xy12Zz"}]
+    run = dc._PawchiveRun(EXTERNALS)
+    asyncio.run(dc._pawchive_process_posts(_PawClient(), posts, Path(tmp_path), {}, True, run))
+    assert (run.ok, run.failed) == (1, 1)
+
+
+def test_pawchive_unsupported_link(tmp_path):
+    assert asyncio.run(dc._download_pawchive(
+        _PawClient(), "https://pawchive.pw/creators", Path(tmp_path), {}, True)) == (0, 0, 1)
