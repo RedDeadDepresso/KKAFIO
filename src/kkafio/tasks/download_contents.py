@@ -972,18 +972,24 @@ async def _download_pixiv(
 # Gofile
 # ---------------------------------------------------------------------------
 #
-# Same method as megaloader's Gofile plugin: a guest account token from
-# POST /accounts, then GET /contents/<id> signed with a "website token". The
-# token is a sha256 over the user agent, language, account token, a 4-hour
-# time bucket and a salt that gofile ships (obfuscated) in its wt.js and
-# rotates every few months. If requests start failing with "error-notPremium"
-# the salt is stale: set the GOFILE_SALT environment variable to the new one
-# (megaloader tracks it too). GOFILE_TOKEN may hold the token of a real
-# account instead of using a throw-away guest account.
+# A guest account token from POST /accounts, then GET /contents/<id> signed
+# with a "website token": a sha256 over the user agent, language, account
+# token, a 4-hour time bucket and a secret ("salt"). Gofile rotates that secret
+# every few months, so it is NOT pinned: like HeapLeach, it is read out of
+# gofile's own script (/js/wt.obf.js), where it is hidden in an RC4-encrypted,
+# shuffled-base64 string table (see _gofile_secret_from). If that fails, set
+# the GOFILE_SALT environment variable to the current secret. GOFILE_TOKEN may hold the token of a real account
+# instead of using a throw-away guest account.
+#
+# Signing badly is worse than not signing: gofile blocks an address that keeps
+# doing it. So after an "error-notPremium" rejection nothing signed is sent
+# for GOFILE_REJECTION_COOLDOWN seconds, and the secret is read again after.
 
 GOFILE_API         = "https://api.gofile.io"
 GOFILE_DOMAIN      = ".gofile.io"
-GOFILE_SALT        = "9844d94d963d30"
+GOFILE_SCRIPT_URL  = "https://gofile.io/js/wt.obf.js"
+GOFILE_SECRET_TTL      = 3600          # reuse a recovered secret this long (s)
+GOFILE_REJECTION_COOLDOWN = 900        # stop signing this long after a rejection (s)
 GOFILE_TIME_BUCKET = 14400            # seconds
 GOFILE_LANG        = "en-US"
 # The website token hashes this exact user agent, so the client must send it.
@@ -1009,10 +1015,173 @@ def _parse_gofile_url(url: str) -> tuple[str, str | None] | None:
     return m.group(1), opts.get("password") or None
 
 
-def _gofile_website_token(api_token: str) -> str:
+# --- Recovering the secret from gofile's script (port of HeapLeach's gofilewt.go)
+
+_GOFILE_ALPHABET_RE   = re.compile(r"'([A-Za-z0-9+/]{64}=)'")
+_GOFILE_TABLE_RE      = re.compile(r"\[((?:'[A-Za-z0-9+/=]*'\s*,\s*){8,}'[A-Za-z0-9+/=]*')\]")
+_GOFILE_TABLE_ITEM_RE = re.compile(r"'([A-Za-z0-9+/=]*)'")
+_GOFILE_CALL_RE       = re.compile(r"\(\s*0x([0-9a-fA-F]+)\s*,\s*'([^']{1,32})'\s*\)")
+_GOFILE_HEX_ESCAPE_RE = re.compile(r"\\x([0-9a-fA-F]{2})")
+_GOFILE_SECRET_RE     = re.compile(r"^[0-9a-f]{10,40}$")
+
+
+def _gofile_rc4(text: str, key: str) -> str:
+    """RC4 over characters (code points), as the script does it."""
+    if not key:
+        return ""
+    k = [ord(c) for c in key]
+    state = list(range(256))
+    j = 0
+    for i in range(256):
+        j = (j + state[i] + k[i % len(k)]) % 256
+        state[i], state[j] = state[j], state[i]
+    out = []
+    i = j = 0
+    for ch in text:
+        i = (i + 1) % 256
+        j = (j + state[i]) % 256
+        state[i], state[j] = state[j], state[i]
+        out.append(chr(ord(ch) ^ state[(state[i] + state[j]) % 256]))
+    return "".join(out)
+
+
+def _gofile_base64(encoded: str, alphabet: str) -> bytes:
+    """Base64 under the script's shuffled alphabet, six bits at a time."""
+    out = bytearray()
+    acc = bits = 0
+    for ch in encoded:
+        value = alphabet.find(ch)
+        if value < 0 or value >= 64:
+            continue                      # padding / foreign character
+        acc = (acc << 6 | value) & 0xFFFFFF
+        bits += 6
+        if bits >= 8:
+            bits -= 8
+            out.append((acc >> bits) & 0xFF)
+    if not out:
+        raise ValueError("entry decoded to nothing")
+    return bytes(out)
+
+
+def _gofile_decode_entry(encoded: str, key: str, alphabet: str) -> str:
+    # Decoded to text first, then enciphered over characters — same order as
+    # the script, so multi-byte characters don't turn into noise.
+    return _gofile_rc4(_gofile_base64(encoded, alphabet).decode("utf-8"), key)
+
+
+def _gofile_printable(text: str) -> bool:
+    return bool(text) and all(0x20 <= ord(c) <= 0x7e for c in text)
+
+
+def _gofile_secret_from(script: str) -> str:
+    """Extract the signing secret from wt.obf.js, or raise ValueError.
+
+    Refuses to guess: the secret is returned only if the whole script decodes
+    under one table rotation and exactly one decoded string looks like a secret.
+    """
+    script = _GOFILE_HEX_ESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)), script)
+
+    m = _GOFILE_ALPHABET_RE.search(script)
+    if not m:
+        raise ValueError("no base64 alphabet in the signing script")
+    alphabet = m.group(1)
+
+    table: list[str] = []
+    for tm in _GOFILE_TABLE_RE.finditer(script):
+        items = _GOFILE_TABLE_ITEM_RE.findall(tm.group(1))
+        if len(items) > len(table):
+            table = items                 # the longest table is the real one
+    if not table:
+        raise ValueError("no string table in the signing script")
+
+    calls: list[tuple[int, str]] = []
+    for cm in _GOFILE_CALL_RE.finditer(script):
+        call = (int(cm.group(1), 16), cm.group(2))
+        if call not in calls:
+            calls.append(call)
+    if not calls:
+        raise ValueError("no decodable references in the signing script")
+
+    # The table is rotated by the script's startup loop; try every rotation and
+    # keep the one where every reference decodes to readable text.
+    decoded: list[str] | None = None
+    for offset in range(len(table)):
+        attempt: list[str] = []
+        for index, key in calls:
+            try:
+                text = _gofile_decode_entry(table[(index + offset) % len(table)], key, alphabet)
+            except (ValueError, UnicodeDecodeError):
+                break
+            if not _gofile_printable(text):
+                break
+            attempt.append(text)
+        else:
+            decoded = attempt
+            break
+    if decoded is None:
+        raise ValueError("the signing script did not decode; its obfuscation has changed")
+
+    candidates = list(dict.fromkeys(
+        t for t in decoded
+        if _GOFILE_SECRET_RE.match(t) and len(set(t)) > 1))
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        raise ValueError("the signing script holds nothing shaped like a secret")
+    raise ValueError(f"the signing script holds {len(candidates)} strings shaped like a secret")
+
+
+_gofile_secret_cache: dict = {"secret": "", "until": 0.0, "rejected_at": 0.0,
+                              "error": "", "error_until": 0.0}
+
+
+async def _gofile_ensure_secret(client) -> str:
+    """The secret to sign with: the GOFILE_SALT env override, else the one read
+    from gofile's script (cached). Raises RuntimeError if neither is available."""
+    override = os.environ.get("GOFILE_SALT")
+    if override:
+        return override
+
+    cache = _gofile_secret_cache
+    now = time.time()
+    since = now - cache["rejected_at"]
+    if cache["rejected_at"] and since < GOFILE_REJECTION_COOLDOWN:
+        raise RuntimeError(
+            "Gofile refused the last request as wrongly signed, and repeating that "
+            f"gets this address blocked — waiting {GOFILE_REJECTION_COOLDOWN - since:.0f}s "
+            "before trying again (or set the GOFILE_SALT environment variable).")
+
+    if cache["secret"] and now < cache["until"]:
+        return cache["secret"]
+
+    # A failed read is held briefly so a failing script isn't re-fetched per request.
+    if cache.get("error") and now < cache["error_until"]:
+        raise RuntimeError(cache["error"])
+
+    try:
+        r = await client.get(GOFILE_SCRIPT_URL, headers={"Referer": "https://gofile.io/"})
+        r.raise_for_status()
+        cache["secret"] = _gofile_secret_from(r.text)
+        cache["until"] = now + GOFILE_SECRET_TTL
+        cache["error"] = ""
+        logger.info("DLOAD", "  Read Gofile signing secret from its script.")
+    except Exception as e:
+        cache["error"] = (
+            f"Could not read Gofile's signing secret from its script ({e}). "
+            "Set the GOFILE_SALT environment variable to the current secret.")
+        cache["error_until"] = now + 60
+        raise RuntimeError(cache["error"]) from e
+    return cache["secret"]
+
+
+def _gofile_signature_rejected() -> None:
+    """Drop the secret and start the cooldown (the next try re-reads the script)."""
+    _gofile_secret_cache.update(secret="", until=0.0, rejected_at=time.time())
+
+
+def _gofile_website_token(api_token: str, secret: str) -> str:
     bucket = int(time.time() // GOFILE_TIME_BUCKET)
-    salt = os.environ.get("GOFILE_SALT") or GOFILE_SALT
-    raw = f"{GOFILE_USER_AGENT}::{GOFILE_LANG}::{api_token}::{bucket}::{salt}"
+    raw = f"{GOFILE_USER_AGENT}::{GOFILE_LANG}::{api_token}::{bucket}::{secret}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -1023,9 +1192,9 @@ def _gofile_status_message(status: str | None) -> str:
             "This Gofile folder is password protected — add ?password=... to the link.",
         "error-passwordWrong": "Wrong Gofile folder password.",
         "error-notPremium":
-            "Gofile rejected the request (error-notPremium). The website-token salt is "
-            "probably out of date: set the GOFILE_SALT environment variable to the "
-            "current value (see megaloader's gofile plugin).",
+            "Gofile rejected the request signature (error-notPremium). The signing secret "
+            "read from gofile's script was refused; it will be read again after a short "
+            "cooldown. Set the GOFILE_SALT environment variable to override it.",
     }.get(status or "", f"Gofile API error: {status}")
 
 
@@ -1054,9 +1223,10 @@ async def _gofile_token(client) -> str:
 
 async def _gofile_api(client, path: str, params: dict, api_token: str):
     """GET a signed gofile API endpoint and return its "data"."""
+    secret = await _gofile_ensure_secret(client)
     headers = {
         "Authorization": f"Bearer {api_token}",
-        "X-Website-Token": _gofile_website_token(api_token),
+        "X-Website-Token": _gofile_website_token(api_token, secret),
         "X-BL": GOFILE_LANG,
         "Origin": "https://gofile.io",
         "Referer": "https://gofile.io/",
@@ -1070,11 +1240,15 @@ async def _gofile_api(client, path: str, params: dict, api_token: str):
             status = exc.response.json().get("status")          # type: ignore[attr-defined]
         except Exception:
             status = None
+        if status == "error-notPremium":
+            _gofile_signature_rejected()
         if status:
             raise RuntimeError(_gofile_status_message(status)) from exc
         raise
     data = r.json()
     if data.get("status") != "ok":
+        if data.get("status") == "error-notPremium":
+            _gofile_signature_rejected()
         raise RuntimeError(_gofile_status_message(data.get("status")))
     return data.get("data")
 
