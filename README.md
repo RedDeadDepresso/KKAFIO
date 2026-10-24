@@ -112,7 +112,7 @@ Everything else — CLI output, log files, and error messages — is English-onl
 
 **2. Download Contents**
 
-- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [gofile.io](https://gofile.io) and [mega.nz](https://mega.nz).
+- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [gofile.io](https://gofile.io) and [mega.nz](https://mega.nz) and [Google Drive](https://drive.google.com).
 - **Output Directory** defaults to `C:/KKAFIO/Downloads`.
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
 - **Pagination formats** (use `|` as separator):
@@ -140,6 +140,7 @@ Everything else — CLI output, log files, and error messages — is English-onl
 - **gofile.io** — paste a folder link such as `https://gofile.io/d/AbC123`. Every file in the folder is downloaded; nested folders are downloaded into subfolders of the output directory named after them, so same-named files never overwrite each other. No login is needed: like megaloader, KKAFIO creates a throw-away guest account for each run (set the `GOFILE_TOKEN` environment variable to use your own account token instead). For a password-protected folder append `?password=...` to the link. The page directive is ignored.
   - Gofile signs its API requests with a website token that includes a secret which gofile changes every few months. KKAFIO reads the current secret from gofile's own script (the same method as HeapLeach), so rotations are picked up automatically. If that ever fails, set the `GOFILE_SALT` environment variable to the current secret. After a rejected signature (`error-notPremium`) KKAFIO stops sending signed requests for 15 minutes, because gofile blocks addresses that keep signing badly.
 - **mega.nz** — paste a file link (`https://mega.nz/file/ID#KEY`), a folder link (`https://mega.nz/folder/ID#KEY`) or a single file of a folder (`.../folder/ID#KEY/file/NODE`); the old `#!ID!KEY` / `#F!ID!KEY` shapes work too. The part after `#` is the decryption key and is required: Mega encrypts names and data, and KKAFIO decrypts them while downloading. Folders keep their structure (nested folders become subfolders). Mega limits free transfer per IP address; if the quota is used up the file fails with the wait time Mega reports, and a re-run later resumes (finished files are skipped). The page directive is ignored.
+- **Google Drive** — public files (`https://drive.google.com/file/d/ID/view`, `open?id=ID`, `uc?id=ID`) and folders (`https://drive.google.com/drive/folders/ID`); subfolders become subfolders. Items must be shared as "anyone with the link". Large files go through Google's confirmation page automatically; if a file has hit Google's download quota you get that reason and can retry in about a day. Google Docs/Sheets/Slides inside a folder are skipped (they aren't files). The page directive is ignored.
 
 **3. Filter & Convert KKS Cards**
 

@@ -659,6 +659,149 @@ def test_mega_errors_become_clear_messages(tmp_path, monkeypatch):
     assert asyncio.run(go("https://mega.nz/file/X")) == (0, 0, 1)      # key missing → counted as failed
 
 
+# ---------------------------------------------------------------------------
+# google drive
+# ---------------------------------------------------------------------------
+
+_GD_ID = "1AbCdEfGhIjKlMnOpQrStUv"
+_GD_ID2 = "1ZzYyXxWwVvUuTtSsRrQqPp"
+
+
+def test_gdrive_url_parsing():
+    assert dc._is_gdrive_url("https://drive.google.com/file/d/x/view")
+    assert dc._is_gdrive_url("https://docs.google.com/uc?id=" + _GD_ID)
+    assert not dc._is_gdrive_url("https://docs.google.com/document/d/" + _GD_ID)
+    assert not dc._is_gdrive_url("https://example.com/file/d/" + _GD_ID)
+    p = dc._parse_gdrive_url
+    assert p(f"https://drive.google.com/file/d/{_GD_ID}/view?usp=sharing") == ("file", _GD_ID)
+    assert p(f"https://drive.google.com/file/u/0/d/{_GD_ID}/view") == ("file", _GD_ID)
+    assert p(f"https://drive.google.com/open?id={_GD_ID}") == ("file", _GD_ID)
+    assert p(f"https://drive.google.com/uc?export=download&id={_GD_ID}") == ("file", _GD_ID)
+    assert p(f"https://drive.google.com/drive/folders/{_GD_ID}?usp=sharing") == ("folder", _GD_ID)
+    assert p(f"https://drive.google.com/drive/u/1/folders/{_GD_ID}") == ("folder", _GD_ID)
+    assert p("https://drive.google.com/drive/my-drive") is None
+
+
+def _gdrive_client(handler):
+    import httpx
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+
+
+def test_gdrive_small_file_streams_directly(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    seen = []
+
+    def handler(req: httpx.Request):
+        seen.append(req.url)
+        assert req.url.host == "drive.usercontent.google.com"
+        return httpx.Response(200, content=b"BYTES", headers={
+            "content-type": "application/octet-stream",
+            "content-disposition": "attachment; filename=\"fallback.png\"; filename*=UTF-8''%E3%82%AB%E3%83%BC%E3%83%89.png"})
+
+    async def go():
+        c = _gdrive_client(handler)
+        try:
+            h = {}
+            r1 = await dc._download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), h, True)
+            r2 = await dc._download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), h, True)
+            return r1, r2
+        finally:
+            await c.aclose()
+
+    r1, r2 = asyncio.run(go())
+    assert r1 == (1, 0, 0) and r2 == (0, 1, 0)
+    assert (Path(tmp_path) / "カード.png").read_bytes() == b"BYTES"    # filename* wins
+    assert len(seen) == 1
+
+
+def test_gdrive_large_file_goes_through_confirmation(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    page = ('<html><span class="uc-name-size"><a href="/open?id=x">big pack.7z</a> (2G)</span>'
+            '<form id="download-form" action="https://drive.usercontent.google.com/download" method="get">'
+            f'<input type="hidden" name="id" value="{_GD_ID}"><input type="hidden" name="export" value="download">'
+            '<input type="hidden" name="uuid" value="tok-123"><input type="hidden" name="at" value="AB"></form></html>')
+    calls = []
+
+    def handler(req: httpx.Request):
+        calls.append(dict(req.url.params))
+        if req.url.params.get("uuid") == "tok-123":
+            return httpx.Response(200, content=b"REALDATA", headers={"content-type": "application/octet-stream"})
+        return httpx.Response(200, text=page, headers={"content-type": "text/html; charset=utf-8"})
+
+    async def go():
+        c = _gdrive_client(handler)
+        try:
+            return await dc._download_gdrive(c, f"https://drive.google.com/uc?id={_GD_ID}", Path(tmp_path), {}, True)
+        finally:
+            await c.aclose()
+
+    assert asyncio.run(go()) == (1, 0, 0)
+    assert (Path(tmp_path) / "big pack.7z").read_bytes() == b"REALDATA"     # name from the page
+    assert calls[1]["uuid"] == "tok-123" and calls[1]["at"] == "AB"
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_gdrive_refusals_are_reported_not_retried(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    n = {"calls": 0}
+
+    def handler(req: httpx.Request):
+        n["calls"] += 1
+        return httpx.Response(200, text="<html>Sorry, you can't view or download this file at this time. "
+                              "Too many users have viewed or downloaded this file recently.</html>",
+                              headers={"content-type": "text/html"})
+
+    async def go():
+        c = _gdrive_client(handler)
+        try:
+            return await dc._download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), {}, True)
+        finally:
+            await c.aclose()
+
+    assert asyncio.run(go()) == (0, 0, 1)
+    assert n["calls"] == 1
+    assert not list(Path(tmp_path).iterdir())
+
+
+def test_gdrive_folder_listing_and_download(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+
+    def entry(eid, href, title):
+        return (f'<div class="flip-entry" id="entry-{eid}" tabindex="0"><a href="{href}" target="_blank">'
+                f'<div class="flip-entry-info"><div class="flip-entry-title">{title}</div></div></a></div>')
+
+    root = "<html><title>pack</title><body>" + "".join([
+        entry("F1", "https://drive.google.com/file/d/FILEONE0001/view?usp=drive_web", "a.png"),
+        entry("F2", "https://drive.google.com/file/d/FILETWO0002/view?usp=drive_web", "a.png"),   # duplicate name
+        entry("D1", "https://drive.google.com/drive/folders/SUBFOLDER001", "extras"),
+        entry("G1", "https://docs.google.com/document/d/DOC0000001/edit", "notes"),                # a Google Doc
+    ]) + "</body></html>"
+    sub = "<html><body>" + entry("F3", "https://drive.google.com/file/d/FILETHREE03/view", "b &amp; c.png") + "</body></html>"
+    blobs = {"FILEONE0001": b"one", "FILETWO0002": b"two", "FILETHREE03": b"three"}
+
+    def handler(req: httpx.Request):
+        if req.url.host == "drive.google.com" and req.url.path == "/embeddedfolderview":
+            return httpx.Response(200, text={"ROOTFOLDER01": root, "SUBFOLDER001": sub}[req.url.params["id"]],
+                                  headers={"content-type": "text/html"})
+        return httpx.Response(200, content=blobs[req.url.params["id"]], headers={"content-type": "application/octet-stream"})
+
+    async def go():
+        c = _gdrive_client(handler)
+        try:
+            return await dc._download_gdrive(c, "https://drive.google.com/drive/folders/ROOTFOLDER01", Path(tmp_path), {}, True)
+        finally:
+            await c.aclose()
+
+    assert asyncio.run(go()) == (3, 0, 0)
+    assert (Path(tmp_path) / "a.png").read_bytes() == b"one"
+    assert (Path(tmp_path) / "a (FILETW).png").read_bytes() == b"two"        # duplicate name kept, not overwritten
+    assert (Path(tmp_path) / "extras" / "b & c.png").read_bytes() == b"three"
+
+
 def test_resolve_filename_decodes_percent_escapes():
     class _R: headers = {}
     assert dc._resolve_filename(_R(), "https://store1.gofile.io/download/web/id/card%20one.png", "x") == "card one.png"
