@@ -112,7 +112,7 @@ Everything else — CLI output, log files, and error messages — is English-onl
 
 **2. Download Contents**
 
-- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net) and [gofile.io](https://gofile.io).
+- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [gofile.io](https://gofile.io) and [mega.nz](https://mega.nz).
 - **Output Directory** defaults to `C:/KKAFIO/Downloads`.
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
 - **Pagination formats** (use `|` as separator):
@@ -138,7 +138,8 @@ Everything else — CLI output, log files, and error messages — is English-onl
   - **Only matching images are downloaded:** exactly 320x180 (scene thumbnails) or any size with the 252x352 aspect ratio (character / coordinate cards). The size is read from pixiv's API before downloading, so everything else is skipped without being fetched.
   - **PHPSESSID cookie** — like koikatsucards.com, KKAFIO opens [accounts.pixiv.net/login](https://accounts.pixiv.net/login) and shows a dialog asking for the `PHPSESSID` cookie value (DevTools → Application/Storage → Cookies → https://www.pixiv.net). It is stored in `%APPDATA%/KKAFIO/config/pixiv_session.json`; the `PIXIV_PHPSESSID` environment variable also works. It is only needed for R-18 / restricted works: cancelling the dialog continues without a login. To enter a new one, delete `pixiv_session.json`.
 - **gofile.io** — paste a folder link such as `https://gofile.io/d/AbC123`. Every file in the folder is downloaded; nested folders are downloaded into subfolders of the output directory named after them, so same-named files never overwrite each other. No login is needed: like megaloader, KKAFIO creates a throw-away guest account for each run (set the `GOFILE_TOKEN` environment variable to use your own account token instead). For a password-protected folder append `?password=...` to the link. The page directive is ignored.
-  - Gofile signs its API requests with a website token that includes a salt which gofile changes every few months (same as in megaloader's plugin). If Gofile links suddenly fail with an `error-notPremium` message, the salt is out of date: set the `GOFILE_SALT` environment variable to the new value.
+  - Gofile signs its API requests with a website token that includes a secret which gofile changes every few months. KKAFIO reads the current secret from gofile's own script (the same method as HeapLeach), so rotations are picked up automatically. If that ever fails, set the `GOFILE_SALT` environment variable to the current secret. After a rejected signature (`error-notPremium`) KKAFIO stops sending signed requests for 15 minutes, because gofile blocks addresses that keep signing badly.
+- **mega.nz** — paste a file link (`https://mega.nz/file/ID#KEY`), a folder link (`https://mega.nz/folder/ID#KEY`) or a single file of a folder (`.../folder/ID#KEY/file/NODE`); the old `#!ID!KEY` / `#F!ID!KEY` shapes work too. The part after `#` is the decryption key and is required: Mega encrypts names and data, and KKAFIO decrypts them while downloading. Folders keep their structure (nested folders become subfolders). Mega limits free transfer per IP address; if the quota is used up the file fails with the wait time Mega reports, and a re-run later resumes (finished files are skipped). The page directive is ignored.
 
 **3. Filter & Convert KKS Cards**
 

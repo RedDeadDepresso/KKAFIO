@@ -1,5 +1,6 @@
 """Download Contents: the `url | page` pagination formats."""
 
+import pytest
 import asyncio
 from pathlib import Path
 
@@ -340,15 +341,33 @@ def test_gofile_url_parsing():
     assert not dc._is_gofile_url("https://example.com/?u=gofile.io")
 
 
-def test_gofile_website_token_matches_megaloader_formula(monkeypatch):
+@pytest.fixture(autouse=True)
+def _reset_gofile_secret_cache():
+    dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
+    yield
+    dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
+
+
+def test_gofile_website_token_formula():
     import hashlib
-    monkeypatch.delenv("GOFILE_SALT", raising=False)
-    monkeypatch.setattr(dc.time, "time", lambda: 14400 * 7 + 5)
-    expect = hashlib.sha256(
-        f"{dc.GOFILE_USER_AGENT}::en-US::tok::7::9844d94d963d30".encode()).hexdigest()
-    assert dc._gofile_website_token("tok") == expect
-    monkeypatch.setenv("GOFILE_SALT", "newsalt")
-    assert dc._gofile_website_token("tok") != expect
+    import time as _t
+    orig = dc.time.time
+    dc.time.time = lambda: 14400 * 7 + 5
+    try:
+        expect = hashlib.sha256(
+            f"{dc.GOFILE_USER_AGENT}::en-US::tok::7::somesecret".encode()).hexdigest()
+        assert dc._gofile_website_token("tok", "somesecret") == expect
+        assert dc._gofile_website_token("tok", "other") != expect
+    finally:
+        dc.time.time = orig
+
+
+def test_gofile_secret_is_decoded_from_the_script():
+    script = open(Path(__file__).parent / "data" / "gofile-wt.obf.js", encoding="utf-8").read()
+    assert dc._gofile_secret_from(script) == "12af056dacea0b"
+    import pytest
+    with pytest.raises(ValueError):
+        dc._gofile_secret_from("var nothing = 1;")
 
 
 def _gofile_mock_client(tree, record, fail_status=None):
@@ -380,7 +399,7 @@ def _gf_file(fid, name):
 
 def test_gofile_folder_download_end_to_end(tmp_path, monkeypatch):
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
-    monkeypatch.delenv("GOFILE_SALT", raising=False)
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
     tree = {
         "ROOT": {"name": "pack", "children": {
             "f1": _gf_file("f1", "card one.png"),
@@ -419,6 +438,7 @@ def test_gofile_folder_download_end_to_end(tmp_path, monkeypatch):
 def test_gofile_password_is_sent_hashed(tmp_path, monkeypatch):
     import hashlib
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
     record: list = []
     monkeypatch.setattr(dc, "_save_history", lambda h: None)
     tree = {"ROOT": {"name": "x", "children": {"f": _gf_file("f", "a.png")}}}
@@ -438,6 +458,7 @@ def test_gofile_password_is_sent_hashed(tmp_path, monkeypatch):
 
 def test_gofile_api_errors_become_clear_messages(tmp_path, monkeypatch):
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
     import pytest
     for status, fragment in (("error-notFound", "not found"), ("error-passwordRequired", "password"),
                              ("error-notPremium", "GOFILE_SALT")):
@@ -449,6 +470,193 @@ def test_gofile_api_errors_become_clear_messages(tmp_path, monkeypatch):
                 await client.aclose()
         with pytest.raises(RuntimeError, match=fragment):
             asyncio.run(go())
+        dc._gofile_secret_cache["rejected_at"] = 0.0     # a rejection starts a cooldown
+
+
+def test_gofile_rejection_starts_a_cooldown(monkeypatch):
+    import pytest
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
+    dc._gofile_signature_rejected()
+    with pytest.raises(RuntimeError, match="wrongly signed"):
+        asyncio.run(dc._gofile_ensure_secret(None))
+
+
+# ---------------------------------------------------------------------------
+# mega
+# ---------------------------------------------------------------------------
+
+def _b64(b: bytes) -> str:
+    import base64
+    return base64.urlsafe_b64encode(b).decode().rstrip("=")
+
+
+def _aes_ecb(key, data):
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    e = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+    return e.update(data) + e.finalize()
+
+
+def _enc_attrs(name, aes_key):
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    import json as _json
+    plain = b"MEGA" + _json.dumps({"n": name}).encode()
+    plain += bytes(-len(plain) % 16)
+    e = Cipher(algorithms.AES(aes_key), modes.CBC(bytes(16))).encryptor()
+    return _b64(e.update(plain) + e.finalize())
+
+
+def _mega_file(name, content: bytes, seed: int):
+    """(32-byte file key, aes key, nonce, encrypted attrs, encrypted payload)."""
+    import os as _os
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    rnd = bytes((seed * 31 + i) % 256 for i in range(32))
+    aes_key, nonce = bytes(a ^ b for a, b in zip(rnd[:16], rnd[16:])), rnd[16:24]
+    e = Cipher(algorithms.AES(aes_key), modes.CTR(nonce + bytes(8))).encryptor()
+    return rnd, aes_key, nonce, _enc_attrs(name, aes_key), e.update(content) + e.finalize()
+
+
+def test_mega_url_and_link_parsing():
+    import pytest
+    key16, key32 = _b64(bytes(range(16))), _b64(bytes(range(32)))
+    assert dc._is_mega_url("https://mega.nz/file/abc#" + key32)
+    assert dc._is_mega_url("https://mega.co.nz/#!abc!" + key32)
+    assert not dc._is_mega_url("https://notmega.nz/file/abc")
+
+    l = dc._parse_mega_link(f"https://mega.nz/file/abc#{key32}")
+    assert (l["folder"], l["handle"], l["node"], len(l["key"])) == (False, "abc", "", 32)
+    l = dc._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}")
+    assert (l["folder"], l["handle"], len(l["key"])) == (True, "FOL", 16)
+    l = dc._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/file/NODE")
+    assert l["node"] == "NODE"
+    l = dc._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/folder/SUB")   # subtree: whole share
+    assert l["node"] == ""
+    l = dc._parse_mega_link(f"https://mega.nz/#!abc!{key32}")
+    assert (l["folder"], l["handle"]) == (False, "abc")
+    l = dc._parse_mega_link(f"https://mega.nz/#F!FOL!{key16}!NODE")
+    assert (l["folder"], l["handle"], l["node"]) == (True, "FOL", "NODE")
+
+    with pytest.raises(dc.MegaError, match="no key"):
+        dc._parse_mega_link("https://mega.nz/file/abc")
+    with pytest.raises(dc.MegaError, match="expected 32"):
+        dc._parse_mega_link(f"https://mega.nz/file/abc#{key16}")
+    with pytest.raises(dc.MegaError, match="not a file or folder"):
+        dc._parse_mega_link("https://mega.nz/")
+
+
+def test_mega_attrs_reject_a_wrong_key():
+    import pytest
+    attrs = _enc_attrs("card.png", bytes(16))
+    assert dc._mega_decrypt_attrs(attrs, bytes(16)) == {"n": "card.png"}
+    with pytest.raises(ValueError, match="wrong key"):
+        dc._mega_decrypt_attrs(attrs, bytes([1] * 16))
+
+
+def _mega_mock_client(handler_state):
+    import httpx
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        u = request.url
+        if u.host == "g.api.mega.co.nz":
+            import json as _json
+            cmd = _json.loads(request.content)[0]
+            handler_state["cmds"].append((cmd, u.params.get("n")))
+            return httpx.Response(200, json=handler_state["api"](cmd, u.params.get("n")))
+        if u.host == "storage.example":
+            return httpx.Response(200, content=handler_state["blobs"][u.path])
+        return httpx.Response(404)
+
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+
+
+def test_mega_single_file_is_decrypted(tmp_path, monkeypatch):
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    content = b"PNGDATA" * 5000 + b"tail"
+    rnd, aes_key, nonce, at, blob = _mega_file("my card.png", content, 1)
+    state = {"cmds": [], "blobs": {"/dl1": blob}}
+
+    def api(cmd, folder):
+        assert cmd["p"] == "FILEH" and folder is None
+        if cmd.get("g"):
+            return [{"g": "http://storage.example/dl1", "s": len(content), "at": at}]
+        return [{"s": len(content), "at": at}]
+    state["api"] = api
+
+    async def go():
+        client = _mega_mock_client(state)
+        try:
+            history = {}
+            r = await dc._download_mega(client, f"https://mega.nz/file/FILEH#{_b64(rnd)}",
+                                        Path(tmp_path), history, True)
+            r2 = await dc._download_mega(client, f"https://mega.nz/file/FILEH#{_b64(rnd)}",
+                                         Path(tmp_path), history, True)
+            return r, r2
+        finally:
+            await client.aclose()
+
+    first, second = asyncio.run(go())
+    assert first == (1, 0, 0) and second == (0, 1, 0)           # second run skipped via history
+    assert (Path(tmp_path) / "my card.png").read_bytes() == content
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_mega_folder_download_keeps_structure(tmp_path, monkeypatch):
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    share = bytes(range(100, 116))
+
+    def wrap(raw_key, node_handle):
+        return f"{node_handle}:{_b64(_aes_ecb(share, raw_key))}"
+
+    root_key = bytes([7] * 16)
+    sub_key = bytes([8] * 16)
+    c1, c2 = b"one" * 1000, b"two" * 777
+    k1, ak1, n1, at1, b1 = _mega_file("a.png", c1, 2)
+    k2, ak2, n2, at2, b2 = _mega_file("a.png", c2, 3)      # same name, other folder
+    nodes = [
+        {"h": "ROOT", "p": "", "t": 1, "a": _enc_attrs("pack", root_key), "k": wrap(root_key, "ROOT")},
+        {"h": "SUB", "p": "ROOT", "t": 1, "a": _enc_attrs("extras", sub_key), "k": wrap(sub_key, "SUB")},
+        {"h": "F1", "p": "ROOT", "t": 0, "s": len(c1), "a": at1, "k": wrap(k1, "F1")},
+        {"h": "F2", "p": "SUB", "t": 0, "s": len(c2), "a": at2, "k": wrap(k2, "F2")},
+    ]
+    state = {"cmds": [], "blobs": {"/b1": b1, "/b2": b2}}
+
+    def api(cmd, folder):
+        assert folder == "SHARE"
+        if cmd["a"] == "f":
+            return [{"f": nodes}]
+        return [{"g": "https://storage.example/" + {"F1": "b1", "F2": "b2"}[cmd["n"]],
+                 "s": {"F1": len(c1), "F2": len(c2)}[cmd["n"]]}]
+    state["api"] = api
+
+    async def go():
+        client = _mega_mock_client(state)
+        try:
+            return await dc._download_mega(client, f"https://mega.nz/folder/SHARE#{_b64(share)}",
+                                           Path(tmp_path), {}, True)
+        finally:
+            await client.aclose()
+
+    assert asyncio.run(go()) == (2, 0, 0)
+    assert (Path(tmp_path) / "a.png").read_bytes() == c1
+    assert (Path(tmp_path) / "extras" / "a.png").read_bytes() == c2     # no overwrite, root omitted
+
+
+def test_mega_errors_become_clear_messages(tmp_path, monkeypatch):
+    import pytest
+    state = {"cmds": [], "blobs": {}, "api": lambda cmd, folder: -9}
+
+    async def go(url):
+        client = _mega_mock_client(state)
+        try:
+            return await dc._download_mega(client, url, Path(tmp_path), {}, True)
+        finally:
+            await client.aclose()
+
+    with pytest.raises(dc.MegaError, match="not found"):
+        asyncio.run(go(f"https://mega.nz/file/X#{_b64(bytes(32))}"))
+    state["api"] = lambda cmd, folder: [{"e": -17, "tl": 3600}]
+    with pytest.raises(dc.MegaError, match="quota.*3600s"):
+        asyncio.run(go(f"https://mega.nz/file/X#{_b64(bytes(32))}"))
+    assert asyncio.run(go("https://mega.nz/file/X")) == (0, 0, 1)      # key missing → counted as failed
 
 
 def test_resolve_filename_decodes_percent_escapes():
