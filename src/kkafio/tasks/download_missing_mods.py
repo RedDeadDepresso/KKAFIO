@@ -144,7 +144,7 @@ class DownloadMissingMods(BaseTask):
                 f"Failed mods ({len(all_failed)}):",
                 "These mods could not be downloaded (no source found, or the download failed).",
                 "Check your internet connection and try again, or search for them manually",
-                "on the KKC mod index or game modding communities.",
+                "on kk.now.cc, koikatsucards.com, telegram, discord or game modding communities.",
                 "",
             ]
             for guid in sorted(all_failed):
