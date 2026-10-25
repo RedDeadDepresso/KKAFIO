@@ -50,7 +50,7 @@ KKAFIO-dev/
 │   │   ├── compress_cards_textures.py
 │   │   ├── create_backup.py
 │   │   ├── delete_cards.py
-│   │   ├── download_contents.py
+│   │   ├── download_contents.py     # Download Contents: parses the links, picks the client + downloader per site (the sites live in services/content_sources/)
 │   │   ├── download_missing_mods.py
 │   │   ├── export_mods.py
 │   │   ├── filter_convert_kks.py
@@ -87,6 +87,11 @@ KKAFIO-dev/
 │   │   ├── kkd_session.py           # koikatsucards.com session cookie management
 │   │   ├── pixiv_session.py         # pixiv.net PHPSESSID cookie management
 │   │   ├── pawchive_session.py      # pawchive.pw session cookie management (t1 files only)
+│   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
+│   │   │   ├── net.py / history.py / transfer.py   # Shared: retry + HTTP client, download history, streaming downloads and paged listings
+│   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
+│   │   │   ├── bepis.py  koikatsu.py  pixiv.py  gofile.py  mega.py  gdrive.py   # One module per site
+│   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session) · files · posts · downloader
 │   │   ├── telegram_config.py       # Telegram API credential storage
 │   │   ├── telegram_links.py        # Parsing Telegram links / the chat list (pure string handling)
 │   │   ├── telegram_mods.py         # Searching Telegram chats and downloading mods (teleget)

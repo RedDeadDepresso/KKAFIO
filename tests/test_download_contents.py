@@ -2,9 +2,12 @@
 
 import pytest
 import asyncio
+import time
 from pathlib import Path
 
 from kkafio.tasks import download_contents as dc
+from kkafio.services.content_sources import card_size, gdrive, gofile, history as history_store, mega, net, pixiv, transfer
+from kkafio.services.content_sources.pawchive import access as pw_access, downloader as pw_downloader, parsing as pw_parsing, posts as pw_posts
 
 
 def test_parse_line_formats():
@@ -22,10 +25,10 @@ def test_single_page_replaces_page_in_link():
     link = "https://db.bepis.moe/koikatsu?tag=a&tag=b&page=2&sort=new"
     _, start, end = dc._parse_line(f"{link} | 5")
     assert (start, end) == (5, 5)
-    clean = dc._strip_page(link)
+    clean = net.strip_page(link)
     assert "page=" not in clean and clean.count("tag=") == 2
-    assert dc._set_page(clean, start).count("page=5") == 1
-    assert dc._set_page(link, 5).count("page=") == 1         # replaced, not duplicated
+    assert net.set_page(clean, start).count("page=5") == 1
+    assert net.set_page(link, 5).count("page=") == 1         # replaced, not duplicated
 
 
 def test_single_page_fetches_only_that_page(tmp_path):
@@ -35,7 +38,7 @@ def test_single_page_fetches_only_that_page(tmp_path):
         seen.append(page)
         return [], 0, False
 
-    asyncio.run(dc._download_pages(
+    asyncio.run(transfer.download_pages(
         None, "https://db.bepis.moe/koikatsu?page=2", Path(tmp_path), {}, True,
         5, 5, fake_pages, lambda u: "x"))
     assert seen == [5]
@@ -46,7 +49,7 @@ def test_single_page_fetches_only_that_page(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_pixiv_url_parsing_and_normalisation():
-    P = dc._parse_pixiv_url
+    P = pixiv._parse_pixiv_url
     assert P("https://www.pixiv.net/en/users/85712366") == ("user", "85712366", "artworks")
     assert P("https://www.pixiv.net/en/users/85712366/illustrations") == ("user", "85712366", "illustrations")
     assert P("https://www.pixiv.net/users/85712366/manga") == ("user", "85712366", "manga")
@@ -57,20 +60,20 @@ def test_pixiv_url_parsing_and_normalisation():
     assert P("https://www.pixiv.net/en/ranking.php?mode=daily") is None
 
     # bare users/ID becomes users/ID/artworks
-    assert dc._normalize_pixiv_url("https://www.pixiv.net/en/users/85712366") \
+    assert pixiv._normalize_pixiv_url("https://www.pixiv.net/en/users/85712366") \
         == "https://www.pixiv.net/en/users/85712366/artworks"
-    assert dc._normalize_pixiv_url("https://www.pixiv.net/en/users/85712366/illustrations") \
+    assert pixiv._normalize_pixiv_url("https://www.pixiv.net/en/users/85712366/illustrations") \
         == "https://www.pixiv.net/en/users/85712366/illustrations"
 
 
 def test_pixiv_url_is_not_confused_with_other_hosts():
-    assert dc._is_pixiv_url("https://www.pixiv.net/en/artworks/1")
-    assert not dc._is_pixiv_url("https://db.bepis.moe/koikatsu?q=www.pixiv.net")
-    assert not dc._is_pixiv_url("https://evilpixiv.net/artworks/1")
+    assert pixiv.is_pixiv_url("https://www.pixiv.net/en/artworks/1")
+    assert not pixiv.is_pixiv_url("https://db.bepis.moe/koikatsu?q=www.pixiv.net")
+    assert not pixiv.is_pixiv_url("https://evilpixiv.net/artworks/1")
 
 
 def test_pixiv_size_filter():
-    ok = dc._pixiv_size_matches
+    ok = card_size.kk_size_matches
     assert ok(320, 180)                      # scene thumbnail, exact
     assert ok(252, 352)                      # chara card
     assert ok(504, 704) and ok(1008, 1408)   # scaled card, same ratio
@@ -118,11 +121,11 @@ def test_pixiv_gallery_only_downloads_matching_sizes(tmp_path, monkeypatch):
             history[u] = name_fn(u)
         return len(urls), 0, 0
 
-    monkeypatch.setattr(dc, "_download_files", fake_download_files)
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
 
     history: dict = {}
-    res = asyncio.run(dc._download_pixiv(
+    res = asyncio.run(pixiv.download_pixiv(
         _fake_pixiv_client(works), "https://www.pixiv.net/en/users/85712366",
         Path(tmp_path), history, True))
 
@@ -139,10 +142,10 @@ def test_pixiv_one_bad_artwork_does_not_abort_gallery(tmp_path, monkeypatch):
     async def fake_download_files(client, urls, directory, name_fn, history, skip):
         return len(urls), 0, 0
 
-    monkeypatch.setattr(dc, "_download_files", fake_download_files)
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
 
-    ok, skipped, failed = asyncio.run(dc._download_pixiv(
+    ok, skipped, failed = asyncio.run(pixiv.download_pixiv(
         _fake_pixiv_client(works, failing={"2"}),
         "https://www.pixiv.net/en/users/9/artworks", Path(tmp_path), {}, True))
     assert (ok, skipped, failed) == (1, 0, 1)
@@ -158,14 +161,14 @@ def test_pixiv_profile_all_with_empty_sections():
     class _C:
         async def get(self, url): return _R()
 
-    assert asyncio.run(dc._pixiv_user_artwork_ids(_C(), "1", "artworks")) == []
+    assert asyncio.run(pixiv._pixiv_user_artwork_ids(_C(), "1", "artworks")) == []
 
 
 def test_pixiv_cookie_is_scoped_to_pixiv_only():
     import httpx
-    client = dc._make_client(cookies={"PHPSESSID": "1_abc"},
-                             cookie_domain=dc.PIXIV_COOKIE_DOMAIN,
-                             extra_headers={"Referer": dc.PIXIV_URL + "/"})
+    client = net.make_client(cookies={"PHPSESSID": "1_abc"},
+                             cookie_domain=pixiv.PIXIV_COOKIE_DOMAIN,
+                             extra_headers={"Referer": pixiv.PIXIV_URL + "/"})
     try:
         def cookie_header(url):
             req = client.build_request("GET", url)
@@ -189,7 +192,7 @@ def test_pixiv_session_cleaning_and_shape():
 
 def test_pixiv_page_selection():
     ids = [str(i) for i in range(100, 0, -1)]            # 100 works -> 3 pages (48/48/4)
-    sel = dc._pixiv_select_page_ids
+    sel = pixiv._pixiv_select_page_ids
     assert sel(ids, 1, 1) == ids[:48]
     assert sel(ids, 2, 2) == ids[48:96]
     assert sel(ids, 3, 3) == ids[96:]
@@ -197,9 +200,9 @@ def test_pixiv_page_selection():
     assert sel(ids, 1, None) == ids
     assert sel(ids, 3, 2) == ids[96:] + ids[48:96]        # reverse order
     assert sel(ids, 4, 4) == [] and sel(ids, 0, 0) == []   # out of range
-    assert dc._pixiv_url_page("https://www.pixiv.net/en/users/1/illustrations?p=2") == 2
-    assert dc._pixiv_url_page("https://www.pixiv.net/en/users/1/illustrations") is None
-    assert dc._pixiv_url_page("https://www.pixiv.net/en/users/1/illustrations?p=x") is None
+    assert pixiv._pixiv_url_page("https://www.pixiv.net/en/users/1/illustrations?p=2") == 2
+    assert pixiv._pixiv_url_page("https://www.pixiv.net/en/users/1/illustrations") is None
+    assert pixiv._pixiv_url_page("https://www.pixiv.net/en/users/1/illustrations?p=x") is None
 
 
 def test_pixiv_directive_and_link_page(tmp_path, monkeypatch):
@@ -209,13 +212,13 @@ def test_pixiv_directive_and_link_page(tmp_path, monkeypatch):
     async def fake_download_files(client, urls, directory, name_fn, history, skip):
         seen.append(list(urls)); return len(urls), 0, 0
 
-    monkeypatch.setattr(dc, "_download_files", fake_download_files)
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     base = "https://www.pixiv.net/en/users/9/illustrations"
 
     def run(url, s=None, e=None):
         seen.clear()
-        asyncio.run(dc._download_pixiv(_fake_pixiv_client(works), url, Path(tmp_path), {}, True, s, e))
+        asyncio.run(pixiv.download_pixiv(_fake_pixiv_client(works), url, Path(tmp_path), {}, True, s, e))
         return sum(len(x) for x in seen)
 
     assert run(base) == 100                    # no page -> whole gallery
@@ -235,18 +238,18 @@ KEYWORD = "キャラ配布(コイカツ) 原神"
 
 
 def test_pixiv_search_url_parsing():
-    assert dc._parse_pixiv_url(SEARCH_URL) == ("search", KEYWORD, "artworks")
-    assert dc._parse_pixiv_url("https://www.pixiv.net/en/search?q=a&type=illust") == ("search", "a", "illustrations")
-    assert dc._parse_pixiv_url("https://www.pixiv.net/search?q=a&type=manga") == ("search", "a", "manga")
-    assert dc._parse_pixiv_url("https://www.pixiv.net/search?q=a&type=novel") is None
-    assert dc._parse_pixiv_url("https://www.pixiv.net/search") is None
-    assert dc._parse_pixiv_url("https://www.pixiv.net/en/tags/%E5%8E%9F%E7%A5%9E/illustrations") \
+    assert pixiv._parse_pixiv_url(SEARCH_URL) == ("search", KEYWORD, "artworks")
+    assert pixiv._parse_pixiv_url("https://www.pixiv.net/en/search?q=a&type=illust") == ("search", "a", "illustrations")
+    assert pixiv._parse_pixiv_url("https://www.pixiv.net/search?q=a&type=manga") == ("search", "a", "manga")
+    assert pixiv._parse_pixiv_url("https://www.pixiv.net/search?q=a&type=novel") is None
+    assert pixiv._parse_pixiv_url("https://www.pixiv.net/search") is None
+    assert pixiv._parse_pixiv_url("https://www.pixiv.net/en/tags/%E5%8E%9F%E7%A5%9E/illustrations") \
         == ("search", "原神", "illustrations")
-    assert dc._pixiv_url_page(SEARCH_URL + "&p=4") == 4
+    assert pixiv._pixiv_url_page(SEARCH_URL + "&p=4") == 4
 
 
 def test_pixiv_search_request_keeps_filters():
-    endpoint, params = dc._pixiv_search_request(SEARCH_URL + "&p=9", 3)
+    endpoint, params = pixiv._pixiv_search_request(SEARCH_URL + "&p=9", 3)
     assert endpoint == "/search/artworks/" + "%E3%82%AD%E3%83%A3%E3%83%A9%E9%85%8D%E5%B8%83%28" \
         "%E3%82%B3%E3%82%A4%E3%82%AB%E3%83%84%29%20%E5%8E%9F%E7%A5%9E"
     d = dict(params)
@@ -254,7 +257,7 @@ def test_pixiv_search_request_keeps_filters():
     assert d["s_mode"] == "tag" and d["ai_type"] == "1" and d["r"] == "1"
     assert d["type"] == "all" and d["order"] == "date_d" and d["mode"] == "all"
     assert [k for k, _ in params].count("p") == 1
-    _, p2 = dc._pixiv_search_request("https://www.pixiv.net/search?q=x&type=illust&order=date&mode=r18", 1)
+    _, p2 = pixiv._pixiv_search_request("https://www.pixiv.net/search?q=x&type=illust&order=date&mode=r18", 1)
     assert dict(p2)["order"] == "date" and dict(p2)["mode"] == "r18" and dict(p2)["type"] == "illust"
 
 
@@ -289,11 +292,11 @@ def test_pixiv_search_page_skips_single_page_mismatches_without_extra_requests()
     client, calls = _fake_search_client(
         {1: [(1, 252, 352, 1), (2, 1000, 1000, 1), (3, 320, 180, 1), (4, 800, 600, 2)]},
         {"1": [(252, 352)], "3": [(320, 180)], "4": [(800, 600), (504, 704)]})
-    urls, failed, empty = asyncio.run(dc._get_pixiv_search_page_urls(client, SEARCH_URL, 1))
+    urls, failed, empty = asyncio.run(pixiv._get_pixiv_search_page_urls(client, SEARCH_URL, 1))
     assert not empty and failed == 0
     assert sorted(calls["pages"]) == ["1", "3", "4"]       # work 2 never hit /pages
     assert sorted(urls) == [f"https://i.pximg.net/img-original/{n}.png" for n in ("1_p0", "3_p0", "4_p1")]
-    assert asyncio.run(dc._get_pixiv_search_page_urls(client, SEARCH_URL, 2))[2] is True
+    assert asyncio.run(pixiv._get_pixiv_search_page_urls(client, SEARCH_URL, 2))[2] is True
 
 
 def test_pixiv_search_paging_and_no_match_pages_do_not_stop_run(tmp_path, monkeypatch):
@@ -306,10 +309,10 @@ def test_pixiv_search_paging_and_no_match_pages_do_not_stop_run(tmp_path, monkey
     async def fake_download_files(c, urls, directory, name_fn, history, skip):
         got.extend(urls); return len(urls), 0, 0
 
-    monkeypatch.setattr(dc, "_download_files", fake_download_files)
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
 
-    run = lambda s, e: asyncio.run(dc._download_pixiv_search(
+    run = lambda s, e: asyncio.run(pixiv._download_pixiv_search(
         client, SEARCH_URL, Path(tmp_path), {}, True, s, e))
 
     assert run(1, None) == (1, 0, 0)                        # "| all" runs through 4 empty-match pages
@@ -320,7 +323,7 @@ def test_pixiv_search_paging_and_no_match_pages_do_not_stop_run(tmp_path, monkey
     run(None, None)                                         # no directive -> page 1 only
     assert [c["p"] for c in calls["search"]] == ["1"]
     calls["search"].clear()
-    asyncio.run(dc._download_pixiv_search(client, SEARCH_URL + "&p=5", Path(tmp_path), {}, True, None, None))
+    asyncio.run(pixiv._download_pixiv_search(client, SEARCH_URL + "&p=5", Path(tmp_path), {}, True, None, None))
     assert [c["p"] for c in calls["search"]] == ["5"]       # ?p= in the link
 
 
@@ -329,46 +332,46 @@ def test_pixiv_search_paging_and_no_match_pages_do_not_stop_run(tmp_path, monkey
 # ---------------------------------------------------------------------------
 
 def test_gofile_url_parsing():
-    P = dc._parse_gofile_url
+    P = gofile.parse_gofile_url
     assert P("https://gofile.io/d/AbC123") == ("AbC123", None)
     assert P("https://gofile.io/d/AbC123/") == ("AbC123", None)
     assert P("https://gofile.io/f/AbC-123") == ("AbC-123", None)
     assert P("https://gofile.io/d/AbC123?password=hunter2") == ("AbC123", "hunter2")
     assert P("https://gofile.io/d/AbC123#password=hunter2") == ("AbC123", "hunter2")
     assert P("https://gofile.io/") is None and P("https://gofile.io/contents/x") is None
-    assert dc._is_gofile_url("https://gofile.io/d/x") and dc._is_gofile_url("https://www.gofile.io/d/x")
-    assert not dc._is_gofile_url("https://notgofile.io/d/x")
-    assert not dc._is_gofile_url("https://example.com/?u=gofile.io")
+    assert gofile.is_gofile_url("https://gofile.io/d/x") and gofile.is_gofile_url("https://www.gofile.io/d/x")
+    assert not gofile.is_gofile_url("https://notgofile.io/d/x")
+    assert not gofile.is_gofile_url("https://example.com/?u=gofile.io")
 
 
 @pytest.fixture(autouse=True)
 def _reset_gofile_secret_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr(dc, "GOFILE_STATE_FILE", tmp_path / "gofile_state.json")   # never touch the real one
-    dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
+    monkeypatch.setattr(gofile, "GOFILE_STATE_FILE", tmp_path / "gofile_state.json")   # never touch the real one
+    gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
     yield
-    dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
+    gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
 
 
 def test_gofile_website_token_formula():
     import hashlib
     import time as _t
-    orig = dc.time.time
-    dc.time.time = lambda: 14400 * 7 + 5
+    orig = time.time
+    time.time = lambda: 14400 * 7 + 5
     try:
         expect = hashlib.sha256(
-            f"{dc.GOFILE_USER_AGENT}::en-US::tok::7::somesecret".encode()).hexdigest()
-        assert dc._gofile_website_token("tok", "somesecret") == expect
-        assert dc._gofile_website_token("tok", "other") != expect
+            f"{gofile.GOFILE_USER_AGENT}::en-US::tok::7::somesecret".encode()).hexdigest()
+        assert gofile._gofile_website_token("tok", "somesecret") == expect
+        assert gofile._gofile_website_token("tok", "other") != expect
     finally:
-        dc.time.time = orig
+        time.time = orig
 
 
 def test_gofile_secret_is_decoded_from_the_script():
     script = open(Path(__file__).parent / "data" / "gofile-wt.obf.js", encoding="utf-8").read()
-    assert dc._gofile_secret_from(script) == "12af056dacea0b"
+    assert gofile._gofile_secret_from(script) == "12af056dacea0b"
     import pytest
     with pytest.raises(ValueError):
-        dc._gofile_secret_from("var nothing = 1;")
+        gofile._gofile_secret_from("var nothing = 1;")
 
 
 def _gofile_mock_client(tree, record, fail_status=None):
@@ -390,7 +393,7 @@ def _gofile_mock_client(tree, record, fail_status=None):
         return httpx.Response(404)
 
     return httpx.AsyncClient(transport=httpx.MockTransport(handler),
-                             headers={"User-Agent": dc.GOFILE_USER_AGENT}, follow_redirects=True)
+                             headers={"User-Agent": gofile.GOFILE_USER_AGENT}, follow_redirects=True)
 
 
 def _gf_file(fid, name):
@@ -409,12 +412,12 @@ def test_gofile_folder_download_end_to_end(tmp_path, monkeypatch):
         "SUB": {"name": "extras", "children": {"f2": _gf_file("f2", "card one.png")}},  # same name!
     }
     record: list = []
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
 
     async def go():
         client = _gofile_mock_client(tree, record)
         try:
-            return await dc._download_gofile(client, "https://gofile.io/d/ROOT", Path(tmp_path), {}, True)
+            return await gofile.download_gofile(client, "https://gofile.io/d/ROOT", Path(tmp_path), {}, True)
         finally:
             await client.aclose()
 
@@ -425,13 +428,13 @@ def test_gofile_folder_download_end_to_end(tmp_path, monkeypatch):
     api = [r for r in record if r[1].startswith("https://api.gofile.io/contents/ROOT")][0]
     assert api[2]["authorization"] == "Bearer GUEST"
     assert len(api[2]["x-website-token"]) == 64 and api[2]["x-bl"] == "en-US"
-    assert api[2]["user-agent"] == dc.GOFILE_USER_AGENT
+    assert api[2]["user-agent"] == gofile.GOFILE_USER_AGENT
     assert sum(1 for r in record if r[1].endswith("/accounts")) == 1    # one guest account per client
     dl = [r for r in record if r[1].startswith("https://store1.gofile.io")]
     assert dl and all("accountToken=GUEST" in r[2].get("cookie", "") for r in dl)
     # the cookie is scoped to .gofile.io: sent to gofile hosts, never anywhere else
     import httpx
-    jar = httpx.Cookies(); jar.set("accountToken", "GUEST", domain=dc.GOFILE_DOMAIN)
+    jar = httpx.Cookies(); jar.set("accountToken", "GUEST", domain=gofile.GOFILE_DOMAIN)
     other = httpx.Request("GET", "https://example.com/x"); jar.set_cookie_header(other)
     assert "cookie" not in other.headers
 
@@ -441,13 +444,13 @@ def test_gofile_password_is_sent_hashed(tmp_path, monkeypatch):
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
     monkeypatch.setenv("GOFILE_SALT", "testsecret")
     record: list = []
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     tree = {"ROOT": {"name": "x", "children": {"f": _gf_file("f", "a.png")}}}
 
     async def go():
         client = _gofile_mock_client(tree, record)
         try:
-            return await dc._download_gofile(
+            return await gofile.download_gofile(
                 client, "https://gofile.io/d/ROOT?password=secret", Path(tmp_path), {}, True)
         finally:
             await client.aclose()
@@ -466,23 +469,23 @@ def test_gofile_api_errors_become_clear_messages(tmp_path, monkeypatch):
         async def go():
             client = _gofile_mock_client({}, [], fail_status=status)
             try:
-                return await dc._download_gofile(client, "https://gofile.io/d/X", Path(tmp_path), {}, True)
+                return await gofile.download_gofile(client, "https://gofile.io/d/X", Path(tmp_path), {}, True)
             finally:
                 await client.aclose()
         with pytest.raises(RuntimeError, match=fragment):
             asyncio.run(go())
-        dc._gofile_secret_cache["rejected_at"] = 0.0     # a rejection starts a cooldown
+        gofile._gofile_secret_cache["rejected_at"] = 0.0     # a rejection starts a cooldown
 
 
 def test_gofile_cooldown_survives_a_restart(monkeypatch):
     import pytest
     monkeypatch.setenv("GOFILE_SALT", "testsecret")
-    dc._gofile_signature_rejected()
-    dc._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0)     # a fresh process: memory is empty
+    gofile._gofile_signature_rejected()
+    gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0)     # a fresh process: memory is empty
     with pytest.raises(RuntimeError, match="wrongly signed"):
-        asyncio.run(dc._gofile_ensure_secret(None))
-    dc._gofile_save_state(rejected_at=0)                                       # cooldown over
-    assert asyncio.run(dc._gofile_ensure_secret(None)) == "testsecret"
+        asyncio.run(gofile._gofile_ensure_secret(None))
+    gofile._gofile_save_state(rejected_at=0)                                       # cooldown over
+    assert asyncio.run(gofile._gofile_ensure_secret(None)) == "testsecret"
 
 
 def test_gofile_guest_token_is_kept_between_runs(monkeypatch):
@@ -497,14 +500,14 @@ def test_gofile_guest_token_is_kept_between_runs(monkeypatch):
     async def run():
         c = httpx.AsyncClient(transport=httpx.MockTransport(handler))
         try:
-            return await dc._gofile_token(c)
+            return await gofile._gofile_token(c)
         finally:
             await c.aclose()
 
     assert asyncio.run(run()) == "tok1"
     assert asyncio.run(run()) == "tok1"            # a new client (= a new run) reuses it
     assert len(posts) == 1
-    dc._gofile_save_state(token_at=0)              # expired
+    gofile._gofile_save_state(token_at=0)              # expired
     assert asyncio.run(run()) == "tok2"
 
 
@@ -520,7 +523,7 @@ def test_gofile_busy_server_html_is_not_saved_and_next_server_is_tried(tmp_path,
     async def fake_sleep(t):
         sleeps.append(t)
 
-    monkeypatch.setattr(dc.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
     hosts = []
 
     def handler(req: httpx.Request):
@@ -533,7 +536,7 @@ def test_gofile_busy_server_html_is_not_saved_and_next_server_is_tried(tmp_path,
         c = _gofile_file_client(handler)
         try:
             h = {}
-            r = await dc._download_gofile_file(c, "https://store1.gofile.io/download/web/abc/card.png",
+            r = await gofile._download_gofile_file(c, "https://store1.gofile.io/download/web/abc/card.png",
                                                ["store1", "store2"], Path(tmp_path), h, True)
             return r, h
         finally:
@@ -542,7 +545,7 @@ def test_gofile_busy_server_html_is_not_saved_and_next_server_is_tried(tmp_path,
     (link, err, skipped), history = asyncio.run(go())
     assert err is None and not skipped
     assert hosts == ["store1.gofile.io", "store2.gofile.io"]
-    assert sleeps == [dc.GOFILE_BUSY_BASE]
+    assert sleeps == [gofile.GOFILE_BUSY_BASE]
     assert (Path(tmp_path) / "card.png").read_bytes() == b"REAL"       # the page was never written
     assert history[link].endswith("card.png")
     assert not list(Path(tmp_path).glob("*.part"))
@@ -554,7 +557,7 @@ def test_gofile_busy_forever_gives_up_without_saving_anything(tmp_path, monkeypa
     async def fake_sleep(t):
         pass
 
-    monkeypatch.setattr(dc.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
     n = {"calls": 0}
 
     def handler(req: httpx.Request):
@@ -565,14 +568,14 @@ def test_gofile_busy_forever_gives_up_without_saving_anything(tmp_path, monkeypa
         c = _gofile_file_client(handler)
         try:
             h = {}
-            return await dc._download_gofile_file(c, "https://store1.gofile.io/download/web/abc/card.png",
+            return await gofile._download_gofile_file(c, "https://store1.gofile.io/download/web/abc/card.png",
                                                   [], Path(tmp_path), h, True), h
         finally:
             await c.aclose()
 
     (link, err, skipped), history = asyncio.run(go())
     assert err is not None and "busy" in str(err) and history == {}
-    assert n["calls"] == dc.GOFILE_BUSY_LIMIT + 1
+    assert n["calls"] == gofile.GOFILE_BUSY_LIMIT + 1
     assert not list(Path(tmp_path).iterdir())
 
 
@@ -580,8 +583,8 @@ def test_gofile_stale_saved_token_is_replaced_once(tmp_path, monkeypatch):
     import httpx
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
     monkeypatch.setenv("GOFILE_SALT", "testsecret")
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
-    dc._gofile_save_state(token="oldtok", token_at=__import__("time").time())
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
+    gofile._gofile_save_state(token="oldtok", token_at=__import__("time").time())
     seen = []
 
     def handler(req: httpx.Request):
@@ -599,21 +602,21 @@ def test_gofile_stale_saved_token_is_replaced_once(tmp_path, monkeypatch):
     async def go():
         c = _gofile_file_client(handler)
         try:
-            return await dc._download_gofile(c, "https://gofile.io/d/AbC123", Path(tmp_path), {}, True)
+            return await gofile.download_gofile(c, "https://gofile.io/d/AbC123", Path(tmp_path), {}, True)
         finally:
             await c.aclose()
 
     assert asyncio.run(go()) == (1, 0, 0)
     assert seen == ["oldtok", "newtok"]
-    assert dc._gofile_load_state()["token"] == "newtok"
+    assert gofile._gofile_load_state()["token"] == "newtok"
 
 
 def test_gofile_rejection_starts_a_cooldown(monkeypatch):
     import pytest
     monkeypatch.setenv("GOFILE_SALT", "testsecret")
-    dc._gofile_signature_rejected()
+    gofile._gofile_signature_rejected()
     with pytest.raises(RuntimeError, match="wrongly signed"):
-        asyncio.run(dc._gofile_ensure_secret(None))
+        asyncio.run(gofile._gofile_ensure_secret(None))
 
 
 # ---------------------------------------------------------------------------
@@ -653,37 +656,37 @@ def _mega_file(name, content: bytes, seed: int):
 def test_mega_url_and_link_parsing():
     import pytest
     key16, key32 = _b64(bytes(range(16))), _b64(bytes(range(32)))
-    assert dc._is_mega_url("https://mega.nz/file/abc#" + key32)
-    assert dc._is_mega_url("https://mega.co.nz/#!abc!" + key32)
-    assert not dc._is_mega_url("https://notmega.nz/file/abc")
+    assert mega.is_mega_url("https://mega.nz/file/abc#" + key32)
+    assert mega.is_mega_url("https://mega.co.nz/#!abc!" + key32)
+    assert not mega.is_mega_url("https://notmega.nz/file/abc")
 
-    l = dc._parse_mega_link(f"https://mega.nz/file/abc#{key32}")
+    l = mega._parse_mega_link(f"https://mega.nz/file/abc#{key32}")
     assert (l["folder"], l["handle"], l["node"], len(l["key"])) == (False, "abc", "", 32)
-    l = dc._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}")
+    l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}")
     assert (l["folder"], l["handle"], len(l["key"])) == (True, "FOL", 16)
-    l = dc._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/file/NODE")
+    l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/file/NODE")
     assert l["node"] == "NODE"
-    l = dc._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/folder/SUB")   # subtree: whole share
+    l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/folder/SUB")   # subtree: whole share
     assert l["node"] == ""
-    l = dc._parse_mega_link(f"https://mega.nz/#!abc!{key32}")
+    l = mega._parse_mega_link(f"https://mega.nz/#!abc!{key32}")
     assert (l["folder"], l["handle"]) == (False, "abc")
-    l = dc._parse_mega_link(f"https://mega.nz/#F!FOL!{key16}!NODE")
+    l = mega._parse_mega_link(f"https://mega.nz/#F!FOL!{key16}!NODE")
     assert (l["folder"], l["handle"], l["node"]) == (True, "FOL", "NODE")
 
-    with pytest.raises(dc.MegaError, match="no key"):
-        dc._parse_mega_link("https://mega.nz/file/abc")
-    with pytest.raises(dc.MegaError, match="expected 32"):
-        dc._parse_mega_link(f"https://mega.nz/file/abc#{key16}")
-    with pytest.raises(dc.MegaError, match="not a file or folder"):
-        dc._parse_mega_link("https://mega.nz/")
+    with pytest.raises(mega.MegaError, match="no key"):
+        mega._parse_mega_link("https://mega.nz/file/abc")
+    with pytest.raises(mega.MegaError, match="expected 32"):
+        mega._parse_mega_link(f"https://mega.nz/file/abc#{key16}")
+    with pytest.raises(mega.MegaError, match="not a file or folder"):
+        mega._parse_mega_link("https://mega.nz/")
 
 
 def test_mega_attrs_reject_a_wrong_key():
     import pytest
     attrs = _enc_attrs("card.png", bytes(16))
-    assert dc._mega_decrypt_attrs(attrs, bytes(16)) == {"n": "card.png"}
+    assert mega._mega_decrypt_attrs(attrs, bytes(16)) == {"n": "card.png"}
     with pytest.raises(ValueError, match="wrong key"):
-        dc._mega_decrypt_attrs(attrs, bytes([1] * 16))
+        mega._mega_decrypt_attrs(attrs, bytes([1] * 16))
 
 
 def _mega_mock_client(handler_state):
@@ -704,7 +707,7 @@ def _mega_mock_client(handler_state):
 
 
 def test_mega_single_file_is_decrypted(tmp_path, monkeypatch):
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     content = b"PNGDATA" * 5000 + b"tail"
     rnd, aes_key, nonce, at, blob = _mega_file("my card.png", content, 1)
     state = {"cmds": [], "blobs": {"/dl1": blob}}
@@ -720,9 +723,9 @@ def test_mega_single_file_is_decrypted(tmp_path, monkeypatch):
         client = _mega_mock_client(state)
         try:
             history = {}
-            r = await dc._download_mega(client, f"https://mega.nz/file/FILEH#{_b64(rnd)}",
+            r = await mega.download_mega(client, f"https://mega.nz/file/FILEH#{_b64(rnd)}",
                                         Path(tmp_path), history, True)
-            r2 = await dc._download_mega(client, f"https://mega.nz/file/FILEH#{_b64(rnd)}",
+            r2 = await mega.download_mega(client, f"https://mega.nz/file/FILEH#{_b64(rnd)}",
                                          Path(tmp_path), history, True)
             return r, r2
         finally:
@@ -735,7 +738,7 @@ def test_mega_single_file_is_decrypted(tmp_path, monkeypatch):
 
 
 def test_mega_folder_download_keeps_structure(tmp_path, monkeypatch):
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     share = bytes(range(100, 116))
 
     def wrap(raw_key, node_handle):
@@ -765,7 +768,7 @@ def test_mega_folder_download_keeps_structure(tmp_path, monkeypatch):
     async def go():
         client = _mega_mock_client(state)
         try:
-            return await dc._download_mega(client, f"https://mega.nz/folder/SHARE#{_b64(share)}",
+            return await mega.download_mega(client, f"https://mega.nz/folder/SHARE#{_b64(share)}",
                                            Path(tmp_path), {}, True)
         finally:
             await client.aclose()
@@ -782,14 +785,14 @@ def test_mega_errors_become_clear_messages(tmp_path, monkeypatch):
     async def go(url):
         client = _mega_mock_client(state)
         try:
-            return await dc._download_mega(client, url, Path(tmp_path), {}, True)
+            return await mega.download_mega(client, url, Path(tmp_path), {}, True)
         finally:
             await client.aclose()
 
-    with pytest.raises(dc.MegaError, match="not found"):
+    with pytest.raises(mega.MegaError, match="not found"):
         asyncio.run(go(f"https://mega.nz/file/X#{_b64(bytes(32))}"))
     state["api"] = lambda cmd, folder: [{"e": -17, "tl": 3600}]
-    with pytest.raises(dc.MegaError, match="quota.*3600s"):
+    with pytest.raises(mega.MegaError, match="quota.*3600s"):
         asyncio.run(go(f"https://mega.nz/file/X#{_b64(bytes(32))}"))
     assert asyncio.run(go("https://mega.nz/file/X")) == (0, 0, 1)      # key missing → counted as failed
 
@@ -803,11 +806,11 @@ _GD_ID2 = "1ZzYyXxWwVvUuTtSsRrQqPp"
 
 
 def test_gdrive_url_parsing():
-    assert dc._is_gdrive_url("https://drive.google.com/file/d/x/view")
-    assert dc._is_gdrive_url("https://docs.google.com/uc?id=" + _GD_ID)
-    assert not dc._is_gdrive_url("https://docs.google.com/document/d/" + _GD_ID)
-    assert not dc._is_gdrive_url("https://example.com/file/d/" + _GD_ID)
-    p = dc._parse_gdrive_url
+    assert gdrive.is_gdrive_url("https://drive.google.com/file/d/x/view")
+    assert gdrive.is_gdrive_url("https://docs.google.com/uc?id=" + _GD_ID)
+    assert not gdrive.is_gdrive_url("https://docs.google.com/document/d/" + _GD_ID)
+    assert not gdrive.is_gdrive_url("https://example.com/file/d/" + _GD_ID)
+    p = gdrive.parse_gdrive_url
     assert p(f"https://drive.google.com/file/d/{_GD_ID}/view?usp=sharing") == ("file", _GD_ID)
     assert p(f"https://drive.google.com/file/u/0/d/{_GD_ID}/view") == ("file", _GD_ID)
     assert p(f"https://drive.google.com/open?id={_GD_ID}") == ("file", _GD_ID)
@@ -824,7 +827,7 @@ def _gdrive_client(handler):
 
 def test_gdrive_small_file_streams_directly(tmp_path, monkeypatch):
     import httpx
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     seen = []
 
     def handler(req: httpx.Request):
@@ -838,8 +841,8 @@ def test_gdrive_small_file_streams_directly(tmp_path, monkeypatch):
         c = _gdrive_client(handler)
         try:
             h = {}
-            r1 = await dc._download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), h, True)
-            r2 = await dc._download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), h, True)
+            r1 = await gdrive.download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), h, True)
+            r2 = await gdrive.download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), h, True)
             return r1, r2
         finally:
             await c.aclose()
@@ -852,7 +855,7 @@ def test_gdrive_small_file_streams_directly(tmp_path, monkeypatch):
 
 def test_gdrive_large_file_goes_through_confirmation(tmp_path, monkeypatch):
     import httpx
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     page = ('<html><span class="uc-name-size"><a href="/open?id=x">big pack.7z</a> (2G)</span>'
             '<form id="download-form" action="https://drive.usercontent.google.com/download" method="get">'
             f'<input type="hidden" name="id" value="{_GD_ID}"><input type="hidden" name="export" value="download">'
@@ -868,7 +871,7 @@ def test_gdrive_large_file_goes_through_confirmation(tmp_path, monkeypatch):
     async def go():
         c = _gdrive_client(handler)
         try:
-            return await dc._download_gdrive(c, f"https://drive.google.com/uc?id={_GD_ID}", Path(tmp_path), {}, True)
+            return await gdrive.download_gdrive(c, f"https://drive.google.com/uc?id={_GD_ID}", Path(tmp_path), {}, True)
         finally:
             await c.aclose()
 
@@ -880,7 +883,7 @@ def test_gdrive_large_file_goes_through_confirmation(tmp_path, monkeypatch):
 
 def test_gdrive_refusals_are_reported_not_retried(tmp_path, monkeypatch):
     import httpx
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     n = {"calls": 0}
 
     def handler(req: httpx.Request):
@@ -892,7 +895,7 @@ def test_gdrive_refusals_are_reported_not_retried(tmp_path, monkeypatch):
     async def go():
         c = _gdrive_client(handler)
         try:
-            return await dc._download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), {}, True)
+            return await gdrive.download_gdrive(c, f"https://drive.google.com/file/d/{_GD_ID}/view", Path(tmp_path), {}, True)
         finally:
             await c.aclose()
 
@@ -903,7 +906,7 @@ def test_gdrive_refusals_are_reported_not_retried(tmp_path, monkeypatch):
 
 def test_gdrive_folder_listing_and_download(tmp_path, monkeypatch):
     import httpx
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
 
     def entry(eid, href, title):
         return (f'<div class="flip-entry" id="entry-{eid}" tabindex="0"><a href="{href}" target="_blank">'
@@ -927,7 +930,7 @@ def test_gdrive_folder_listing_and_download(tmp_path, monkeypatch):
     async def go():
         c = _gdrive_client(handler)
         try:
-            return await dc._download_gdrive(c, "https://drive.google.com/drive/folders/ROOTFOLDER01", Path(tmp_path), {}, True)
+            return await gdrive.download_gdrive(c, "https://drive.google.com/drive/folders/ROOTFOLDER01", Path(tmp_path), {}, True)
         finally:
             await c.aclose()
 
@@ -939,7 +942,7 @@ def test_gdrive_folder_listing_and_download(tmp_path, monkeypatch):
 
 def test_resolve_filename_decodes_percent_escapes():
     class _R: headers = {}
-    assert dc._resolve_filename(_R(), "https://store1.gofile.io/download/web/id/card%20one.png", "x") == "card one.png"
+    assert net.resolve_filename(_R(), "https://store1.gofile.io/download/web/id/card%20one.png", "x") == "card one.png"
 
 
 # ---------------------------------------------------------------------------
@@ -947,7 +950,7 @@ def test_resolve_filename_decodes_percent_escapes():
 # ---------------------------------------------------------------------------
 
 def test_pawchive_url_parsing():
-    P = dc._parse_pawchive_url
+    P = pw_parsing.parse_pawchive_url
     assert P("https://pawchive.pw/posts") == ("posts", "", "", "")
     assert P("https://pawchive.pw/posts?q=koikatsu&o=50") == ("posts", "", "", "")
     assert P("https://pawchive.pw/patreon/user/58585170") == ("user", "patreon", "58585170", "")
@@ -964,14 +967,14 @@ def test_pawchive_url_parsing():
 
 
 def test_pawchive_host_is_not_confused_with_other_hosts():
-    assert dc._is_pawchive_url("https://pawchive.pw/posts")
-    assert dc._is_pawchive_url("https://www.pawchive.pw/posts")
-    assert not dc._is_pawchive_url("https://evilpawchive.pw/posts")
-    assert not dc._is_pawchive_url("https://db.bepis.moe/koikatsu?q=pawchive.pw")
+    assert pw_parsing.is_pawchive_url("https://pawchive.pw/posts")
+    assert pw_parsing.is_pawchive_url("https://www.pawchive.pw/posts")
+    assert not pw_parsing.is_pawchive_url("https://evilpawchive.pw/posts")
+    assert not pw_parsing.is_pawchive_url("https://db.bepis.moe/koikatsu?q=pawchive.pw")
 
 
 def test_pawchive_api_url_conversion():
-    A = dc._pawchive_api_url
+    A = pw_parsing.pawchive_api_url
     assert A("https://pawchive.pw/posts") == "https://pawchive.pw/api/v1/posts"
     assert A("https://pawchive.pw/patreon/user/58585170") \
         == "https://pawchive.pw/api/v1/patreon/user/58585170"
@@ -999,14 +1002,14 @@ def test_pawchive_api_url_conversion():
 
 
 def test_pawchive_link_offset_to_page():
-    assert dc._pawchive_url_page("https://pawchive.pw/posts") is None
-    assert dc._pawchive_url_page("https://pawchive.pw/posts?o=0") == 1
-    assert dc._pawchive_url_page("https://pawchive.pw/posts?o=100") == 3
-    assert dc._pawchive_url_page("https://pawchive.pw/posts?o=abc") is None
+    assert pw_parsing.pawchive_url_page("https://pawchive.pw/posts") is None
+    assert pw_parsing.pawchive_url_page("https://pawchive.pw/posts?o=0") == 1
+    assert pw_parsing.pawchive_url_page("https://pawchive.pw/posts?o=100") == 3
+    assert pw_parsing.pawchive_url_page("https://pawchive.pw/posts?o=abc") is None
 
 
 def test_pawchive_response_shapes():
-    P = dc._pawchive_posts_from
+    P = pw_parsing.pawchive_posts_from
     assert P([{"id": "1"}, {"id": "2"}, "junk"]) == [{"id": "1"}, {"id": "2"}]
     assert P([]) == []
     assert P({"id": "1", "title": "x"}) == [{"id": "1", "title": "x"}]        # single post
@@ -1032,7 +1035,7 @@ def test_pawchive_post_files():
             "junk",
         ],
     }
-    files = dc._pawchive_post_files(post)
+    files = pw_parsing.pawchive_post_files(post)
     # the public file host comes first, with the name as ?f=
     assert [f["url"] for f in files] == [
         "https://file.pawchive.pw/data/7c/9b/7c9bc148.png?f=000.png",
@@ -1058,17 +1061,17 @@ def test_pawchive_post_files():
     node_post = {"file": {"name": "a.png", "node": 2, "path": "/7c/9b/a.png"},
                  "attachments": [{"name": "b.rar", "node": "13", "path": "/18/fb/b.rar"},
                                  {"name": "c.rar", "node": "bad", "path": "/18/fb/c.rar"}]}
-    assert [f["urls"][1] for f in dc._pawchive_post_files(node_post)] == [
+    assert [f["urls"][1] for f in pw_parsing.pawchive_post_files(node_post)] == [
         "https://n2.pawchive.pw/data/7c/9b/a.png?f=a.png",
         "https://n13.pawchive.pw/data/18/fb/b.rar?f=b.rar",
         "https://pawchive.pw/data/18/fb/c.rar?f=c.rar",      # no usable node: main host
     ]
 
-    assert dc._pawchive_post_files({"file": {}, "attachments": []}) == []
-    assert dc._pawchive_post_files({"file": None, "attachments": None}) == []
-    assert dc._pawchive_post_files({}) == []
+    assert pw_parsing.pawchive_post_files({"file": {}, "attachments": []}) == []
+    assert pw_parsing.pawchive_post_files({"file": None, "attachments": None}) == []
+    assert pw_parsing.pawchive_post_files({}) == []
     # path separators in a name never escape the download folder
-    f = dc._pawchive_post_files({"file": {"name": "../../evil.rar", "path": "/a/b/c.rar"}})[0]
+    f = pw_parsing.pawchive_post_files({"file": {"name": "../../evil.rar", "path": "/a/b/c.rar"}})[0]
     assert f["name"] == "evil.rar"
 
 
@@ -1084,18 +1087,18 @@ def test_pawchive_content_links():
         'evilmega.nz/file/abc#def https://docs.google.com/document/d/1AbCdEfGhIjKlMnOp/edit '
         'https://mega.nz/ https://gofile.io https://example.com/x</p>'
     )
-    assert dc._pawchive_content_links(content) == [
+    assert pw_parsing.pawchive_content_links(content) == [
         f"https://mega.nz/file/AbCdEfGh#{key}",          # fragment kept, shortened text dropped
         "https://gofile.io/d/Xy12Zz?password=hunter2",   # query kept, sentence dot removed
         "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing&x=1",  # &amp; decoded
         "https://mega.nz/folder/Zz9Yy8Xx#abcdefghijklmnopqrstuv",   # scheme added
     ]
-    assert dc._pawchive_content_links("") == []
-    assert dc._pawchive_content_links(None) == []
-    assert dc._pawchive_content_links("<p></p>") == []
+    assert pw_parsing.pawchive_content_links("") == []
+    assert pw_parsing.pawchive_content_links(None) == []
+    assert pw_parsing.pawchive_content_links("<p></p>") == []
     # the same link twice is one link; legacy mega and uc links are recognised
     text = "https://mega.nz/#!AbCdEfGh!key https://mega.nz/#!AbCdEfGh!key https://drive.google.com/uc?id=1AbCdEfGhIjKlMnOp&export=download"
-    assert dc._pawchive_content_links(text) == [
+    assert pw_parsing.pawchive_content_links(text) == [
         "https://mega.nz/#!AbCdEfGh!key",
         "https://drive.google.com/uc?id=1AbCdEfGhIjKlMnOp&export=download",
     ]
@@ -1108,7 +1111,7 @@ def test_pawchive_unique_names(tmp_path):
     c = {"url": "u3", "name": "pack.rar", "path": "/ee/ff/cccccccc.rar"}
     d = {"url": "u4", "name": "pack.rar", "path": "/ee/ff/cccccccc.rar"}   # same hash twice
     taken: set[str] = set()
-    names = [dc._pawchive_unique_name(x, Path(tmp_path), {}, taken) for x in (a, b, c, d)]
+    names = [pw_parsing.pawchive_unique_name(x, Path(tmp_path), {}, taken) for x in (a, b, c, d)]
     assert names[0] == "000_aaaaaaaa.png"           # exists on disk
     assert names[1] == "000_bbbbbbbb.png"
     assert names[2] == "pack.rar"                   # first one keeps its name
@@ -1118,7 +1121,7 @@ def test_pawchive_unique_names(tmp_path):
     # a file downloaded before keeps the name it got, even though it exists
     (tmp_path / "pack.rar").write_bytes(b"x")
     hist = {"u3": str(tmp_path / "pack.rar")}
-    assert dc._pawchive_unique_name(c, Path(tmp_path), hist, set()) == "pack.rar"
+    assert pw_parsing.pawchive_unique_name(c, Path(tmp_path), hist, set()) == "pack.rar"
 
 
 # --- a fake pawchive server -------------------------------------------------
@@ -1216,9 +1219,9 @@ class _PawClient:
 def _fast_pawchive(monkeypatch):
     """No pacing gaps and a tiny 429 cooldown, so the tests run instantly;
     the throttle tests set their own values where timing is the point."""
-    monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (0.0, 0.0))
-    monkeypatch.setattr(dc, "PAWCHIVE_PAGE_DELAY", (0.0, 0.0))
-    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 0.05)
+    monkeypatch.setattr(pw_access, "PAWCHIVE_FILE_DELAY", (0.0, 0.0))
+    monkeypatch.setattr(pw_access, "PAWCHIVE_PAGE_DELAY", (0.0, 0.0))
+    monkeypatch.setattr(pw_access, "PAWCHIVE_COOLDOWN", 0.05)
 
 
 def _data(path): return "https://file.pawchive.pw/data" + path
@@ -1243,8 +1246,8 @@ def test_pawchive_png_size_filter_and_downloads(tmp_path):
     # chunk=7 makes the first chunks shorter than a PNG header
     client = _PawClient(blobs=blobs, chunk=7)
     history: dict = {}
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
 
     assert (run.ok, run.skipped, run.failed, run.filtered) == (3, 0, 0, 2)
     assert sorted(p.name for p in Path(tmp_path).iterdir()) == ["card.png", "mods.rar", "scene.png"]
@@ -1274,8 +1277,8 @@ def test_pawchive_png_ratio_is_accepted_and_abort_is_early(tmp_path):
             return s
 
     client = _Counting(blobs=blobs, chunk=1000)
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
     assert (run.ok, run.filtered) == (1, 1)                         # 504x704 has the card ratio
     # the 300 KB rejected PNG was abandoned after its first chunk
     assert sum(n for u, n in consumed if u.startswith(_data(huge))) <= 1000
@@ -1285,8 +1288,8 @@ def test_pawchive_failed_file_is_counted_and_others_continue(tmp_path):
     posts = [{"id": "1", "file": {"name": "gone.rar", "path": "/00/00/gone.rar"},
               "attachments": [{"name": "ok.rar", "path": "/00/00/ok.rar"}]}]
     client = _PawClient(blobs={_data("/00/00/ok.rar"): b"data"})
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
     assert (run.ok, run.failed) == (1, 1)
     assert [p.name for p in Path(tmp_path).iterdir()] == ["ok.rar"]
 
@@ -1295,12 +1298,12 @@ def test_pawchive_skip_downloaded_uses_history(tmp_path):
     posts = [{"id": "1", "file": {"name": "a.rar", "path": "/00/00/a.rar"}}]
     client = _PawClient(blobs={_data("/00/00/a.rar"): b"data"})
     history = {_data("/00/00/a.rar"): str(tmp_path / "a.rar")}
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
     assert (run.ok, run.skipped) == (0, 1) and client.fetched == []
 
-    run = dc._PawchiveRun(None)          # skip off: fetched again
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, False, run))
+    run = pw_posts.PawchiveRun(None)          # skip off: fetched again
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), history, False, run))
     assert (run.ok, run.skipped) == (1, 0) and client.fetched == [_data("/00/00/a.rar") + "?f=a.rar"]
 
 
@@ -1314,10 +1317,10 @@ def _patch_externals(monkeypatch):
             return 1, 0, 0
         return fake
 
-    monkeypatch.setattr(dc, "_download_gofile", make("gofile"))
-    monkeypatch.setattr(dc, "_download_mega", make("mega"))
-    monkeypatch.setattr(dc, "_download_gdrive", make("gdrive"))
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    monkeypatch.setattr(pw_posts, "download_gofile", make("gofile"))
+    monkeypatch.setattr(pw_posts, "download_mega", make("mega"))
+    monkeypatch.setattr(pw_posts, "download_gdrive", make("gdrive"))
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
     return calls
 
 
@@ -1334,7 +1337,7 @@ def test_pawchive_listing_pages_until_empty(tmp_path, monkeypatch):
         # offset 100 is empty -> end
     }
     client = _PawClient(pages=pages, blobs={_data("/00/00/a.rar"): b"a", _data("/00/00/b.zip"): b"b"})
-    res = asyncio.run(dc._download_pawchive(
+    res = asyncio.run(pw_downloader.download_pawchive(
         client, "https://pawchive.pw/posts?q=chara", Path(tmp_path), {}, True,
         page_start=1, page_end=None, externals=EXTERNALS))
 
@@ -1357,17 +1360,17 @@ def test_pawchive_default_reads_one_page_and_link_offset_is_honoured(tmp_path, m
     full = {o: [{"id": str(o + 1)}] for o in (0, 50, 100)}
 
     c1 = _PawClient(pages=full)
-    asyncio.run(dc._download_pawchive(c1, "https://pawchive.pw/patreon/user/9",
+    asyncio.run(pw_downloader.download_pawchive(c1, "https://pawchive.pw/patreon/user/9",
                                       Path(tmp_path), {}, True, externals=EXTERNALS))
     assert c1.api_calls == ["https://pawchive.pw/api/v1/patreon/user/9?o=0"]
 
     c2 = _PawClient(pages=full)
-    asyncio.run(dc._download_pawchive(c2, "https://pawchive.pw/patreon/user/9?o=100",
+    asyncio.run(pw_downloader.download_pawchive(c2, "https://pawchive.pw/patreon/user/9?o=100",
                                       Path(tmp_path), {}, True, externals=EXTERNALS))
     assert c2.api_calls == ["https://pawchive.pw/api/v1/patreon/user/9?o=100"]
 
     c3 = _PawClient(pages=full)         # "| 2 | 3" -> offsets 50 and 100
-    asyncio.run(dc._download_pawchive(c3, "https://pawchive.pw/patreon/user/9",
+    asyncio.run(pw_downloader.download_pawchive(c3, "https://pawchive.pw/patreon/user/9",
                                       Path(tmp_path), {}, True, page_start=2, page_end=3,
                                       externals=EXTERNALS))
     assert [u.rsplit("o=", 1)[1] for u in c3.api_calls] == ["50", "100"]
@@ -1376,7 +1379,7 @@ def test_pawchive_default_reads_one_page_and_link_offset_is_honoured(tmp_path, m
 def test_pawchive_reverse_range_survives_an_empty_first_page(tmp_path, monkeypatch):
     _patch_externals(monkeypatch)
     client = _PawClient(pages={0: [{"id": "1"}], 50: [{"id": "2"}]})   # page 3 (o=100) is empty
-    asyncio.run(dc._download_pawchive(client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
+    asyncio.run(pw_downloader.download_pawchive(client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
                                       page_start=3, page_end=1, externals=EXTERNALS))
     assert [u.rsplit("o=", 1)[1] for u in client.api_calls] == ["100", "50", "0"]
 
@@ -1390,7 +1393,7 @@ def test_pawchive_repeated_pages_stop_an_open_ended_run(tmp_path, monkeypatch):
             return _PawResp(data=[{"id": "1"}])
 
     client = _Clamping()
-    asyncio.run(dc._download_pawchive(client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
+    asyncio.run(pw_downloader.download_pawchive(client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
                                       page_start=1, page_end=None, externals=EXTERNALS))
     assert len(client.api_calls) == 2     # page 2 repeated page 1 -> stop
 
@@ -1404,11 +1407,11 @@ def test_pawchive_bad_response_is_a_failed_page_not_the_end(tmp_path, monkeypatc
             return _PawResp(data={"error": "rate limited"})
 
     client = _Erroring()
-    ok, skipped, failed = asyncio.run(dc._download_pawchive(
+    ok, skipped, failed = asyncio.run(pw_downloader.download_pawchive(
         client, "https://pawchive.pw/posts", Path(tmp_path), {}, True,
         page_start=1, page_end=None, externals=EXTERNALS))
-    assert (ok, skipped) == (0, 0) and failed == dc.MAX_CONSECUTIVE_BAD_PAGES
-    assert len(client.api_calls) == dc.MAX_CONSECUTIVE_BAD_PAGES
+    assert (ok, skipped) == (0, 0) and failed == net.MAX_CONSECUTIVE_BAD_PAGES
+    assert len(client.api_calls) == net.MAX_CONSECUTIVE_BAD_PAGES
 
 
 def test_pawchive_single_post(tmp_path, monkeypatch):
@@ -1419,7 +1422,7 @@ def test_pawchive_single_post(tmp_path, monkeypatch):
             "attachments": [{"name": "c.rar", "path": "/01/aa/c.rar"}]}
     client = _PawClient(singles={"173280929": post},
                         blobs={_data("/01/aa/c.png"): _png(252, 352), _data("/01/aa/c.rar"): b"zz"})
-    res = asyncio.run(dc._download_pawchive(
+    res = asyncio.run(pw_downloader.download_pawchive(
         client, "https://pawchive.pw/patreon/user/58585170/post/173280929",
         Path(tmp_path), {}, True, page_start=5, page_end=5, externals=EXTERNALS))   # directive ignored
     assert client.api_calls == ["https://pawchive.pw/api/v1/patreon/user/58585170/post/173280929"]
@@ -1429,7 +1432,7 @@ def test_pawchive_single_post(tmp_path, monkeypatch):
     # the wrapped shape works the same
     client = _PawClient(singles={"1": {"post": {"id": "1", "attachments": [{"name": "d.rar", "path": "/d.rar"}]}}},
                         blobs={_data("/d.rar"): b"d"})
-    assert asyncio.run(dc._download_pawchive(
+    assert asyncio.run(pw_downloader.download_pawchive(
         client, "https://pawchive.pw/fanbox/user/2/post/1", Path(tmp_path), {}, True,
         externals=EXTERNALS)) == (1, 0, 0)
 
@@ -1439,8 +1442,8 @@ def test_pawchive_same_file_and_link_in_many_posts_is_handled_once(tmp_path, mon
     post = lambda i: {"id": str(i), "file": {"name": "a.rar", "path": "/00/00/a.rar"},
                       "content": "https://gofile.io/d/Xy12Zz"}
     client = _PawClient(blobs={_data("/00/00/a.rar"): b"a"})
-    run = dc._PawchiveRun(EXTERNALS)
-    asyncio.run(dc._pawchive_process_posts(client, [post(1), post(2)], Path(tmp_path), {}, True, run))
+    run = pw_posts.PawchiveRun(EXTERNALS)
+    asyncio.run(pw_posts.pawchive_process_posts(client, [post(1), post(2)], Path(tmp_path), {}, True, run))
     assert client.fetched == [_data("/00/00/a.rar") + "?f=a.rar"] and len(calls) == 1
     assert (run.ok, run.failed) == (2, 0)            # 1 file + 1 link
 
@@ -1451,15 +1454,15 @@ def test_pawchive_failing_link_does_not_stop_the_rest(tmp_path, monkeypatch):
     async def boom(client, url, directory, history, skip):
         raise RuntimeError("mega: quota")
 
-    monkeypatch.setattr(dc, "_download_mega", boom)
+    monkeypatch.setattr(pw_posts, "download_mega", boom)
     posts = [{"id": "1", "content": "https://mega.nz/file/AbCdEfGh#KEY https://gofile.io/d/Xy12Zz"}]
-    run = dc._PawchiveRun(EXTERNALS)
-    asyncio.run(dc._pawchive_process_posts(_PawClient(), posts, Path(tmp_path), {}, True, run))
+    run = pw_posts.PawchiveRun(EXTERNALS)
+    asyncio.run(pw_posts.pawchive_process_posts(_PawClient(), posts, Path(tmp_path), {}, True, run))
     assert (run.ok, run.failed) == (1, 1)
 
 
 def test_pawchive_unsupported_link(tmp_path):
-    assert asyncio.run(dc._download_pawchive(
+    assert asyncio.run(pw_downloader.download_pawchive(
         _PawClient(), "https://pawchive.pw/creators", Path(tmp_path), {}, True)) == (0, 0, 1)
 
 
@@ -1473,8 +1476,8 @@ def test_pawchive_falls_back_to_the_node_host(tmp_path):
     # the public file host refuses (403): the storage node is tried next
     client = _PawClient(blobs={node: b"Rar!" * 10}, deny={"file.pawchive.pw"})
     history: dict = {}
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
     assert (run.ok, run.failed) == (1, 0)
     assert client.fetched == [_data(path) + "?f=pack.rar", node + "?f=pack.rar"]
     assert (Path(tmp_path) / "pack.rar").read_bytes() == b"Rar!" * 10
@@ -1484,8 +1487,8 @@ def test_pawchive_falls_back_to_the_node_host(tmp_path):
     other = Path(tmp_path) / "other"
     other.mkdir()
     client = _PawClient(deny={"file.pawchive.pw", "n2.pawchive.pw"})
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(client, posts, other, {}, True, run))
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, other, {}, True, run))
     assert (run.ok, run.failed) == (0, 1)
     assert len(client.fetched) == 2 and not list(other.iterdir())
 
@@ -1493,19 +1496,19 @@ def test_pawchive_falls_back_to_the_node_host(tmp_path):
 def test_pawchive_file_host_is_preferred_and_node_not_touched(tmp_path):
     path = "/01/aa/ok.rar"
     client = _PawClient(blobs={_data(path): b"x"})
-    run = dc._PawchiveRun(None)
-    asyncio.run(dc._pawchive_process_posts(
+    run = pw_posts.PawchiveRun(None)
+    asyncio.run(pw_posts.pawchive_process_posts(
         client, [{"id": "1", "file": {"name": "ok.rar", "node": 2, "path": path}}],
         Path(tmp_path), {}, True, run))
     assert (run.ok, run.failed) == (1, 0) and client.fetched == [_data(path) + "?f=ok.rar"]
 
 
 def test_pawchive_data_prefix_and_odd_names_in_urls():
-    key, urls = dc._pawchive_data_urls("/data/ab/cd/x.rar", None, "a b&c.rar")
+    key, urls = pw_parsing._pawchive_data_urls("/data/ab/cd/x.rar", None, "a b&c.rar")
     assert key == "https://file.pawchive.pw/data/ab/cd/x.rar"        # /data/ is not doubled
     assert urls[0] == key + "?f=a%20b%26c.rar"                       # the name is quoted
     # a path that already is a full URL is used as it is (no candidates added)
-    f = dc._pawchive_post_files({"file": {"name": "z.zip", "path": "https://t1.pawchive.pw/f/h/z.zip?e=1&s=2"}})[0]
+    f = pw_parsing.pawchive_post_files({"file": {"name": "z.zip", "path": "https://t1.pawchive.pw/f/h/z.zip?e=1&s=2"}})[0]
     assert f["urls"] == ["https://t1.pawchive.pw/f/h/z.zip?e=1&s=2"]
     assert f["key"] == "https://t1.pawchive.pw/f/h/z.zip" and f["name"] == "z.zip"
 
@@ -1523,19 +1526,19 @@ def _t1_post(**extra):
 def test_pawchive_temp_link_parsing():
     html = (f'<a href="{T1.replace("&", "&amp;")}">dl</a> <img src=\'https://t1.pawchive.pw/f/a/B.png?e=1\'>'
             '<a href="https://evil.example/f/x/y.rar">no</a><a href="https://file.pawchive.pw/data/a.rar">no</a>')
-    assert dc._pawchive_temp_links(html) == {          # &amp; decoded, name decoded and lower-cased
+    assert pw_parsing.pawchive_temp_links(html) == {          # &amp; decoded, name decoded and lower-cased
         "big pack.rar": T1, "b.png": "https://t1.pawchive.pw/f/a/B.png?e=1"}
-    assert dc._pawchive_temp_links("") == {} and dc._pawchive_temp_links(None) == {}
+    assert pw_parsing.pawchive_temp_links("") == {} and pw_parsing.pawchive_temp_links(None) == {}
 
     post = _t1_post()
-    assert [a["name"] for a in dc._pawchive_deferred_attachments(post)] == ["Big Pack.rar"]
-    assert [f["name"] for f in dc._pawchive_post_files(post)] == ["small.rar"]   # deferred: no path, no file yet
-    assert dc._pawchive_post_page_url(post) == PAGE
-    assert dc._pawchive_post_page_url({"id": "1"}) is None
-    item = dc._pawchive_temp_item(post["attachments"][0], T1)
+    assert [a["name"] for a in pw_parsing.pawchive_deferred_attachments(post)] == ["Big Pack.rar"]
+    assert [f["name"] for f in pw_parsing.pawchive_post_files(post)] == ["small.rar"]   # deferred: no path, no file yet
+    assert pw_parsing.pawchive_post_page_url(post) == PAGE
+    assert pw_parsing.pawchive_post_page_url({"id": "1"}) is None
+    item = pw_parsing.pawchive_temp_item(post["attachments"][0], T1)
     assert item["urls"] == [T1] and item["key"] == "https://t1.pawchive.pw/f/9f8e7d/Big%20Pack.rar"
-    assert item["name"] == "Big Pack.rar" and dc._is_pawchive_temp_url(T1)
-    assert not dc._is_pawchive_temp_url("https://file.pawchive.pw/data/a.rar")
+    assert item["name"] == "Big Pack.rar" and pw_parsing.is_pawchive_temp_url(T1)
+    assert not pw_parsing.is_pawchive_temp_url("https://file.pawchive.pw/data/a.rar")
 
 
 def test_pawchive_cookie_is_asked_only_for_t1_files_and_only_once(tmp_path):
@@ -1550,9 +1553,9 @@ def test_pawchive_cookie_is_asked_only_for_t1_files_and_only_once(tmp_path):
 
     # a post without temporary files never asks
     client = _PawClient(blobs={_data(small): b"s"})
-    auth = dc._PawchiveAuth(resolver)
-    run = dc._PawchiveRun(None, auth)
-    asyncio.run(dc._pawchive_process_posts(
+    auth = pw_access.PawchiveAuth(resolver)
+    run = pw_posts.PawchiveRun(None, auth)
+    asyncio.run(pw_posts.pawchive_process_posts(
         client, [{"id": "1", "file": {"name": "small.rar", "path": small}}], Path(tmp_path), {}, True, run))
     assert asked == [] and not auth.asked and len(client.cookies.jar) == 0
 
@@ -1560,10 +1563,10 @@ def test_pawchive_cookie_is_asked_only_for_t1_files_and_only_once(tmp_path):
     big = T1.split("?")[0]
     client = _PawClient(blobs={_data(small): b"s", big: b"B" * 50}, html={PAGE: [page_html]})
     history: dict = {}
-    run = dc._PawchiveRun(None, auth)
+    run = pw_posts.PawchiveRun(None, auth)
     posts = [_t1_post(), _t1_post(id="78", attachments=[{"name": "Big Pack.rar", "deferred": True}])]
     client.html["https://pawchive.pw/patreon/user/9/post/78"] = [page_html]
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
     assert asked == [1]
     assert (run.ok, run.failed) == (2, 0)              # small.rar + the same big file, handled once
     assert (Path(tmp_path) / "Big Pack.rar").read_bytes() == b"B" * 50
@@ -1577,9 +1580,9 @@ def test_pawchive_login_is_asked_when_the_page_hides_the_link(tmp_path):
     big = T1.split("?")[0]
     # first read (no cookie): no link; second read (with the cookie): the link
     client = _PawClient(blobs={big: b"B"}, html={PAGE: ["<html>log in</html>", f'<a href="{T1}">x</a>']})
-    auth = dc._PawchiveAuth(lambda: (asked.append(1), "tok_" + "b" * 20)[1])
-    run = dc._PawchiveRun(None, auth)
-    asyncio.run(dc._pawchive_process_posts(
+    auth = pw_access.PawchiveAuth(lambda: (asked.append(1), "tok_" + "b" * 20)[1])
+    run = pw_posts.PawchiveRun(None, auth)
+    asyncio.run(pw_posts.pawchive_process_posts(
         client, [_t1_post(attachments=[{"name": "Big Pack.rar", "deferred": True}])],
         Path(tmp_path), {}, True, run))
     assert asked == [1] and (run.ok, run.failed) == (1, 0)
@@ -1589,9 +1592,9 @@ def test_pawchive_login_is_asked_when_the_page_hides_the_link(tmp_path):
 def test_pawchive_login_cancelled_counts_the_missing_file(tmp_path, ):
     asked: list[int] = []
     client = _PawClient(html={PAGE: ["<html>log in</html>"]})
-    auth = dc._PawchiveAuth(lambda: asked.append(1))          # dialog cancelled -> None
-    run = dc._PawchiveRun(None, auth)
-    asyncio.run(dc._pawchive_process_posts(
+    auth = pw_access.PawchiveAuth(lambda: asked.append(1))          # dialog cancelled -> None
+    run = pw_posts.PawchiveRun(None, auth)
+    asyncio.run(pw_posts.pawchive_process_posts(
         client, [_t1_post(attachments=[{"name": "Big Pack.rar", "deferred": True}])],
         Path(tmp_path), {}, True, run))
     assert asked == [1] and (run.ok, run.failed) == (0, 1)
@@ -1600,17 +1603,17 @@ def test_pawchive_login_cancelled_counts_the_missing_file(tmp_path, ):
 
     # a post with no way to find its page is counted as failed, without asking
     asked.clear()
-    run = dc._PawchiveRun(None, dc._PawchiveAuth(lambda: asked.append(1)))
-    asyncio.run(dc._pawchive_process_posts(
+    run = pw_posts.PawchiveRun(None, pw_access.PawchiveAuth(lambda: asked.append(1)))
+    asyncio.run(pw_posts.pawchive_process_posts(
         _PawClient(), [{"id": "5", "attachments": [{"name": "x.rar", "deferred": True}]}],
         Path(tmp_path), {}, True, run))
     assert asked == [] and run.failed == 1
 
 
 def test_pawchive_auth_scopes_the_cookie_to_pawchive():
-    client = dc._make_client(extra_headers={"Referer": dc.PAWCHIVE_URL + "/"}, http2=False)
+    client = net.make_client(extra_headers={"Referer": pw_parsing.PAWCHIVE_URL + "/"}, http2=False)
     try:
-        auth = dc._PawchiveAuth(lambda: "tok_" + "c" * 20)
+        auth = pw_access.PawchiveAuth(lambda: "tok_" + "c" * 20)
         assert auth.ensure(client) is True and auth.ensure(client) is True   # asked once, set each time
 
         def cookie_header(url):
@@ -1625,8 +1628,8 @@ def test_pawchive_auth_scopes_the_cookie_to_pawchive():
     finally:
         asyncio.run(client.aclose())
 
-    none = dc._PawchiveAuth(lambda: None)
-    c2 = dc._make_client()
+    none = pw_access.PawchiveAuth(lambda: None)
+    c2 = net.make_client()
     try:
         assert none.ensure(c2) is False and none.asked and len(c2.cookies.jar) == 0
     finally:
@@ -1715,23 +1718,22 @@ def test_pawchive_session_validation_status_mapping(monkeypatch):
 # --- pawchive: throttle (pacing, adaptive concurrency, shared 429 cooldown) -------
 
 def test_throttle_scales_up_and_backs_off(monkeypatch):
-    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 14.0)
-    t = dc._PawchiveThrottle()
-    assert dc.PAWCHIVE_PARALLEL == 8
-    assert (t.limit, t.ceiling) == (2, 8)                     # starts low, may grow to 8
+    monkeypatch.setattr(pw_access, "PAWCHIVE_COOLDOWN", 14.0)
+    t = pw_access.PawchiveThrottle()
+    assert (t.limit, t.ceiling) == (2, 4)                     # starts low, may grow to 4
 
     for _ in range(3):
         t.on_success()
     assert t.limit == 3                                       # every 3 clean files, one more worker
     for _ in range(30):
         t.on_success()
-    assert (t.limit, t.ceiling) == (8, 8)                     # never above the ceiling
+    assert (t.limit, t.ceiling) == (4, 4)                     # never above the ceiling
 
     wait = t.on_rate_limited()                                # first 429 of a burst
-    assert wait == 14.0 and (t.ceiling, t.limit) == (7, 6)    # ceiling = old limit - 1, limit lower still
+    assert wait == 14.0 and (t.ceiling, t.limit) == (3, 2)    # ceiling = old limit - 1, limit lower still
     assert t.cooldown_until > 0
     t.on_rate_limited()                                       # same burst: other refused workers
-    assert (t.ceiling, t.limit) == (7, 6)                     # ... must not lower it again
+    assert (t.ceiling, t.limit) == (3, 2)                     # ... must not lower it again
 
     before = t.limit
     for _ in range(9):                                        # no scaling up inside the cooldown
@@ -1742,12 +1744,12 @@ def test_throttle_scales_up_and_backs_off(monkeypatch):
     t.clean = 0
     for _ in range(3):
         t.on_success()
-    assert t.limit == 7                                       # grows again, up to the new ceiling
+    assert t.limit == 3                                       # grows again, up to the new ceiling
     t.clean = 49
     t.on_success()                                            # 50 clean files: probe a higher ceiling
-    assert t.ceiling == 8 and t.clean == 0
+    assert t.ceiling == 4 and t.clean == 0
 
-    low = dc._PawchiveThrottle()                              # at the bottom it stays at 1
+    low = pw_access.PawchiveThrottle()                              # at the bottom it stays at 1
     low.on_rate_limited()
     assert (low.ceiling, low.limit) == (1, 1)
     low.cooldown_until = 0.0
@@ -1756,13 +1758,13 @@ def test_throttle_scales_up_and_backs_off(monkeypatch):
 
 
 def test_throttle_cooldown_length(monkeypatch):
-    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 14.0)
-    t = dc._PawchiveThrottle()
+    monkeypatch.setattr(pw_access, "PAWCHIVE_COOLDOWN", 14.0)
+    t = pw_access.PawchiveThrottle()
     assert t.on_rate_limited(retry_after=3) == 14.0           # never shorter than the base cooldown
     t.cooldown_until = 0.0
     assert t.on_rate_limited(retry_after=30) == 30.0          # Retry-After wins when longer
     t.cooldown_until = 0.0
-    assert t.on_rate_limited(retry_after=9999) == dc.PAWCHIVE_COOLDOWN_CAP     # ... within the cap
+    assert t.on_rate_limited(retry_after=9999) == pw_access.PAWCHIVE_COOLDOWN_CAP     # ... within the cap
     t.cooldown_until = 0.0
     assert t.on_rate_limited(streak=3) == 42.0                # longer after repeated 429s
     t.cooldown_until = 0.0
@@ -1779,23 +1781,23 @@ def test_retry_after_parsing():
         resp = httpx.Response(429, headers=headers, request=httpx.Request("GET", "https://x/"))
         return httpx.HTTPStatusError("429", request=resp.request, response=resp)
 
-    assert dc._retry_after_seconds(err("7")) == 7.0
-    assert dc._retry_after_seconds(err("9999")) == 120.0
-    assert dc._retry_after_seconds(err(None)) is None
-    assert dc._retry_after_seconds(err("soon")) is None
-    assert dc._retry_after_seconds(RuntimeError("no response")) is None
+    assert net.retry_after_seconds(err("7")) == 7.0
+    assert net.retry_after_seconds(err("9999")) == 120.0
+    assert net.retry_after_seconds(err(None)) is None
+    assert net.retry_after_seconds(err("soon")) is None
+    assert net.retry_after_seconds(RuntimeError("no response")) is None
     when = email.utils.format_datetime(_dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(seconds=60))
-    assert 50 <= dc._retry_after_seconds(err(when)) <= 60     # an HTTP date works too
-    assert dc._is_rate_limited(err("1")) and not dc._is_rate_limited(RuntimeError("429"))
+    assert 50 <= net.retry_after_seconds(err(when)) <= 60     # an HTTP date works too
+    assert net.is_rate_limited(err("1")) and not net.is_rate_limited(RuntimeError("429"))
 
 
 def test_throttle_pacing_gate_and_slots(monkeypatch):
     import time
-    monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (0.06, 0.06))
-    monkeypatch.setattr(dc, "PAWCHIVE_PAGE_DELAY", (0.06, 0.06))
+    monkeypatch.setattr(pw_access, "PAWCHIVE_FILE_DELAY", (0.06, 0.06))
+    monkeypatch.setattr(pw_access, "PAWCHIVE_PAGE_DELAY", (0.06, 0.06))
 
     async def scenario():
-        t = dc._PawchiveThrottle()
+        t = pw_access.PawchiveThrottle()
         t0 = time.monotonic()
         await asyncio.gather(*(t.pace("api") for _ in range(3)))   # three requests: two gaps
         assert time.monotonic() - t0 >= 0.11
@@ -1814,9 +1816,9 @@ def test_throttle_pacing_gate_and_slots(monkeypatch):
         assert t.active == 0
 
         # never more downloads in flight than the current limit
-        monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (0.0, 0.0))
+        monkeypatch.setattr(pw_access, "PAWCHIVE_FILE_DELAY", (0.0, 0.0))
         for limit in (1, 2):
-            t = dc._PawchiveThrottle()
+            t = pw_access.PawchiveThrottle()
             t.limit = limit
             peak = 0
 
@@ -1829,7 +1831,7 @@ def test_throttle_pacing_gate_and_slots(monkeypatch):
             assert peak == limit and t.active == 0
 
         # a slot is given back when the download inside it fails or is cancelled
-        t = dc._PawchiveThrottle()
+        t = pw_access.PawchiveThrottle()
         with pytest.raises(RuntimeError):
             async with t.slot():
                 raise RuntimeError("boom")
@@ -1840,60 +1842,60 @@ def test_throttle_pacing_gate_and_slots(monkeypatch):
 def test_pawchive_file_429_waits_and_retries_the_same_host(tmp_path):
     path = "/01/aa/pack.rar"
     client = _PawClient(blobs={_data(path): b"Rar!" * 4}, limited={_data(path): 2}, retry_after=0)
-    throttle = dc._PawchiveThrottle()
-    run = dc._PawchiveRun(None, throttle=throttle)
+    throttle = pw_access.PawchiveThrottle()
+    run = pw_posts.PawchiveRun(None, throttle=throttle)
     posts = [{"id": "1", "file": {"name": "pack.rar", "node": 2, "path": path}}]
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
 
     assert (run.ok, run.failed) == (1, 0)                     # not failed: waited and tried again
     assert client.fetched == [_data(path) + "?f=pack.rar"] * 3   # same host each time, node untouched
     gaps = [b - a for a, b in zip(client.times, client.times[1:])]
-    assert min(gaps[:2]) >= dc.PAWCHIVE_COOLDOWN * 0.8        # the cooldown was really waited out
+    assert min(gaps[:2]) >= pw_access.PAWCHIVE_COOLDOWN * 0.8        # the cooldown was really waited out
     assert throttle.ceiling == 1 and throttle.limit == 1      # and concurrency went down for good
     assert (Path(tmp_path) / "pack.rar").read_bytes() == b"Rar!" * 4
 
 
 def test_pawchive_file_gives_up_after_repeated_429(tmp_path, monkeypatch):
-    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 0.005)
+    monkeypatch.setattr(pw_access, "PAWCHIVE_COOLDOWN", 0.005)
     path = "/01/aa/pack.rar"
     node = "https://n2.pawchive.pw/data" + path
     client = _PawClient(limited={_data(path): 1000})
-    run = dc._PawchiveRun(None)
+    run = pw_posts.PawchiveRun(None)
     posts = [{"id": "1", "file": {"name": "pack.rar", "node": 2, "path": path}}]
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
     assert (run.ok, run.failed) == (0, 1)
     file_host = [u for u in client.fetched if u.startswith(_data(path))]
-    assert len(file_host) == dc.PAWCHIVE_MAX_RATE_LIMITED + 1      # a bounded number of waits ...
+    assert len(file_host) == pw_access.PAWCHIVE_MAX_RATE_LIMITED + 1      # a bounded number of waits ...
     assert client.fetched[-1].startswith(node)                     # ... then the next host gets its turn
     assert not list(Path(tmp_path).iterdir())
 
 
 def test_pawchive_api_429_uses_the_shared_cooldown(tmp_path):
     post_url = "https://pawchive.pw/patreon/user/9/post/77"
-    api = dc._pawchive_api_url(post_url).split("?")[0]
+    api = pw_parsing.pawchive_api_url(post_url).split("?")[0]
     path = "/00/00/a.rar"
     single = {"id": "77", "user": "9", "service": "patreon", "file": {"name": "a.rar", "path": path}}
     client = _PawClient(singles={"77": single}, blobs={_data(path): b"x"},
                         limited={api: 2}, retry_after=0)
-    throttle = dc._PawchiveThrottle()
-    ok, skipped, failed = asyncio.run(dc._download_pawchive(
+    throttle = pw_access.PawchiveThrottle()
+    ok, skipped, failed = asyncio.run(pw_downloader.download_pawchive(
         client, post_url, Path(tmp_path), {}, True, throttle=throttle))
     assert (ok, failed) == (1, 0)
     assert len([u for u in client.api_calls if u.split("?")[0] == api]) == 3   # 2 x 429, then the post
-    assert throttle.ceiling < dc.PAWCHIVE_PARALLEL                              # the API 429 slowed the run
+    assert throttle.ceiling < pw_access.PAWCHIVE_PARALLEL                              # the API 429 slowed the run
 
     # a listing page that is refused again and again fails that page only
     listing = "https://pawchive.pw/patreon/user/9"
-    page_api = dc._pawchive_api_url(listing, 1).split("?")[0]
+    page_api = pw_parsing.pawchive_api_url(listing, 1).split("?")[0]
     bad = _PawClient(limited={page_api: 1000})
-    dc.PAWCHIVE_COOLDOWN = 0.002
+    pw_access.PAWCHIVE_COOLDOWN = 0.002
     try:
-        ok, skipped, failed = asyncio.run(dc._download_pawchive(
+        ok, skipped, failed = asyncio.run(pw_downloader.download_pawchive(
             bad, listing, Path(tmp_path), {}, True, page_start=1, page_end=1))
     finally:
-        dc.PAWCHIVE_COOLDOWN = 0.05
+        pw_access.PAWCHIVE_COOLDOWN = 0.05
     assert ok == 0 and failed >= 1
-    assert len(bad.api_calls) == dc.PAWCHIVE_MAX_RATE_LIMITED + 1
+    assert len(bad.api_calls) == pw_access.PAWCHIVE_MAX_RATE_LIMITED + 1
 
 
 def test_get_with_retry_can_hand_429_to_the_caller():
@@ -1901,19 +1903,19 @@ def test_get_with_retry_can_hand_429_to_the_caller():
     url = "https://pawchive.pw/api/v1/x"
     client = _PawClient(limited={url: 5})
     with pytest.raises(httpx.HTTPStatusError):
-        asyncio.run(dc._get_with_retry(client, url, retry_429=False))
+        asyncio.run(net.get_with_retry(client, url, retry_429=False))
     assert len(client.api_calls) == 1                          # raised at once, no private backoff
 
 
 def test_pawchive_skipped_files_cost_no_slot_or_delay(tmp_path, monkeypatch):
-    monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (30.0, 30.0))   # a paced file would take 30 s
+    monkeypatch.setattr(pw_access, "PAWCHIVE_FILE_DELAY", (30.0, 30.0))   # a paced file would take 30 s
     paths = [f"/00/00/f{i}.rar" for i in range(4)]
     posts = [{"id": str(i), "file": {"name": f"f{i}.rar", "path": p}} for i, p in enumerate(paths)]
     history = {_data(p): str(Path(tmp_path) / f"f{i}.rar") for i, p in enumerate(paths)}
     client = _PawClient()
-    run = dc._PawchiveRun(None)
+    run = pw_posts.PawchiveRun(None)
     asyncio.run(asyncio.wait_for(
-        dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run), timeout=3))
+        pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), history, True, run), timeout=3))
     assert (run.ok, run.skipped, run.failed) == (0, 4, 0) and client.fetched == []
 
 
@@ -1932,16 +1934,16 @@ def test_pixiv_artwork_images_are_png_only(monkeypatch):
 
     async def fake_api(client, endpoint, params=None):
         return pages
-    monkeypatch.setattr(dc, "_pixiv_api", fake_api)
+    monkeypatch.setattr(pixiv, "_pixiv_api", fake_api)
 
-    urls, rejected = asyncio.run(dc._pixiv_artwork_images(None, "1"))
+    urls, rejected = asyncio.run(pixiv._pixiv_artwork_images(None, "1"))
     assert urls == [base + "1_p0.png", base + "1_p3.PNG?x=1"]
     assert rejected == 3                                       # jpg + gif + the 1920x1080 PNG
-    assert dc.PIXIV_EXTENSIONS == (".png",)
+    assert pixiv.PIXIV_EXTENSIONS == (".png",)
 
 
 def test_pawchive_only_archives_and_png_are_downloaded():
-    assert dc.PAWCHIVE_EXTENSIONS == (".rar", ".zip", ".7z", ".zipmod", ".png")
+    assert pw_parsing.PAWCHIVE_EXTENSIONS == (".rar", ".zip", ".7z", ".zipmod", ".png")
     post = {"id": "1",
             "file": {"name": "cover.jpg", "node": 2, "path": "/aa/bb/cover.jpg"},
             "attachments": [
@@ -1960,18 +1962,18 @@ def test_pawchive_only_archives_and_png_are_downloaded():
                 {"name": "readme", "node": 2, "path": "/00/0c/readme"},            # no extension at all
             ]}
     excluded: list[str] = []
-    files = dc._pawchive_post_files(post, excluded)
+    files = pw_parsing.pawchive_post_files(post, excluded)
     assert [f["name"] for f in files] == [
         "mod.zipmod", "Pack.RAR", "chars.7z", "bundle.zip", "card.png", "My Mod v1.2"]
     assert excluded == ["cover.jpg", "notes.txt", "clip.mp4", "photo.jpeg", "anim.gif",
                         "setup.exe", "readme"]                  # the repeated main file is counted once
     assert [f["check_size"] for f in files] == [False, False, False, False, True, False]
-    assert [f["name"] for f in dc._pawchive_post_files(post)] == [f["name"] for f in files]   # `excluded` is optional
+    assert [f["name"] for f in pw_parsing.pawchive_post_files(post)] == [f["name"] for f in files]   # `excluded` is optional
 
     # a full URL path is judged by its file name, not its query string
     t1 = {"file": {"name": "big.rar", "path": "https://t1.pawchive.pw/f/h/big.rar?e=1&s=x.jpg"},
           "attachments": [{"name": "x.mp4", "path": "https://t1.pawchive.pw/f/h/x.mp4?e=1&s=y.zip"}]}
-    assert [f["name"] for f in dc._pawchive_post_files(t1)] == ["big.rar"]
+    assert [f["name"] for f in pw_parsing.pawchive_post_files(t1)] == ["big.rar"]
 
 
 def test_pawchive_deferred_attachments_are_filtered_before_the_page_is_read(tmp_path):
@@ -1981,193 +1983,27 @@ def test_pawchive_deferred_attachments_are_filtered_before_the_page_is_read(tmp_
         {"name": "noext", "deferred": True},
     ]}
     excluded: list[str] = []
-    assert [a["name"] for a in dc._pawchive_deferred_attachments(post, excluded)] == ["Big Pack.rar"]
+    assert [a["name"] for a in pw_parsing.pawchive_deferred_attachments(post, excluded)] == ["Big Pack.rar"]
     assert excluded == ["movie.mp4", "noext"]
 
     # only unwanted temporary files: no page request, no login prompt
     asked: list[int] = []
     client = _PawClient()
-    run = dc._PawchiveRun(None, dc._PawchiveAuth(lambda: asked.append(1)))
+    run = pw_posts.PawchiveRun(None, pw_access.PawchiveAuth(lambda: asked.append(1)))
     only_video = {"id": "78", "user": "9", "service": "patreon",
                   "attachments": [{"name": "movie.mp4", "deferred": True}]}
-    asyncio.run(dc._pawchive_process_posts(client, [only_video], Path(tmp_path), {}, True, run))
+    asyncio.run(pw_posts.pawchive_process_posts(client, [only_video], Path(tmp_path), {}, True, run))
     assert client.api_calls == [] and asked == [] and run.excluded == 1 and run.failed == 0
 
 
 def test_pawchive_other_file_types_are_never_requested(tmp_path):
     keep, skip_ = "/00/00/keep.zip", "/00/00/skip.mp4"
     client = _PawClient(blobs={_data(keep): b"PK", _data(skip_): b"video"})
-    run = dc._PawchiveRun(None)
+    run = pw_posts.PawchiveRun(None)
     posts = [{"id": "1", "file": {"name": "skip.mp4", "path": skip_},
               "attachments": [{"name": "keep.zip", "path": keep},
                               {"name": "skip.mp4", "path": skip_}]}]
-    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    asyncio.run(pw_posts.pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
     assert (run.ok, run.failed, run.excluded) == (1, 0, 1)
     assert client.fetched == [_data(keep) + "?f=keep.zip"]
     assert [f.name for f in Path(tmp_path).iterdir()] == ["keep.zip"]
-
-
-# --- pixiv: mega / gofile / gdrive links in artwork descriptions ------------------
-
-def test_pixiv_description_links():
-    from urllib.parse import quote
-    mega = "https://mega.nz/file/AbCdEf12#KeY_-abc123"
-    folder = "https://mega.nz/folder/Fold3r#K3y"
-    gofile = "https://gofile.io/d/Xy12Zz"
-    gdrive = "https://drive.google.com/file/d/1AbCdEfGhIjKl/view?usp=sharing"
-    caption = (
-        # pixiv wraps external links in its /jump.php redirector (url-encoded)
-        f'My card!<br />DL: <a href="/jump.php?{quote(mega, safe="")}" target="_blank">{mega}</a><br />'
-        f'<a href="https://www.pixiv.net/jump.php?{quote(folder, safe="")}">mirror</a><br />'
-        f'<a href="/jump.php?url={quote(gofile, safe="")}">gofile</a> '
-        f'<a href="/jump.php?{quote(gdrive, safe="").replace("%26", "%26amp;")}">drive</a><br />'
-        'not these: https://evilmega.nz/file/x#y, https://www.youtube.com/watch?v=1, https://mega.nz, '
-        'https://www.pixiv.net/artworks/123'
-    )
-    links = dc._pixiv_description_links(caption)
-    assert links == [mega, folder, gofile, gdrive]            # in order, decoded, #key kept, no duplicates
-
-    # plain text works too, and so does a link typed without "https://"
-    assert dc._pixiv_description_links("get it at mega.nz/file/Q1#W2.") == ["https://mega.nz/file/Q1#W2"]
-    assert dc._pixiv_description_links("") == [] and dc._pixiv_description_links(None) == []
-    assert dc._pixiv_description_links("no links here") == []
-
-
-def _fake_pixiv_links_client(works, captions, bad_caption=(), bad_pages=()):
-    """works: {id: [(w, h)]}; captions: {id: html}. Records every request path."""
-    import httpx
-    seen: list[str] = []
-
-    class _Resp:
-        def __init__(self, body): self._b = body
-        def raise_for_status(self): pass
-        def json(self): return {"error": False, "message": "", "body": self._b}
-
-    class _Client:
-        async def get(self, url):
-            path = httpx.URL(url).path
-            seen.append(path)
-            if path.endswith("/profile/all"):
-                return _Resp({"illusts": {k: None for k in works}, "manga": []})
-            if path.endswith("/pages"):
-                aid = path.split("/")[-2]
-                if aid in bad_pages:
-                    raise RuntimeError("pages boom")
-                return _Resp([{"urls": {"original": f"https://i.pximg.net/img-original/{aid}_p{i}.png"},
-                               "width": w, "height": h} for i, (w, h) in enumerate(works[aid])])
-            aid = path.split("/")[-1]                       # /ajax/illust/<id>: the description
-            if aid in bad_caption:
-                raise RuntimeError("caption boom")
-            return _Resp({"id": aid, "description": captions.get(aid, ""), "illustComment": ""})
-    return _Client(), seen
-
-
-def test_pixiv_resolve_artwork_reads_the_caption_independently():
-    client, seen = _fake_pixiv_links_client(
-        {"1": [(252, 352)], "2": [(252, 352)]},
-        {"1": 'DL https://mega.nz/file/AA#BB', "2": "x"}, bad_caption={"2"})
-    urls, rejected, links, err = asyncio.run(dc._pixiv_resolve_artwork(client, "1", True))
-    assert urls == ["https://i.pximg.net/img-original/1_p0.png"] and links == ["https://mega.nz/file/AA#BB"] and err == ""
-
-    urls, rejected, links, err = asyncio.run(dc._pixiv_resolve_artwork(client, "2", True))
-    assert urls and links == [] and "caption boom" in err      # the images survive a caption failure
-
-    seen.clear()
-    urls, rejected, links, err = asyncio.run(dc._pixiv_resolve_artwork(client, "1", False))
-    assert links == [] and not any(path.endswith("/1") for path in seen)   # links off: no extra request
-    seen.clear()
-    urls, _, links, _ = asyncio.run(dc._pixiv_resolve_artwork(client, "1", True, images=False))
-    assert urls == [] and links and not any(path.endswith("/pages") for path in seen)
-
-
-EXT_STUBS = {"gofile": object(), "mega": object(), "gdrive": object()}
-
-
-def _capture_links(monkeypatch, fail=()):
-    downloaded: list[str] = []
-
-    async def fake_link(link, externals, directory, history, skip):
-        downloaded.append(link)
-        return (0, 0, 1) if link in fail else (2, 1, 0)
-
-    async def fake_files(client, urls, directory, name_fn, history, skip):
-        return len(urls), 0, 0
-    monkeypatch.setattr(dc, "_download_pawchive_link", fake_link)
-    monkeypatch.setattr(dc, "_download_files", fake_files)
-    monkeypatch.setattr(dc, "_save_history", lambda h: None)
-    return downloaded
-
-
-def test_pixiv_gallery_follows_description_links_of_every_artwork(tmp_path, monkeypatch):
-    downloaded = _capture_links(monkeypatch)
-    works = {"30": [(252, 352)], "20": [(1920, 1080)], "10": [(320, 180)]}
-    captions = {
-        "30": "card: https://mega.nz/file/A1#K1",
-        "20": "wrong size, but: https://gofile.io/d/Zz9 and https://mega.nz/file/A1#K1",   # repeated link
-        "10": '<a href="/jump.php?https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1abcDEFghiJKLmno%2Fview">dl</a>',
-    }
-    client, seen = _fake_pixiv_links_client(works, captions)
-    res = asyncio.run(dc._download_pixiv(
-        client, "https://www.pixiv.net/en/users/85712366", Path(tmp_path), {}, True, externals=EXT_STUBS))
-
-    assert sorted(downloaded) == sorted([
-        "https://mega.nz/file/A1#K1", "https://gofile.io/d/Zz9", "https://drive.google.com/file/d/1abcDEFghiJKLmno/view"])
-    assert res == (2 + 3 * 2, 3 * 1, 0)        # 2 images + 3 links x (2 ok, 1 skipped); each link once
-    assert sum(path.endswith(("/30", "/20", "/10")) for path in seen) == 3   # one caption request per artwork
-
-
-def test_pixiv_without_externals_never_reads_descriptions(tmp_path, monkeypatch):
-    downloaded = _capture_links(monkeypatch)
-    client, seen = _fake_pixiv_links_client({"1": [(252, 352)]}, {"1": "https://mega.nz/file/A#B"})
-    res = asyncio.run(dc._download_pixiv(
-        client, "https://www.pixiv.net/en/artworks/1", Path(tmp_path), {}, True))
-    assert res == (1, 0, 0) and downloaded == []
-    assert not any(path.endswith("/1") for path in seen)
-
-
-def test_pixiv_link_failures_are_counted_but_do_not_stop_the_run(tmp_path, monkeypatch):
-    bad = "https://mega.nz/file/BAD#K"
-    downloaded = _capture_links(monkeypatch, fail={bad})
-    works = {"1": [(252, 352)], "2": [(252, 352)], "3": [(252, 352)]}
-    captions = {"1": bad, "2": "never read", "3": "https://gofile.io/d/Ok1"}
-    client, _ = _fake_pixiv_links_client(works, captions, bad_caption={"2"})
-    ok, skipped, failed = asyncio.run(dc._download_pixiv(
-        client, "https://www.pixiv.net/en/users/1", Path(tmp_path), {}, True, externals=EXT_STUBS))
-    assert sorted(downloaded) == ["https://gofile.io/d/Ok1", bad]
-    assert failed == 2                    # the bad link + the unreadable caption of artwork 2
-    assert ok == 3 + 2                    # 3 images, the good link
-
-
-def test_pixiv_search_reads_descriptions_of_size_dropped_works_too(tmp_path, monkeypatch):
-    import httpx
-    downloaded = _capture_links(monkeypatch)
-    seen: list[str] = []
-
-    class _Resp:
-        def __init__(self, body): self._b = body
-        def raise_for_status(self): pass
-        def json(self): return {"error": False, "message": "", "body": self._b}
-
-    class _Client:
-        async def get(self, url):
-            u = httpx.URL(url)
-            seen.append(u.path)
-            if "/ajax/search/" in u.path:
-                data = [{"id": "1", "width": 252, "height": 352, "pageCount": 1},
-                        {"id": "2", "width": 1000, "height": 1000, "pageCount": 1}] if u.params["p"] == "1" else []
-                return _Resp({"illustManga": {"data": data, "total": 2}})
-            if u.path.endswith("/pages"):
-                return _Resp([{"urls": {"original": "https://i.pximg.net/img-original/1_p0.png"},
-                               "width": 252, "height": 352}])
-            return _Resp({"description": f"link: https://mega.nz/file/W{u.path.rsplit('/', 1)[-1]}#K", "illustComment": ""})
-
-    res = asyncio.run(dc._download_pixiv_search(
-        _Client(), SEARCH_URL, Path(tmp_path), {}, True, 1, None, EXT_STUBS))
-    assert sorted(downloaded) == ["https://mega.nz/file/W1#K", "https://mega.nz/file/W2#K"]
-    assert not any(path.endswith("/2/pages") for path in seen)         # the dropped work: no /pages ...
-    assert any(path.endswith("/illust/2") for path in seen)            # ... but its description is read
-    assert res == (1 + 2 * 2, 2, 0)
-
-    seen.clear(); downloaded.clear()                                   # without externals: as before
-    res = asyncio.run(dc._download_pixiv_search(_Client(), SEARCH_URL, Path(tmp_path), {}, True, 1, None))
-    assert res == (1, 0, 0) and downloaded == [] and not any("/illust/" in p and not p.endswith("/pages") for p in seen)
