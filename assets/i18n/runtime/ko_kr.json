@@ -75,6 +75,8 @@
   "dialog.password.kkd_body": "koikatsucards.com에 로그인한 후 다음을 진행하세요:\n1. 브라우저의 DevTools(개발자 도구) 열기(F12)\n2. Chrome/Edge: Application(애플리케이션) → Storage(저장소/저장용량) → Cookies(쿠키) → https://koikatsucards.com\n    Firefox: Storage → Cookies → https://koikatsucards.com\n3. 'kkd_session'을 찾아 Value(값)를 복사\n\n아래에 값을 붙여넣으세요:",
   "dialog.password.pixiv_title": "pixiv.net 세션 쿠키",
   "dialog.password.pixiv_body": "pixiv.net에 로그인한 후 다음을 진행하세요:\n1. 브라우저의 DevTools(개발자 도구) 열기(F12)\n2. Chrome/Edge: Application(애플리케이션) → Storage(저장소/저장용량) → Cookies(쿠키) → https://www.pixiv.net\n    Firefox: Storage → Cookies → https://www.pixiv.net\n3. 'PHPSESSID'를 찾아 Value(값)를 복사\n\n아래에 값을 붙여넣으세요 (취소하면 로그인 없이 계속하며, R-18 작품은 받을 수 없습니다):",
+  "dialog.password.pawchive_title": "pawchive.pw 세션 쿠키",
+  "dialog.password.pawchive_body": "pawchive.pw에 로그인한 후 다음을 진행하세요:\n1. 브라우저의 DevTools(개발자 도구) 열기(F12)\n2. Chrome/Edge: Application(애플리케이션) → Storage(저장소/저장용량) → Cookies(쿠키) → https://pawchive.pw\n    Firefox: Storage → Cookies → https://pawchive.pw\n3. 'session'을 찾아 Value(값)를 복사\n\n아래에 값을 붙여넣으세요 (취소하면 로그인 없이 계속하며, t1.pawchive.pw의 대용량 임시 파일은 받을 수 없습니다):",
   "dialog.password.archive_title": "비밀번호 입력",
   "dialog.password.archive_body": "아카이브 {archive}에 오류가 있습니다. 비밀번호가 필요할 수 있습니다.",
   "dialog.password.archive_retry": "비밀번호가 틀렸거나 {archive}이(가) 손상되었습니다. 비밀번호를 다시 입력하거나 취소를 클릭하세요."

@@ -75,6 +75,8 @@
   "dialog.password.kkd_body": "登入 koikatsucards.com，然後：\n1. 開啟瀏覽器的 DevTools（開發人員工具，F12）\n2. Chrome/Edge：Application（應用程式）→ Storage（儲存空間）→ Cookies（Cookie）→ https://koikatsucards.com\n    Firefox：Storage → Cookies → https://koikatsucards.com\n3. 找到「kkd_session」並複製其 Value（值）\n\n請在下方貼上該值：",
   "dialog.password.pixiv_title": "pixiv.net 工作階段 Cookie",
   "dialog.password.pixiv_body": "登入 pixiv.net，然後：\n1. 開啟瀏覽器的 DevTools（開發人員工具，F12）\n2. Chrome/Edge：Application（應用程式）→ Storage（儲存空間）→ Cookies（Cookie）→ https://www.pixiv.net\n    Firefox：Storage → Cookies → https://www.pixiv.net\n3. 找到「PHPSESSID」並複製其 Value（值）\n\n請在下方貼上該值（按取消則不登入繼續；R-18 作品將無法下載）：",
+  "dialog.password.pawchive_title": "pawchive.pw 工作階段 Cookie",
+  "dialog.password.pawchive_body": "登入 pawchive.pw，然後：\n1. 開啟瀏覽器的 DevTools（開發人員工具，F12）\n2. Chrome/Edge：Application（應用程式）→ Storage（儲存空間）→ Cookies（Cookie）→ https://pawchive.pw\n    Firefox：Storage → Cookies → https://pawchive.pw\n3. 找到「session」並複製其 Value（值）\n\n請在下方貼上該值（按取消則不登入繼續；t1.pawchive.pw 上的超大暫存檔案將無法下載）：",
   "dialog.password.archive_title": "輸入密碼",
   "dialog.password.archive_body": "壓縮檔 {archive} 發生錯誤。可能需要密碼？",
   "dialog.password.archive_retry": "密碼錯誤，或 {archive} 已損毀。請重新輸入密碼，或按「取消」。"

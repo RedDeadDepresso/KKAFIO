@@ -75,6 +75,8 @@
   "dialog.password.kkd_body": "koikatsucards.comにログインし、次の手順に従ってください：\n1. ブラウザーのDevTools（開発者ツール）を開く（F12）\n2. Chrome／Edge：Application（アプリケーション／アプリ）→ Storage（ストレージ）→ Cookies（Cookie）→ https://koikatsucards.com\n    Firefox：Storage → Cookies → https://koikatsucards.com\n3. 「kkd_session」を探し、その Value（値）をコピー\n\n下に値を貼り付けてください：",
   "dialog.password.pixiv_title": "pixiv.net セッションCookie",
   "dialog.password.pixiv_body": "pixiv.netにログインし、次の手順に従ってください：\n1. ブラウザーのDevTools（開発者ツール）を開く（F12）\n2. Chrome／Edge：Application（アプリケーション／アプリ）→ Storage（ストレージ）→ Cookies（Cookie）→ https://www.pixiv.net\n    Firefox：Storage → Cookies → https://www.pixiv.net\n3. 「PHPSESSID」を探し、その Value（値）をコピー\n\n下に値を貼り付けてください（キャンセルするとログインせずに続行します。R-18作品は取得できません）：",
+  "dialog.password.pawchive_title": "pawchive.pw セッションCookie",
+  "dialog.password.pawchive_body": "pawchive.pwにログインし、次の手順に従ってください：\n1. ブラウザーのDevTools（開発者ツール）を開く（F12）\n2. Chrome／Edge：Application（アプリケーション／アプリ）→ Storage（ストレージ）→ Cookies（Cookie）→ https://pawchive.pw\n    Firefox：Storage → Cookies → https://pawchive.pw\n3. 「session」を探し、その Value（値）をコピー\n\n下に値を貼り付けてください（キャンセルするとログインせずに続行します。t1.pawchive.pw の大容量一時ファイルは取得できません）：",
   "dialog.password.archive_title": "パスワードを入力",
   "dialog.password.archive_body": "アーカイブ {archive} でエラーが発生しました。パスワードが必要かもしれません。",
   "dialog.password.archive_retry": "パスワードが違うか、{archive} が破損しています。もう一度パスワードを入力するか、キャンセルをクリックしてください。"

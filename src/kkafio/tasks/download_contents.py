@@ -16,7 +16,11 @@ Supports:
                                   gofile and Google Drive links in the post text
                                   are followed. The listings are paged 50 posts at a
                                   time (?o=), with the usual | N / | N | M / | all
-                                  directives; without one only page 1 is read
+                                  directives; without one only page 1 is read.
+                                  Oversized files in Pawchive's temporary storage
+                                  (t1.pawchive.pw) need a logged-in account: the
+                                  `session` cookie is asked for (like pixiv's
+                                  PHPSESSID) only when such a file is met
   https://gofile.io             — folders (/d/ID); every file is downloaded,
                                   subfolders into subdirectories; a password can
                                   be given as ?password=...
@@ -77,6 +81,7 @@ _TRANSIENT_STATUS = {408, 425, 429, 500, 502, 503, 504}
 # make sense on Linux/macOS at all, so history silently ended up somewhere
 # that isn't even where the rest of KKAFIO's own data lives.
 from kkafio.core.paths import CONFIG_DIR
+from kkafio.services.pawchive_session import USER_AGENT as PAWCHIVE_USER_AGENT
 
 HISTORY_FILE = CONFIG_DIR / "download_history.json"
 
@@ -218,7 +223,7 @@ def _save_history(history: dict[str, str]) -> None:
 # ---------------------------------------------------------------------------
 
 def _make_client(cookies: dict | None = None, cookie_domain: str | None = None,
-                 extra_headers: dict | None = None):
+                 extra_headers: dict | None = None, http2: bool = True):
     import httpx
     limits = httpx.Limits(
         max_connections=MAX_CONNECTIONS,
@@ -248,7 +253,7 @@ def _make_client(cookies: dict | None = None, cookie_domain: str | None = None,
 
     return httpx.AsyncClient(
         limits=limits, headers=headers, cookies=cookie_jar,
-        follow_redirects=True, http2=True,
+        follow_redirects=True, http2=http2,
         timeout=httpx.Timeout(30.0, pool=None),
     )
 
@@ -2262,11 +2267,17 @@ async def _download_gdrive(
 # "o" offset query parameter (page N is o=(N-1)*50). A single post comes back
 # as one object. Every post is processed the same way:
 #
-#   * its "file" and "attachments" are downloaded from the node host they name
-#     (node 2 -> https://n2.pawchive.pw/data<path>; a PNG is only
-#     kept when it is 320x180 or has the 252x352 ratio, like pixiv images --
+#   * its "file" and "attachments" are downloaded from the public file host
+#     (https://file.pawchive.pw/data<path>?f=<name>), falling back to the storage
+#     node that holds them (node 2 -> https://n2.pawchive.pw/data<path>?f=<name>)
+#     when that fails -- the node host on its own tends to answer 403. A PNG is
+#     only kept when it is 320x180 or has the 252x352 ratio, like pixiv images --
 #     the size is read from the first bytes, so non-matching PNGs are aborted
-#     after the first chunk);
+#     after the first chunk;
+#   * attachments flagged "deferred" (oversized files in Pawchive's temporary
+#     storage) have no path: their signed t1.pawchive.pw links are read from the
+#     post's web page, and downloading them needs a logged-in account, so the
+#     `session` cookie is asked for -- only then -- like pixiv's PHPSESSID;
 #   * its "content" is searched for mega.nz, gofile.io and Google Drive links,
 #     which are handed to the matching downloader with the link unchanged
 #     (query parameters such as ?password= are kept).
@@ -2275,6 +2286,9 @@ PAWCHIVE_URL       = "https://pawchive.pw"
 PAWCHIVE_API_URL   = f"{PAWCHIVE_URL}/api/v1"
 PAWCHIVE_DATA_URL  = f"{PAWCHIVE_URL}/data"     # fallback when an entry has no "node"
 PAWCHIVE_NODE_URL  = "https://n{node}.pawchive.pw/data"   # files live on the host named by "node"
+PAWCHIVE_FILE_URL  = "https://file.pawchive.pw/data"   # the public file host: tried first
+PAWCHIVE_TEMP_HOST = "t1.pawchive.pw"           # oversized files in temporary storage (signed links, login needed)
+PAWCHIVE_COOKIE_DOMAIN = ".pawchive.pw"         # the session cookie goes to pawchive.pw and its subdomains only
 PAWCHIVE_PAGE_SIZE = 50                         # posts per listing page (the "o" step)
 PAWCHIVE_PARALLEL  = 4                          # files downloaded at once
 _PAWCHIVE_HEAD_BYTES = 32                       # bytes needed to read a PNG's size
@@ -2376,12 +2390,41 @@ def _pawchive_filename(name, path: str) -> str:
     return base
 
 
+def _is_pawchive_temp_url(url: str) -> bool:
+    """True for a file in Pawchive's temporary storage (t1.pawchive.pw)."""
+    return (urlparse(url).hostname or "").lower() == PAWCHIVE_TEMP_HOST
+
+
+def _pawchive_data_urls(path: str, node, name: str) -> tuple[str, list[str]]:
+    """(history key, candidate URLs best first) of a file stored under `path`.
+
+    The public file host comes first; the storage node that holds the file (or
+    the main host when the entry names none) is the fallback -- on its own it
+    often answers 403. Both get the file name as ``?f=``, like the website.
+    """
+    rel = path if path.startswith("/") else "/" + path
+    if rel.startswith("/data/"):
+        rel = rel[5:]
+    query = "?f=" + quote(name, safe="")
+    node = str(node or "").strip()
+    base = PAWCHIVE_NODE_URL.format(node=node) if node.isdigit() else PAWCHIVE_DATA_URL
+    return f"{PAWCHIVE_FILE_URL}{rel}", [f"{PAWCHIVE_FILE_URL}{rel}{query}", f"{base}{rel}{query}"]
+
+
+def _pawchive_item_key(item: dict) -> str:
+    """What the download history knows a file by (stable: signed t1 links
+    change on every visit, so their query string is not part of it)."""
+    return item.get("key") or item["url"]
+
+
 def _pawchive_post_files(post: dict) -> list[dict]:
     """The downloadable files of a post: its main "file" and every
     attachment, each once (the first attachment often repeats the main file).
 
-    Returns dicts with url, name, path and check_size (True for PNGs, which
-    are only kept when they look like a KK card/scene).
+    Returns dicts with url (the first candidate), urls (all candidates, best
+    first), key (history key), name, path and check_size (True for PNGs, which
+    are only kept when they look like a KK card/scene). Deferred attachments
+    (no path yet) are not here: see _pawchive_deferred_attachments.
     """
     entries = []
     if isinstance(post.get("file"), dict):
@@ -2396,18 +2439,64 @@ def _pawchive_post_files(post: dict) -> list[dict]:
             continue
         path = path.strip()
         if path.startswith(("http://", "https://")):
-            url = path
+            key = path.split("?", 1)[0]
+            urls = [path]
+            path = urlparse(path).path                # no query string in names
+            name = _pawchive_filename(entry.get("name"), path)
         else:
-            node = str(entry.get("node") or "").strip()
-            base = PAWCHIVE_NODE_URL.format(node=node) if node.isdigit() else PAWCHIVE_DATA_URL
-            url = base + (path if path.startswith("/") else "/" + path)
-        if url in seen:
+            name = _pawchive_filename(entry.get("name"), path)
+            key, urls = _pawchive_data_urls(path, entry.get("node"), name)
+        if key in seen:
             continue
-        seen.add(url)
-        name = _pawchive_filename(entry.get("name"), path)
+        seen.add(key)
         is_png = Path(name).suffix.lower() == ".png" or Path(path).suffix.lower() == ".png"
-        files.append({"url": url, "name": name, "path": path, "check_size": is_png})
+        files.append({"url": urls[0], "urls": urls, "key": key, "name": name,
+                      "path": path, "check_size": is_png})
     return files
+
+
+def _pawchive_deferred_attachments(post: dict) -> list[dict]:
+    """Attachments flagged "deferred" that have no path yet: oversized files
+    kept in Pawchive's temporary storage, whose signed links only the post's
+    web page shows."""
+    return [
+        a for a in (post.get("attachments") or [])
+        if isinstance(a, dict) and a.get("deferred")
+        and not (isinstance(a.get("path"), str) and a["path"].strip())
+    ]
+
+
+def _pawchive_post_page_url(post: dict) -> str | None:
+    service, user, post_id = (str(post.get(k) or "").strip() for k in ("service", "user", "id"))
+    if not (service and user and post_id):
+        return None
+    return (f"{PAWCHIVE_URL}/{quote(service, safe='')}/user/{quote(user, safe='')}"
+            f"/post/{quote(post_id, safe='')}")
+
+
+_PAWCHIVE_TEMP_LINK_RE = re.compile(
+    r"""(?:href|src)=["'](https://t1\.pawchive\.pw/f/[^"']+)["']""", re.IGNORECASE)
+
+
+def _pawchive_temp_links(page_html: str) -> dict[str, str]:
+    """{file name (lower case): signed t1.pawchive.pw link} found in a post page."""
+    import html
+    links: dict[str, str] = {}
+    for raw in _PAWCHIVE_TEMP_LINK_RE.findall(page_html or ""):
+        link = html.unescape(raw)
+        name = unquote(urlparse(link).path.rsplit("/", 1)[-1]).lower()
+        if name:
+            links.setdefault(name, link)
+    return links
+
+
+def _pawchive_temp_item(entry: dict, link: str) -> dict:
+    """A download item for a deferred attachment, from its signed link."""
+    path = urlparse(link).path
+    name = _pawchive_filename(entry.get("name"), path)
+    is_png = Path(name).suffix.lower() == ".png" or Path(path).suffix.lower() == ".png"
+    return {"url": link, "urls": [link], "key": link.split("?", 1)[0], "name": name,
+            "path": path, "check_size": is_png}
 
 
 # A link in the post text: scheme and "www." are optional (people often type
@@ -2467,7 +2556,7 @@ def _pawchive_unique_name(item: dict, directory: Path, history: dict, taken: set
     every post), so a name that is already used -- on disk or by another file
     of this run -- gets the start of the file's content hash (the last part of
     its path) added. A file downloaded before keeps the name it got."""
-    previous = history.get(item["url"])
+    previous = history.get(_pawchive_item_key(item))
     if previous and Path(previous).parent == directory:
         name = Path(previous).name
         taken.add(name.lower())
@@ -2497,20 +2586,12 @@ def _pawchive_png_matches(path: Path) -> bool:
     return _pixiv_size_matches(width, height)
 
 
-async def _download_pawchive_file(
-    client, item: dict, directory: Path, name: str,
-    history: dict[str, str], skip_downloaded: bool,
-) -> tuple[str, Exception | None, str]:
-    """Download one pawchive file. Returns (url, error, status) with status
-    "ok", "skipped" (already in the history) or "filtered" (a PNG that is not
-    a KK card/scene size; aborted after its first chunk, nothing is kept)."""
-    url = item["url"]
-    if skip_downloaded and url in history:
-        logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
-        return url, None, "skipped"
-
-    dest = directory / name
-    check = bool(item["check_size"])
+async def _download_pawchive_url(
+    client, url: str, dest: Path, name: str, check: bool,
+) -> tuple[Exception | None, str]:
+    """Fetch one URL of a pawchive file into `dest`. Returns (error, status)
+    with status "ok" or "filtered" (a PNG that is not a KK card/scene size;
+    aborted after its first chunk, nothing is kept)."""
     for attempt in range(1, RETRY_ATTEMPTS + 1):
         # Same ".part" scheme as _download_file: a failed, cancelled or
         # filtered transfer never leaves anything under the final name.
@@ -2540,11 +2621,10 @@ async def _download_pawchive_file(
                         await f.flush()
                         verdict = _pawchive_png_matches(part)
             if check and not verdict:
-                return url, None, "filtered"
+                return None, "filtered"
             os.replace(part, dest)
             completed = True
-            history[url] = str(dest)
-            return url, None, "ok"
+            return None, "ok"
         except Exception as exc:
             if attempt < RETRY_ATTEMPTS and _is_transient(exc):
                 delay = _retry_delay(exc, attempt)
@@ -2552,14 +2632,47 @@ async def _download_pawchive_file(
                     f"  {url} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
                 continue
-            return url, exc, "ok"
+            return exc, "ok"
         finally:
             if part is not None and not completed:
                 try:
                     part.unlink(missing_ok=True)
                 except OSError:
                     pass
-    return url, RuntimeError("retries exhausted"), "ok"   # not reached
+    return RuntimeError("retries exhausted"), "ok"   # not reached
+
+
+async def _download_pawchive_file(
+    client, item: dict, directory: Path, name: str,
+    history: dict[str, str], skip_downloaded: bool,
+) -> tuple[str, Exception | None, str]:
+    """Download one pawchive file. Returns (url, error, status) with status
+    "ok", "skipped" (already in the history) or "filtered" (a PNG that is not
+    a KK card/scene size; nothing is kept).
+
+    The candidate URLs of the file are tried in order: a host that fails (403,
+    404, unreachable, ...) hands over to the next one, and only the last
+    failure is reported.
+    """
+    url = item["url"]
+    key = _pawchive_item_key(item)
+    if skip_downloaded and key in history:
+        logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[key]).name}")
+        return url, None, "skipped"
+
+    dest = directory / name
+    check = bool(item["check_size"])
+    urls = item.get("urls") or [url]
+    err: Exception | None = None
+    for i, candidate in enumerate(urls):
+        err, status = await _download_pawchive_url(client, candidate, dest, name, check)
+        if err is None:
+            if status == "ok":
+                history[key] = str(dest)
+            return url, None, status
+        if i + 1 < len(urls):
+            logger.warning("DLOAD", f"  {candidate} — {err}; trying {urls[i + 1]}")
+    return url, err, "ok"
 
 
 async def _download_pawchive_link(
@@ -2583,16 +2696,97 @@ async def _download_pawchive_link(
     return await fn(client, link, directory, history, skip)
 
 
+class _PawchiveAuth:
+    """The pawchive.pw ``session`` cookie, asked for like pixiv's PHPSESSID and
+    koikatsucards.com's kkd_session -- but lazily: only when a file in Pawchive's
+    temporary storage (t1.pawchive.pw) is about to be downloaded, and at most
+    once per run. Nothing else on pawchive.pw needs a login.
+
+    `resolver` returns the cookie value (or None to go on without); by default
+    it is pawchive_session.get_or_prompt, which opens the login page and shows
+    the paste dialog. The dialog blocks, so it is only ever shown while no
+    transfer is in flight (see _pawchive_process_posts)."""
+
+    def __init__(self, resolver=None):
+        self._resolver = resolver
+        self.asked = False
+        self.cookie: str | None = None
+
+    def ensure(self, client) -> bool:
+        """Ask once, then put the cookie on `client` (scoped to pawchive.pw and
+        its subdomains). True when a session is available."""
+        if not self.asked:
+            self.asked = True
+            resolver = self._resolver
+            if resolver is None:
+                from kkafio.services import pawchive_session
+                resolver = pawchive_session.get_or_prompt
+            self.cookie = resolver() or None
+        if self.cookie:
+            client.cookies.set("session", self.cookie, domain=PAWCHIVE_COOKIE_DOMAIN)
+        return bool(self.cookie)
+
+
 class _PawchiveRun:
     """What one pawchive link has seen so far, so a file or link repeated in
     several posts (re-uploads, the same mega folder in every post of a
     series) is only handled once."""
 
-    def __init__(self, externals: dict | None):
+    def __init__(self, externals: dict | None, auth: _PawchiveAuth | None = None):
         self.externals = externals or {}
+        self.auth = auth or _PawchiveAuth()
         self.files: set[str] = set()
         self.links: set[str] = set()
         self.ok = self.skipped = self.failed = self.filtered = 0
+
+
+async def _pawchive_fetch_temp_links(client, page_url: str) -> dict[str, str]:
+    r = await _get_with_retry(client, page_url)
+    return _pawchive_temp_links(r.text)
+
+
+async def _pawchive_resolve_deferred(
+    client, post: dict, deferred: list[dict], run: _PawchiveRun,
+) -> list[dict]:
+    """Download items for a post's deferred (temporary storage) attachments.
+
+    Their signed t1.pawchive.pw links are only shown on the post's web page.
+    If some are missing the page may be showing them to logged-in accounts
+    only, so the session cookie is asked for (once per run) and the page read
+    again. Attachments that stay unavailable are counted as failed.
+    """
+    page_url = _pawchive_post_page_url(post)
+    label = f"post {post.get('id', '?')}"
+    if page_url is None:
+        run.failed += len(deferred)
+        logger.error("DLOAD",
+            f"  {label}: {len(deferred)} temporary file(s) skipped — the post has no "
+            "service / user / id to find its web page with.")
+        return []
+
+    def _missing(links: dict[str, str]) -> list[dict]:
+        return [d for d in deferred if str(d.get("name") or "").lower() not in links]
+
+    try:
+        links = await _pawchive_fetch_temp_links(client, page_url)
+        if _missing(links) and not run.auth.asked and run.auth.ensure(client):
+            links = await _pawchive_fetch_temp_links(client, page_url)
+    except Exception as exc:
+        run.failed += len(deferred)
+        logger.error("DLOAD", f"  {label}: could not read {page_url} for its temporary files — {exc}")
+        return []
+
+    items: list[dict] = []
+    for entry in deferred:
+        link = links.get(str(entry.get("name") or "").lower())
+        if link:
+            items.append(_pawchive_temp_item(entry, link))
+        else:
+            run.failed += 1
+            logger.error("DLOAD",
+                f"  {label}: temporary file {entry.get('name')!r} is not available "
+                "(its link expired" + ("" if run.auth.cookie else ", or a login is needed") + ").")
+    return items
 
 
 async def _pawchive_process_posts(
@@ -2604,8 +2798,12 @@ async def _pawchive_process_posts(
     taken: set[str] = set()
 
     for post in posts:
-        files = [f for f in _pawchive_post_files(post) if f["url"] not in run.files]
-        run.files.update(f["url"] for f in files)
+        files = _pawchive_post_files(post)
+        deferred = _pawchive_deferred_attachments(post)
+        if deferred:
+            files += await _pawchive_resolve_deferred(client, post, deferred, run)
+        files = [f for f in files if _pawchive_item_key(f) not in run.files]
+        run.files.update(_pawchive_item_key(f) for f in files)
         post_links = [l for l in _pawchive_content_links(post.get("content"))
                       if l not in run.links]
         run.links.update(post_links)
@@ -2617,6 +2815,12 @@ async def _pawchive_process_posts(
         links += post_links
 
     if jobs:
+        # Files in temporary storage need the account's session cookie. Ask for
+        # it here, before any transfer starts: the paste dialog blocks, and
+        # must not stall downloads that are already running.
+        if any(_is_pawchive_temp_url(item["url"]) for item, _ in jobs):
+            run.auth.ensure(client)
+
         sem = asyncio.Semaphore(PAWCHIVE_PARALLEL)
 
         async def _one(item: dict, name: str):
@@ -2711,12 +2915,13 @@ async def _download_pawchive_pages(
 async def _download_pawchive(
     client, url: str, directory: Path, history: dict, skip: bool,
     page_start: int | None = None, page_end: int | None = None,
-    externals: dict | None = None,
+    externals: dict | None = None, auth: _PawchiveAuth | None = None,
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed).
 
     `externals` maps "gofile" / "mega" / "gdrive" to the clients used for the
-    links found in post content. For the two listings the page directive
+    links found in post content. `auth` is shared by all pawchive links of a
+    run, so the session cookie is asked for at most once. For the two listings the page directive
     (``| N``, ``| N | M``, ``| all``) or, without one, the link's own ``?o=``
     picks the pages; with neither only page 1 is read (a listing can hold
     millions of posts, so everything has to be asked for with ``| all``).
@@ -2729,7 +2934,7 @@ async def _download_pawchive(
             f"/<service>/user/ID/post/ID): {url}")
         return 0, 0, 1
     kind = parsed[0]
-    run = _PawchiveRun(externals)
+    run = _PawchiveRun(externals, auth)
 
     if kind == "post":
         api_url = _pawchive_api_url(url)
@@ -2839,11 +3044,17 @@ class DownloadContents(BaseTask):
                        _make_client(extra_headers={"User-Agent": GOFILE_USER_AGENT}) as gofile_client, \
                        _make_client() as mega_client, \
                        _make_client() as gdrive_client, \
-                       _make_client() as pawchive_client:
+                       _make_client(extra_headers={"User-Agent": PAWCHIVE_USER_AGENT,
+                                                   "Referer": PAWCHIVE_URL + "/",
+                                                   "Accept": "*/*"},
+                                    http2=False) as pawchive_client:
                 # Hosts of the links found inside pawchive posts.
                 pawchive_externals = {
                     "gofile": gofile_client, "mega": mega_client, "gdrive": gdrive_client,
                 }
+                # Asks for the pawchive.pw session cookie, but only if a file on
+                # t1.pawchive.pw turns up; shared so it is asked for once per run.
+                pawchive_auth = _PawchiveAuth()
                 for url_str, page_start, page_end in urls:
                     ok = skipped = fail = 0
                     try:
@@ -2853,7 +3064,8 @@ class DownloadContents(BaseTask):
                             ok, skipped, fail = await _download_pawchive(
                                 pawchive_client, url_str, output_dir, history,
                                 self.skip_downloaded, page_start=page_start,
-                                page_end=page_end, externals=pawchive_externals)
+                                page_end=page_end, externals=pawchive_externals,
+                                auth=pawchive_auth)
                         elif BEPIS_URL in url_str:
                             ok, skipped, fail = await _download_bepis(
                                 bepis_client, url_str, output_dir, history, self.skip_downloaded,

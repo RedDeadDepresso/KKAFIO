@@ -111,6 +111,23 @@ an error — public works still download, only R-18 / restricted ones need it �
 so cancelling the dialog continues without a login. The cookie is scoped to
 `.pixiv.net` and never sent to the image host (`i.pximg.net`).
 
+### `config/pawchive_session.json` — pawchive.pw session
+
+```json
+{ "session": "<session cookie value>" }
+```
+
+Written/read by `src/kkafio/services/pawchive_session.py`. Used by **Download Contents**
+for the oversized files Pawchive keeps in temporary storage (`t1.pawchive.pw`), which
+are only served to a logged-in account. Unlike the other sessions it is asked for
+lazily: only when such a file is about to be downloaded, and at most once per run.
+Lookup order: the `PAWCHIVE_SESSION` environment variable, this file, then a native
+dialog (after opening `pawchive.pw/account/login`). A stored or pasted value is
+checked with `GET pawchive.pw/account`: a redirect or 401 means invalid/expired (a new
+one is asked for); a network error or a 403 proves nothing, so the value is used as it
+is. Cancelling the dialog continues without a login (the temporary files then fail).
+The cookie is scoped to `.pawchive.pw` and never sent to other hosts.
+
 ### `config/telegram.json` — Telegram API credentials
 
 ```json

@@ -1033,10 +1033,23 @@ def test_pawchive_post_files():
         ],
     }
     files = dc._pawchive_post_files(post)
+    # the public file host comes first, with the name as ?f=
     assert [f["url"] for f in files] == [
-        "https://n2.pawchive.pw/data/7c/9b/7c9bc148.png",
-        "https://n2.pawchive.pw/data/18/fb/18fb6c9e.rar",
-        "https://pawchive.pw/data/aa/bb/aabb.zip",         # no node: main host
+        "https://file.pawchive.pw/data/7c/9b/7c9bc148.png?f=000.png",
+        "https://file.pawchive.pw/data/18/fb/18fb6c9e.rar?f=excelwalter.rar",
+        "https://file.pawchive.pw/data/aa/bb/aabb.zip?f=noext.zip",
+    ]
+    # ... then the storage node that holds the file (the main host without a node)
+    assert [f["urls"][1] for f in files] == [
+        "https://n2.pawchive.pw/data/7c/9b/7c9bc148.png?f=000.png",
+        "https://n2.pawchive.pw/data/18/fb/18fb6c9e.rar?f=excelwalter.rar",
+        "https://pawchive.pw/data/aa/bb/aabb.zip?f=noext.zip",
+    ]
+    # the history key is the file host without the query
+    assert [f["key"] for f in files] == [
+        "https://file.pawchive.pw/data/7c/9b/7c9bc148.png",
+        "https://file.pawchive.pw/data/18/fb/18fb6c9e.rar",
+        "https://file.pawchive.pw/data/aa/bb/aabb.zip",
     ]
     assert [f["name"] for f in files] == ["000.png", "excelwalter.rar", "noext.zip"]
     assert [f["check_size"] for f in files] == [True, False, False]   # only PNGs are size-checked
@@ -1045,10 +1058,10 @@ def test_pawchive_post_files():
     node_post = {"file": {"name": "a.png", "node": 2, "path": "/7c/9b/a.png"},
                  "attachments": [{"name": "b.rar", "node": "13", "path": "/18/fb/b.rar"},
                                  {"name": "c.rar", "node": "bad", "path": "/18/fb/c.rar"}]}
-    assert [f["url"] for f in dc._pawchive_post_files(node_post)] == [
-        "https://n2.pawchive.pw/data/7c/9b/a.png",
-        "https://n13.pawchive.pw/data/18/fb/b.rar",
-        "https://pawchive.pw/data/18/fb/c.rar",      # no usable node: main host
+    assert [f["urls"][1] for f in dc._pawchive_post_files(node_post)] == [
+        "https://n2.pawchive.pw/data/7c/9b/a.png?f=a.png",
+        "https://n13.pawchive.pw/data/18/fb/b.rar?f=b.rar",
+        "https://pawchive.pw/data/18/fb/c.rar?f=c.rar",      # no usable node: main host
     ]
 
     assert dc._pawchive_post_files({"file": {}, "attachments": []}) == []
@@ -1118,8 +1131,9 @@ def _png(width: int, height: int, extra: int = 500) -> bytes:
 
 
 class _PawResp:
-    def __init__(self, body=b"", data=None, chunk=65536, status_error=None):
+    def __init__(self, body=b"", data=None, chunk=65536, status_error=None, text=""):
         self._body, self._data, self._chunk, self._err = body, data, chunk, status_error
+        self.text = text
 
     def raise_for_status(self):
         if self._err:
@@ -1143,8 +1157,12 @@ class _PawClient:
     """pages: {offset: [posts]} for listings; singles: {post_id: post};
     blobs: {url: bytes}. Records every API call and every file fetch."""
 
-    def __init__(self, pages=None, singles=None, blobs=None, chunk=65536):
+    def __init__(self, pages=None, singles=None, blobs=None, chunk=65536, html=None, deny=()):
+        import httpx
         self.pages, self.singles, self.blobs, self.chunk = pages or {}, singles or {}, blobs or {}, chunk
+        self.html = {u: list(v) for u, v in (html or {}).items()}   # post web pages: every read pops one
+        self.deny = set(deny)                                      # hosts that answer 403
+        self.cookies = httpx.Cookies()
         self.api_calls: list[str] = []
         self.fetched: list[str] = []
 
@@ -1152,19 +1170,26 @@ class _PawClient:
         from urllib.parse import parse_qsl, urlparse
         self.api_calls.append(url)
         parts = urlparse(url)
+        if url in self.html:
+            seq = self.html[url]
+            return _PawResp(text=seq.pop(0) if len(seq) > 1 else seq[0])
         if "/post/" in parts.path:
             return _PawResp(data=self.singles[parts.path.rsplit("/", 1)[-1]])
         offset = int(dict(parse_qsl(parts.query)).get("o", "0"))
         return _PawResp(data=self.pages.get(offset, []))
 
     def stream(self, method, url):
+        from urllib.parse import urlparse
         self.fetched.append(url)
-        if url not in self.blobs:
+        if urlparse(url).hostname in self.deny:
+            return _PawStream(_PawResp(status_error="403 Forbidden"))
+        base = url.split("?")[0]                  # blobs are keyed without the ?f= name
+        if base not in self.blobs:
             return _PawStream(_PawResp(status_error="404 Not Found"))
-        return _PawStream(_PawResp(body=self.blobs[url], chunk=self.chunk))
+        return _PawStream(_PawResp(body=self.blobs[base], chunk=self.chunk))
 
 
-def _data(path): return "https://pawchive.pw/data" + path
+def _data(path): return "https://file.pawchive.pw/data" + path
 
 
 def test_pawchive_png_size_filter_and_downloads(tmp_path):
@@ -1221,7 +1246,7 @@ def test_pawchive_png_ratio_is_accepted_and_abort_is_early(tmp_path):
     asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
     assert (run.ok, run.filtered) == (1, 1)                         # 504x704 has the card ratio
     # the 300 KB rejected PNG was abandoned after its first chunk
-    assert sum(n for u, n in consumed if u == _data(huge)) <= 1000
+    assert sum(n for u, n in consumed if u.startswith(_data(huge))) <= 1000
 
 
 def test_pawchive_failed_file_is_counted_and_others_continue(tmp_path):
@@ -1244,7 +1269,7 @@ def test_pawchive_skip_downloaded_uses_history(tmp_path):
 
     run = dc._PawchiveRun(None)          # skip off: fetched again
     asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, False, run))
-    assert (run.ok, run.skipped) == (1, 0) and client.fetched == [_data("/00/00/a.rar")]
+    assert (run.ok, run.skipped) == (1, 0) and client.fetched == [_data("/00/00/a.rar") + "?f=a.rar"]
 
 
 def _patch_externals(monkeypatch):
@@ -1384,7 +1409,7 @@ def test_pawchive_same_file_and_link_in_many_posts_is_handled_once(tmp_path, mon
     client = _PawClient(blobs={_data("/00/00/a.rar"): b"a"})
     run = dc._PawchiveRun(EXTERNALS)
     asyncio.run(dc._pawchive_process_posts(client, [post(1), post(2)], Path(tmp_path), {}, True, run))
-    assert client.fetched == [_data("/00/00/a.rar")] and len(calls) == 1
+    assert client.fetched == [_data("/00/00/a.rar") + "?f=a.rar"] and len(calls) == 1
     assert (run.ok, run.failed) == (2, 0)            # 1 file + 1 link
 
 
@@ -1404,3 +1429,252 @@ def test_pawchive_failing_link_does_not_stop_the_rest(tmp_path, monkeypatch):
 def test_pawchive_unsupported_link(tmp_path):
     assert asyncio.run(dc._download_pawchive(
         _PawClient(), "https://pawchive.pw/creators", Path(tmp_path), {}, True)) == (0, 0, 1)
+
+
+# --- pawchive: host fallback, temporary (t1) files, session cookie --------------
+
+def test_pawchive_falls_back_to_the_node_host(tmp_path):
+    path = "/01/aa/pack.rar"
+    node = "https://n2.pawchive.pw/data" + path
+    posts = [{"id": "1", "file": {"name": "pack.rar", "node": 2, "path": path}}]
+
+    # the public file host refuses (403): the storage node is tried next
+    client = _PawClient(blobs={node: b"Rar!" * 10}, deny={"file.pawchive.pw"})
+    history: dict = {}
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    assert (run.ok, run.failed) == (1, 0)
+    assert client.fetched == [_data(path) + "?f=pack.rar", node + "?f=pack.rar"]
+    assert (Path(tmp_path) / "pack.rar").read_bytes() == b"Rar!" * 10
+    assert history == {_data(path): str(Path(tmp_path) / "pack.rar")}     # keyed by the file host
+
+    # every host refuses: one failure, reported once, nothing left behind
+    other = Path(tmp_path) / "other"
+    other.mkdir()
+    client = _PawClient(deny={"file.pawchive.pw", "n2.pawchive.pw"})
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(client, posts, other, {}, True, run))
+    assert (run.ok, run.failed) == (0, 1)
+    assert len(client.fetched) == 2 and not list(other.iterdir())
+
+
+def test_pawchive_file_host_is_preferred_and_node_not_touched(tmp_path):
+    path = "/01/aa/ok.rar"
+    client = _PawClient(blobs={_data(path): b"x"})
+    run = dc._PawchiveRun(None)
+    asyncio.run(dc._pawchive_process_posts(
+        client, [{"id": "1", "file": {"name": "ok.rar", "node": 2, "path": path}}],
+        Path(tmp_path), {}, True, run))
+    assert (run.ok, run.failed) == (1, 0) and client.fetched == [_data(path) + "?f=ok.rar"]
+
+
+def test_pawchive_data_prefix_and_odd_names_in_urls():
+    key, urls = dc._pawchive_data_urls("/data/ab/cd/x.rar", None, "a b&c.rar")
+    assert key == "https://file.pawchive.pw/data/ab/cd/x.rar"        # /data/ is not doubled
+    assert urls[0] == key + "?f=a%20b%26c.rar"                       # the name is quoted
+    # a path that already is a full URL is used as it is (no candidates added)
+    f = dc._pawchive_post_files({"file": {"name": "z.zip", "path": "https://t1.pawchive.pw/f/h/z.zip?e=1&s=2"}})[0]
+    assert f["urls"] == ["https://t1.pawchive.pw/f/h/z.zip?e=1&s=2"]
+    assert f["key"] == "https://t1.pawchive.pw/f/h/z.zip" and f["name"] == "z.zip"
+
+
+T1 = "https://t1.pawchive.pw/f/9f8e7d/Big%20Pack.rar?e=1700000000&s=abc123"
+PAGE = "https://pawchive.pw/patreon/user/9/post/77"
+
+
+def _t1_post(**extra):
+    return {"id": "77", "user": "9", "service": "patreon", "title": "t",
+            "attachments": [{"name": "Big Pack.rar", "deferred": True},
+                            {"name": "small.rar", "path": "/00/00/small.rar"}], **extra}
+
+
+def test_pawchive_temp_link_parsing():
+    html = (f'<a href="{T1.replace("&", "&amp;")}">dl</a> <img src=\'https://t1.pawchive.pw/f/a/B.png?e=1\'>'
+            '<a href="https://evil.example/f/x/y.rar">no</a><a href="https://file.pawchive.pw/data/a.rar">no</a>')
+    assert dc._pawchive_temp_links(html) == {          # &amp; decoded, name decoded and lower-cased
+        "big pack.rar": T1, "b.png": "https://t1.pawchive.pw/f/a/B.png?e=1"}
+    assert dc._pawchive_temp_links("") == {} and dc._pawchive_temp_links(None) == {}
+
+    post = _t1_post()
+    assert [a["name"] for a in dc._pawchive_deferred_attachments(post)] == ["Big Pack.rar"]
+    assert [f["name"] for f in dc._pawchive_post_files(post)] == ["small.rar"]   # deferred: no path, no file yet
+    assert dc._pawchive_post_page_url(post) == PAGE
+    assert dc._pawchive_post_page_url({"id": "1"}) is None
+    item = dc._pawchive_temp_item(post["attachments"][0], T1)
+    assert item["urls"] == [T1] and item["key"] == "https://t1.pawchive.pw/f/9f8e7d/Big%20Pack.rar"
+    assert item["name"] == "Big Pack.rar" and dc._is_pawchive_temp_url(T1)
+    assert not dc._is_pawchive_temp_url("https://file.pawchive.pw/data/a.rar")
+
+
+def test_pawchive_cookie_is_asked_only_for_t1_files_and_only_once(tmp_path):
+    asked: list[int] = []
+
+    def resolver():
+        asked.append(1)
+        return "tok_" + "a" * 20
+
+    small = "/00/00/small.rar"
+    page_html = f'<a href="{T1}">x</a>'.replace("&", "&amp;")
+
+    # a post without temporary files never asks
+    client = _PawClient(blobs={_data(small): b"s"})
+    auth = dc._PawchiveAuth(resolver)
+    run = dc._PawchiveRun(None, auth)
+    asyncio.run(dc._pawchive_process_posts(
+        client, [{"id": "1", "file": {"name": "small.rar", "path": small}}], Path(tmp_path), {}, True, run))
+    assert asked == [] and not auth.asked and len(client.cookies.jar) == 0
+
+    # a temporary file asks once, before it is downloaded; two posts still ask once
+    big = T1.split("?")[0]
+    client = _PawClient(blobs={_data(small): b"s", big: b"B" * 50}, html={PAGE: [page_html]})
+    history: dict = {}
+    run = dc._PawchiveRun(None, auth)
+    posts = [_t1_post(), _t1_post(id="78", attachments=[{"name": "Big Pack.rar", "deferred": True}])]
+    client.html["https://pawchive.pw/patreon/user/9/post/78"] = [page_html]
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run))
+    assert asked == [1]
+    assert (run.ok, run.failed) == (2, 0)              # small.rar + the same big file, handled once
+    assert (Path(tmp_path) / "Big Pack.rar").read_bytes() == b"B" * 50
+    assert T1 in client.fetched                        # the signed link, query kept
+    assert history[big] == str(Path(tmp_path) / "Big Pack.rar")    # ... but stored without it
+    assert [c.name for c in client.cookies.jar] == ["session"]
+
+
+def test_pawchive_login_is_asked_when_the_page_hides_the_link(tmp_path):
+    asked: list[int] = []
+    big = T1.split("?")[0]
+    # first read (no cookie): no link; second read (with the cookie): the link
+    client = _PawClient(blobs={big: b"B"}, html={PAGE: ["<html>log in</html>", f'<a href="{T1}">x</a>']})
+    auth = dc._PawchiveAuth(lambda: (asked.append(1), "tok_" + "b" * 20)[1])
+    run = dc._PawchiveRun(None, auth)
+    asyncio.run(dc._pawchive_process_posts(
+        client, [_t1_post(attachments=[{"name": "Big Pack.rar", "deferred": True}])],
+        Path(tmp_path), {}, True, run))
+    assert asked == [1] and (run.ok, run.failed) == (1, 0)
+    assert client.api_calls == [PAGE, PAGE]
+
+
+def test_pawchive_login_cancelled_counts_the_missing_file(tmp_path, ):
+    asked: list[int] = []
+    client = _PawClient(html={PAGE: ["<html>log in</html>"]})
+    auth = dc._PawchiveAuth(lambda: asked.append(1))          # dialog cancelled -> None
+    run = dc._PawchiveRun(None, auth)
+    asyncio.run(dc._pawchive_process_posts(
+        client, [_t1_post(attachments=[{"name": "Big Pack.rar", "deferred": True}])],
+        Path(tmp_path), {}, True, run))
+    assert asked == [1] and (run.ok, run.failed) == (0, 1)
+    assert client.fetched == [] and len(client.cookies.jar) == 0
+    assert client.api_calls == [PAGE]                         # no cookie: nothing to read again
+
+    # a post with no way to find its page is counted as failed, without asking
+    asked.clear()
+    run = dc._PawchiveRun(None, dc._PawchiveAuth(lambda: asked.append(1)))
+    asyncio.run(dc._pawchive_process_posts(
+        _PawClient(), [{"id": "5", "attachments": [{"name": "x.rar", "deferred": True}]}],
+        Path(tmp_path), {}, True, run))
+    assert asked == [] and run.failed == 1
+
+
+def test_pawchive_auth_scopes_the_cookie_to_pawchive():
+    client = dc._make_client(extra_headers={"Referer": dc.PAWCHIVE_URL + "/"}, http2=False)
+    try:
+        auth = dc._PawchiveAuth(lambda: "tok_" + "c" * 20)
+        assert auth.ensure(client) is True and auth.ensure(client) is True   # asked once, set each time
+
+        def cookie_header(url):
+            req = client.build_request("GET", url)
+            client.cookies.set_cookie_header(req)
+            return req.headers.get("cookie", "")
+        for url in ("https://t1.pawchive.pw/f/h/a.rar", "https://file.pawchive.pw/data/a.rar",
+                    "https://pawchive.pw/api/v1/posts"):
+            assert "session=tok_" in cookie_header(url), url
+        for url in ("https://mega.nz/file/x", "https://api.gofile.io/x", "https://evilpawchive.pw/x"):
+            assert cookie_header(url) == "", url
+    finally:
+        asyncio.run(client.aclose())
+
+    none = dc._PawchiveAuth(lambda: None)
+    c2 = dc._make_client()
+    try:
+        assert none.ensure(c2) is False and none.asked and len(c2.cookies.jar) == 0
+    finally:
+        asyncio.run(c2.aclose())
+
+
+def test_pawchive_session_cleaning_and_shape():
+    from kkafio.services import pawchive_session as ps
+    tok = "eyJhbGciOiJIUzI1NiJ9.abc-DEF_123.sig456"
+    assert ps.looks_valid(tok) and not ps.looks_valid("") and not ps.looks_valid("short")
+    assert not ps.looks_valid("has space in it, not a token")
+    assert ps.clean_session(tok) == tok
+    assert ps.clean_session(f"session={tok}") == tok
+    assert ps.clean_session(f'  "{tok}"  ') == tok
+    assert ps.clean_session(f"theme=dark; session={tok}; other=1") == tok      # a whole Cookie header
+    assert ps.clean_session("theme=dark") == "" and ps.clean_session("") == ""
+    assert ps.USER_AGENT.startswith("KKAFIO/")
+
+
+def test_pawchive_session_get_or_prompt(monkeypatch):
+    from kkafio.services import pawchive_session as ps
+    tok, new = "eyJ" + "a" * 30, "eyJ" + "n" * 30
+    saved: list[str] = []
+    prompts: list[int] = []
+    state = {"stored": tok, "valid": {tok: True, new: True}, "paste": new}
+    monkeypatch.delenv(ps.ENV_VAR, raising=False)
+    monkeypatch.setattr(ps, "_load", lambda: {"session": state["stored"]} if state["stored"] else {})
+    monkeypatch.setattr(ps, "_save", saved.append)
+    monkeypatch.setattr(ps, "_is_valid", lambda s: state["valid"].get(s))
+    monkeypatch.setattr(ps, "_prompt", lambda: (prompts.append(1), state["paste"])[1])
+
+    assert ps.get_or_prompt() == tok and prompts == []               # stored + valid: no dialog
+
+    state["valid"][tok] = None                                       # cannot be checked: used as it is
+    assert ps.get_or_prompt() == tok and prompts == []
+
+    state["valid"][tok] = False                                      # expired: a new one is asked for
+    assert ps.get_or_prompt() == new and prompts == [1] and saved == [new]
+
+    state["stored"] = None                                           # nothing stored: asked for
+    saved.clear(); prompts.clear()
+    assert ps.get_or_prompt() == new and prompts == [1] and saved == [new]
+
+    state["paste"] = None                                            # dialog cancelled
+    saved.clear()
+    assert ps.get_or_prompt() is None and saved == []
+
+    state["paste"] = "not a token"                                   # clearly not a cookie
+    assert ps.get_or_prompt() is None and saved == []
+
+    state["paste"] = new; state["valid"][new] = False                # pawchive rejects it
+    assert ps.get_or_prompt() is None and saved == []
+
+    state["valid"][new] = None                                       # cannot be checked: saved anyway
+    assert ps.get_or_prompt() == new and saved == [new]
+
+    monkeypatch.setenv(ps.ENV_VAR, f"session={tok}")                 # the environment comes first
+    state["valid"][tok] = True
+    prompts.clear()
+    assert ps.get_or_prompt() == tok and prompts == []
+
+
+def test_pawchive_session_validation_status_mapping(monkeypatch):
+    import httpx
+    from kkafio.services import pawchive_session as ps
+    seen: dict = {}
+
+    def fake_get(status):
+        def _get(url, **kw):
+            seen.update(url=url, **kw)
+            if status == "boom":
+                raise httpx.ConnectError("down")
+            return httpx.Response(status, request=httpx.Request("GET", url))
+        return _get
+
+    expected = {200: True, 302: False, 303: False, 401: False,
+                403: None, 429: None, 503: None, "boom": None}   # 403 may be a bot block: no verdict
+    for status, verdict in expected.items():
+        monkeypatch.setattr(ps.httpx, "get", fake_get(status))
+        assert ps._is_valid("tok_" + "d" * 20) is verdict, status
+    assert seen["url"] == ps.ACCOUNT_URL and seen["follow_redirects"] is False   # a redirect IS the answer
+    assert seen["headers"]["User-Agent"] == ps.USER_AGENT
+    assert [(c.name, c.domain) for c in seen["cookies"].jar] == [("session", "pawchive.pw")]
