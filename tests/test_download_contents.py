@@ -1717,20 +1717,21 @@ def test_pawchive_session_validation_status_mapping(monkeypatch):
 def test_throttle_scales_up_and_backs_off(monkeypatch):
     monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 14.0)
     t = dc._PawchiveThrottle()
-    assert (t.limit, t.ceiling) == (2, 4)                     # starts low, may grow to 4
+    assert dc.PAWCHIVE_PARALLEL == 8
+    assert (t.limit, t.ceiling) == (2, 8)                     # starts low, may grow to 8
 
     for _ in range(3):
         t.on_success()
     assert t.limit == 3                                       # every 3 clean files, one more worker
     for _ in range(30):
         t.on_success()
-    assert (t.limit, t.ceiling) == (4, 4)                     # never above the ceiling
+    assert (t.limit, t.ceiling) == (8, 8)                     # never above the ceiling
 
     wait = t.on_rate_limited()                                # first 429 of a burst
-    assert wait == 14.0 and (t.ceiling, t.limit) == (3, 2)    # ceiling = old limit - 1, limit lower still
+    assert wait == 14.0 and (t.ceiling, t.limit) == (7, 6)    # ceiling = old limit - 1, limit lower still
     assert t.cooldown_until > 0
     t.on_rate_limited()                                       # same burst: other refused workers
-    assert (t.ceiling, t.limit) == (3, 2)                     # ... must not lower it again
+    assert (t.ceiling, t.limit) == (7, 6)                     # ... must not lower it again
 
     before = t.limit
     for _ in range(9):                                        # no scaling up inside the cooldown
@@ -1741,10 +1742,10 @@ def test_throttle_scales_up_and_backs_off(monkeypatch):
     t.clean = 0
     for _ in range(3):
         t.on_success()
-    assert t.limit == 3                                       # grows again, up to the new ceiling
+    assert t.limit == 7                                       # grows again, up to the new ceiling
     t.clean = 49
     t.on_success()                                            # 50 clean files: probe a higher ceiling
-    assert t.ceiling == 4 and t.clean == 0
+    assert t.ceiling == 8 and t.clean == 0
 
     low = dc._PawchiveThrottle()                              # at the bottom it stays at 1
     low.on_rate_limited()
@@ -2004,3 +2005,169 @@ def test_pawchive_other_file_types_are_never_requested(tmp_path):
     assert (run.ok, run.failed, run.excluded) == (1, 0, 1)
     assert client.fetched == [_data(keep) + "?f=keep.zip"]
     assert [f.name for f in Path(tmp_path).iterdir()] == ["keep.zip"]
+
+
+# --- pixiv: mega / gofile / gdrive links in artwork descriptions ------------------
+
+def test_pixiv_description_links():
+    from urllib.parse import quote
+    mega = "https://mega.nz/file/AbCdEf12#KeY_-abc123"
+    folder = "https://mega.nz/folder/Fold3r#K3y"
+    gofile = "https://gofile.io/d/Xy12Zz"
+    gdrive = "https://drive.google.com/file/d/1AbCdEfGhIjKl/view?usp=sharing"
+    caption = (
+        # pixiv wraps external links in its /jump.php redirector (url-encoded)
+        f'My card!<br />DL: <a href="/jump.php?{quote(mega, safe="")}" target="_blank">{mega}</a><br />'
+        f'<a href="https://www.pixiv.net/jump.php?{quote(folder, safe="")}">mirror</a><br />'
+        f'<a href="/jump.php?url={quote(gofile, safe="")}">gofile</a> '
+        f'<a href="/jump.php?{quote(gdrive, safe="").replace("%26", "%26amp;")}">drive</a><br />'
+        'not these: https://evilmega.nz/file/x#y, https://www.youtube.com/watch?v=1, https://mega.nz, '
+        'https://www.pixiv.net/artworks/123'
+    )
+    links = dc._pixiv_description_links(caption)
+    assert links == [mega, folder, gofile, gdrive]            # in order, decoded, #key kept, no duplicates
+
+    # plain text works too, and so does a link typed without "https://"
+    assert dc._pixiv_description_links("get it at mega.nz/file/Q1#W2.") == ["https://mega.nz/file/Q1#W2"]
+    assert dc._pixiv_description_links("") == [] and dc._pixiv_description_links(None) == []
+    assert dc._pixiv_description_links("no links here") == []
+
+
+def _fake_pixiv_links_client(works, captions, bad_caption=(), bad_pages=()):
+    """works: {id: [(w, h)]}; captions: {id: html}. Records every request path."""
+    import httpx
+    seen: list[str] = []
+
+    class _Resp:
+        def __init__(self, body): self._b = body
+        def raise_for_status(self): pass
+        def json(self): return {"error": False, "message": "", "body": self._b}
+
+    class _Client:
+        async def get(self, url):
+            path = httpx.URL(url).path
+            seen.append(path)
+            if path.endswith("/profile/all"):
+                return _Resp({"illusts": {k: None for k in works}, "manga": []})
+            if path.endswith("/pages"):
+                aid = path.split("/")[-2]
+                if aid in bad_pages:
+                    raise RuntimeError("pages boom")
+                return _Resp([{"urls": {"original": f"https://i.pximg.net/img-original/{aid}_p{i}.png"},
+                               "width": w, "height": h} for i, (w, h) in enumerate(works[aid])])
+            aid = path.split("/")[-1]                       # /ajax/illust/<id>: the description
+            if aid in bad_caption:
+                raise RuntimeError("caption boom")
+            return _Resp({"id": aid, "description": captions.get(aid, ""), "illustComment": ""})
+    return _Client(), seen
+
+
+def test_pixiv_resolve_artwork_reads_the_caption_independently():
+    client, seen = _fake_pixiv_links_client(
+        {"1": [(252, 352)], "2": [(252, 352)]},
+        {"1": 'DL https://mega.nz/file/AA#BB', "2": "x"}, bad_caption={"2"})
+    urls, rejected, links, err = asyncio.run(dc._pixiv_resolve_artwork(client, "1", True))
+    assert urls == ["https://i.pximg.net/img-original/1_p0.png"] and links == ["https://mega.nz/file/AA#BB"] and err == ""
+
+    urls, rejected, links, err = asyncio.run(dc._pixiv_resolve_artwork(client, "2", True))
+    assert urls and links == [] and "caption boom" in err      # the images survive a caption failure
+
+    seen.clear()
+    urls, rejected, links, err = asyncio.run(dc._pixiv_resolve_artwork(client, "1", False))
+    assert links == [] and not any(path.endswith("/1") for path in seen)   # links off: no extra request
+    seen.clear()
+    urls, _, links, _ = asyncio.run(dc._pixiv_resolve_artwork(client, "1", True, images=False))
+    assert urls == [] and links and not any(path.endswith("/pages") for path in seen)
+
+
+EXT_STUBS = {"gofile": object(), "mega": object(), "gdrive": object()}
+
+
+def _capture_links(monkeypatch, fail=()):
+    downloaded: list[str] = []
+
+    async def fake_link(link, externals, directory, history, skip):
+        downloaded.append(link)
+        return (0, 0, 1) if link in fail else (2, 1, 0)
+
+    async def fake_files(client, urls, directory, name_fn, history, skip):
+        return len(urls), 0, 0
+    monkeypatch.setattr(dc, "_download_pawchive_link", fake_link)
+    monkeypatch.setattr(dc, "_download_files", fake_files)
+    monkeypatch.setattr(dc, "_save_history", lambda h: None)
+    return downloaded
+
+
+def test_pixiv_gallery_follows_description_links_of_every_artwork(tmp_path, monkeypatch):
+    downloaded = _capture_links(monkeypatch)
+    works = {"30": [(252, 352)], "20": [(1920, 1080)], "10": [(320, 180)]}
+    captions = {
+        "30": "card: https://mega.nz/file/A1#K1",
+        "20": "wrong size, but: https://gofile.io/d/Zz9 and https://mega.nz/file/A1#K1",   # repeated link
+        "10": '<a href="/jump.php?https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1abcDEFghiJKLmno%2Fview">dl</a>',
+    }
+    client, seen = _fake_pixiv_links_client(works, captions)
+    res = asyncio.run(dc._download_pixiv(
+        client, "https://www.pixiv.net/en/users/85712366", Path(tmp_path), {}, True, externals=EXT_STUBS))
+
+    assert sorted(downloaded) == sorted([
+        "https://mega.nz/file/A1#K1", "https://gofile.io/d/Zz9", "https://drive.google.com/file/d/1abcDEFghiJKLmno/view"])
+    assert res == (2 + 3 * 2, 3 * 1, 0)        # 2 images + 3 links x (2 ok, 1 skipped); each link once
+    assert sum(path.endswith(("/30", "/20", "/10")) for path in seen) == 3   # one caption request per artwork
+
+
+def test_pixiv_without_externals_never_reads_descriptions(tmp_path, monkeypatch):
+    downloaded = _capture_links(monkeypatch)
+    client, seen = _fake_pixiv_links_client({"1": [(252, 352)]}, {"1": "https://mega.nz/file/A#B"})
+    res = asyncio.run(dc._download_pixiv(
+        client, "https://www.pixiv.net/en/artworks/1", Path(tmp_path), {}, True))
+    assert res == (1, 0, 0) and downloaded == []
+    assert not any(path.endswith("/1") for path in seen)
+
+
+def test_pixiv_link_failures_are_counted_but_do_not_stop_the_run(tmp_path, monkeypatch):
+    bad = "https://mega.nz/file/BAD#K"
+    downloaded = _capture_links(monkeypatch, fail={bad})
+    works = {"1": [(252, 352)], "2": [(252, 352)], "3": [(252, 352)]}
+    captions = {"1": bad, "2": "never read", "3": "https://gofile.io/d/Ok1"}
+    client, _ = _fake_pixiv_links_client(works, captions, bad_caption={"2"})
+    ok, skipped, failed = asyncio.run(dc._download_pixiv(
+        client, "https://www.pixiv.net/en/users/1", Path(tmp_path), {}, True, externals=EXT_STUBS))
+    assert sorted(downloaded) == ["https://gofile.io/d/Ok1", bad]
+    assert failed == 2                    # the bad link + the unreadable caption of artwork 2
+    assert ok == 3 + 2                    # 3 images, the good link
+
+
+def test_pixiv_search_reads_descriptions_of_size_dropped_works_too(tmp_path, monkeypatch):
+    import httpx
+    downloaded = _capture_links(monkeypatch)
+    seen: list[str] = []
+
+    class _Resp:
+        def __init__(self, body): self._b = body
+        def raise_for_status(self): pass
+        def json(self): return {"error": False, "message": "", "body": self._b}
+
+    class _Client:
+        async def get(self, url):
+            u = httpx.URL(url)
+            seen.append(u.path)
+            if "/ajax/search/" in u.path:
+                data = [{"id": "1", "width": 252, "height": 352, "pageCount": 1},
+                        {"id": "2", "width": 1000, "height": 1000, "pageCount": 1}] if u.params["p"] == "1" else []
+                return _Resp({"illustManga": {"data": data, "total": 2}})
+            if u.path.endswith("/pages"):
+                return _Resp([{"urls": {"original": "https://i.pximg.net/img-original/1_p0.png"},
+                               "width": 252, "height": 352}])
+            return _Resp({"description": f"link: https://mega.nz/file/W{u.path.rsplit('/', 1)[-1]}#K", "illustComment": ""})
+
+    res = asyncio.run(dc._download_pixiv_search(
+        _Client(), SEARCH_URL, Path(tmp_path), {}, True, 1, None, EXT_STUBS))
+    assert sorted(downloaded) == ["https://mega.nz/file/W1#K", "https://mega.nz/file/W2#K"]
+    assert not any(path.endswith("/2/pages") for path in seen)         # the dropped work: no /pages ...
+    assert any(path.endswith("/illust/2") for path in seen)            # ... but its description is read
+    assert res == (1 + 2 * 2, 2, 0)
+
+    seen.clear(); downloaded.clear()                                   # without externals: as before
+    res = asyncio.run(dc._download_pixiv_search(_Client(), SEARCH_URL, Path(tmp_path), {}, True, 1, None))
+    assert res == (1, 0, 0) and downloaded == [] and not any("/illust/" in p and not p.endswith("/pages") for p in seen)
