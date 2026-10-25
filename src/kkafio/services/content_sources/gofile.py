@@ -1,4 +1,4 @@
-"""gofile.io — folders (/d/ID); subfolders go into subdirectories.
+"""gofile.io — folders and single files (/d/ID); subfolders go into subdirectories.
 
 A guest account token from POST /accounts, then GET /contents/<id> signed
 with a "website token": a sha256 over the user agent, language, account
@@ -376,6 +376,14 @@ async def _gofile_walk(
         data = await _gofile_api(client, f"/contents/{content_id}", params, api_token)
         if not isinstance(data, dict):
             raise RuntimeError("Unexpected Gofile response (expected an object).")
+        if data.get("type") == "file":
+            # A /d/ link can name one file: its entry is the answer, with no "children".
+            link, servers = data.get("link"), data.get("servers")
+            if not isinstance(link, str) or not link:
+                raise RuntimeError("Gofile: this link names a file but carries no download link.")
+            out.append((rel, [(link, [x for x in servers if isinstance(x, str) and x]
+                                if isinstance(servers, list) else [])]))
+            return
         children = data.get("children")
         children = children if isinstance(children, dict) else {}
 

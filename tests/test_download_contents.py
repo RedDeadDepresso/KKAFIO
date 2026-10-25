@@ -439,6 +439,25 @@ def test_gofile_folder_download_end_to_end(tmp_path, monkeypatch):
     assert "cookie" not in other.headers
 
 
+def test_gofile_link_to_a_single_file_is_downloaded(tmp_path, monkeypatch):
+    monkeypatch.delenv("GOFILE_TOKEN", raising=False)
+    monkeypatch.setenv("GOFILE_SALT", "testsecret")
+    one = _gf_file("f1", "2024-5.zip")
+    tree = {"ONE": {**one, "canAccess": True, "code": "ONE", "servers": ["store2"]}}   # a file, no "children"
+    record: list = []
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
+
+    async def go():
+        client = _gofile_mock_client(tree, record)
+        try:
+            return await gofile.download_gofile(client, "https://gofile.io/d/ONE", Path(tmp_path), {}, True)
+        finally:
+            await client.aclose()
+
+    assert asyncio.run(go()) == (1, 0, 0)
+    assert (Path(tmp_path) / "2024-5.zip").read_bytes().startswith(b"data:")
+
+
 def test_gofile_password_is_sent_hashed(tmp_path, monkeypatch):
     import hashlib
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
