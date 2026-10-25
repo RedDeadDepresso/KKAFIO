@@ -12,6 +12,11 @@ hold the token of a real account instead of using a throw-away guest account.
 Signing badly is worse than not signing: gofile blocks an address that keeps
 doing it. So after an "error-notPremium" rejection nothing signed is sent
 for GOFILE_REJECTION_COOLDOWN seconds, and the secret is read again after.
+
+An interrupted download keeps its "<name>.part" file; the next attempt (or
+run) continues it with a Range request. A server that ignores Range sends the
+whole file again, which replaces the part. The body is checked against the
+size the server announced before the part is renamed into place.
 """
 
 from __future__ import annotations
@@ -466,6 +471,22 @@ class _GofileBusy(Exception):
     """A storage server answered with a web page instead of the file."""
 
 
+class _GofileIncomplete(Exception):
+    """The body ended before the announced size: worth another (resumed) try."""
+
+
+class _GofileRestart(Exception):
+    """The part cannot be continued and was removed: start again, no retry used."""
+
+
+def _content_range(response) -> tuple[int, int | None] | None:
+    """(first byte, total size or None) of a 206's "Content-Range: bytes a-b/total"."""
+    m = re.match(r"\s*bytes\s+(\d+)-\d+/(\d+|\*)", response.headers.get("content-range", ""), re.IGNORECASE)
+    if not m:
+        return None
+    return int(m.group(1)), (int(m.group(2)) if m.group(2).isdigit() else None)
+
+
 def _gofile_mirrors(link: str, servers: list[str]) -> list[str]:
     """The link, then the same path on each other storage server holding the file."""
     parts = urlparse(link)
@@ -487,6 +508,8 @@ async def _download_gofile_file(
     which arrives as a 200 of HTML. That must not be saved as the file (and
     recorded as downloaded). Instead the next mirror is tried after a growing
     wait; those waits don't use up the retry budget, but are capped.
+
+    A failed attempt keeps its ".part" file; the next attempt resumes it.
     """
     if skip_downloaded and link in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[link]).name}")
@@ -494,31 +517,58 @@ async def _download_gofile_file(
 
     mirrors = _gofile_mirrors(link, servers)
     default_name = _gofile_default_name(link)
-    headers = {"Referer": "https://gofile.io/"}
+    part = directory / (safe_filename(default_name, "gofile-file") + ".part")   # same on every mirror
     busy = 0
     attempt = 1
     while attempt <= RETRY_ATTEMPTS:
         url = mirrors[busy % len(mirrors)]
-        part: Path | None = None
-        completed = False
         try:
             import aiofiles
+            offset = part.stat().st_size if part.exists() else 0
+            headers = {"Referer": "https://gofile.io/", "Accept-Encoding": "identity"}
+            if offset:
+                headers["Range"] = f"bytes={offset}-"
             async with client.stream("GET", url, headers=headers) as response:
+                if offset and response.status_code == 416:     # the part is not a prefix of the file
+                    part.unlink(missing_ok=True)
+                    raise _GofileRestart()
                 response.raise_for_status()
                 filename = resolve_filename(response, url, default_name)
                 if ("text/html" in response.headers.get("content-type", "").lower()
                         and Path(filename).suffix.lower() not in (".html", ".htm")):
                     raise _GofileBusy()
+
+                # The bytes. 206 continues the part; a plain 200 is the whole file.
+                total: int | None = None
+                length = response.headers.get("content-length", "")
+                if offset and response.status_code == 206:
+                    span = _content_range(response)
+                    if span is None or span[0] != offset:
+                        part.unlink(missing_ok=True)
+                        raise _GofileIncomplete("server answered a different range than asked; restarting")
+                    total = span[1] or (offset + int(length) if length.isdigit() else None)
+                else:
+                    offset = 0
+                    total = int(length) if length.isdigit() else None
                 dest = directory / filename
-                part = dest.with_name(dest.name + ".part")
-                logger.info("DLOAD", f"Downloading: {filename}")
-                async with aiofiles.open(part, "wb") as f:
+                if offset:
+                    logger.info("DLOAD", f"Resuming: {filename} from {offset} bytes")
+                else:
+                    logger.info("DLOAD", f"Downloading: {filename}")
+                written = offset
+                async with aiofiles.open(part, "ab" if offset else "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
+                        written += len(chunk)
                         await f.write(chunk)
+            if total is not None and written != total:
+                if written > total:
+                    part.unlink(missing_ok=True)    # more than the file holds: unusable
+                raise _GofileIncomplete(f"incomplete download ({written} of {total} bytes)")
             os.replace(part, dest)
-            completed = True
             history[link] = str(dest)
             return link, None, False
+        except _GofileRestart:
+            continue                                # the part is gone; this try was not used up
         except _GofileBusy:
             busy += 1
             if busy > GOFILE_BUSY_LIMIT:
@@ -531,20 +581,16 @@ async def _download_gofile_file(
                 f"{'another server' if len(mirrors) > 1 else 'again'} ({busy}/{GOFILE_BUSY_LIMIT})")
             await asyncio.sleep(wait)
         except Exception as exc:
-            if attempt < RETRY_ATTEMPTS and is_transient(exc):
+            if attempt < RETRY_ATTEMPTS and (is_transient(exc) or isinstance(exc, _GofileIncomplete)):
                 delay = retry_delay(exc, attempt)
                 logger.warning("DLOAD",
                     f"  {link} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
                 attempt += 1
                 continue
+            if getattr(getattr(exc, "response", None), "status_code", None) in (404, 410):
+                part.unlink(missing_ok=True)        # the file is gone: nothing to resume later
             return link, exc, False
-        finally:
-            if part is not None and not completed:
-                try:
-                    part.unlink(missing_ok=True)
-                except OSError:
-                    pass
     return link, RuntimeError("retries exhausted"), False  # not reached
 
 

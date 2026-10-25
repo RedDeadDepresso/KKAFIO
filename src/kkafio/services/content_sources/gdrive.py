@@ -14,6 +14,11 @@ Google Docs/Sheets/Slides inside a folder are not files and are skipped.
   https://drive.google.com/uc?id=<id>           https://drive.google.com/drive/folders/<id>
 
 Only items shared as "anyone with the link" can be fetched.
+
+An interrupted download keeps its "drive-<id>.part" file; the next attempt (or
+run) continues it with a Range request. A server that ignores Range sends the
+whole file again, which replaces the part. Bytes are checked against the size
+the server announced before the part is renamed into place.
 """
 
 from __future__ import annotations
@@ -42,6 +47,10 @@ _GDRIVE_FILE_RE   = re.compile(r"/file/d/([A-Za-z0-9_-]+)")
 
 class GDriveError(RuntimeError):
     """A Google Drive failure with a message fit to show the user (not retried)."""
+
+
+class _Incomplete(Exception):
+    """The body ended before the announced size: worth another (resumed) try."""
 
 
 def is_gdrive_url(url: str) -> bool:
@@ -167,28 +176,47 @@ def _gdrive_filename(response) -> str:
     return Path(m.group(1).strip()).name if m else ""
 
 
+def _content_range(response) -> tuple[int, int | None] | None:
+    """(first byte, total size or None) of a 206's "Content-Range: bytes a-b/total"."""
+    m = re.match(r"\s*bytes\s+(\d+)-\d+/(\d+|\*)", response.headers.get("content-range", ""), re.IGNORECASE)
+    if not m:
+        return None
+    return int(m.group(1)), (int(m.group(2)) if m.group(2).isdigit() else None)
+
+
 async def _download_gdrive_file(
     client, file_id: str, name_hint: str, directory: Path,
     history: dict[str, str], skip_downloaded: bool,
 ) -> tuple[str, Exception | None, bool]:
-    """Download one drive file. Returns (history key, error, was_skipped)."""
+    """Download one drive file. Returns (history key, error, was_skipped).
+
+    A failed attempt keeps "drive-<id>.part"; the next attempt resumes it.
+    """
     hkey = f"gdrive:{file_id}"
     if skip_downloaded and hkey in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[hkey]).name}")
         return hkey, None, True
 
-    referer = {"Referer": GDRIVE_ROOT + "/"}
+    part = directory / f"drive-{file_id}.part"      # the name is only known once Drive answers
     for attempt in range(1, RETRY_ATTEMPTS + 1):
-        part: Path | None = None
-        completed = False
         try:
             import aiofiles
+            offset = part.stat().st_size if part.exists() else 0
             url = f"{GDRIVE_DOWNLOAD}?{urlencode({'id': file_id, 'export': 'download', 'confirm': 't'})}"
             page_name = ""
-            for _step in range(3):             # the file itself, or its confirmation page(s)
-                async with client.stream("GET", url, headers=referer) as response:
+            done = False
+            for _step in range(4):             # the file itself, or its confirmation page(s)
+                headers = {"Referer": GDRIVE_ROOT + "/", "Accept-Encoding": "identity"}
+                if offset:
+                    headers["Range"] = f"bytes={offset}-"
+                async with client.stream("GET", url, headers=headers) as response:
                     if response.status_code == 404:
+                        part.unlink(missing_ok=True)
                         raise GDriveError("Google Drive: the file does not exist or is not shared publicly")
+                    if offset and response.status_code == 416:     # the part is not a prefix of the file
+                        part.unlink(missing_ok=True)
+                        offset = 0
+                        continue
                     response.raise_for_status()
                     if "text/html" in response.headers.get("content-type", "").lower():
                         doc = (await response.aread()).decode("utf-8", errors="replace")
@@ -205,35 +233,50 @@ async def _download_gdrive_file(
                         fields.setdefault("confirm", "t")
                         url = f"{form.action or GDRIVE_DOWNLOAD}?{urlencode(fields)}"
                         continue
+
+                    # The bytes. 206 continues the part; a plain 200 is the whole file.
+                    total: int | None = None
+                    length = response.headers.get("content-length", "")
+                    if offset and response.status_code == 206:
+                        span = _content_range(response)
+                        if span is None or span[0] != offset:
+                            part.unlink(missing_ok=True)
+                            raise _Incomplete("server answered a different range than asked; restarting")
+                        total = span[1] or (offset + int(length) if length.isdigit() else None)
+                    else:
+                        offset = 0
+                        total = int(length) if length.isdigit() else None
                     name = (name_hint or _gdrive_filename(response) or page_name
                             or f"drive-{file_id}")
                     dest = directory / safe_filename(name, f"drive-{file_id}")
-                    part = dest.with_name(dest.name + ".part")
-                    logger.info("DLOAD", f"Downloading: {dest.name}")
-                    async with aiofiles.open(part, "wb") as f:
+                    if offset:
+                        logger.info("DLOAD", f"Resuming: {dest.name} from {offset} bytes")
+                    else:
+                        logger.info("DLOAD", f"Downloading: {dest.name}")
+                    written = offset
+                    async with aiofiles.open(part, "ab" if offset else "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=65536):
+                            written += len(chunk)
                             await f.write(chunk)
+                    done = True
                     break
-            else:
+            if not done:
                 raise GDriveError("Google Drive: stuck on the confirmation page")
+            if total is not None and written != total:
+                if written > total:
+                    part.unlink(missing_ok=True)    # more than the file holds: unusable
+                raise _Incomplete(f"incomplete download ({written} of {total} bytes)")
             os.replace(part, dest)
-            completed = True
             history[hkey] = str(dest)
             return hkey, None, False
         except Exception as exc:
-            if attempt < RETRY_ATTEMPTS and is_transient(exc):
+            if attempt < RETRY_ATTEMPTS and (is_transient(exc) or isinstance(exc, _Incomplete)):
                 delay = retry_delay(exc, attempt)
                 logger.warning("DLOAD",
                     f"  {file_id} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
                 continue
             return hkey, exc, False
-        finally:
-            if part is not None and not completed:
-                try:
-                    part.unlink(missing_ok=True)
-                except OSError:
-                    pass
     return hkey, RuntimeError("retries exhausted"), False  # not reached
 
 

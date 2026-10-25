@@ -579,6 +579,87 @@ def test_gofile_busy_forever_gives_up_without_saving_anything(tmp_path, monkeypa
     assert not list(Path(tmp_path).iterdir())
 
 
+def _gofile_resume(tmp_path, prefix_len: int, honour_range: bool = True, servers=()):
+    import httpx
+    content = bytes((i * 13) % 251 for i in range(30000))
+    link = "https://store1.gofile.io/download/web/abc/card%20one.png"
+    seen: list = []
+    (Path(tmp_path) / "card one.png.part").write_bytes(content[:prefix_len])
+
+    def handler(req: httpx.Request):
+        rng = req.headers.get("range")
+        seen.append(rng)
+        head = {"content-type": "application/octet-stream"}
+        if rng and honour_range:
+            start = int(rng.removeprefix("bytes=").rstrip("-"))
+            if start >= len(content):
+                return httpx.Response(416, headers={"content-range": f"bytes */{len(content)}"})
+            return httpx.Response(206, content=content[start:], headers={
+                **head, "content-range": f"bytes {start}-{len(content) - 1}/{len(content)}"})
+        return httpx.Response(200, content=content, headers=head)
+
+    async def go():
+        c = httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+        try:
+            return await gofile._download_gofile_file(c, link, list(servers), Path(tmp_path), {}, False)
+        finally:
+            await c.aclose()
+
+    return content, asyncio.run(go()), seen
+
+
+def test_gofile_download_resumes_from_a_part_file(tmp_path):
+    content, (link, err, skipped), seen = _gofile_resume(tmp_path, 12345)
+    assert err is None and not skipped
+    assert seen == ["bytes=12345-"]
+    assert (Path(tmp_path) / "card one.png").read_bytes() == content
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_gofile_resume_falls_back_when_range_is_ignored(tmp_path):
+    content, (link, err, skipped), seen = _gofile_resume(tmp_path, 12345, honour_range=False)
+    assert err is None
+    assert (Path(tmp_path) / "card one.png").read_bytes() == content     # the whole body replaced the part
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_gofile_part_that_is_not_a_prefix_restarts_after_416(tmp_path):
+    content, (link, err, skipped), seen = _gofile_resume(tmp_path, 30000)    # as long as the file
+    assert err is None
+    assert seen == ["bytes=30000-", None]                    # 416, then the file from the start
+    assert (Path(tmp_path) / "card one.png").read_bytes() == content
+
+
+def test_gofile_short_body_is_resumed_on_retry(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.setattr(gofile, "retry_delay", lambda exc, attempt: 0.0)
+    content = bytes((i * 7) % 251 for i in range(20000))
+    link = "https://store1.gofile.io/download/web/abc/card.png"
+    seen: list = []
+    head = {"content-type": "application/octet-stream"}
+
+    def handler(req: httpx.Request):
+        rng = req.headers.get("range")
+        seen.append(rng)
+        if not rng:       # the first try announces the full size but ends early
+            return httpx.Response(200, content=content[:6000], headers={**head, "content-length": str(len(content))})
+        start = int(rng.removeprefix("bytes=").rstrip("-"))
+        return httpx.Response(206, content=content[start:], headers={
+            **head, "content-range": f"bytes {start}-{len(content) - 1}/{len(content)}"})
+
+    async def go():
+        c = httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+        try:
+            return await gofile._download_gofile_file(c, link, [], Path(tmp_path), {}, False)
+        finally:
+            await c.aclose()
+
+    link_, err, skipped = asyncio.run(go())
+    assert err is None
+    assert (Path(tmp_path) / "card.png").read_bytes() == content
+    assert seen[0] is None and seen[1] == "bytes=6000-"
+
+
 def test_gofile_stale_saved_token_is_replaced_once(tmp_path, monkeypatch):
     import httpx
     monkeypatch.delenv("GOFILE_TOKEN", raising=False)
@@ -737,6 +818,64 @@ def test_mega_single_file_is_decrypted(tmp_path, monkeypatch):
     assert not list(Path(tmp_path).glob("*.part"))
 
 
+def _mega_range_client(blob: bytes, seen: list, honour_range: bool):
+    """A mock mega client whose storage host serves `blob`, optionally with Range support."""
+    import httpx
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "g.api.mega.co.nz":
+            return httpx.Response(200, json=[{"g": "http://storage.example/dl1", "s": len(blob), "at": ""}])
+        rng = request.headers.get("range")
+        seen.append(rng)
+        if rng and honour_range:
+            start = int(rng.removeprefix("bytes=").rstrip("-"))
+            return httpx.Response(206, content=blob[start:])
+        return httpx.Response(200, content=blob)
+
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+
+
+def _resume_case(tmp_path, honour_range: bool):
+    content = bytes(range(256)) * 40 + b"tail!"              # 10245 bytes, not a block multiple
+    rnd, aes_key, nonce, at, blob = _mega_file("big.bin", content, 7)
+    file = {"handle": "H", "name": "big.bin", "dir": (), "size": len(content), "key": aes_key, "nonce": nonce}
+    part = mega._mega_part_path(Path(tmp_path) / "big.bin", aes_key)
+    part.write_bytes(content[:1005])                         # 1005 is not a multiple of 16
+    seen: list = []
+
+    async def go():
+        client = _mega_range_client(blob, seen, honour_range)
+        try:
+            return await mega._download_mega_file(client, file, "", Path(tmp_path), {}, False)
+        finally:
+            await client.aclose()
+
+    result = asyncio.run(go())
+    return content, result, seen, part
+
+
+def test_mega_download_resumes_from_a_part_file(tmp_path, monkeypatch):
+    content, (hkey, err, skipped), seen, part = _resume_case(tmp_path, honour_range=True)
+    assert err is None and not skipped
+    assert seen == ["bytes=992-"]                            # 1005 rounded down to a 16-byte block
+    assert (Path(tmp_path) / "big.bin").read_bytes() == content
+    assert not part.exists()
+
+
+def test_mega_resume_falls_back_when_range_is_ignored(tmp_path, monkeypatch):
+    content, (hkey, err, skipped), seen, part = _resume_case(tmp_path, honour_range=False)
+    assert err is None
+    assert seen == ["bytes=992-"]
+    assert (Path(tmp_path) / "big.bin").read_bytes() == content     # the whole body replaced the part
+    assert not part.exists()
+
+
+def test_mega_ctr_decryptor_offset_must_be_block_aligned():
+    import pytest
+    with pytest.raises(ValueError):
+        mega._mega_ctr_decryptor(bytes(16), bytes(8), 5)
+
+
 def test_mega_folder_download_keeps_structure(tmp_path, monkeypatch):
     monkeypatch.setattr(history_store, "save_history", lambda h: None)
     share = bytes(range(100, 116))
@@ -879,6 +1018,91 @@ def test_gdrive_large_file_goes_through_confirmation(tmp_path, monkeypatch):
     assert (Path(tmp_path) / "big pack.7z").read_bytes() == b"REALDATA"     # name from the page
     assert calls[1]["uuid"] == "tok-123" and calls[1]["at"] == "AB"
     assert not list(Path(tmp_path).glob("*.part"))
+
+
+def _gdrive_range_handler(content: bytes, seen: list, honour_range: bool = True):
+    import httpx
+
+    def handler(req: httpx.Request):
+        rng = req.headers.get("range")
+        seen.append(rng)
+        head = {"content-type": "application/octet-stream", "content-disposition": 'attachment; filename="card.bin"'}
+        if rng and honour_range:
+            start = int(rng.removeprefix("bytes=").rstrip("-"))
+            if start >= len(content):
+                return httpx.Response(416, headers={"content-range": f"bytes */{len(content)}"})
+            return httpx.Response(206, content=content[start:], headers={
+                **head, "content-range": f"bytes {start}-{len(content) - 1}/{len(content)}"})
+        return httpx.Response(200, content=content, headers=head)
+
+    return handler
+
+
+def _gdrive_resume(tmp_path, prefix: bytes, honour_range: bool = True):
+    content = bytes((i * 13) % 251 for i in range(30000))
+    seen: list = []
+    (Path(tmp_path) / f"drive-{_GD_ID}.part").write_bytes(content[:len(prefix)])
+
+    async def go():
+        c = _gdrive_client(_gdrive_range_handler(content, seen, honour_range))
+        try:
+            return await gdrive._download_gdrive_file(c, _GD_ID, "", Path(tmp_path), {}, False)
+        finally:
+            await c.aclose()
+
+    return content, asyncio.run(go()), seen
+
+
+def test_gdrive_download_resumes_from_a_part_file(tmp_path):
+    content, (hkey, err, skipped), seen = _gdrive_resume(tmp_path, b"x" * 12345)
+    assert err is None and not skipped
+    assert seen == ["bytes=12345-"]
+    assert (Path(tmp_path) / "card.bin").read_bytes() == content
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_gdrive_resume_falls_back_when_range_is_ignored(tmp_path):
+    content, (hkey, err, skipped), seen = _gdrive_resume(tmp_path, b"x" * 12345, honour_range=False)
+    assert err is None
+    assert (Path(tmp_path) / "card.bin").read_bytes() == content     # the whole body replaced the part
+    assert not list(Path(tmp_path).glob("*.part"))
+
+
+def test_gdrive_part_that_is_not_a_prefix_restarts_after_416(tmp_path):
+    content, (hkey, err, skipped), seen = _gdrive_resume(tmp_path, b"x" * 30000)    # as long as the file
+    assert err is None
+    assert seen == ["bytes=30000-", None]                    # 416, then the file from the start
+    assert (Path(tmp_path) / "card.bin").read_bytes() == content
+
+
+def test_gdrive_short_body_is_resumed_on_retry(tmp_path, monkeypatch):
+    import httpx
+    monkeypatch.setattr(net, "retry_delay", lambda exc, attempt: 0.0)
+    monkeypatch.setattr(gdrive, "retry_delay", lambda exc, attempt: 0.0)
+    content = bytes((i * 7) % 251 for i in range(20000))
+    seen: list = []
+    head = {"content-type": "application/octet-stream", "content-disposition": 'attachment; filename="card.bin"'}
+
+    def handler(req: httpx.Request):
+        rng = req.headers.get("range")
+        seen.append(rng)
+        if not rng:       # the first try announces the full size but ends early
+            return httpx.Response(200, content=content[:6000], headers={**head, "content-length": str(len(content))})
+        start = int(rng.removeprefix("bytes=").rstrip("-"))
+        return httpx.Response(206, content=content[start:], headers={
+            **head, "content-range": f"bytes {start}-{len(content) - 1}/{len(content)}"})
+
+    async def go():
+        c = _gdrive_client(handler)
+        try:
+            return await gdrive._download_gdrive_file(c, _GD_ID, "", Path(tmp_path), {}, False)
+        finally:
+            await c.aclose()
+
+    hkey, err, skipped = asyncio.run(go())
+    assert err is None
+    assert (Path(tmp_path) / "card.bin").read_bytes() == content
+    assert seen[0] is None and seen[1] == "bytes=6000-"
 
 
 def test_gdrive_refusals_are_reported_not_retried(tmp_path, monkeypatch):

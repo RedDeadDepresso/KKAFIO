@@ -14,7 +14,13 @@ Download links are minted per request (they are tied to one storage node),
 so each is requested right before its file starts. Mega meters free
 transfer per IP address; when the quota is used up the API (error -17) or
 the storage server (HTTP 509) says how long the wait is, and the file is
-reported as failed with that wait rather than retried pointlessly.
+reported as failed with that wait rather than retried pointlessly; the
+remaining files of the run are then not attempted either.
+
+An interrupted download keeps its "<name>.<key id>.part" file and the next
+attempt (or run) continues it with a Range request: AES-CTR is seekable, so
+the counter is simply set to the resume offset (rounded down to a 16-byte
+block). A server that ignores the Range header gets the file from the start.
 """
 
 from __future__ import annotations
@@ -34,7 +40,7 @@ MEGA_ROOT           = "https://mega.nz"
 MEGA_FILE_KEY_LEN   = 32
 MEGA_FOLDER_KEY_LEN = 16
 MEGA_MAX_DEPTH      = 8
-MEGA_PARALLEL       = 1                 # files at once (mega meters free transfer per address)
+MEGA_PARALLEL       = 3                 # files at once (mega meters free transfer per address)
 MEGA_TYPE_FILE, MEGA_TYPE_FOLDER, MEGA_TYPE_ROOT = 0, 1, 2
 
 _mega_seq = 0
@@ -161,10 +167,22 @@ def _mega_decrypt_attrs(encoded: str, key: bytes) -> dict:
     return attrs if isinstance(attrs, dict) else {}
 
 
-def _mega_ctr_decryptor(key: bytes, nonce: bytes):
-    """Streaming AES-CTR decryptor (counter starts at 0 after the 8-byte nonce)."""
+def _mega_ctr_decryptor(key: bytes, nonce: bytes, offset: int = 0):
+    """Streaming AES-CTR decryptor positioned at byte `offset` of the file.
+
+    The counter (the 8 bytes after the nonce) counts 16-byte blocks, so a
+    resume offset must be a multiple of 16.
+    """
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-    return Cipher(algorithms.AES(key), modes.CTR(nonce + bytes(8))).decryptor()
+    if offset < 0 or offset % 16:
+        raise ValueError("resume offset must be a multiple of 16 bytes")
+    return Cipher(algorithms.AES(key), modes.CTR(nonce + (offset // 16).to_bytes(8, "big"))).decryptor()
+
+
+def _mega_part_path(dest: Path, key: bytes) -> Path:
+    """Partial-download file of `dest`. The key id in its name keeps a part of
+    one file from being continued as another file's content (names repeat)."""
+    return dest.with_name(f"{dest.name}.{key[:4].hex()}.part")
 
 
 # --- API --------------------------------------------------------------------
@@ -292,29 +310,52 @@ async def _download_mega_file(
     client, file: dict, share_handle: str, directory: Path,
     history: dict[str, str], skip_downloaded: bool,
 ) -> tuple[str, Exception | None, bool]:
-    """Download + decrypt one mega file. Returns (history key, error, was_skipped)."""
+    """Download + decrypt one mega file. Returns (history key, error, was_skipped).
+
+    A failed attempt keeps its ".part" file; the next attempt resumes it.
+    """
     hkey = f"mega:{share_handle or '-'}:{file['handle']}"
     if skip_downloaded and hkey in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[hkey]).name}")
         return hkey, None, True
 
     dest = directory / file["name"]
+    part = _mega_part_path(dest, file["key"])
     for attempt in range(1, RETRY_ATTEMPTS + 1):
-        part: Path | None = None
-        completed = False
         try:
             import aiofiles
             dl = await _mega_link_for(client, file["handle"], folder=share_handle)
-            decryptor = _mega_ctr_decryptor(file["key"], file["nonce"])
-            written = 0
-            async with client.stream("GET", dl["g"]) as response:
+            expected = file["size"] or int(dl.get("s") or 0)
+
+            # Resume from the whole 16-byte blocks already on disk.
+            offset = 0
+            if part.exists():
+                have = part.stat().st_size
+                offset = have - have % 16
+                if expected and offset >= expected:
+                    offset = 0                  # not a prefix of this file: start over
+                if offset != have:
+                    with open(part, "r+b") as fh:
+                        fh.truncate(offset)
+
+            headers = {"Range": f"bytes={offset}-"} if offset else {}
+            async with client.stream("GET", dl["g"], headers=headers) as response:
                 if response.status_code == 509:
                     left = (response.headers.get("X-MEGA-Time-Left") or "").strip()
                     raise MegaError(_mega_api_message(-17) + (f" (about {left}s left)" if left.isdigit() else ""))
+                if offset and response.status_code == 416:      # range not satisfiable
+                    part.unlink(missing_ok=True)
+                    raise IOError("resume offset rejected by the server; restarting")
                 response.raise_for_status()
-                part = dest.with_name(dest.name + ".part")
-                logger.info("DLOAD", f"Downloading: {file['name']}")
-                async with aiofiles.open(part, "wb") as f:
+                if offset and response.status_code != 206:      # Range ignored: whole file follows
+                    offset = 0
+                decryptor = _mega_ctr_decryptor(file["key"], file["nonce"], offset)
+                written = offset
+                if offset:
+                    logger.info("DLOAD", f"Resuming: {file['name']} from {offset} bytes")
+                else:
+                    logger.info("DLOAD", f"Downloading: {file['name']}")
+                async with aiofiles.open(part, "ab" if offset else "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
                         plain = decryptor.update(chunk)
                         written += len(plain)
@@ -323,11 +364,11 @@ async def _download_mega_file(
                     if tail:
                         written += len(tail)
                         await f.write(tail)
-            expected = file["size"] or int(dl.get("s") or 0)
             if expected and written != expected:
+                if written > expected:
+                    part.unlink(missing_ok=True)    # more than the file holds: unusable
                 raise IOError(f"incomplete download ({written} of {expected} bytes)")
             os.replace(part, dest)
-            completed = True
             history[hkey] = str(dest)
             return hkey, None, False
         except Exception as exc:
@@ -338,12 +379,6 @@ async def _download_mega_file(
                 await asyncio.sleep(delay)
                 continue
             return hkey, exc, False
-        finally:
-            if part is not None and not completed:
-                try:
-                    part.unlink(missing_ok=True)
-                except OSError:
-                    pass
     return hkey, RuntimeError("retries exhausted"), False  # not reached
 
 
@@ -383,12 +418,19 @@ async def download_mega(
     logger.info("DLOAD", f"  Found {len(files)} file(s).")
 
     sem = asyncio.Semaphore(MEGA_PARALLEL)
+    quota_hit = asyncio.Event()             # one file ran into the quota: the rest would too
 
     async def _one(f: dict):
         target = directory.joinpath(*f["dir"])
         target.mkdir(parents=True, exist_ok=True)
         async with sem:
-            return f, await _download_mega_file(client, f, share, target, history, skip)
+            if quota_hit.is_set():
+                return f, (f"mega:{share or '-'}:{f['handle']}",
+                           MegaError("Mega: not attempted, the download quota is already used up"), False)
+            result = await _download_mega_file(client, f, share, target, history, skip)
+            if result[1] is not None and "quota exceeded" in str(result[1]):
+                quota_hit.set()
+            return f, result
 
     ok = skipped = failed = 0
     for coro in asyncio.as_completed([_one(f) for f in files]):
