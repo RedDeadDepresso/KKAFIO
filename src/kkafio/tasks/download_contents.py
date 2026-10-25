@@ -6,13 +6,14 @@ Supports:
   https://koikatsucards.com     — card pages (/contents/) and listing pages
   https://www.pixiv.net         — artworks (/artworks/ID), galleries
                                   (/users/ID, /users/ID/illustrations) and
-                                  searches (/search?q=...); only
+                                  searches (/search?q=...); only PNG
                                   images that look like KK cards/scenes are kept
   https://pawchive.pw           — post searches (/posts?q=...), creators
                                   (/<service>/user/ID) and single posts
                                   (/<service>/user/ID/post/ID). Every file and
-                                  attachment of a post is downloaded (a PNG only
-                                  if it is 320x180 / 252x352-ratio), and the mega,
+                                  attachment of a post of type .rar / .zip / .7z /
+                                  .zipmod / .png is downloaded (a PNG only if it is
+                                  320x180 / 252x352-ratio; other types are skipped), and the mega,
                                   gofile and Google Drive links in the post text
                                   are followed. The listings are paged 50 posts at a
                                   time (?o=), with the usual | N / | N | M / | all
@@ -130,14 +131,46 @@ def _retry_delay(exc: Exception, attempt: int) -> float:
     return float(min(2 ** attempt, 30))
 
 
-async def _get_with_retry(client, url: str, headers: dict | None = None):
-    """GET `url`, raise_for_status, retrying transient failures with backoff."""
+def _is_rate_limited(exc: Exception | None) -> bool:
+    """True for an HTTP 429 answer."""
+    import httpx
+    return isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 429
+
+
+def _retry_after_seconds(exc: Exception | None, cap: float = 120.0) -> float | None:
+    """The Retry-After of a 429 (seconds or an HTTP date), capped; None if absent."""
+    response = getattr(exc, "response", None)
+    value = (response.headers.get("retry-after", "") if response is not None else "").strip()
+    if not value:
+        return None
+    if value.isdigit():
+        return float(min(int(value), cap))
+    try:
+        from email.utils import parsedate_to_datetime
+        import datetime as _dt
+        when = parsedate_to_datetime(value)
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=_dt.timezone.utc)
+        return max(0.0, min(cap, (when - _dt.datetime.now(_dt.timezone.utc)).total_seconds()))
+    except Exception:
+        return None
+
+
+async def _get_with_retry(client, url: str, headers: dict | None = None,
+                          retry_429: bool = True):
+    """GET `url`, raise_for_status, retrying transient failures with backoff.
+
+    With retry_429=False a 429 is raised at once instead of being retried here:
+    the caller owns the rate-limit handling (pawchive's shared cooldown).
+    """
     for attempt in range(1, RETRY_ATTEMPTS + 1):
         try:
             r = await (client.get(url, headers=headers) if headers else client.get(url))
             r.raise_for_status()
             return r
         except Exception as exc:
+            if not retry_429 and _is_rate_limited(exc):
+                raise
             if attempt < RETRY_ATTEMPTS and _is_transient(exc):
                 delay = _retry_delay(exc, attempt)
                 logger.warning("DLOAD",
@@ -654,6 +687,7 @@ PIXIV_CHUNK_SIZE       = PIXIV_PAGE_SIZE   # artworks resolved, then downloaded,
 # KK scene thumbnails are exactly 320x180; character/coordinate cards are
 # 252x352 — but a re-saved card may be scaled, so any image with that aspect
 # ratio (within a small tolerance for rounding) is accepted.
+PIXIV_EXTENSIONS = (".png",)   # only these image types are downloaded (originals keep their real extension)
 PIXIV_SCENE_SIZE = (320, 180)
 PIXIV_CARD_SIZE  = (252, 352)
 PIXIV_RATIO_TOLERANCE = 0.01   # relative
@@ -775,7 +809,8 @@ async def _pixiv_api(client, endpoint: str, params: dict | None = None):
 
 
 async def _pixiv_artwork_images(client, artwork_id: str) -> tuple[list[str], int]:
-    """Return (original image URLs that pass the size filter, number rejected)."""
+    """Return (original image URLs that are PNGs and pass the size filter,
+    number rejected -- by type or by size)."""
     pages = await _pixiv_api(client, f"/illust/{artwork_id}/pages")
     urls: list[str] = []
     rejected = 0
@@ -783,7 +818,9 @@ async def _pixiv_artwork_images(client, artwork_id: str) -> tuple[list[str], int
         original = (page.get("urls") or {}).get("original")
         if not original or not isinstance(original, str):
             continue
-        if _pixiv_size_matches(page.get("width"), page.get("height")):
+        if Path(urlparse(original).path).suffix.lower() not in PIXIV_EXTENSIONS:
+            rejected += 1                      # a jpg / gif / ...: not a KK image
+        elif _pixiv_size_matches(page.get("width"), page.get("height")):
             urls.append(original)
         else:
             rejected += 1
@@ -985,8 +1022,8 @@ async def _download_pixiv(
         _save_history(history)       # checkpoint after every chunk
 
     logger.info("DLOAD",
-        f"  {kept} image(s) matched 320x180 / 252x352-ratio, "
-        f"{filtered} filtered out by size.")
+        f"  {kept} PNG image(s) matched 320x180 / 252x352-ratio, "
+        f"{filtered} filtered out (not a PNG, or wrong size).")
     return total_ok, total_skip, total_fail
 
 
@@ -2274,6 +2311,10 @@ async def _download_gdrive(
 #     only kept when it is 320x180 or has the 252x352 ratio, like pixiv images --
 #     the size is read from the first bytes, so non-matching PNGs are aborted
 #     after the first chunk;
+#   * requests are paced and rate-limited politely (see _PawchiveThrottle): a
+#     random gap between requests, 2 files at once growing to at most 4, and on
+#     HTTP 429 a cooldown that every worker waits out (Retry-After honoured), a
+#     lower concurrency, and the refused request retried afterwards;
 #   * attachments flagged "deferred" (oversized files in Pawchive's temporary
 #     storage) have no path: their signed t1.pawchive.pw links are read from the
 #     post's web page, and downloading them needs a logged-in account, so the
@@ -2289,8 +2330,15 @@ PAWCHIVE_NODE_URL  = "https://n{node}.pawchive.pw/data"   # files live on the ho
 PAWCHIVE_FILE_URL  = "https://file.pawchive.pw/data"   # the public file host: tried first
 PAWCHIVE_TEMP_HOST = "t1.pawchive.pw"           # oversized files in temporary storage (signed links, login needed)
 PAWCHIVE_COOKIE_DOMAIN = ".pawchive.pw"         # the session cookie goes to pawchive.pw and its subdomains only
+PAWCHIVE_EXTENSIONS = (".rar", ".zip", ".7z", ".zipmod", ".png")   # the only file types downloaded
 PAWCHIVE_PAGE_SIZE = 50                         # posts per listing page (the "o" step)
-PAWCHIVE_PARALLEL  = 4                          # files downloaded at once
+PAWCHIVE_PARALLEL  = 4                          # most files downloaded at once (the ceiling)
+PAWCHIVE_START_PARALLEL = 2                     # ... a run starts with this many and works up
+PAWCHIVE_FILE_DELAY = (0.25, 0.40)              # random gap (s) between two file downloads starting
+PAWCHIVE_PAGE_DELAY = (0.35, 0.55)              # ... and between two API / page requests
+PAWCHIVE_COOLDOWN  = 14.0                       # s every request waits after a 429 (x streak, or Retry-After)
+PAWCHIVE_COOLDOWN_CAP = 120.0
+PAWCHIVE_MAX_RATE_LIMITED = 6                   # consecutive 429s on one request before giving up on it
 _PAWCHIVE_HEAD_BYTES = 32                       # bytes needed to read a PNG's size
 
 
@@ -2390,6 +2438,15 @@ def _pawchive_filename(name, path: str) -> str:
     return base
 
 
+def _pawchive_extension_ok(*names) -> bool:
+    """True if any of `names` (a file name and/or the stored path) ends in one
+    of PAWCHIVE_EXTENSIONS. Both are looked at because an attachment's display
+    name sometimes lacks the extension that its stored file has."""
+    return any(
+        Path(str(n or "").replace("\\", "/")).suffix.lower() in PAWCHIVE_EXTENSIONS
+        for n in names)
+
+
 def _is_pawchive_temp_url(url: str) -> bool:
     """True for a file in Pawchive's temporary storage (t1.pawchive.pw)."""
     return (urlparse(url).hostname or "").lower() == PAWCHIVE_TEMP_HOST
@@ -2417,9 +2474,11 @@ def _pawchive_item_key(item: dict) -> str:
     return item.get("key") or item["url"]
 
 
-def _pawchive_post_files(post: dict) -> list[dict]:
+def _pawchive_post_files(post: dict, excluded: list[str] | None = None) -> list[dict]:
     """The downloadable files of a post: its main "file" and every
-    attachment, each once (the first attachment often repeats the main file).
+    attachment, each once (the first attachment often repeats the main file),
+    limited to PAWCHIVE_EXTENSIONS -- other types (images, videos, text, ...)
+    are left out and their names appended to `excluded` when it is given.
 
     Returns dicts with url (the first candidate), urls (all candidates, best
     first), key (history key), name, path and check_size (True for PNGs, which
@@ -2449,21 +2508,30 @@ def _pawchive_post_files(post: dict) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
+        if not _pawchive_extension_ok(name, path):
+            if excluded is not None:
+                excluded.append(name)
+            continue
         is_png = Path(name).suffix.lower() == ".png" or Path(path).suffix.lower() == ".png"
         files.append({"url": urls[0], "urls": urls, "key": key, "name": name,
                       "path": path, "check_size": is_png})
     return files
 
 
-def _pawchive_deferred_attachments(post: dict) -> list[dict]:
+def _pawchive_deferred_attachments(post: dict, excluded: list[str] | None = None) -> list[dict]:
     """Attachments flagged "deferred" that have no path yet: oversized files
     kept in Pawchive's temporary storage, whose signed links only the post's
-    web page shows."""
-    return [
+    web page shows. Only those of a PAWCHIVE_EXTENSIONS type are returned (the
+    others are appended to `excluded`), so the page is not even read for them."""
+    deferred = [
         a for a in (post.get("attachments") or [])
         if isinstance(a, dict) and a.get("deferred")
         and not (isinstance(a.get("path"), str) and a["path"].strip())
     ]
+    wanted = [a for a in deferred if _pawchive_extension_ok(a.get("name"))]
+    if excluded is not None:
+        excluded += [str(a.get("name") or "?") for a in deferred if a not in wanted]
+    return wanted
 
 
 def _pawchive_post_page_url(post: dict) -> str | None:
@@ -2626,6 +2694,8 @@ async def _download_pawchive_url(
             completed = True
             return None, "ok"
         except Exception as exc:
+            if _is_rate_limited(exc):
+                return exc, "ok"       # the caller applies the shared cooldown
             if attempt < RETRY_ATTEMPTS and _is_transient(exc):
                 delay = _retry_delay(exc, attempt)
                 logger.warning("DLOAD",
@@ -2642,9 +2712,14 @@ async def _download_pawchive_url(
     return RuntimeError("retries exhausted"), "ok"   # not reached
 
 
+def _pawchive_already_downloaded(item: dict, history: dict[str, str], skip_downloaded: bool) -> bool:
+    return bool(skip_downloaded) and _pawchive_item_key(item) in history
+
+
 async def _download_pawchive_file(
     client, item: dict, directory: Path, name: str,
     history: dict[str, str], skip_downloaded: bool,
+    throttle: _PawchiveThrottle | None = None,
 ) -> tuple[str, Exception | None, str]:
     """Download one pawchive file. Returns (url, error, status) with status
     "ok", "skipped" (already in the history) or "filtered" (a PNG that is not
@@ -2652,8 +2727,11 @@ async def _download_pawchive_file(
 
     The candidate URLs of the file are tried in order: a host that fails (403,
     404, unreachable, ...) hands over to the next one, and only the last
-    failure is reported.
+    failure is reported. A 429 is different: it starts the shared cooldown (see
+    _PawchiveThrottle), and the same URL is tried again once it is over -- up
+    to PAWCHIVE_MAX_RATE_LIMITED times in a row -- instead of failing the file.
     """
+    throttle = throttle or _PawchiveThrottle()
     url = item["url"]
     key = _pawchive_item_key(item)
     if skip_downloaded and key in history:
@@ -2665,8 +2743,18 @@ async def _download_pawchive_file(
     urls = item.get("urls") or [url]
     err: Exception | None = None
     for i, candidate in enumerate(urls):
-        err, status = await _download_pawchive_url(client, candidate, dest, name, check)
+        limited = 0
+        while True:
+            await throttle.gate()
+            err, status = await _download_pawchive_url(client, candidate, dest, name, check)
+            if not _is_rate_limited(err):
+                break
+            limited += 1
+            if limited > PAWCHIVE_MAX_RATE_LIMITED:
+                break
+            throttle.on_rate_limited(_retry_after_seconds(err), limited)
         if err is None:
+            throttle.on_success()
             if status == "ok":
                 history[key] = str(dest)
             return url, None, status
@@ -2694,6 +2782,134 @@ async def _download_pawchive_link(
         logger.error("DLOAD", f"  No {kind} client available for: {link}")
         return 0, 0, 1
     return await fn(client, link, directory, history, skip)
+
+
+class _PawchiveThrottle:
+    """Keeps a run polite towards pawchive.pw and reacts to HTTP 429.
+
+    Shared by every request of the run (all workers, all links), because the
+    limit belongs to the site, not to one download:
+
+      * pacing   -- a random gap between two file downloads starting
+                    (PAWCHIVE_FILE_DELAY) and between two API / page requests
+                    (PAWCHIVE_PAGE_DELAY), so nothing is ever sent in a burst;
+      * adaptive concurrency -- starts at PAWCHIVE_START_PARALLEL files at once
+                    and adds one after every few clean files, up to a ceiling;
+      * cooldown -- after a 429 *everything* waits (not only the request that
+                    was refused): the Retry-After, or PAWCHIVE_COOLDOWN
+                    seconds, longer the more 429s in a row. The first 429 of a
+                    burst also lowers the ceiling and the current concurrency,
+                    and after 50 clean files the ceiling is probed upwards again.
+
+    Plain monotonic timestamps and polling, no asyncio primitives, so it works
+    on any event loop."""
+
+    SCALE_UP_EVERY = 3         # clean files before one more worker is allowed
+    PROBE_EVERY = 50           # clean files before a lowered ceiling is raised by one
+
+    def __init__(self, max_parallel: int | None = None, start_parallel: int | None = None):
+        self.max_parallel = max(1, max_parallel or PAWCHIVE_PARALLEL)
+        self.ceiling = self.max_parallel
+        self.limit = max(1, min(start_parallel or PAWCHIVE_START_PARALLEL, self.ceiling))
+        self.active = 0
+        self.clean = 0
+        self.cooldown_until = 0.0
+        self._next_start = {"file": 0.0, "api": 0.0}
+
+    # -- waiting -----------------------------------------------------------------
+    async def gate(self) -> None:
+        """Wait out the cooldown (it may be extended while waiting)."""
+        while (left := self.cooldown_until - time.monotonic()) > 0:
+            await asyncio.sleep(min(left, 1.0))
+
+    async def pace(self, kind: str) -> None:
+        """Reserve the next start time of a "file" or "api" request and wait for it."""
+        import random
+        low, high = PAWCHIVE_FILE_DELAY if kind == "file" else PAWCHIVE_PAGE_DELAY
+        now = time.monotonic()
+        start = max(now, self._next_start[kind])
+        self._next_start[kind] = start + random.uniform(low, high)
+        if start > now:
+            await asyncio.sleep(start - now)
+
+    def slot(self):
+        """``async with throttle.slot():`` around one file download: waits for a
+        free place under the current concurrency limit, then for the cooldown
+        and the pacing gap."""
+        throttle = self
+
+        class _Slot:
+            async def __aenter__(self):
+                while throttle.active >= throttle.limit:
+                    await asyncio.sleep(0.05)
+                throttle.active += 1               # no await between check and take
+                try:
+                    await throttle.gate()
+                    await throttle.pace("file")
+                except BaseException:
+                    throttle.active -= 1
+                    raise
+
+            async def __aexit__(self, *exc):
+                throttle.active -= 1
+                return False
+        return _Slot()
+
+    # -- feedback ----------------------------------------------------------------
+    def on_success(self) -> None:
+        """A file went through: after a few in a row let one more worker run."""
+        self.clean += 1
+        if time.monotonic() < self.cooldown_until:
+            return
+        if self.limit < self.ceiling and self.clean % self.SCALE_UP_EVERY == 0:
+            self.limit += 1
+            logger.info("DLOAD", f"  pawchive: connection stable — {self.limit} files at once.")
+        elif self.clean >= self.PROBE_EVERY and self.ceiling < self.max_parallel:
+            self.ceiling += 1
+            self.clean = 0
+            logger.info("DLOAD", f"  pawchive: stable for a while — allowing up to {self.ceiling} files at once.")
+
+    def on_rate_limited(self, retry_after: float | None = None, streak: int = 1) -> float:
+        """A 429 came back. Starts (or extends) the shared cooldown and returns
+        how long everything now waits. Only the first 429 of a burst lowers the
+        concurrency: the other workers refused at the same moment must not each
+        take it down again."""
+        now = time.monotonic()
+        wait = min(PAWCHIVE_COOLDOWN_CAP,
+                   max(retry_after or 0.0, PAWCHIVE_COOLDOWN * max(1, min(streak, 4))))
+        first_of_burst = now >= self.cooldown_until
+        self.cooldown_until = max(self.cooldown_until, now + wait)
+        if first_of_burst:
+            before = self.limit
+            self.ceiling = max(1, min(self.ceiling, self.limit - 1))
+            self.limit = max(1, self.ceiling - 1)
+            self.clean = 0
+            logger.warning("DLOAD",
+                f"  pawchive rate limit (HTTP 429): pausing {wait:.0f}s, files at once "
+                f"{before} -> {self.limit} (stable ceiling {self.ceiling}).")
+        else:
+            logger.warning("DLOAD",
+                f"  pawchive rate limit (HTTP 429) again: pause now {self.cooldown_until - now:.0f}s.")
+        return wait
+
+
+async def _pawchive_get(client, url: str, throttle: _PawchiveThrottle):
+    """GET an API / page URL of pawchive.pw: paced, held back by the shared
+    cooldown, and a 429 starts that cooldown and is retried (up to
+    PAWCHIVE_MAX_RATE_LIMITED times in a row) rather than failing the page."""
+    limited = 0
+    while True:
+        await throttle.gate()
+        await throttle.pace("api")
+        try:
+            return await _get_with_retry(client, url, retry_429=False)
+        except Exception as exc:
+            if not _is_rate_limited(exc):
+                raise
+            limited += 1
+            if limited > PAWCHIVE_MAX_RATE_LIMITED:
+                raise
+            throttle.on_rate_limited(_retry_after_seconds(exc), limited)
 
 
 class _PawchiveAuth:
@@ -2732,16 +2948,20 @@ class _PawchiveRun:
     several posts (re-uploads, the same mega folder in every post of a
     series) is only handled once."""
 
-    def __init__(self, externals: dict | None, auth: _PawchiveAuth | None = None):
+    def __init__(self, externals: dict | None, auth: _PawchiveAuth | None = None,
+                 throttle: _PawchiveThrottle | None = None):
         self.externals = externals or {}
         self.auth = auth or _PawchiveAuth()
+        self.throttle = throttle or _PawchiveThrottle()
         self.files: set[str] = set()
         self.links: set[str] = set()
         self.ok = self.skipped = self.failed = self.filtered = 0
+        self.excluded = 0              # files of a type outside PAWCHIVE_EXTENSIONS
 
 
-async def _pawchive_fetch_temp_links(client, page_url: str) -> dict[str, str]:
-    r = await _get_with_retry(client, page_url)
+async def _pawchive_fetch_temp_links(client, page_url: str,
+                                     throttle: _PawchiveThrottle) -> dict[str, str]:
+    r = await _pawchive_get(client, page_url, throttle)
     return _pawchive_temp_links(r.text)
 
 
@@ -2768,9 +2988,9 @@ async def _pawchive_resolve_deferred(
         return [d for d in deferred if str(d.get("name") or "").lower() not in links]
 
     try:
-        links = await _pawchive_fetch_temp_links(client, page_url)
+        links = await _pawchive_fetch_temp_links(client, page_url, run.throttle)
         if _missing(links) and not run.auth.asked and run.auth.ensure(client):
-            links = await _pawchive_fetch_temp_links(client, page_url)
+            links = await _pawchive_fetch_temp_links(client, page_url, run.throttle)
     except Exception as exc:
         run.failed += len(deferred)
         logger.error("DLOAD", f"  {label}: could not read {page_url} for its temporary files — {exc}")
@@ -2798,8 +3018,10 @@ async def _pawchive_process_posts(
     taken: set[str] = set()
 
     for post in posts:
-        files = _pawchive_post_files(post)
-        deferred = _pawchive_deferred_attachments(post)
+        excluded: list[str] = []
+        files = _pawchive_post_files(post, excluded)
+        deferred = _pawchive_deferred_attachments(post, excluded)
+        run.excluded += len(excluded)
         if deferred:
             files += await _pawchive_resolve_deferred(client, post, deferred, run)
         files = [f for f in files if _pawchive_item_key(f) not in run.files]
@@ -2821,12 +3043,15 @@ async def _pawchive_process_posts(
         if any(_is_pawchive_temp_url(item["url"]) for item, _ in jobs):
             run.auth.ensure(client)
 
-        sem = asyncio.Semaphore(PAWCHIVE_PARALLEL)
-
         async def _one(item: dict, name: str):
-            async with sem:
+            if _pawchive_already_downloaded(item, history, skip):
+                # No request, so no slot and no pacing: a resumed run must be
+                # able to skip thousands of finished files at once.
                 return await _download_pawchive_file(client, item, directory, name,
-                                                     history, skip)
+                                                     history, skip, run.throttle)
+            async with run.throttle.slot():
+                return await _download_pawchive_file(client, item, directory, name,
+                                                     history, skip, run.throttle)
 
         for coro in asyncio.as_completed([_one(i, n) for i, n in jobs]):
             url, err, status = await coro
@@ -2880,7 +3105,7 @@ async def _download_pawchive_pages(
             continue
         logger.info("DLOAD", f"  Page {page}...")
         try:
-            r = await _get_with_retry(client, _pawchive_api_url(url, page))
+            r = await _pawchive_get(client, _pawchive_api_url(url, page), run.throttle)
             posts = _pawchive_posts_from(r.json())
         except Exception as exc:
             # Not "end of results": we can't tell, so count it and go on.
@@ -2916,12 +3141,14 @@ async def _download_pawchive(
     client, url: str, directory: Path, history: dict, skip: bool,
     page_start: int | None = None, page_end: int | None = None,
     externals: dict | None = None, auth: _PawchiveAuth | None = None,
+    throttle: _PawchiveThrottle | None = None,
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed).
 
     `externals` maps "gofile" / "mega" / "gdrive" to the clients used for the
-    links found in post content. `auth` is shared by all pawchive links of a
-    run, so the session cookie is asked for at most once. For the two listings the page directive
+    links found in post content. `auth` and `throttle` are shared by all
+    pawchive links of a run: the session cookie is asked for at most once, and
+    one 429 slows every request down, not just the one that was refused. For the two listings the page directive
     (``| N``, ``| N | M``, ``| all``) or, without one, the link's own ``?o=``
     picks the pages; with neither only page 1 is read (a listing can hold
     millions of posts, so everything has to be asked for with ``| all``).
@@ -2934,12 +3161,12 @@ async def _download_pawchive(
             f"/<service>/user/ID/post/ID): {url}")
         return 0, 0, 1
     kind = parsed[0]
-    run = _PawchiveRun(externals, auth)
+    run = _PawchiveRun(externals, auth, throttle)
 
     if kind == "post":
         api_url = _pawchive_api_url(url)
         logger.info("DLOAD", f"Scraping pawchive post: {api_url}")
-        r = await _get_with_retry(client, api_url)
+        r = await _pawchive_get(client, api_url, run.throttle)
         await _pawchive_process_posts(client, _pawchive_posts_from(r.json()),
                                       directory, history, skip, run)
     else:
@@ -2957,6 +3184,9 @@ async def _download_pawchive(
         await _download_pawchive_pages(
             client, url, directory, history, skip, page_start, page_end, run)
 
+    if run.excluded:
+        logger.info("DLOAD",
+            f"  {run.excluded} file(s) skipped: not {' / '.join(PAWCHIVE_EXTENSIONS)}.")
     if run.filtered:
         logger.info("DLOAD",
             f"  {run.filtered} PNG(s) skipped: not 320x180 / 252x352-ratio.")
@@ -3055,6 +3285,9 @@ class DownloadContents(BaseTask):
                 # Asks for the pawchive.pw session cookie, but only if a file on
                 # t1.pawchive.pw turns up; shared so it is asked for once per run.
                 pawchive_auth = _PawchiveAuth()
+                # Pacing, concurrency and the 429 cooldown are one budget for
+                # the whole run, so they are shared the same way.
+                pawchive_throttle = _PawchiveThrottle()
                 for url_str, page_start, page_end in urls:
                     ok = skipped = fail = 0
                     try:
@@ -3065,7 +3298,7 @@ class DownloadContents(BaseTask):
                                 pawchive_client, url_str, output_dir, history,
                                 self.skip_downloaded, page_start=page_start,
                                 page_end=page_end, externals=pawchive_externals,
-                                auth=pawchive_auth)
+                                auth=pawchive_auth, throttle=pawchive_throttle)
                         elif BEPIS_URL in url_str:
                             ok, skipped, fail = await _download_bepis(
                                 bepis_client, url_str, output_dir, history, self.skip_downloaded,

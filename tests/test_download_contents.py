@@ -1136,6 +1136,8 @@ class _PawResp:
         self.text = text
 
     def raise_for_status(self):
+        if isinstance(self._err, Exception):
+            raise self._err
         if self._err:
             raise RuntimeError(self._err)
 
@@ -1157,8 +1159,13 @@ class _PawClient:
     """pages: {offset: [posts]} for listings; singles: {post_id: post};
     blobs: {url: bytes}. Records every API call and every file fetch."""
 
-    def __init__(self, pages=None, singles=None, blobs=None, chunk=65536, html=None, deny=()):
+    def __init__(self, pages=None, singles=None, blobs=None, chunk=65536, html=None, deny=(),
+                 limited=None, retry_after=None):
         import httpx
+        # {url without query: how many 429s to answer before the real answer}
+        self.limited = dict(limited or {})
+        self.retry_after = retry_after                             # Retry-After header of those 429s
+        self.times: list[float] = []                               # when each request arrived
         self.pages, self.singles, self.blobs, self.chunk = pages or {}, singles or {}, blobs or {}, chunk
         self.html = {u: list(v) for u, v in (html or {}).items()}   # post web pages: every read pops one
         self.deny = set(deny)                                      # hosts that answer 403
@@ -1166,9 +1173,23 @@ class _PawClient:
         self.api_calls: list[str] = []
         self.fetched: list[str] = []
 
+    def _maybe_429(self, url):
+        import time
+        import httpx
+        self.times.append(time.monotonic())
+        base = url.split("?")[0]
+        if self.limited.get(base, 0) > 0:
+            self.limited[base] -= 1
+            headers = {"Retry-After": str(self.retry_after)} if self.retry_after is not None else {}
+            resp = httpx.Response(429, headers=headers, request=httpx.Request("GET", url))
+            return _PawResp(status_error=httpx.HTTPStatusError("429 Too Many Requests", request=resp.request, response=resp))
+        return None
+
     async def get(self, url):
         from urllib.parse import parse_qsl, urlparse
         self.api_calls.append(url)
+        if (r429 := self._maybe_429(url)) is not None:
+            return r429
         parts = urlparse(url)
         if url in self.html:
             seq = self.html[url]
@@ -1181,12 +1202,23 @@ class _PawClient:
     def stream(self, method, url):
         from urllib.parse import urlparse
         self.fetched.append(url)
+        if (r429 := self._maybe_429(url)) is not None:
+            return _PawStream(r429)
         if urlparse(url).hostname in self.deny:
             return _PawStream(_PawResp(status_error="403 Forbidden"))
         base = url.split("?")[0]                  # blobs are keyed without the ?f= name
         if base not in self.blobs:
             return _PawStream(_PawResp(status_error="404 Not Found"))
         return _PawStream(_PawResp(body=self.blobs[base], chunk=self.chunk))
+
+
+@pytest.fixture(autouse=True)
+def _fast_pawchive(monkeypatch):
+    """No pacing gaps and a tiny 429 cooldown, so the tests run instantly;
+    the throttle tests set their own values where timing is the point."""
+    monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (0.0, 0.0))
+    monkeypatch.setattr(dc, "PAWCHIVE_PAGE_DELAY", (0.0, 0.0))
+    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 0.05)
 
 
 def _data(path): return "https://file.pawchive.pw/data" + path
@@ -1678,3 +1710,297 @@ def test_pawchive_session_validation_status_mapping(monkeypatch):
     assert seen["url"] == ps.ACCOUNT_URL and seen["follow_redirects"] is False   # a redirect IS the answer
     assert seen["headers"]["User-Agent"] == ps.USER_AGENT
     assert [(c.name, c.domain) for c in seen["cookies"].jar] == [("session", "pawchive.pw")]
+
+
+# --- pawchive: throttle (pacing, adaptive concurrency, shared 429 cooldown) -------
+
+def test_throttle_scales_up_and_backs_off(monkeypatch):
+    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 14.0)
+    t = dc._PawchiveThrottle()
+    assert (t.limit, t.ceiling) == (2, 4)                     # starts low, may grow to 4
+
+    for _ in range(3):
+        t.on_success()
+    assert t.limit == 3                                       # every 3 clean files, one more worker
+    for _ in range(30):
+        t.on_success()
+    assert (t.limit, t.ceiling) == (4, 4)                     # never above the ceiling
+
+    wait = t.on_rate_limited()                                # first 429 of a burst
+    assert wait == 14.0 and (t.ceiling, t.limit) == (3, 2)    # ceiling = old limit - 1, limit lower still
+    assert t.cooldown_until > 0
+    t.on_rate_limited()                                       # same burst: other refused workers
+    assert (t.ceiling, t.limit) == (3, 2)                     # ... must not lower it again
+
+    before = t.limit
+    for _ in range(9):                                        # no scaling up inside the cooldown
+        t.on_success()
+    assert t.limit == before
+
+    t.cooldown_until = 0.0                                    # cooldown over
+    t.clean = 0
+    for _ in range(3):
+        t.on_success()
+    assert t.limit == 3                                       # grows again, up to the new ceiling
+    t.clean = 49
+    t.on_success()                                            # 50 clean files: probe a higher ceiling
+    assert t.ceiling == 4 and t.clean == 0
+
+    low = dc._PawchiveThrottle()                              # at the bottom it stays at 1
+    low.on_rate_limited()
+    assert (low.ceiling, low.limit) == (1, 1)
+    low.cooldown_until = 0.0
+    low.on_rate_limited()
+    assert (low.ceiling, low.limit) == (1, 1)
+
+
+def test_throttle_cooldown_length(monkeypatch):
+    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 14.0)
+    t = dc._PawchiveThrottle()
+    assert t.on_rate_limited(retry_after=3) == 14.0           # never shorter than the base cooldown
+    t.cooldown_until = 0.0
+    assert t.on_rate_limited(retry_after=30) == 30.0          # Retry-After wins when longer
+    t.cooldown_until = 0.0
+    assert t.on_rate_limited(retry_after=9999) == dc.PAWCHIVE_COOLDOWN_CAP     # ... within the cap
+    t.cooldown_until = 0.0
+    assert t.on_rate_limited(streak=3) == 42.0                # longer after repeated 429s
+    t.cooldown_until = 0.0
+    assert t.on_rate_limited(streak=50) == 56.0               # streak factor is capped at 4
+
+
+def test_retry_after_parsing():
+    import datetime as _dt
+    import email.utils
+    import httpx
+
+    def err(value):
+        headers = {} if value is None else {"Retry-After": value}
+        resp = httpx.Response(429, headers=headers, request=httpx.Request("GET", "https://x/"))
+        return httpx.HTTPStatusError("429", request=resp.request, response=resp)
+
+    assert dc._retry_after_seconds(err("7")) == 7.0
+    assert dc._retry_after_seconds(err("9999")) == 120.0
+    assert dc._retry_after_seconds(err(None)) is None
+    assert dc._retry_after_seconds(err("soon")) is None
+    assert dc._retry_after_seconds(RuntimeError("no response")) is None
+    when = email.utils.format_datetime(_dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(seconds=60))
+    assert 50 <= dc._retry_after_seconds(err(when)) <= 60     # an HTTP date works too
+    assert dc._is_rate_limited(err("1")) and not dc._is_rate_limited(RuntimeError("429"))
+
+
+def test_throttle_pacing_gate_and_slots(monkeypatch):
+    import time
+    monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (0.06, 0.06))
+    monkeypatch.setattr(dc, "PAWCHIVE_PAGE_DELAY", (0.06, 0.06))
+
+    async def scenario():
+        t = dc._PawchiveThrottle()
+        t0 = time.monotonic()
+        await asyncio.gather(*(t.pace("api") for _ in range(3)))   # three requests: two gaps
+        assert time.monotonic() - t0 >= 0.11
+        t0 = time.monotonic()
+        await asyncio.gather(*(t.pace("file") for _ in range(3)))  # files are paced separately
+        assert time.monotonic() - t0 >= 0.11
+
+        t.cooldown_until = time.monotonic() + 0.15                 # a cooldown holds back everything
+        t0 = time.monotonic()
+        await t.gate()
+        assert time.monotonic() - t0 >= 0.13
+        t.cooldown_until = time.monotonic() + 0.15
+        t0 = time.monotonic()
+        async with t.slot():
+            assert time.monotonic() - t0 >= 0.13                   # ... a new download included
+        assert t.active == 0
+
+        # never more downloads in flight than the current limit
+        monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (0.0, 0.0))
+        for limit in (1, 2):
+            t = dc._PawchiveThrottle()
+            t.limit = limit
+            peak = 0
+
+            async def job():
+                nonlocal peak
+                async with t.slot():
+                    peak = max(peak, t.active)
+                    await asyncio.sleep(0.02)
+            await asyncio.gather(*(job() for _ in range(6)))
+            assert peak == limit and t.active == 0
+
+        # a slot is given back when the download inside it fails or is cancelled
+        t = dc._PawchiveThrottle()
+        with pytest.raises(RuntimeError):
+            async with t.slot():
+                raise RuntimeError("boom")
+        assert t.active == 0
+    asyncio.run(scenario())
+
+
+def test_pawchive_file_429_waits_and_retries_the_same_host(tmp_path):
+    path = "/01/aa/pack.rar"
+    client = _PawClient(blobs={_data(path): b"Rar!" * 4}, limited={_data(path): 2}, retry_after=0)
+    throttle = dc._PawchiveThrottle()
+    run = dc._PawchiveRun(None, throttle=throttle)
+    posts = [{"id": "1", "file": {"name": "pack.rar", "node": 2, "path": path}}]
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+
+    assert (run.ok, run.failed) == (1, 0)                     # not failed: waited and tried again
+    assert client.fetched == [_data(path) + "?f=pack.rar"] * 3   # same host each time, node untouched
+    gaps = [b - a for a, b in zip(client.times, client.times[1:])]
+    assert min(gaps[:2]) >= dc.PAWCHIVE_COOLDOWN * 0.8        # the cooldown was really waited out
+    assert throttle.ceiling == 1 and throttle.limit == 1      # and concurrency went down for good
+    assert (Path(tmp_path) / "pack.rar").read_bytes() == b"Rar!" * 4
+
+
+def test_pawchive_file_gives_up_after_repeated_429(tmp_path, monkeypatch):
+    monkeypatch.setattr(dc, "PAWCHIVE_COOLDOWN", 0.005)
+    path = "/01/aa/pack.rar"
+    node = "https://n2.pawchive.pw/data" + path
+    client = _PawClient(limited={_data(path): 1000})
+    run = dc._PawchiveRun(None)
+    posts = [{"id": "1", "file": {"name": "pack.rar", "node": 2, "path": path}}]
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    assert (run.ok, run.failed) == (0, 1)
+    file_host = [u for u in client.fetched if u.startswith(_data(path))]
+    assert len(file_host) == dc.PAWCHIVE_MAX_RATE_LIMITED + 1      # a bounded number of waits ...
+    assert client.fetched[-1].startswith(node)                     # ... then the next host gets its turn
+    assert not list(Path(tmp_path).iterdir())
+
+
+def test_pawchive_api_429_uses_the_shared_cooldown(tmp_path):
+    post_url = "https://pawchive.pw/patreon/user/9/post/77"
+    api = dc._pawchive_api_url(post_url).split("?")[0]
+    path = "/00/00/a.rar"
+    single = {"id": "77", "user": "9", "service": "patreon", "file": {"name": "a.rar", "path": path}}
+    client = _PawClient(singles={"77": single}, blobs={_data(path): b"x"},
+                        limited={api: 2}, retry_after=0)
+    throttle = dc._PawchiveThrottle()
+    ok, skipped, failed = asyncio.run(dc._download_pawchive(
+        client, post_url, Path(tmp_path), {}, True, throttle=throttle))
+    assert (ok, failed) == (1, 0)
+    assert len([u for u in client.api_calls if u.split("?")[0] == api]) == 3   # 2 x 429, then the post
+    assert throttle.ceiling < dc.PAWCHIVE_PARALLEL                              # the API 429 slowed the run
+
+    # a listing page that is refused again and again fails that page only
+    listing = "https://pawchive.pw/patreon/user/9"
+    page_api = dc._pawchive_api_url(listing, 1).split("?")[0]
+    bad = _PawClient(limited={page_api: 1000})
+    dc.PAWCHIVE_COOLDOWN = 0.002
+    try:
+        ok, skipped, failed = asyncio.run(dc._download_pawchive(
+            bad, listing, Path(tmp_path), {}, True, page_start=1, page_end=1))
+    finally:
+        dc.PAWCHIVE_COOLDOWN = 0.05
+    assert ok == 0 and failed >= 1
+    assert len(bad.api_calls) == dc.PAWCHIVE_MAX_RATE_LIMITED + 1
+
+
+def test_get_with_retry_can_hand_429_to_the_caller():
+    import httpx
+    url = "https://pawchive.pw/api/v1/x"
+    client = _PawClient(limited={url: 5})
+    with pytest.raises(httpx.HTTPStatusError):
+        asyncio.run(dc._get_with_retry(client, url, retry_429=False))
+    assert len(client.api_calls) == 1                          # raised at once, no private backoff
+
+
+def test_pawchive_skipped_files_cost_no_slot_or_delay(tmp_path, monkeypatch):
+    monkeypatch.setattr(dc, "PAWCHIVE_FILE_DELAY", (30.0, 30.0))   # a paced file would take 30 s
+    paths = [f"/00/00/f{i}.rar" for i in range(4)]
+    posts = [{"id": str(i), "file": {"name": f"f{i}.rar", "path": p}} for i, p in enumerate(paths)]
+    history = {_data(p): str(Path(tmp_path) / f"f{i}.rar") for i, p in enumerate(paths)}
+    client = _PawClient()
+    run = dc._PawchiveRun(None)
+    asyncio.run(asyncio.wait_for(
+        dc._pawchive_process_posts(client, posts, Path(tmp_path), history, True, run), timeout=3))
+    assert (run.ok, run.skipped, run.failed) == (0, 4, 0) and client.fetched == []
+
+
+# --- file type restrictions: pixiv PNG only, pawchive archives + PNG --------------
+
+def test_pixiv_artwork_images_are_png_only(monkeypatch):
+    base = "https://i.pximg.net/img-original/img/2024/01/01/"
+    pages = [
+        {"urls": {"original": base + "1_p0.png"}, "width": 252, "height": 352},      # kept
+        {"urls": {"original": base + "1_p1.jpg"}, "width": 252, "height": 352},      # right size, wrong type
+        {"urls": {"original": base + "1_p2.gif"}, "width": 320, "height": 180},      # wrong type
+        {"urls": {"original": base + "1_p3.PNG?x=1"}, "width": 320, "height": 180},  # kept: case + query
+        {"urls": {"original": base + "1_p4.png"}, "width": 1920, "height": 1080},    # PNG, wrong size
+        {"urls": {}, "width": 252, "height": 352},                                    # no original: ignored
+    ]
+
+    async def fake_api(client, endpoint, params=None):
+        return pages
+    monkeypatch.setattr(dc, "_pixiv_api", fake_api)
+
+    urls, rejected = asyncio.run(dc._pixiv_artwork_images(None, "1"))
+    assert urls == [base + "1_p0.png", base + "1_p3.PNG?x=1"]
+    assert rejected == 3                                       # jpg + gif + the 1920x1080 PNG
+    assert dc.PIXIV_EXTENSIONS == (".png",)
+
+
+def test_pawchive_only_archives_and_png_are_downloaded():
+    assert dc.PAWCHIVE_EXTENSIONS == (".rar", ".zip", ".7z", ".zipmod", ".png")
+    post = {"id": "1",
+            "file": {"name": "cover.jpg", "node": 2, "path": "/aa/bb/cover.jpg"},
+            "attachments": [
+                {"name": "cover.jpg", "node": 2, "path": "/aa/bb/cover.jpg"},      # the main file again
+                {"name": "mod.zipmod", "node": 2, "path": "/00/01/mod.zipmod"},
+                {"name": "Pack.RAR", "node": 2, "path": "/00/02/pack.rar"},        # case-insensitive
+                {"name": "chars.7z", "node": 2, "path": "/00/03/chars.7z"},
+                {"name": "bundle.zip", "node": 2, "path": "/00/04/bundle.zip"},
+                {"name": "card.png", "node": 2, "path": "/00/05/card.png"},
+                {"name": "notes.txt", "node": 2, "path": "/00/06/notes.txt"},
+                {"name": "clip.mp4", "node": 2, "path": "/00/07/clip.mp4"},
+                {"name": "photo.jpeg", "node": 2, "path": "/00/08/photo.jpeg"},
+                {"name": "anim.gif", "node": 2, "path": "/00/09/anim.gif"},
+                {"name": "setup.exe", "node": 2, "path": "/00/0a/setup.exe"},
+                {"name": "My Mod v1.2", "node": 2, "path": "/00/0b/hash.zip"},     # odd display name, real .zip
+                {"name": "readme", "node": 2, "path": "/00/0c/readme"},            # no extension at all
+            ]}
+    excluded: list[str] = []
+    files = dc._pawchive_post_files(post, excluded)
+    assert [f["name"] for f in files] == [
+        "mod.zipmod", "Pack.RAR", "chars.7z", "bundle.zip", "card.png", "My Mod v1.2"]
+    assert excluded == ["cover.jpg", "notes.txt", "clip.mp4", "photo.jpeg", "anim.gif",
+                        "setup.exe", "readme"]                  # the repeated main file is counted once
+    assert [f["check_size"] for f in files] == [False, False, False, False, True, False]
+    assert [f["name"] for f in dc._pawchive_post_files(post)] == [f["name"] for f in files]   # `excluded` is optional
+
+    # a full URL path is judged by its file name, not its query string
+    t1 = {"file": {"name": "big.rar", "path": "https://t1.pawchive.pw/f/h/big.rar?e=1&s=x.jpg"},
+          "attachments": [{"name": "x.mp4", "path": "https://t1.pawchive.pw/f/h/x.mp4?e=1&s=y.zip"}]}
+    assert [f["name"] for f in dc._pawchive_post_files(t1)] == ["big.rar"]
+
+
+def test_pawchive_deferred_attachments_are_filtered_before_the_page_is_read(tmp_path):
+    post = {"id": "77", "user": "9", "service": "patreon", "attachments": [
+        {"name": "Big Pack.rar", "deferred": True},
+        {"name": "movie.mp4", "deferred": True},
+        {"name": "noext", "deferred": True},
+    ]}
+    excluded: list[str] = []
+    assert [a["name"] for a in dc._pawchive_deferred_attachments(post, excluded)] == ["Big Pack.rar"]
+    assert excluded == ["movie.mp4", "noext"]
+
+    # only unwanted temporary files: no page request, no login prompt
+    asked: list[int] = []
+    client = _PawClient()
+    run = dc._PawchiveRun(None, dc._PawchiveAuth(lambda: asked.append(1)))
+    only_video = {"id": "78", "user": "9", "service": "patreon",
+                  "attachments": [{"name": "movie.mp4", "deferred": True}]}
+    asyncio.run(dc._pawchive_process_posts(client, [only_video], Path(tmp_path), {}, True, run))
+    assert client.api_calls == [] and asked == [] and run.excluded == 1 and run.failed == 0
+
+
+def test_pawchive_other_file_types_are_never_requested(tmp_path):
+    keep, skip_ = "/00/00/keep.zip", "/00/00/skip.mp4"
+    client = _PawClient(blobs={_data(keep): b"PK", _data(skip_): b"video"})
+    run = dc._PawchiveRun(None)
+    posts = [{"id": "1", "file": {"name": "skip.mp4", "path": skip_},
+              "attachments": [{"name": "keep.zip", "path": keep},
+                              {"name": "skip.mp4", "path": skip_}]}]
+    asyncio.run(dc._pawchive_process_posts(client, posts, Path(tmp_path), {}, True, run))
+    assert (run.ok, run.failed, run.excluded) == (1, 0, 1)
+    assert client.fetched == [_data(keep) + "?f=keep.zip"]
+    assert [f.name for f in Path(tmp_path).iterdir()] == ["keep.zip"]
