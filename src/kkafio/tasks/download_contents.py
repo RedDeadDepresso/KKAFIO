@@ -62,6 +62,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -88,7 +89,7 @@ from kkafio.services.content_sources.pixiv import (
     is_pixiv_url,
 )
 from kkafio.services.pawchive_session import USER_AGENT as PAWCHIVE_USER_AGENT
-from kkafio.tasks.base_task import BaseTask
+from kkafio.tasks.base_task import BaseTask, open_in_default_app
 
 if TYPE_CHECKING:
     import httpx
@@ -176,6 +177,31 @@ class _Totals:
 
 
 @dataclass
+class _LinkResult:
+    """What happened to one input line, for the report."""
+    link: _Link
+    ok: int = 0
+    skipped: int = 0
+    failed: int = 0
+    error: str = ""           # why the whole line failed (exception / skipped outright)
+
+
+REPORT_NAME = "kkafio_download_contents_report.txt"
+
+
+def _link_label(link: _Link) -> str:
+    """The input line as the user would have written it."""
+    url, page_start, page_end, follow = link
+    label = url
+    if page_start is not None:
+        if page_end is None:
+            label += " | all" if page_start == 1 else f" | {page_start} | …"
+        else:
+            label += f" | {page_start}" + ("" if page_end == page_start else f" | {page_end}")
+    return label + (" | f" if follow else "")
+
+
+@dataclass
 class _Clients:
     """One HTTP client per site: each needs its own cookies / headers."""
     bepis: httpx.AsyncClient
@@ -218,6 +244,7 @@ class DownloadContents(BaseTask):
         self.links           : str  = cfg.get("Links", "")
         self.output_dir_str  : str  = cfg.get("OutputDir", "")
         self.skip_downloaded : bool = cfg.get("SkipDownloaded", True)
+        self.open_report     : bool = cfg.get("OpenReport", True)
 
     def run(self) -> None:
         urls = self._parse_links()
@@ -239,11 +266,14 @@ class DownloadContents(BaseTask):
 
         history = history_store.load_history()
         totals = _Totals()
+        results: list[_LinkResult] = []
 
         try:
             asyncio.run(self._download_all(
-                urls, output_dir, history, totals, kkd_session, pixiv_session))
+                urls, output_dir, history, totals, kkd_session, pixiv_session, results))
         finally:
+            # Also when interrupted: the links not reached are listed as such.
+            report_path = self._write_report(output_dir, urls, results, totals)
             # Also runs on Stop / Ctrl+C (KeyboardInterrupt) and on errors, so
             # "Skip already downloaded" still works on the next run.
             try:
@@ -254,6 +284,76 @@ class DownloadContents(BaseTask):
         self.log_done("DLOAD", moved=totals.ok, skipped=totals.skipped,
                       extra=f"{totals.failed} failed, "
                             f"{totals.ok + totals.skipped + totals.failed} total")
+
+        # Like Download Missing Mods: open the report only when something went wrong.
+        if self.open_report and report_path is not None and totals.failed:
+            logger.info("DLOAD", "Some downloads failed — opening the report")
+            open_in_default_app("DLOAD", report_path)
+
+    # -- report --------------------------------------------------------------
+
+    def _write_report(
+        self, output_dir: Path, urls: list[_Link], results: list[_LinkResult], totals: _Totals,
+    ) -> Path | None:
+        """Write kkafio_download_contents_report.txt to the output directory.
+
+        Returns its path, or None if it couldn't be written."""
+        not_reached = urls[len(results):]               # links are handled in order
+        failed = [r for r in results if r.failed or r.error]
+        fine = [r for r in results if not (r.failed or r.error)]
+
+        lines: list[str] = [
+            "KKAFIO — Download Contents Report",
+            f"Generated        : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Output directory : {output_dir}",
+            f"Skip downloaded  : {'Yes' if self.skip_downloaded else 'No'}",
+            "",
+            "=" * 60,
+            "",
+            f"Links processed         : {len(results)} of {len(urls)}",
+            f"Downloaded successfully : {totals.ok}",
+            f"Skipped (already have)  : {totals.skipped}",
+            f"Failed                  : {totals.failed}",
+            "",
+        ]
+        if failed:
+            lines += [
+                "=" * 60,
+                f"Links with failures ({len(failed)}):",
+                "Check your internet connection and try again; a link can also be private, "
+                "deleted or",
+                "need a login. The log lists every file that failed.",
+                "",
+            ]
+            for r in failed:
+                lines.append(f"  ✗ {_link_label(r.link)}")
+                lines.append("    " + (r.error or
+                    f"{r.failed} failed, {r.ok} downloaded, {r.skipped} skipped"))
+            lines.append("")
+        if not_reached:
+            lines += [
+                "=" * 60,
+                f"Links not processed ({len(not_reached)}) — the run was stopped:",
+                "",
+            ]
+            lines += [f"  … {_link_label(u)}" for u in not_reached]
+            lines.append("")
+        if fine:
+            lines += ["=" * 60, f"Links completed ({len(fine)}):", ""]
+            for r in fine:
+                mark = "+" if r.ok else "~"
+                lines.append(f"  {mark} {_link_label(r.link)}")
+                lines.append(f"    {r.ok} downloaded, {r.skipped} skipped")
+            lines.append("")
+
+        report_path = output_dir / REPORT_NAME
+        try:
+            report_path.write_text("\n".join(lines), encoding="utf-8")
+            logger.info("DLOAD", f"Report saved: {report_path}")
+            return report_path
+        except Exception as e:
+            logger.warning("DLOAD", f"Could not write report: {e}")
+            return None
 
     # -- setup ---------------------------------------------------------------
 
@@ -341,23 +441,32 @@ class DownloadContents(BaseTask):
     async def _download_all(
         self, urls: list[_Link], output_dir: Path, history: dict[str, str],
         totals: _Totals, kkd_session: str | None, pixiv_session: str | None,
+        results: list[_LinkResult] | None = None,
     ) -> None:
         async with self._open_clients(kkd_session, pixiv_session) as clients:
             run = _Run(output_dir, history, clients, kkd_session, PixivFollowState())
-            for url_str, page_start, page_end, follow_illustrations in urls:
-                ok = skipped = fail = 0
+            for link in urls:
+                url_str, page_start, page_end, follow_illustrations = link
+                entry = _LinkResult(link)
                 try:
                     result = await self._download_url(
                         run, url_str, page_start, page_end, follow_illustrations)
                     if result is None:           # skipped outright: nothing to checkpoint
                         totals.add(0, 0, 1)
+                        entry.failed = 1
+                        entry.error = "Skipped — no session / unsupported link (see the log)"
+                        if results is not None:
+                            results.append(entry)
                         continue
-                    ok, skipped, fail = result
+                    entry.ok, entry.skipped, entry.failed = result
                 except Exception as exc:
                     # One bad URL must not abort the remaining ones.
                     logger.error("DLOAD", f"Failed to process {url_str}: {exc}")
-                    fail += 1
-                totals.add(ok, skipped, fail)
+                    entry.failed += 1
+                    entry.error = f"Error: {exc}"
+                totals.add(entry.ok, entry.skipped, entry.failed)
+                if results is not None:
+                    results.append(entry)
                 # Persist after every URL so an interrupted run keeps
                 # everything downloaded so far.
                 history_store.save_history(history)

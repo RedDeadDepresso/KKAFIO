@@ -14,8 +14,9 @@ SITES = ("pawchive", "bepis", "koikatsu", "pixiv", "gofile", "mega", "gdrive")
 
 
 class _Cfg:
-    def __init__(self, links, out):
-        self.download_contents = {"Links": links, "OutputDir": str(out), "SkipDownloaded": True}
+    def __init__(self, links, out, **extra):
+        self.download_contents = {"Links": links, "OutputDir": str(out), "SkipDownloaded": True,
+                                  **extra}
         self.config_data = {"Core": {}}
 
 
@@ -42,8 +43,12 @@ def rig(monkeypatch, tmp_path):
     monkeypatch.setattr(kkd, "get_or_prompt", lambda: session["kkd"])
     monkeypatch.setattr(pxv, "get_or_prompt", lambda: None)
 
-    def run(links):
-        dc.DownloadContents(_Cfg(links, tmp_path), None).run()
+    opened = []
+    monkeypatch.setattr(dc, "open_in_default_app", lambda tag, path: opened.append(path))
+
+    def run(links, **cfg):
+        dc.DownloadContents(_Cfg(links, tmp_path, **cfg), None).run()
+    run.opened = opened
     return run, calls, saves, session, tmp_path
 
 
@@ -95,3 +100,53 @@ def test_no_valid_links_does_nothing(rig):
     run, calls, saves, *_ = rig
     run("# only a comment\nnope\n")
     assert calls == [] and saves == []
+
+
+def _report(out):
+    return (out / dc.REPORT_NAME).read_text(encoding="utf-8")
+
+
+def test_a_report_is_always_written_and_not_opened_when_all_went_well(rig):
+    run, calls, saves, session, out = rig
+    run("https://gofile.io/d/x\nhttps://mega.nz/file/a#b | f\n")
+    text = _report(out)
+    assert "Download Contents Report" in text
+    assert "Downloaded successfully : 2" in text and "Failed                  : 0" in text
+    assert "Links completed (2):" in text and "Links with failures" not in text
+    assert "+ https://gofile.io/d/x" in text
+    assert run.opened == []
+
+
+def test_the_report_lists_failed_links_and_is_opened(rig):
+    run, calls, saves, session, out = rig
+    run("https://gofile.io/d/boom\n"
+        "https://koikatsucards.com/contents/a\n"           # no session -> skipped outright
+        "https://mega.nz/file/a#b\n"
+        "https://www.pixiv.net/en/users/5 | 2 | 3 | f\n")
+    text = _report(out)
+    assert "Links with failures (2):" in text
+    assert "✗ https://gofile.io/d/boom" in text and "Error: boom" in text
+    assert "✗ https://koikatsucards.com/contents/a" in text
+    assert "+ https://mega.nz/file/a#b" in text
+    assert "+ https://www.pixiv.net/en/users/5 | 2 | 3 | f" in text       # directives shown back
+    assert run.opened == [out / dc.REPORT_NAME]
+
+
+def test_open_report_off_still_writes_the_report(rig):
+    run, calls, saves, session, out = rig
+    run("https://gofile.io/d/boom\n", OpenReport=False)
+    assert (out / dc.REPORT_NAME).exists()
+    assert run.opened == []
+
+
+def test_an_interrupted_run_lists_the_links_not_reached(rig, monkeypatch):
+    run, calls, saves, session, out = rig
+
+    async def stop(client, url, directory, history, skip, **kw):
+        raise KeyboardInterrupt
+    monkeypatch.setattr(dc, "download_mega", stop)
+    with pytest.raises(KeyboardInterrupt):
+        run("https://gofile.io/d/x\nhttps://mega.nz/file/a#b\nhttps://gofile.io/d/y\n")
+    text = _report(out)
+    assert "Links processed         : 1 of 3" in text
+    assert "Links not processed (2)" in text and "… https://gofile.io/d/y" in text

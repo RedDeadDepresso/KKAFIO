@@ -1256,6 +1256,28 @@
         }
       ]
     },
+    "DownloadContentsOpenReport": {
+      "type": "switch",
+      "label": "$option.DownloadContentsOpenReport.label",
+      "description": "$option.DownloadContentsOpenReport.description",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.DownloadContentsOpenReport.case.Yes.label",
+          "pipeline_override": {
+            "OpenReport": true
+          }
+        },
+        {
+          "name": "No",
+          "label": "$option.DownloadContentsOpenReport.case.No.label",
+          "pipeline_override": {
+            "OpenReport": false
+          }
+        }
+      ]
+    },
     "CheckSharedMods": {
       "type": "switch",
       "label": "$option.CheckSharedMods.label",
@@ -1357,7 +1379,7 @@
       "default_check": false,
       "description": "$task.DownloadContents.description",
       "group": ["content-management"],
-      "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded"]
+      "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded", "DownloadContentsOpenReport"]
     },
     {
       "name": "FilterConvertKKS",

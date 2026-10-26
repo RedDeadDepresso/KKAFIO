@@ -8,6 +8,8 @@ Provides only what is genuinely shared across every task:
 """
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 from kkafio.core.errors import InputError
@@ -23,6 +25,20 @@ DEFAULT_DOWNLOADS_PATH = Path("C:/KKAFIO/Downloads")
 # Fallback for the "LlmWebsiteUrl" option (Group / Rename Characters) when it
 # is blank — must match the option's "default" in interface.json.
 DEFAULT_LLM_WEBSITE_URL = "https://chat.deepseek.com/"
+
+
+def open_in_default_app(tag: str, path: Path) -> None:
+    """Open `path` with the system's default program (best effort; a failure
+    is only logged under `tag`). Used to show the reports tasks write."""
+    try:
+        if sys.platform == "win32":
+            os.startfile(str(path))                          # noqa: S606
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(path)])
+        else:
+            subprocess.Popen(["xdg-open", str(path)])
+    except Exception as e:
+        logger.warning(tag, f"Could not open report: {e}")
 
 
 def validate_input_path(tag: str, folder_path: Path, default_path: Path | None = None) -> None:

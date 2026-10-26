@@ -156,7 +156,7 @@ _TASK_KEY = {
 
 _TASK_DEFAULTS = {
     "CreateBackup": {"Enable": False, "OutputPath": "C:/KKAFIO/Backups", "Filename": "koikatsu_backup", "mods": False, "UserData": False, "BepInEx": False},
-    "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True},
+    "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True, "OpenReport": True},
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Request"},
     "FilterDuplicateContents": {"Enable": False, "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "Keep": "Oldest", "DuplicateAction": "Delete", "UseCache": True, "CharaDir": "", "SceneDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
     "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OpenReport": True, "UseCache": True, "InputModsDir": "", "OutputModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
@@ -164,10 +164,10 @@ _TASK_DEFAULTS = {
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Rename", "ExtractArchive": True, "Password": "Request"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "CheckSharedMods": True, "UseCache": True},
     "GroupScenes": {"Enable": False, "SceneDir": "", "IncludeSubfolders": False, "SubgroupByYear": True, "UseCache": True},
-    "GroupChara": {"Enable": False, "CharaDir": "", "IncludeSubfolders": False, "ResolveLocally": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from.\n\nA value is either an empty string \"\" or an object {\"series\": \"\", \"hints\": [...]}. \"hints\" lists up to 5 candidate characters from a character database, written \"Last, First (Series)\", most popular first. They are only name matches and can be wrong: use the one that fits the personality and hair colour, and ignore the list if none does.\n\nRules:\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Some characters may be VTubers (virtual YouTubers). Use \"VTubers\" as the series for them.\n- If you use a hint whose series is not in English, translate it into English.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you do not recognise a character and can search the web, look it up online first.\n- If you are still not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY a JSON object that maps every key to the series name as a plain string (do not repeat \"hints\") — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True, "HintsLanguage": "detect"},
+    "GroupChara": {"Enable": False, "CharaDir": "", "IncludeSubfolders": False, "HintsLanguage": "detect", "ResolveLocally": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from.\n\nA value is either an empty string \"\" or an object {\"series\": \"\", \"hints\": [...]}. \"hints\" lists up to 5 candidate characters from a character database, written \"Last, First (Series)\", most popular first. They are only name matches and can be wrong: use the one that fits the personality and hair colour, and ignore the list if none does.\n\nRules:\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Some characters may be VTubers (virtual YouTubers). Use \"VTubers\" as the series for them.\n- If you use a hint whose series is not in English, translate it into English.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you do not recognise a character and can search the web, look it up online first.\n- If you are still not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY a JSON object that maps every key to the series name as a plain string (do not repeat \"hints\") — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True},
     "GroupCoordinates": {"Enable": False, "CharaDir": "", "CoordDir": "", "IncludeSubfolders": False, "ClothesTolerance": "1", "IgnoreAccessories": True, "GroupByHair": True, "UseCache": True},
     "UngroupCards": {"Enable": False, "InputPath": "", "Chara": True, "Scenes": True, "Coords": True, "DeleteEmptyFolders": True},
-    "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "ResolveLocally": False, "UpdateMetadata": False, "RenameFiles": True, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's English name.\n\nRules:\n- Use the name the character is commonly known by, not a literal reading of the card.\n- If you do not recognise the character or are not confident, search the web for\n  it if you can. If you still do not know, fall back to your best transliteration\n  of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the\n  name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- An entry may have a \"hints\" list: up to 5 candidate characters from a character\n  database, written \"Last, First (Series)\", most popular first. They are only name\n  matches and can be wrong: use the one that fits the personality and hair colour (take\n  its name from it), and ignore the list if none does. Do not repeat \"hints\" in\n  your answer.\n- Some characters may be VTubers (virtual YouTubers); their hints are written with the series\n  \"VTubers\". Use the name from the hint.\n- If you use a hint whose name is not in English, translate it into English.\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True, "HintsLanguage": "detect"},
+    "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "HintsLanguage": "detect", "ResolveLocally": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's English name.\n\nRules:\n- Use the name the character is commonly known by, not a literal reading of the card.\n- If you do not recognise the character or are not confident, search the web for\n  it if you can. If you still do not know, fall back to your best transliteration\n  of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the\n  name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- An entry may have a \"hints\" list: up to 5 candidate characters from a character\n  database, written \"Last, First (Series)\", most popular first. They are only name\n  matches and can be wrong: use the one that fits the personality and hair colour (take\n  its name from it), and ignore the list if none does. Do not repeat \"hints\" in\n  your answer.\n- Some characters may be VTubers (virtual YouTubers); their hints are written with the series\n  \"VTubers\". Use the name from the hint.\n- If you use a hint whose name is not in English, translate it into English.\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True},
     "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
     "DeleteCards": {"Enable": False, "ContentPaths": [], "CheckSharedMods": True, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
     "ReviewSimilarChara": {"Enable": False, "Mode": "Similar cover", "CheckSharedMods": True, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
@@ -198,6 +198,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("OutputDir", "DownloadOutputDir")
         _set("Links", "DownloadLinks")
         _set("SkipDownloaded", "SkipDownloaded")
+        _set("OpenReport", "DownloadContentsOpenReport")
 
     elif task_name == "FilterConvertKKS":
         _set("InputPath", "DownloadsInputPath")
@@ -257,8 +258,6 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
 
     elif task_name == "UninstallContents":
         _set("InputPath", "DownloadsInputPath")
-        _set("CheckSharedMods", "CheckSharedMods")
-        _set("UseCache", "UseCache")
         selected = _extract_opt(opt_values, "InstallContentTypes")
         if selected is not None:
             cfg["Chara"] = "Chara" in selected
@@ -266,6 +265,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
             cfg["Coords"] = "Coords" in selected
             cfg["Scenes"] = "Scenes" in selected
             cfg["Overlays"] = "Overlays" in selected
+        _set("CheckSharedMods", "CheckSharedMods")
+        _set("UseCache", "UseCache")
 
     elif task_name == "GroupScenes":
         _set("SceneDir", "SceneDir")
@@ -276,12 +277,12 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
     elif task_name == "GroupChara":
         _set("CharaDir", "CharaDir")
         _set("IncludeSubfolders", "GroupCharaIncludeSubfolders")
+        _set("HintsLanguage", "HintsLanguage")
+        _set("ResolveLocally", "GroupCharaResolveLocally")
         _set("OpenLlmWebsite", "OpenLlmWebsite")
         _set("LlmWebsiteUrl", "LlmWebsiteUrl")
         _set("Prompt", "GroupCharaPrompt")
         _set("UseCache", "UseCache")
-        _set("HintsLanguage", "HintsLanguage")
-        _set("ResolveLocally", "GroupCharaResolveLocally")
 
     elif task_name == "GroupCoordinates":
         _set("CharaDir", "CharaDir")
@@ -306,12 +307,12 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SkipAlreadyRenamed", "SkipAlreadyRenamed")
         _set("UpdateMetadata", "UpdateMetadata")
         _set("RenameFiles", "RenameFiles")
+        _set("HintsLanguage", "HintsLanguage")
+        _set("ResolveLocally", "RenameCharaResolveLocally")
         _set("OpenLlmWebsite", "OpenLlmWebsite")
         _set("LlmWebsiteUrl", "LlmWebsiteUrl")
         _set("Prompt", "RenameCharaPrompt")
         _set("UseCache", "UseCache")
-        _set("HintsLanguage", "HintsLanguage")
-        _set("ResolveLocally", "RenameCharaResolveLocally")
 
     elif task_name == "ArchiveCards":
         _set("OutputPath", "ArchiveOutputPath")

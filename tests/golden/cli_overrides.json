@@ -2613,6 +2613,7 @@
     {
      "attrs": {
       "links": "cfg-link",
+      "open_report": true,
       "output_dir_str": "/cfg/dl",
       "skip_downloaded": false
      },
@@ -2641,6 +2642,7 @@
     {
      "attrs": {
       "links": "cfg-link",
+      "open_report": true,
       "output_dir_str": "/cfg/dl",
       "skip_downloaded": false
      },
@@ -2669,6 +2671,7 @@
     {
      "attrs": {
       "links": "cfg-link",
+      "open_report": true,
       "output_dir_str": "",
       "skip_downloaded": false
      },
@@ -2693,13 +2696,15 @@
    "S_links",
    "--output-dir",
    "S_output_dir",
-   "--skip-downloaded"
+   "--skip-downloaded",
+   "--open-report"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
+      "open_report": true,
       "output_dir_str": "S_output_dir",
       "skip_downloaded": true
      },
@@ -2724,13 +2729,15 @@
    "S_links",
    "--output-dir",
    "S_output_dir",
-   "--no-skip-downloaded"
+   "--no-skip-downloaded",
+   "--no-open-report"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
+      "open_report": false,
       "output_dir_str": "S_output_dir",
       "skip_downloaded": false
      },
@@ -7529,6 +7536,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -7557,6 +7565,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -7585,6 +7594,7 @@
     {
      "attrs": {
       "links": "https://example.com/a\nhttps://example.com/b\n",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -7613,6 +7623,35 @@
     {
      "attrs": {
       "links": "S_links",
+      "open_report": true,
+      "output_dir_str": "C:/KKAFIO/Downloads",
+      "skip_downloaded": true
+     },
+     "class": "DownloadContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-contents --no-open-report": {
+  "argv": [
+   "download-contents",
+   "--no-open-report"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "links": "",
+      "open_report": false,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -7640,8 +7679,37 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": false
+     },
+     "class": "DownloadContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-contents --open-report": {
+  "argv": [
+   "download-contents",
+   "--open-report"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "links": "",
+      "open_report": true,
+      "output_dir_str": "C:/KKAFIO/Downloads",
+      "skip_downloaded": true
      },
      "class": "DownloadContents",
      "enabled": true,
@@ -7668,6 +7736,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "",
       "skip_downloaded": true
      },
@@ -7696,6 +7765,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "S_output_dir",
       "skip_downloaded": true
      },
@@ -7723,6 +7793,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -7747,13 +7818,15 @@
    "S_links",
    "--output-dir",
    "S_output_dir",
-   "--skip-downloaded"
+   "--skip-downloaded",
+   "--open-report"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
+      "open_report": true,
       "output_dir_str": "S_output_dir",
       "skip_downloaded": true
      },
@@ -7778,13 +7851,15 @@
    "S_links",
    "--output-dir",
    "S_output_dir",
-   "--no-skip-downloaded"
+   "--no-skip-downloaded",
+   "--no-open-report"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
+      "open_report": false,
       "output_dir_str": "S_output_dir",
       "skip_downloaded": false
      },

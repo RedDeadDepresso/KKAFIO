@@ -127,6 +127,8 @@ Everything else — CLI output, log files, and error messages — is English-onl
 
 - `link | page` fetches just that one page. If the link already has a `page` in it (e.g. `...?page=2`), it is replaced by the number you give, and any other filters in the link (tags, sort, etc.) are kept.
 - Lines starting with `#` are treated as comments and ignored.
+- **Report:** a `kkafio_download_contents_report.txt` file is written to the output folder every time this task runs (replacing the previous one), listing every link with how many files were downloaded, skipped and failed, the links that failed and why, and — if you stopped the run — the links that were not reached.
+- **Open Report** _(on by default)_ — automatically opens the report in your default text editor when any download failed. Turn off to never open it automatically (the report is still written).
 - **Skip already downloaded** (on by default) uses a history file at `%APPDATA%/KKAFIO/download_history.json` to avoid re-downloading files.
   - **Tip:** combined with **Skip already downloaded**, a paginated link effectively lets you "subscribe" to an author or series — re-running the same task later only picks up whatever's new. For example, on koikatsucards.com you can grab everything from an author or series with `| all` once, then switch to a small window like `| 1 | 3` for future runs (widen it if they upload less often than that) so each run only checks the first few pages, skips anything already downloaded, and grabs whatever's new.
 - **koikatsucards.com session cookie** — downloading from koikatsucards.com requires a valid session. KKAFIO manages this automatically:

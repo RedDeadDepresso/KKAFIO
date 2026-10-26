@@ -239,6 +239,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("skip-downloaded", key="SkipDownloaded",
                    help="Skip already-downloaded URLs (overrides config)",
                    off_help="Re-download even if previously downloaded (overrides config)"),
+            Toggle("open-report", key="OpenReport",
+                   help="Open the report (kkafio_download_contents_report.txt) when a download failed (default: on)",
+                   off_help="Never open the report automatically"),
         ),
     ),
 

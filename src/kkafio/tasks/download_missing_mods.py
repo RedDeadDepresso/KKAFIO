@@ -31,9 +31,6 @@ Strategy
 """
 
 import asyncio
-import os
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -58,7 +55,7 @@ from kkafio.services.telegram_mods import (
     ensure_session,
     search_chat_links_and_download,
 )
-from kkafio.tasks.base_task import BaseTask
+from kkafio.tasks.base_task import BaseTask, open_in_default_app
 
 
 class DownloadMissingMods(BaseTask):
@@ -195,15 +192,7 @@ class DownloadMissingMods(BaseTask):
     @staticmethod
     def _open_file(path: Path) -> None:
         """Open `path` with the system's default program (best effort)."""
-        try:
-            if sys.platform == "win32":
-                os.startfile(str(path))                      # noqa: S606
-            elif sys.platform == "darwin":
-                subprocess.Popen(["open", str(path)])
-            else:
-                subprocess.Popen(["xdg-open", str(path)])
-        except Exception as e:
-            logger.warning("DLMOD", f"Could not open report: {e}")
+        open_in_default_app("DLMOD", path)
 
     def run(self) -> None:
         game_path = self.config.game_path
