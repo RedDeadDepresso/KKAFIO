@@ -113,7 +113,7 @@
       "name": "links",
       "label": "$option.DownloadLinks.label",
       "description": "$option.DownloadLinks.description",
-      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 3\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 5 | 1\nhttps://www.pixiv.net/en/users/85712366\nhttps://www.pixiv.net/en/artworks/151074285\nhttps://pawchive.pw/patreon/user/58585170 | all\nhttps://pawchive.pw/patreon/user/58585170/post/173280929\nhttps://pawchive.pw/posts?q=koikatsu | 1 | 3\nhttps://gofile.io/d/AbC123\nhttps://mega.nz/file/AbC123#KEY\nhttps://drive.google.com/drive/folders/AbC123",
+      "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 3\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 5 | 1\nhttps://www.pixiv.net/en/users/85712366\nhttps://www.pixiv.net/en/users/85712366 | 2\nhttps://www.pixiv.net/en/users/85712366 | 1 | 3 | f\nhttps://www.pixiv.net/en/artworks/151074285\nhttps://www.pixiv.net/en/artworks/151074285 | f\nhttps://pawchive.pw/patreon/user/58585170 | all\nhttps://pawchive.pw/patreon/user/58585170/post/173280929\nhttps://pawchive.pw/posts?q=koikatsu | 1 | 3\nhttps://gofile.io/d/AbC123\nhttps://mega.nz/file/AbC123#KEY\nhttps://drive.google.com/drive/folders/AbC123",
       "default": "",
       "pipeline_override": {
         "Links": "{links}"

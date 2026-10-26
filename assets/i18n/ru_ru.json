@@ -23,7 +23,7 @@
   "option.DownloadOutputDir.label": "Папка для загрузок",
   "option.DownloadOutputDir.description": "Куда сохранять загруженные карточки",
   "option.DownloadLinks.label": "Ссылки для загрузки",
-  "option.DownloadLinks.description": "По одному URL на строку — поддерживаются страницы карточек db.bepis.moe и koikatsucards.com, работы, галереи и поиск pixiv.net (сохраняются только изображения 320x180 или с пропорциями 252x352), поиск, авторы и посты pawchive.pw (файлы и вложения, а также ссылки mega.nz, gofile.io и Google Диска из текста поста; PNG — только 320x180 или с пропорциями 252x352), а также папки gofile.io и файлы и папки mega.nz и Google Диска",
+  "option.DownloadLinks.description": "По одному URL на строку. Поддерживаются: страницы карточек db.bepis.moe и koikatsucards.com; работы, галереи и поиск pixiv.net; поиск, авторы и посты pawchive.pw (файлы и вложения, а также ссылки mega.nz, gofile.io и Google Диска из текста поста); папки gofile.io; файлы и папки mega.nz и Google Диска. Из pixiv и pawchive сохраняются только PNG, являющиеся карточками Koikatsu: PNG 320x180 — это сцены, PNG с пропорциями 252x352 — персонажи и координаты (наряды). Чтобы выбрать страницы, добавьте после ссылки на список «| N» или «| N | M» (все страницы — «| all»). Ссылки mega, Google Диска и gofile из описания работы pixiv всегда скачиваются тоже; добавьте «| f» (переходить по иллюстрациям) к строке pixiv, чтобы дополнительно скачивать другие работы pixiv, упомянутые в описании.",
   "option.SkipDownloaded.label": "Пропускать уже загруженное",
   "option.SkipDownloaded.description": "Пропускать карточки, которые уже были загружены ранее (отслеживается в истории загрузок)",
   "option.SkipDownloaded.case.Yes.label": "Пропустить",

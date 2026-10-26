@@ -23,7 +23,7 @@
   "option.DownloadOutputDir.label": "ダウンロード出力フォルダ",
   "option.DownloadOutputDir.description": "ダウンロードしたカードの保存先",
   "option.DownloadLinks.label": "ダウンロードリンク",
-  "option.DownloadLinks.description": "1行に1つのURL - db.bepis.moe と koikatsucards.com のカードページ、pixiv.net の作品／ユーザーページ／検索（320x180 または 252x352 比率の画像のみ保存）、pawchive.pw の検索／クリエイター／投稿（添付ファイルと、投稿本文内の mega.nz・gofile.io・Google ドライブのリンク。PNG は 320x180 または 252x352 比率のみ）、gofile.io のフォルダー、mega.nz と Google ドライブのファイル／フォルダーに対応",
+  "option.DownloadLinks.description": "1行に1つのURL。対応：db.bepis.moe と koikatsucards.com のカードページ、pixiv.net の作品／ユーザーページ／検索、pawchive.pw の検索／クリエイター／投稿（添付ファイルと、投稿本文内の mega.nz・gofile.io・Google ドライブのリンク）、gofile.io のフォルダー、mega.nz と Google ドライブのファイル／フォルダー。pixiv と pawchive からは、コイカツのカードである PNG のみ保存されます：320x180 の PNG はシーン、252x352 比率の PNG はキャラクターとコーディネートです。リスト系リンクの後に「| N」または「| N | M」（全ページは「| all」）を付けるとページを指定できます。pixiv の説明文にある mega・Google ドライブ・gofile のリンクは常にダウンロードされます。pixiv の行に「| f」（イラストをたどる）を付けると、説明文で言及されている他の pixiv 作品もダウンロードします。",
   "option.SkipDownloaded.label": "既にダウンロード済みをスキップ",
   "option.SkipDownloaded.description": "以前にダウンロード済みのカードをスキップする（ダウンロード履歴で追跡）",
   "option.SkipDownloaded.case.Yes.label": "スキップ",

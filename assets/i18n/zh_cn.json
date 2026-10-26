@@ -23,7 +23,7 @@
   "option.DownloadOutputDir.label": "下载输出文件夹",
   "option.DownloadOutputDir.description": "保存已下载卡片的位置",
   "option.DownloadLinks.label": "下载链接",
-  "option.DownloadLinks.description": "每行一个 URL，支持 db.bepis.moe 和 koikatsucards.com 的卡片页面、pixiv.net 的作品/用户主页/搜索（仅保留 320x180 或 252x352 比例的图片），pawchive.pw 的搜索/创作者/帖子（文件和附件，以及帖子正文中的 mega.nz、gofile.io 和 Google 云端硬盘链接；PNG 仅保留 320x180 或 252x352 比例），gofile.io 文件夹，以及 mega.nz 和 Google 云端硬盘的文件和文件夹",
+  "option.DownloadLinks.description": "每行一个 URL。支持：db.bepis.moe 和 koikatsucards.com 的卡片页面，pixiv.net 的作品/用户主页/搜索，pawchive.pw 的搜索/创作者/帖子（文件和附件，以及帖子正文中的 mega.nz、gofile.io 和 Google 云端硬盘链接），gofile.io 文件夹，以及 mega.nz 和 Google 云端硬盘的文件和文件夹。来自 pixiv 和 pawchive 的内容仅保留属于 Koikatsu 卡片的 PNG：320x180 的 PNG 为场景，252x352 比例的 PNG 为角色和服装（coordinate）。在列表类链接后添加“| N”或“| N | M”（全部页面用“| all”）可指定页码。pixiv 作品说明中的 mega、Google 云端硬盘和 gofile 链接总会一并下载；在 pixiv 行末添加“| f”（跟进插画）还会下载说明中提到的其他 pixiv 作品。",
   "option.SkipDownloaded.label": "跳过已下载项",
   "option.SkipDownloaded.description": "跳过之前已下载过的卡片（记录在下载历史中）",
   "option.SkipDownloaded.case.Yes.label": "跳过",

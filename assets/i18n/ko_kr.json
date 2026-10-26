@@ -23,7 +23,7 @@
   "option.DownloadOutputDir.label": "다운로드 출력 폴더",
   "option.DownloadOutputDir.description": "다운로드한 카드를 저장할 위치",
   "option.DownloadLinks.label": "다운로드 링크",
-  "option.DownloadLinks.description": "한 줄에 하나의 URL - db.bepis.moe 및 koikatsucards.com 카드 페이지, pixiv.net 작품/유저 페이지/검색 (320x180 또는 252x352 비율 이미지만 저장), pawchive.pw 검색/크리에이터/게시물 (첨부 파일과 게시물 본문의 mega.nz, gofile.io, Google 드라이브 링크, PNG는 320x180 또는 252x352 비율만), gofile.io 폴더, mega.nz 및 Google 드라이브 파일/폴더 지원",
+  "option.DownloadLinks.description": "한 줄에 하나의 URL. 지원: db.bepis.moe 및 koikatsucards.com 카드 페이지, pixiv.net 작품/유저 페이지/검색, pawchive.pw 검색/크리에이터/게시물(첨부 파일과 게시물 본문의 mega.nz, gofile.io, Google 드라이브 링크), gofile.io 폴더, mega.nz 및 Google 드라이브 파일/폴더. pixiv와 pawchive에서는 코이카츠 카드인 PNG만 저장됩니다: 320x180 PNG는 씬, 252x352 비율의 PNG는 캐릭터와 코디네이트입니다. 목록형 링크 뒤에 \"| N\" 또는 \"| N | M\"(전체는 \"| all\")을 붙이면 페이지를 지정할 수 있습니다. pixiv 설명에 있는 mega, Google 드라이브, gofile 링크는 항상 함께 다운로드됩니다. pixiv 줄에 \"| f\"(일러스트 따라가기)를 붙이면 설명에서 언급된 다른 pixiv 작품도 다운로드합니다.",
   "option.SkipDownloaded.label": "이미 다운로드한 항목 건너뛰기",
   "option.SkipDownloaded.description": "이전에 다운로드한 카드를 건너뜁니다(다운로드 기록에서 추적됨)",
   "option.SkipDownloaded.case.Yes.label": "건너뛰기",
