@@ -5,7 +5,8 @@ Supports:
   https://db.bepis.moe          — card pages (/view/) and listing pages
   https://koikatsucards.com     — card pages (/contents/) and listing pages
   https://www.pixiv.net         — artworks (/artworks/ID), galleries
-                                  (/users/ID, /users/ID/illustrations) and
+                                  (/users/ID, /users/ID/illustrations,
+                                  /users/ID/illustrations/TAG) and
                                   searches (/search?q=...); only PNG
                                   images that look like KK cards/scenes are kept
   https://pawchive.pw           — post searches (/posts?q=...), creators

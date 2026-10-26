@@ -2398,3 +2398,61 @@ def test_pixiv_external_links_are_always_downloaded_but_artworks_only_when_follo
     assert images == ["https://i.pximg.net/1.png"]
     assert external == ["https://mega.nz/file/AAAAAAAA#KKKKKKKK"]
     assert res == (2, 0, 0)
+
+
+# ---------------------------------------------------------------------------
+# Tag-filtered galleries: /users/ID/illustrations/TAG
+# ---------------------------------------------------------------------------
+
+TAG_URL = ("https://www.pixiv.net/en/users/3986523/illustrations/"
+           "%E3%82%AD%E3%83%A3%E3%83%A9%E9%85%8D%E5%B8%83(%E3%82%B3%E3%82%A4%E3%82%AB%E3%83%84)")
+TAG = "キャラ配布(コイカツ)"
+
+
+def test_pixiv_tag_gallery_url_is_parsed():
+    assert pixiv._parse_pixiv_url(TAG_URL) == ("user", "3986523", "illustrations")
+    assert pixiv._pixiv_url_tag(TAG_URL) == TAG
+    assert pixiv._pixiv_url_tag(TAG_URL.replace("/en/", "/")) == TAG
+    assert pixiv._pixiv_url_tag("https://www.pixiv.net/en/users/3986523/illustrations") is None
+    assert pixiv._pixiv_url_tag("https://www.pixiv.net/en/users/3986523") is None
+    assert pixiv._pixiv_url_tag("https://www.pixiv.net/en/artworks/1") is None
+    assert pixiv._pixiv_url_page(TAG_URL + "?p=2") == 2
+
+
+def test_pixiv_tag_gallery_reads_only_the_tagged_works(tmp_path, monkeypatch):
+    import httpx
+    requested: list[dict] = []
+    tagged = [str(i) for i in range(200, 100, -1)]          # 100 works -> 3 requests of 48
+
+    class _Resp:
+        def __init__(self, body): self._b = body
+        def raise_for_status(self): pass
+        def json(self): return {"error": False, "message": "", "body": self._b}
+
+    class _Client:
+        async def get(self, url):
+            u = httpx.URL(url)
+            if u.path == "/ajax/user/3986523/illusts/tag":
+                q = dict(u.params)
+                requested.append(q)
+                off, lim = int(q["offset"]), int(q["limit"])
+                return _Resp({"works": [{"id": i} for i in tagged[off:off + lim]],
+                              "total": len(tagged)})
+            if u.path.endswith("/pages"):
+                return _Resp([])
+            return _Resp({"description": ""})
+
+    async def fake_download_files(client, urls, directory, name_fn, history, skip):
+        return len(urls), 0, 0
+
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
+
+    ids = asyncio.run(pixiv._pixiv_user_tag_artwork_ids(_Client(), "3986523", "illustrations", TAG))
+    assert ids == tagged
+    assert [q["offset"] for q in requested] == ["0", "48", "96"]
+    assert all(q["tag"] == TAG for q in requested)
+
+    requested.clear()
+    asyncio.run(pixiv.download_pixiv(_Client(), TAG_URL, Path(tmp_path), {}, True, 2, 2))
+    assert requested and all(q["tag"] == TAG for q in requested)   # tag was used, not the whole profile

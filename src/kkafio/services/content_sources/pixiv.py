@@ -47,7 +47,9 @@ def _parse_pixiv_url(url: str) -> tuple[str, str, str] | None:
     Returns ("artwork", artwork_id, "") or ("user", user_id, scope) where scope
     is "artworks" (illustrations + manga), "illustrations" or "manga", or
     ("search", keyword, scope) for a search / tag page.
-    A bare /users/ID means /users/ID/artworks. Returns None for anything else.
+    A bare /users/ID means /users/ID/artworks. A tag after the scope
+    (/users/ID/illustrations/TAG) is read by _pixiv_url_tag. Returns None for
+    anything else.
     """
     parts = urlparse(url)
     segs = [s for s in parts.path.split("/") if s]
@@ -84,6 +86,18 @@ def _parse_pixiv_url(url: str) -> tuple[str, str, str] | None:
     return None
 
 
+def _pixiv_url_tag(url: str) -> str | None:
+    """The tag of a tag-filtered gallery link -- /users/ID/illustrations/TAG
+    (also /artworks/TAG, /manga/TAG) -- or None. The tag is percent-decoded."""
+    parsed = _parse_pixiv_url(url)
+    if parsed is None or parsed[0] != "user":
+        return None
+    segs = [s for s in urlparse(url).path.split("/") if s]
+    if segs and _LANG_PREFIX.match(segs[0]) and segs[0].lower() not in ("users", "artworks"):
+        segs = segs[1:]
+    return unquote(segs[3]) if len(segs) >= 4 and segs[3] else None
+
+
 def _pixiv_url_page(url: str) -> int | None:
     """The ?p=N page number of a pixiv gallery link, or None."""
     value = dict(parse_qsl(urlparse(url).query)).get("p", "")
@@ -117,7 +131,8 @@ def _normalize_pixiv_url(url: str) -> str | None:
         return f"{PIXIV_URL}/en/artworks/{ident}"
     if kind == "search":
         return url
-    return f"{PIXIV_URL}/en/users/{ident}/{scope}"
+    tag = _pixiv_url_tag(url)
+    return f"{PIXIV_URL}/en/users/{ident}/{scope}" + (f"/{quote(tag, safe='')}" if tag else "")
 
 
 def _pixiv_default_name(url: str) -> str:
@@ -340,6 +355,30 @@ async def _pixiv_user_artwork_ids(client, user_id: str, scope: str) -> list[str]
     return sorted(set(ids), key=int, reverse=True)
 
 
+# Scope of a gallery link -> the /ajax/user/ID/<kind>/tag endpoint listing a tag's works.
+_PIXIV_USER_TAG_ENDPOINT = {"artworks": "illustmanga", "illustrations": "illusts", "manga": "manga"}
+PIXIV_TAG_PAGE_SIZE = 48
+
+
+async def _pixiv_user_tag_artwork_ids(client, user_id: str, scope: str, tag: str) -> list[str]:
+    """The artwork IDs of a user that carry `tag`, newest first (the user's
+    /users/ID/illustrations/TAG page)."""
+    kind = _PIXIV_USER_TAG_ENDPOINT[scope]
+    ids: list[str] = []
+    offset = 0
+    while True:
+        body = await _pixiv_api(client, f"/user/{user_id}/{kind}/tag", {
+            "tag": tag, "offset": offset, "limit": PIXIV_TAG_PAGE_SIZE, "lang": "en"}) or {}
+        works = body.get("works") if isinstance(body, dict) else None
+        works = [w for w in works or [] if isinstance(w, dict) and str(w.get("id", "")).isdigit()]
+        ids += [str(w["id"]) for w in works]
+        total = body.get("total") if isinstance(body, dict) else None
+        offset += PIXIV_TAG_PAGE_SIZE
+        if len(works) < PIXIV_TAG_PAGE_SIZE or (isinstance(total, int) and offset >= total):
+            break
+    return sorted(set(ids), key=int, reverse=True)
+
+
 # Web search params -> /ajax/search path + "type" value.
 _PIXIV_SEARCH_ENDPOINT = {
     "artworks":      ("artworks",      "all"),
@@ -493,7 +532,9 @@ async def download_pixiv(
     else:
         # Print the normalised link so users/ID visibly became users/ID/artworks.
         logger.info("DLOAD", f"Scraping pixiv gallery: {_normalize_pixiv_url(url)}")
-        artwork_ids = await _pixiv_user_artwork_ids(client, ident, scope)
+        tag = _pixiv_url_tag(url)
+        artwork_ids = (await _pixiv_user_tag_artwork_ids(client, ident, scope, tag) if tag
+                       else await _pixiv_user_artwork_ids(client, ident, scope))
         logger.info("DLOAD", f"  Found {len(artwork_ids)} artwork(s).")
         if page_start is None:
             link_page = _pixiv_url_page(url)       # ...?p=2 means just page 2
