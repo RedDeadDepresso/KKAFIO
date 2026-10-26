@@ -33,6 +33,7 @@ Strategy
 import asyncio
 from datetime import datetime
 from pathlib import Path
+import sys
 
 import kkafio.services.telegram_config as tg_cfg
 
