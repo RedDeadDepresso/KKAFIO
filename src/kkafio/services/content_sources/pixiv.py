@@ -9,7 +9,9 @@ of every image, so the size filter runs before anything is downloaded.
 from __future__ import annotations
 
 import asyncio
+import html
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse
 
@@ -17,7 +19,11 @@ from kkafio.core.logger import logger
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources import transfer
 from kkafio.services.content_sources.card_size import kk_size_matches
+from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
+from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
+from kkafio.services.content_sources.mega import download_mega, is_mega_url
 from kkafio.services.content_sources.net import get_with_retry
+from kkafio.services.content_sources.pawchive.parsing import pawchive_content_links
 
 PIXIV_URL     = "https://www.pixiv.net"
 PIXIV_COOKIE_DOMAIN = ".pixiv.net"
@@ -149,6 +155,175 @@ async def _pixiv_artwork_images(client, artwork_id: str) -> tuple[list[str], int
     return urls, rejected
 
 
+# ---------------------------------------------------------------------------
+# Artwork descriptions: download links, and (optionally) follow other artworks
+# ---------------------------------------------------------------------------
+
+# pixiv wraps outside links as /jump.php?<url-encoded address> (older pages:
+# /jump.php?url=<...>); the real address has to be decoded out of it.
+_JUMP_RE = re.compile(r"/jump\.php\?(?:url=)?([^\s\"'<>]+)", re.IGNORECASE)
+_ARTWORK_LINK_RE = re.compile(
+    r"(?:https?://)?(?:www\.)?pixiv\.net/(?:[a-z]{2}(?:[_-][a-z]{2,4})?/)?artworks/(\d+)",
+    re.IGNORECASE)
+_ARTWORK_HREF_RE = re.compile(
+    r"""href=["']/(?:[a-z]{2}(?:[_-][a-z]{2,4})?/)?artworks/(\d+)""", re.IGNORECASE)
+_LEGACY_ARTWORK_RE = re.compile(r"member_illust\.php\?[^\s\"'<>]*?illust_id=(\d+)", re.IGNORECASE)
+# pixiv's own shorthand, shown (and linked) in descriptions as "illust/12345"
+_ILLUST_SHORTHAND_RE = re.compile(r"(?<![\w/])illust/(\d+)", re.IGNORECASE)
+
+
+def pixiv_description_links(content) -> tuple[list[str], list[str]]:
+    """The references found in an artwork's description (HTML or plain text).
+
+    Returns (artwork_ids, external_links): the ids of other pixiv artworks, and
+    the mega / gofile / Google Drive links -- each in order of appearance,
+    without duplicates.
+    """
+    if not isinstance(content, str) or not content:
+        return [], []
+    text = html.unescape(content)
+    # Swap every jump.php wrapper for the address it carries, so links pixiv
+    # wrapped (Mega's #key included) are seen like plain ones, in place.
+    text = _JUMP_RE.sub(lambda m: " " + unquote(m.group(1)) + " ", text)
+
+    hits = sorted(
+        (m.start(), m.group(1))
+        for rx in (_ARTWORK_LINK_RE, _ARTWORK_HREF_RE, _LEGACY_ARTWORK_RE, _ILLUST_SHORTHAND_RE)
+        for m in rx.finditer(text))
+    ids = list(dict.fromkeys(artwork_id for _, artwork_id in hits))     # order of appearance
+    return ids, pawchive_content_links(text)
+
+
+async def _pixiv_artwork_description(client, artwork_id: str) -> str:
+    """The description (caption) of an artwork, as pixiv sends it (HTML)."""
+    body = await _pixiv_api(client, f"/illust/{artwork_id}", {"lang": "en"}) or {}
+    parts = [body.get(key) for key in ("description", "illustComment")]
+    return "\n".join(p for p in parts if isinstance(p, str) and p)
+
+
+async def _download_external_link(
+    link: str, externals: dict | None, directory: Path, history: dict, skip: bool,
+) -> tuple[int, int, int]:
+    """Hand a link found in a description to the downloader for its host.
+    `externals` maps "gofile" / "mega" / "gdrive" to their HTTP clients."""
+    if is_gofile_url(link):
+        kind, fn = "gofile", download_gofile
+    elif is_mega_url(link):
+        kind, fn = "mega", download_mega
+    elif is_gdrive_url(link):
+        kind, fn = "gdrive", download_gdrive
+    else:
+        logger.error("DLOAD", f"  Unsupported link in description: {link}")
+        return 0, 0, 1
+    client = (externals or {}).get(kind)
+    if client is None:
+        logger.error("DLOAD", f"  No {kind} client available for: {link}")
+        return 0, 0, 1
+    return await fn(client, link, directory, history, skip)
+
+
+@dataclass
+class PixivFollowState:
+    """What the description reading has already handled during a run.
+
+    Shared by every pixiv line of the run, so an artwork that several
+    descriptions point to (or that points back, A -> B -> A) is only read once
+    and the crawl always ends.
+    """
+    visited: set[str] = field(default_factory=set)         # artworks whose description was read
+    links: set[str] = field(default_factory=set)           # external links already downloaded
+
+
+async def _read_pixiv_descriptions(
+    client, artwork_ids: list[str], directory: Path, history: dict, skip: bool,
+    externals: dict | None, state: PixivFollowState, follow_artworks: bool,
+) -> tuple[int, int, int]:
+    """Read the description of each artwork and download the mega / gofile /
+    Google Drive links in it. With `follow_artworks`, the other pixiv artworks
+    it mentions are downloaded too (their images), and their descriptions are
+    read in turn. `artwork_ids` themselves are NOT downloaded here -- the
+    caller already did that.
+
+    Works in rounds: each round holds the artworks found by the one before, so
+    nothing is recursive and the visited set stops loops.
+    """
+    total_ok = total_skip = total_fail = 0
+    sem = asyncio.Semaphore(PIXIV_META_CONCURRENCY)
+
+    async def _describe(artwork_id: str) -> str:
+        async with sem:
+            return await _pixiv_artwork_description(client, artwork_id)
+
+    current = [(a, False) for a in dict.fromkeys(artwork_ids)]      # (id, still to download)
+    while current:
+        current = [(a, ref) for a, ref in current if a not in state.visited]
+        if not current:
+            break
+        state.visited.update(a for a, _ in current)
+
+        # The artworks other descriptions pointed to: download their images.
+        for artwork_id, is_reference in current:
+            if not is_reference:
+                continue
+            logger.info("DLOAD", f"  Following pixiv artwork: {artwork_id}")
+            try:
+                urls, _rejected = await _pixiv_artwork_images(client, artwork_id)
+                ok, skipped, fail = await transfer.download_files(
+                    client, urls, directory, _pixiv_default_name, history, skip)
+            except Exception as exc:
+                logger.error("DLOAD", f"  Could not read artwork {artwork_id}: {exc}")
+                ok = skipped = 0
+                fail = 1
+            total_ok += ok
+            total_skip += skipped
+            total_fail += fail
+            history_store.save_history(history)
+
+        descriptions = await asyncio.gather(
+            *[_describe(a) for a, _ in current], return_exceptions=True)
+
+        next_round: list[tuple[str, bool]] = []
+        for (artwork_id, _), res in zip(current, descriptions, strict=True):
+            if isinstance(res, BaseException):
+                if not isinstance(res, Exception):
+                    raise res                          # Cancelled / KeyboardInterrupt
+                total_fail += 1
+                logger.error("DLOAD",
+                    f"  Could not read the description of artwork {artwork_id}: {res}")
+                continue
+            ref_ids, links = pixiv_description_links(res)
+            ref_ids = ([a for a in ref_ids if a != artwork_id and a not in state.visited]
+                       if follow_artworks else [])
+            if ref_ids or links:
+                logger.info("DLOAD",
+                    f"  Artwork {artwork_id}: "
+                    + (f"{len(ref_ids)} linked artwork(s), " if follow_artworks else "")
+                    + f"{len(links)} download link(s) in its description.")
+            next_round += [(a, True) for a in ref_ids]
+
+            # One link at a time: mega meters transfer per address and gofile
+            # is sensitive about request bursts.
+            for link in links:
+                if link in state.links:
+                    continue
+                state.links.add(link)
+                logger.info("DLOAD", f"  Link: {link}")
+                try:
+                    ok, skipped, fail = await _download_external_link(
+                        link, externals, directory, history, skip)
+                except Exception as exc:
+                    logger.error("DLOAD", f"  Failed: {link} — {exc}")
+                    ok = skipped = 0
+                    fail = 1
+                total_ok += ok
+                total_skip += skipped
+                total_fail += fail
+                history_store.save_history(history)
+        current = next_round
+
+    return total_ok, total_skip, total_fail
+
+
 async def _pixiv_user_artwork_ids(client, user_id: str, scope: str) -> list[str]:
     """All artwork IDs of a user, newest first."""
     body = await _pixiv_api(client, f"/user/{user_id}/profile/all") or {}
@@ -202,7 +377,9 @@ def _pixiv_search_items(body) -> list[dict]:
     return []
 
 
-async def _get_pixiv_search_page_urls(client, url: str, page: int) -> tuple[list[str], int, bool]:
+async def _get_pixiv_search_page_urls(
+    client, url: str, page: int, checked_ids: list[str] | None = None,
+) -> tuple[list[str], int, bool]:
     """Returns (file_urls, card_failures, listing_empty) for one search page.
 
     The search results already carry the first image's size, so a single-page
@@ -221,6 +398,8 @@ async def _get_pixiv_search_page_urls(client, url: str, page: int) -> tuple[list
         if single and not kk_size_matches(w.get("width"), w.get("height")):
             continue
         to_check.append(str(w["id"]))
+    if checked_ids is not None:
+        checked_ids.extend(to_check)              # for "follow illustrations"
     logger.info("DLOAD",
         f"  {len(works)} work(s) on page {page}, {len(to_check)} to check "
         f"({len(works) - len(to_check)} dropped by size).")
@@ -248,6 +427,8 @@ async def _get_pixiv_search_page_urls(client, url: str, page: int) -> tuple[list
 async def _download_pixiv_search(
     client, url: str, directory: Path, history: dict, skip: bool,
     page_start: int | None, page_end: int | None,
+    follow_illustrations: bool = False, externals: dict | None = None,
+    follow_state: PixivFollowState | None = None,
 ) -> tuple[int, int, int]:
     """Search results are paged (60 per page) like the other listing sources:
     ``| N`` / ``| N | M`` / ``| all`` pick the pages; without a directive the
@@ -258,16 +439,37 @@ async def _download_pixiv_search(
     logger.info("DLOAD",
         f"Scraping pixiv search (page {page_start}): {url}" if page_end == page_start else
         f"Scraping pixiv search (pages {page_start}–{'end' if page_end is None else page_end}): {url}")
-    return await transfer.download_pages(
+
+    checked_ids: list[str] = []
+
+    async def _page_urls(c, u, page):
+        return await _get_pixiv_search_page_urls(c, u, page, checked_ids)
+
+    ok, skipped, failed = await transfer.download_pages(
         client, url, directory, history, skip, page_start, page_end,
-        _get_pixiv_search_page_urls, _pixiv_default_name)
+        _page_urls, _pixiv_default_name)
+    if checked_ids:
+        f_ok, f_skip, f_fail = await _read_pixiv_descriptions(
+            client, checked_ids, directory, history, skip, externals,
+            follow_state or PixivFollowState(), follow_illustrations)
+        ok, skipped, failed = ok + f_ok, skipped + f_skip, failed + f_fail
+    return ok, skipped, failed
 
 
 async def download_pixiv(
     client, url: str, directory: Path, history: dict, skip: bool,
     page_start: int | None = None, page_end: int | None = None,
+    follow_illustrations: bool = False, externals: dict | None = None,
+    follow_state: PixivFollowState | None = None,
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed).
+
+    The description of every artwork is searched for mega / gofile / Google
+    Drive links, which are always downloaded too. With ``follow_illustrations`` the
+    other pixiv artworks it mentions are downloaded as well, and their
+    descriptions are searched the same way.
+    `externals` holds the gofile / mega / gdrive clients and `follow_state` the
+    already-visited artworks (share one per run).
 
     For a user gallery the page directive (``| N``, ``| N | M``, ``| all``) or,
     without one, the link's own ``?p=N`` picks which pages are read; with
@@ -282,7 +484,8 @@ async def download_pixiv(
 
     if kind == "search":
         return await _download_pixiv_search(
-            client, url, directory, history, skip, page_start, page_end)
+            client, url, directory, history, skip, page_start, page_end,
+            follow_illustrations, externals, follow_state)
 
     if kind == "artwork":
         logger.info("DLOAD", f"Scraping pixiv artwork: {ident}")
@@ -346,4 +549,12 @@ async def download_pixiv(
     logger.info("DLOAD",
         f"  {kept} PNG image(s) matched 320x180 / 252x352-ratio, "
         f"{filtered} filtered out (not a PNG, or wrong size).")
+
+    if artwork_ids:
+        f_ok, f_skip, f_fail = await _read_pixiv_descriptions(
+            client, artwork_ids, directory, history, skip, externals,
+            follow_state or PixivFollowState(), follow_illustrations)
+        total_ok   += f_ok
+        total_skip += f_skip
+        total_fail += f_fail
     return total_ok, total_skip, total_fail

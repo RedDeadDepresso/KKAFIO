@@ -96,6 +96,8 @@ def _fake_pixiv_client(works: dict[str, list[tuple[int, int]]], failing=()):
             path = httpx.URL(url).path
             if path.endswith("/profile/all"):
                 return _Resp({"illusts": {k: None for k in works}, "manga": []})
+            if not path.endswith("/pages"):                  # /illust/ID: the description
+                return _Resp({"description": ""})
             aid = path.split("/")[-2]
             if aid in failing:
                 raise RuntimeError("boom")
@@ -281,6 +283,8 @@ def _fake_search_client(pages_of_works, size_of):
                         for i, w, h, n in pages_of_works.get(int(q["p"]), [])]
                 data.insert(0, {"isAdContainer": True})            # ad entry without an id
                 return _Resp({"illustManga": {"data": data if len(data) > 1 else [], "total": 1}})
+            if not u.path.endswith("/pages"):                # /illust/ID: the description
+                return _Resp({"description": ""})
             aid = u.path.split("/")[-2]
             calls["pages"].append(aid)
             return _Resp([{"urls": {"original": f"https://i.pximg.net/img-original/{aid}_p{i}.png"},
@@ -2250,3 +2254,147 @@ def test_pawchive_other_file_types_are_never_requested(tmp_path):
     assert (run.ok, run.failed, run.excluded) == (1, 0, 1)
     assert client.fetched == [_data(keep) + "?f=keep.zip"]
     assert [f.name for f in Path(tmp_path).iterdir()] == ["keep.zip"]
+
+# ---------------------------------------------------------------------------
+# "follow illustrations" (pixiv descriptions)
+# ---------------------------------------------------------------------------
+
+def test_split_follow_flag():
+    u = "https://www.pixiv.net/en/artworks/1"
+    assert dc._split_follow_flag(u) == (u, False)
+    assert dc._split_follow_flag(f"{u} | follow illustrations") == (u, True)
+    assert dc._split_follow_flag(f"{u} | Follow-Illustrations") == (u, True)
+    assert dc._split_follow_flag(f"{u} | f") == (u, True)
+    assert dc._split_follow_flag(f"{u} | FI") == (u, True)
+    assert dc._split_follow_flag(f"{u} | 1 | 3 | f") == (f"{u} | 1 | 3", True)
+    assert dc._split_follow_flag(f"{u} | 1 | 3 | follow illustrations") == (f"{u} | 1 | 3", True)
+    assert dc._split_follow_flag(f"{u} | follow | all") == (f"{u} | all", True)
+
+
+def test_parse_links_keeps_follow_flag():
+    task = dc.DownloadContents.__new__(dc.DownloadContents)
+    task.links = ("https://www.pixiv.net/en/artworks/1 | follow illustrations\n"
+                  "https://www.pixiv.net/en/users/2 | 2 | follow illustrations\n"
+                  "https://www.pixiv.net/en/artworks/3")
+    assert task._parse_links() == [
+        ("https://www.pixiv.net/en/artworks/1", None, None, True),
+        ("https://www.pixiv.net/en/users/2", 2, 2, True),
+        ("https://www.pixiv.net/en/artworks/3", None, None, False),
+    ]
+
+
+def test_pixiv_description_links():
+    desc = (
+        'See <a href="/artworks/111">illust/111</a> and '
+        'https://www.pixiv.net/en/artworks/222, also '
+        '<a href="/jump.php?https%3A%2F%2Fmega.nz%2Ffile%2FABCDEFGH%23KEYKEYKEY">mega</a> '
+        'and <a href="/jump.php?url=https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1AbCdEfGhIjKlMnOpQrStUvWxYz%2Fview">gd</a> '
+        'https://gofile.io/d/AbC123 https://www.pixiv.net/en/artworks/111'
+    )
+    ids, links = pixiv.pixiv_description_links(desc)
+    assert ids == ["111", "222"]
+    assert links == [
+        "https://mega.nz/file/ABCDEFGH#KEYKEYKEY",
+        "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view",
+        "https://gofile.io/d/AbC123",
+    ]
+    assert pixiv.pixiv_description_links("") == ([], [])
+    assert pixiv.pixiv_description_links(None) == ([], [])
+
+
+def test_pixiv_follow_illustrations_visits_each_artwork_once(tmp_path, monkeypatch):
+    # 1 -> 2 (+ mega link), 2 -> 1 (loop) and 3, 3 -> 2 again and a mega link seen before.
+    descriptions = {
+        "1": 'illust/2',
+        "2": 'illust/1 illust/3 https://mega.nz/file/AAAAAAAA#KKKKKKKK',
+        "3": 'illust/2 https://mega.nz/file/AAAAAAAA#KKKKKKKK https://gofile.io/d/Zed999',
+    }
+    described: list[str] = []
+    images: list[str] = []
+    external: list[str] = []
+
+    class _Resp:
+        def __init__(self, body): self._b = body
+        def raise_for_status(self): pass
+        def json(self): return {"error": False, "body": self._b}
+
+    class _Client:
+        async def get(self, url, **kw):
+            aid = url.split("/illust/")[1].split("?")[0].split("/")[0]
+            if url.split("?")[0].endswith("/pages"):
+                return _Resp([{"urls": {"original": f"https://i.pximg.net/{aid}.png"},
+                               "width": 252, "height": 352}])
+            described.append(aid)
+            return _Resp({"description": descriptions[aid]})
+
+    async def fake_download_files(client, urls, directory, name_fn, history, skip):
+        images.extend(urls)
+        return len(urls), 0, 0
+
+    async def fake_external(link, externals, directory, history, skip):
+        external.append(link)
+        return 1, 0, 0
+
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
+    monkeypatch.setattr(pixiv, "_download_external_link", fake_external)
+    monkeypatch.setattr(pixiv, "get_with_retry", lambda client, url, **kw: client.get(url))
+
+    state = pixiv.PixivFollowState()
+    res = asyncio.run(pixiv.download_pixiv(
+        _Client(), "https://www.pixiv.net/en/artworks/1", Path(tmp_path), {}, True,
+        follow_illustrations=True, externals={}, follow_state=state))
+
+    assert sorted(described) == ["1", "2", "3"]               # each description read once
+    assert sorted(images) == [                                # root image + 2 and 3 (not 1 twice)
+        "https://i.pximg.net/1.png", "https://i.pximg.net/2.png", "https://i.pximg.net/3.png"]
+    assert external == ["https://mega.nz/file/AAAAAAAA#KKKKKKKK", "https://gofile.io/d/Zed999"]
+    assert state.visited == {"1", "2", "3"}
+    assert res == (5, 0, 0)
+
+
+def test_pixiv_external_links_are_always_downloaded_but_artworks_only_when_followed(
+        tmp_path, monkeypatch):
+    descriptions = {
+        "1": "illust/2 https://mega.nz/file/AAAAAAAA#KKKKKKKK",
+        "2": "https://gofile.io/d/Zed999",
+    }
+    described: list[str] = []
+    images: list[str] = []
+    external: list[str] = []
+
+    class _Resp:
+        def __init__(self, body): self._b = body
+        def raise_for_status(self): pass
+        def json(self): return {"error": False, "body": self._b}
+
+    class _Client:
+        async def get(self, url, **kw):
+            aid = url.split("/illust/")[1].split("?")[0].split("/")[0]
+            if url.split("?")[0].endswith("/pages"):
+                return _Resp([{"urls": {"original": f"https://i.pximg.net/{aid}.png"},
+                               "width": 252, "height": 352}])
+            described.append(aid)
+            return _Resp({"description": descriptions[aid]})
+
+    async def fake_download_files(client, urls, directory, name_fn, history, skip):
+        images.extend(urls)
+        return len(urls), 0, 0
+
+    async def fake_external(link, externals, directory, history, skip):
+        external.append(link)
+        return 1, 0, 0
+
+    monkeypatch.setattr(transfer, "download_files", fake_download_files)
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
+    monkeypatch.setattr(pixiv, "_download_external_link", fake_external)
+    monkeypatch.setattr(pixiv, "get_with_retry", lambda client, url, **kw: client.get(url))
+
+    # Without follow: the mega link of artwork 1 is downloaded, artwork 2 is not touched.
+    res = asyncio.run(pixiv.download_pixiv(
+        _Client(), "https://www.pixiv.net/en/artworks/1", Path(tmp_path), {}, True,
+        externals={}, follow_state=pixiv.PixivFollowState()))
+    assert described == ["1"]
+    assert images == ["https://i.pximg.net/1.png"]
+    assert external == ["https://mega.nz/file/AAAAAAAA#KKKKKKKK"]
+    assert res == (2, 0, 0)

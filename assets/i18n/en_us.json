@@ -23,7 +23,7 @@
   "option.DownloadOutputDir.label": "Download Output Folder",
   "option.DownloadOutputDir.description": "Where to save downloaded cards",
   "option.DownloadLinks.label": "Download Links",
-  "option.DownloadLinks.description": "One URL per line - supports db.bepis.moe and koikatsucards.com card pages, pixiv.net artworks, galleries and searches (only 320x180 / 252x352-ratio images are kept), pawchive.pw searches, creators and posts (files and attachments, plus the mega.nz, gofile.io and Google Drive links in the post text; PNGs only if 320x180 / 252x352-ratio), gofile.io folders, mega.nz and Google Drive files and folders",
+  "option.DownloadLinks.description": "One URL per line - supports db.bepis.moe and koikatsucards.com card pages, pixiv.net artworks, galleries and searches (only 320x180 / 252x352-ratio images are kept); the mega, Google Drive and gofile links in a pixiv description are downloaded too, and \"| f\" (follow illustrations) on a pixiv line also downloads the other pixiv artworks it mentions, pawchive.pw searches, creators and posts (files and attachments, plus the mega.nz, gofile.io and Google Drive links in the post text; PNGs only if 320x180 / 252x352-ratio), gofile.io folders, mega.nz and Google Drive files and folders",
   "option.SkipDownloaded.label": "Skip Already Downloaded",
   "option.SkipDownloaded.description": "Skip cards that have been downloaded before (tracked in download history)",
   "option.SkipDownloaded.case.Yes.label": "Skip",

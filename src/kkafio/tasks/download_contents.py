@@ -40,6 +40,15 @@ Input line formats (| is the separator — safe because URLs never contain |):
   https://... | 5               listing: just page 5 (replaces any ?page= in the link)
   https://... | 3 | 7           listing: pages 3 through 7 inclusive
   https://... | 7 | 3           listing: pages 7 down to 3 (reverse order)
+  https://www.pixiv.net/... | f
+                                pixiv only: also download the other pixiv artworks
+                                mentioned in the artwork's description (and the ones
+                                mentioned in theirs, and so on). Each artwork is
+                                visited only once. Can be combined with a page
+                                directive: "url | 1 | 3 | f"
+                                (also accepted: fi, follow, follow illustrations)
+                                The mega, Google Drive and gofile links in a pixiv
+                                description are always downloaded, with or without f.
   # comment                     lines starting with # are ignored
 
 Both card sites use ?page=N for pagination. Pixiv galleries are paged like the
@@ -73,6 +82,7 @@ from kkafio.services.content_sources.pawchive import (
 from kkafio.services.content_sources.pixiv import (
     PIXIV_COOKIE_DOMAIN,
     PIXIV_URL,
+    PixivFollowState,
     download_pixiv,
     is_pixiv_url,
 )
@@ -82,8 +92,30 @@ from kkafio.tasks.base_task import BaseTask
 if TYPE_CHECKING:
     import httpx
 
-# One parsed input line: (url, page_start, page_end) — see _parse_line.
-_Link = tuple[str, int | None, int | None]
+# One parsed input line: (url, page_start, page_end, follow_illustrations) — see
+# _split_follow_flag and _parse_line.
+_Link = tuple[str, int | None, int | None, bool]
+
+# The words that switch on "follow illustrations" (case-insensitive, spaces / - / _ are
+# interchangeable). "f" is the short spelling used in the README.
+_FOLLOW_WORDS = {"follow illustrations", "follow", "followillustrations", "fi", "f"}
+
+
+def _split_follow_flag(raw: str) -> tuple[str, bool]:
+    """Take the "follow illustrations" option out of an input line.
+
+    Returns (the line without it, whether it was there). It may stand anywhere
+    after the url, e.g. ``url | follow illustrations`` or ``url | 1 | 3 | follow illustrations``.
+    """
+    parts = [p.strip() for p in raw.split("|")]
+    kept = [parts[0]]
+    follow = False
+    for part in parts[1:]:
+        if " ".join(part.lower().replace("-", " ").replace("_", " ").split()) in _FOLLOW_WORDS:
+            follow = True
+        else:
+            kept.append(part)
+    return " | ".join(kept), follow
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +202,8 @@ class _Run:
     history: dict[str, str]
     clients: _Clients
     kkd_session: str | None
+    # Pixiv artworks whose description was read, shared by all lines of the run.
+    pixiv_follow: PixivFollowState
 
 
 # ---------------------------------------------------------------------------
@@ -229,9 +263,10 @@ class DownloadContents(BaseTask):
             raw_line = raw_line.strip()
             if not raw_line or raw_line.startswith("#"):
                 continue
+            raw_line, follow = _split_follow_flag(raw_line)
             parsed = _parse_line(raw_line)
             if parsed:
-                urls.append(parsed)
+                urls.append((*parsed, follow))
         return urls
 
     def _output_dir(self) -> Path:
@@ -307,11 +342,12 @@ class DownloadContents(BaseTask):
         totals: _Totals, kkd_session: str | None, pixiv_session: str | None,
     ) -> None:
         async with self._open_clients(kkd_session, pixiv_session) as clients:
-            run = _Run(output_dir, history, clients, kkd_session)
-            for url_str, page_start, page_end in urls:
+            run = _Run(output_dir, history, clients, kkd_session, PixivFollowState())
+            for url_str, page_start, page_end, follow_illustrations in urls:
                 ok = skipped = fail = 0
                 try:
-                    result = await self._download_url(run, url_str, page_start, page_end)
+                    result = await self._download_url(
+                        run, url_str, page_start, page_end, follow_illustrations)
                     if result is None:           # skipped outright: nothing to checkpoint
                         totals.add(0, 0, 1)
                         continue
@@ -327,6 +363,7 @@ class DownloadContents(BaseTask):
 
     async def _download_url(
         self, run: _Run, url_str: str, page_start: int | None, page_end: int | None,
+        follow_illustrations: bool = False,
     ) -> tuple[int, int, int] | None:
         """Hand one input line to the downloader of its site.
 
@@ -361,7 +398,12 @@ class DownloadContents(BaseTask):
         if is_pixiv_url(url_str):
             return await download_pixiv(
                 clients.pixiv, url_str, out, history, skip,
-                page_start=page_start, page_end=page_end)
+                page_start=page_start, page_end=page_end,
+                follow_illustrations=follow_illustrations, externals=clients.pawchive_externals,
+                follow_state=run.pixiv_follow)
+
+        if follow_illustrations:
+            logger.info("DLOAD", "  'follow illustrations' only applies to pixiv links — ignored.")
 
         if is_gofile_url(url_str):
             self._note_page_directive_ignored("Gofile", page_start)
