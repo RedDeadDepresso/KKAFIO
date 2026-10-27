@@ -26,7 +26,7 @@
   "dialog.manual.size": "Размер",
   "dialog.manual.unknown_series": "Серия неизвестна",
   "dialog.manual.no_cards": "Нет персонажей для показа.",
-  "dialog.manual.hint": "Нажмите «Серия неизвестна» под персонажем и введите серию. Enter подтверждает и переносит карту в папку серии (создаётся при необходимости); Esc отменяет; ↑/↓ и Tab выбирают подсказку.",
+  "dialog.manual.hint": "Выбирайте карту щелчком, стрелками или WASD. Enter (или щелчок по «Серия неизвестна») открывает ввод серии: Enter подтверждает и переносит карту в папку серии (создаётся при необходимости), Esc отменяет, ↑/↓ и Tab выбирают подсказку.",
   "dialog.manual.status": "Персонажей: {total} · без серии: {untagged}",
   "dialog.manual.status_filtered": "Показано {shown} из {total} · без серии: {untagged}",
   "dialog.manual.moved": "{name} → {series}: перенесено",

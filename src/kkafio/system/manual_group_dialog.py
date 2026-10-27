@@ -31,7 +31,7 @@ from pathlib import Path
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
 from kkafio.system.dialog_common import new_window, show_and_wait
-from kkafio.system.similar_chara_dialog import fit_image, format_size
+from kkafio.system.similar_chara_dialog import format_size
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +153,27 @@ def load_cover(path: Path):
         return im.convert("RGBA")
 
 
+def round_corners(img, radius: int):
+    """`img` as RGBA with all four corners rounded by `radius` px (transparent outside the curve),
+    smoothed by drawing the mask at 4x size."""
+    from PIL import Image, ImageDraw
+
+    img = img.convert("RGBA")
+    w, h = img.size
+    k = 4
+    mask = Image.new("L", (w * k, h * k), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, w * k - 1, h * k - 1), radius=min(radius, w // 2, h // 2) * k,
+                                           fill=255)
+    img.putalpha(mask.resize((w, h), Image.LANCZOS))
+    return img
+
+
+def rounded_rect_points(x1: float, y1: float, x2: float, y2: float, r: float) -> list[float]:
+    """Polygon points for a rounded rectangle; draw with create_polygon(..., smooth=True)."""
+    return [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
+            x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
+
+
 def format_stamp(timestamp: float) -> str:
     try:
         return datetime.fromtimestamp(timestamp).strftime("%Y/%m/%d %H:%M:%S")
@@ -203,7 +224,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     import tkinter as tk
     from tkinter import font as tkfont
     import customtkinter as ctk
-    from PIL import ImageTk
+    from PIL import Image, ImageOps, ImageTk
 
     model = GalleryModel(items)
     moved = {"count": 0}
@@ -228,18 +249,20 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         return max(1, int(round(n * scale)))
 
     family = tkfont.nametofont("TkDefaultFont").actual("family")
-    f_name = tkfont.Font(root=root, family=family, size=10, weight="bold")
-    f_small = tkfont.Font(root=root, family=family, size=9)
-    f_italic = tkfont.Font(root=root, family=family, size=9, slant="italic")
+    f_name = tkfont.Font(root=root, family=family, size=12, weight="bold")
+    f_small = tkfont.Font(root=root, family=family, size=11)
+    f_italic = tkfont.Font(root=root, family=family, size=11, slant="italic")
     lh_name = f_name.metrics("linespace") + px(3)
     lh_small = f_small.metrics("linespace") + px(2)
     row_series = lh_small + px(6)                  # tall enough for the series input
+    radius = px(12)                                # corners of the tiles and of the covers in them
 
     # ---- layout / drawing state -------------------------------------------
     lay: dict = {"items": [], "cols": 1, "tile_w": 0, "tile_h": 0, "img_w": 0, "img_h": 0,
                  "pad": px(10), "gap": px(12), "series_y": 0, "region_h": 1}
     drawn: dict[int, list[int]] = {}               # tile index -> its canvas items
     cover_item: dict[int, tuple[int, int]] = {}    # tile index -> (cover image item, "no preview" text item)
+    sel: dict = {"item": None}                     # the selected card (highlighted; Enter edits its series)
     edit: dict = {"idx": None, "entry": None, "lb": None, "suggestions": [], "after": None}
     timers: dict[str, str | None] = {"poll": None, "search": None, "layout": None,
                                      "sidebar": None, "draw": None}
@@ -273,7 +296,8 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         key = (path, lay["img_w"])
         photo = photos.get(key)
         if photo is None:
-            photo = ImageTk.PhotoImage(fit_image(pil, (lay["img_w"], lay["img_h"])))
+            fitted = ImageOps.fit(pil, (lay["img_w"], lay["img_h"]), Image.LANCZOS)    # fills the tile's width
+            photo = ImageTk.PhotoImage(round_corners(fitted, radius))
             photos[key] = photo
             while len(photos) > _PHOTO_CACHE_MAX:
                 photos.popitem(last=False)
@@ -415,11 +439,13 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         # many cards are shown), so a search doesn't make the tiles jump in size.
         cols = max(1, (cw - gap) // (px(size_slider.get()) + 2 * pad + gap))
         tile_w = max(px(80), (cw - gap * (cols + 1)) // cols)
-        img_w = tile_w - 2 * pad
+        img_w = tile_w                             # the cover fills the frame's width, edge to edge
         img_h = int(round(img_w * COVER_RATIO))
-        tile_h = pad + img_h + px(8) + lh_name + row_series + 2 * lh_small + pad
+        tile_h = img_h + px(8) + lh_name + row_series + 2 * lh_small + pad
         lay.update(items=model.visible(), img_w=img_w, img_h=img_h, tile_w=tile_w, tile_h=tile_h,
-                   cols=cols, series_y=pad + img_h + px(8) + lh_name)
+                   cols=cols, series_y=img_h + px(8) + lh_name)
+        if sel["item"] is not None and index_of(sel["item"]) is None:
+            sel["item"] = None
         n = len(lay["items"])
         rows = -(-n // lay["cols"])
         total = gap + rows * (tile_h + gap)
@@ -468,21 +494,22 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         pad, tile_w = lay["pad"], lay["tile_w"]
         tx, ty = tile_xy(idx)
         text_w = tile_w - 2 * pad
-        ids = [canvas.create_rectangle(tx, ty, tx + tile_w, ty + lay["tile_h"], fill=pal["tile"], outline="")]
+        ids = [canvas.create_polygon(rounded_rect_points(tx, ty, tx + tile_w, ty + lay["tile_h"], radius),
+                                     smooth=True, fill=pal["tile"], outline="")]
         cx = tx + tile_w // 2
-        ids.append(canvas.create_rectangle(tx + pad, ty + pad, tx + pad + lay["img_w"], ty + pad + lay["img_h"],
-                                           fill=pal["cover"], outline=""))
+        ids.append(canvas.create_polygon(rounded_rect_points(tx, ty, tx + tile_w, ty + lay["img_h"], radius),
+                                         smooth=True, fill=pal["cover"], outline=""))
         request_cover(item.path)
         photo = photo_for(item.path)
         # Both items always exist: the cover can arrive after the tile is drawn (apply_cover), and
         # a text item can't take an image. The note stays empty while the cover is loading.
-        image_id = canvas.create_image(cx, ty + pad, anchor="n", image=photo if photo is not None else "")
-        note_id = canvas.create_text(cx, ty + pad + lay["img_h"] // 2, fill=pal["muted"], font=f_small,
+        image_id = canvas.create_image(cx, ty, anchor="n", image=photo if photo is not None else "")
+        note_id = canvas.create_text(cx, ty + lay["img_h"] // 2, fill=pal["muted"], font=f_small,
                                      justify="center",
                                      text=t("dialog.review.no_preview") if pil_cache.get(item.path) is False else "")
         ids += [image_id, note_id]
         cover_item[idx] = (image_id, note_id)
-        y = ty + pad + lay["img_h"] + px(8)
+        y = ty + lay["img_h"] + px(8)
         ids.append(canvas.create_text(tx + pad, y, anchor="nw", fill=pal["text"], font=f_name,
                                       text=ellipsize(f_name.measure, item.name, text_w)))
         y += lh_name
@@ -497,7 +524,58 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                                       text=format_size(item.size)))
         ids.append(canvas.create_text(tx + pad, y + lh_small, anchor="nw", fill=pal["muted"], font=f_small,
                                       text=ellipsize(f_small.measure, format_stamp(item.mtime), text_w)))
+        if sel["item"] is item:                    # highlight: an accent border over the whole tile
+            half = px(3) / 2
+            ids.append(canvas.create_polygon(
+                rounded_rect_points(tx + half, ty + half, tx + tile_w - half, ty + lay["tile_h"] - half, radius),
+                smooth=True, splinesteps=24, fill="", outline=pal["accent"], width=px(3), joinstyle="round"))
         drawn[idx] = ids
+
+    def index_of(item) -> int | None:
+        for i, other in enumerate(lay["items"]):
+            if other is item:
+                return i
+        return None
+
+    def redraw_tile(idx: int) -> None:
+        if idx in drawn:
+            for cid in drawn.pop(idx):
+                canvas.delete(cid)
+            cover_item.pop(idx, None)
+            draw_tile(idx)
+
+    def set_selected(item) -> None:
+        old = sel["item"]
+        if old is item:
+            return
+        sel["item"] = item
+        for it in (old, item):
+            i = index_of(it) if it is not None else None
+            if i is not None:
+                redraw_tile(i)
+
+    def first_visible_index() -> int:
+        step = lay["tile_h"] + lay["gap"]
+        row = max(0, int(-(-(canvas.canvasy(0) - lay["gap"]) // step)))
+        return min(row * lay["cols"], len(lay["items"]) - 1)
+
+    def move_card_selection(dx: int, dy: int) -> None:
+        items = lay["items"]
+        n = len(items)
+        if not n:
+            return
+        cur = index_of(sel["item"])
+        if cur is None:
+            new = first_visible_index()
+        else:
+            cols = lay["cols"]
+            new = cur + dx + dy * cols
+            if new < 0:
+                new = cur
+            elif new >= n:                         # down into a short last row lands on its last card
+                new = n - 1 if dy > 0 and cur // cols < (n - 1) // cols else cur
+        set_selected(items[new])
+        ensure_visible(new)
 
     def locate(ex: int, ey: int) -> tuple[int, bool] | None:
         """(tile index, over its series line?) for a point in the canvas window, or None."""
@@ -589,6 +667,11 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         canvas.delete("editor")
         edit["idx"] = None
         edit["suggestions"] = []
+        return "break"
+
+    def cancel_and_focus(_event=None) -> str:
+        cancel_edit()
+        canvas.focus_set()                         # so the arrow keys / WASD / Enter work again
         return "break"
 
     def selected_suggestion() -> str | None:
@@ -710,7 +793,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                              width=lay["tile_w"] - 2 * lay["pad"], height=row_series, tags="editor")
         entry.bind("<Return>", lambda _e: (confirm(), "break")[1])
         entry.bind("<KP_Enter>", lambda _e: (confirm(), "break")[1])
-        entry.bind("<Escape>", cancel_edit)
+        entry.bind("<Escape>", cancel_and_focus)
         entry.bind("<Down>", move_selection(+1))
         entry.bind("<Up>", move_selection(-1))
         entry.bind("<Tab>", on_tab)
@@ -747,6 +830,10 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
             model.set_view(VIEW_ALL)
             refresh_sidebar()
         relayout(keep_scroll=True)
+        if sel["item"] is None and lay["items"]:    # it left this view (e.g. Untagged): select the next card
+            nxt = min(idx, len(lay["items"]) - 1)
+            set_selected(lay["items"][nxt])
+            ensure_visible(nxt)
         status.configure(text=t("dialog.manual.moved", name=item.name, series=series))
 
     # -----------------------------------------------------------------------
@@ -754,12 +841,33 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     # -----------------------------------------------------------------------
     def on_click(event) -> None:
         hit = locate(event.x, event.y)
-        if hit is not None and hit[1]:
-            start_edit(hit[0])
-        else:
-            if edit["idx"] is not None:
-                cancel_edit()
-            canvas.focus_set()
+        if edit["idx"] is not None:
+            cancel_edit()
+        canvas.focus_set()
+        if hit is None:
+            return
+        idx, in_series = hit
+        set_selected(lay["items"][idx])
+        if in_series:
+            start_edit(idx)
+
+    def on_enter_key(_event=None) -> str:
+        items = lay["items"]
+        if items:
+            idx = index_of(sel["item"])
+            if idx is None:
+                idx = first_visible_index()
+                set_selected(items[idx])
+            start_edit(idx)
+        return "break"
+
+    def nav(dx: int, dy: int):
+        def handler(event) -> str | None:
+            if event.state & 0x4:                  # Ctrl+A etc. are not navigation
+                return None
+            move_card_selection(dx, dy)
+            return "break"
+        return handler
 
     def on_motion(event) -> None:
         hit = locate(event.x, event.y)
@@ -838,8 +946,12 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     canvas.bind("<Configure>", on_canvas_configure)
     canvas.bind("<Prior>", scroll_key(pages=-1))
     canvas.bind("<Next>", scroll_key(pages=1))
-    canvas.bind("<Up>", scroll_key(units=-1))
-    canvas.bind("<Down>", scroll_key(units=1))
+    for keys, dx, dy in ((("Left", "a", "A"), -1, 0), (("Right", "d", "D"), 1, 0),
+                         (("Up", "w", "W"), 0, -1), (("Down", "s", "S"), 0, 1)):
+        for key in keys:
+            canvas.bind(f"<{key}>", nav(dx, dy))
+    canvas.bind("<Return>", on_enter_key)
+    canvas.bind("<KP_Enter>", on_enter_key)
     canvas.bind("<Home>", scroll_key(home=0.0))
     canvas.bind("<End>", scroll_key(home=1.0))
     root.bind("<MouseWheel>", on_wheel)

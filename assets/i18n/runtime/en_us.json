@@ -26,7 +26,7 @@
   "dialog.manual.size": "Size",
   "dialog.manual.unknown_series": "Unknown series",
   "dialog.manual.no_cards": "No characters to show.",
-  "dialog.manual.hint": "Click “Unknown series” under a character to type its series. Enter confirms and moves the card into that series folder (created if needed); Esc cancels; ↑/↓ and Tab pick a suggestion.",
+  "dialog.manual.hint": "Select a card with a click, the arrow keys or WASD. Enter (or a click on “Unknown series”) opens its series input: Enter confirms and moves the card into that series folder (created if needed), Esc cancels, ↑/↓ and Tab pick a suggestion.",
   "dialog.manual.status": "{total} characters · {untagged} untagged",
   "dialog.manual.status_filtered": "showing {shown} of {total} characters · {untagged} untagged",
   "dialog.manual.moved": "Moved {name} → {series}",

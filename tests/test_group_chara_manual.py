@@ -307,3 +307,14 @@ def test_run_manual_with_no_cards_does_not_open_the_gallery(tmp_path):
          mock.patch("kkafio.system.manual_group_dialog.manual_dialog", lambda *a: opened.append(a)):
         task.run()
     assert opened == []
+
+
+def test_round_corners_and_polygon_points():
+    from PIL import Image
+    from kkafio.system.manual_group_dialog import round_corners, rounded_rect_points
+    out = round_corners(Image.new("RGB", (60, 80), (200, 10, 10)), 12)
+    assert out.mode == "RGBA" and out.size == (60, 80)
+    assert out.getpixel((0, 0))[3] == 0 and out.getpixel((59, 79))[3] == 0     # corners cut away
+    assert out.getpixel((30, 40)) == (200, 10, 10, 255) and out.getpixel((30, 0))[3] == 255
+    pts = rounded_rect_points(0, 0, 10, 20, 3)
+    assert len(pts) == 24 and min(pts[0::2]) == 0 and max(pts[0::2]) == 10 and max(pts[1::2]) == 20

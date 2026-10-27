@@ -26,7 +26,7 @@
   "dialog.manual.size": "大小",
   "dialog.manual.unknown_series": "未知作品",
   "dialog.manual.no_cards": "沒有可顯示的角色。",
-  "dialog.manual.hint": "點擊角色下方的「未知作品」輸入其作品。按 Enter 確認，卡片會移入該作品資料夾（不存在則建立）；Esc 取消；↑/↓ 與 Tab 選擇建議。",
+  "dialog.manual.hint": "以點擊、方向鍵或 WASD 選擇卡片。按 Enter（或點擊「未知作品」）開啟作品輸入框：Enter 確認並將卡片移入該作品資料夾（不存在則建立），Esc 取消，↑/↓ 與 Tab 選擇建議。",
   "dialog.manual.status": "{total} 個角色 · {untagged} 個未分類",
   "dialog.manual.status_filtered": "顯示 {shown} / {total} 個角色 · {untagged} 個未分類",
   "dialog.manual.moved": "已將 {name} 移至 {series}",

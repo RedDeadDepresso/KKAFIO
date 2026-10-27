@@ -26,7 +26,7 @@
   "dialog.manual.size": "サイズ",
   "dialog.manual.unknown_series": "作品不明",
   "dialog.manual.no_cards": "表示するキャラクターがありません。",
-  "dialog.manual.hint": "キャラクターの下の「作品不明」をクリックして作品名を入力します。Enter で確定するとカードがその作品フォルダー（なければ作成）へ移動します。Esc でキャンセル、↑/↓ と Tab で候補を選択します。",
+  "dialog.manual.hint": "クリック、矢印キー、または WASD でカードを選択します。Enter（または「作品不明」をクリック）で作品入力欄を開きます。Enter で確定するとカードがその作品フォルダー（なければ作成）へ移動し、Esc でキャンセル、↑/↓ と Tab で候補を選択します。",
   "dialog.manual.status": "{total} 体のキャラクター · 未分類 {untagged}",
   "dialog.manual.status_filtered": "{total} 体中 {shown} 体を表示 · 未分類 {untagged}",
   "dialog.manual.moved": "{name} を {series} に移動しました",

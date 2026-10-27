@@ -71,6 +71,11 @@ def texts(cv, text):
     return [i for i in cv.find_all() if cv.type(i) == "text" and cv.itemcget(i, "text") == text]
 
 
+def first_unknown(cv):
+    """The "Unknown series" text of the top-left tile (item order on the canvas isn't tile order)."""
+    return min(texts(cv, "Unknown series"), key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0]))
+
+
 def click(cv, item_id):
     x1, y1, x2, y2 = cv.bbox(item_id)
     cv.event_generate("<Button-1>", x=int((x1 + x2) / 2 - cv.canvasx(0)), y=int((y1 + y2) / 2 - cv.canvasy(0)))
@@ -152,7 +157,7 @@ def test_click_type_pick_a_suggestion_and_enter_moves_the_card(tmp_path, monkeyp
 
     def script(root):
         cv = gallery_canvas(root)
-        click(cv, texts(cv, "Unknown series")[0])
+        click(cv, first_unknown(cv))
         pump(root, 0.2)
         entry = editor(cv)
         assert entry is not None and entry.get() == ""
@@ -180,13 +185,13 @@ def test_enter_without_choosing_uses_the_typed_text_and_tab_completes(tmp_path, 
 
     def script(root):
         cv = gallery_canvas(root)
-        click(cv, texts(cv, "Unknown series")[0])
+        click(cv, first_unknown(cv))
         pump(root, 0.2)
         entry = editor(cv)
         type_into(entry, "My Own Series")
         entry.event_generate("<Return>")
         pump(root, 0.3)
-        click(cv, texts(cv, "Unknown series")[0])
+        click(cv, first_unknown(cv))
         pump(root, 0.2)
         entry = editor(cv)
         type_into(entry, "fa")
@@ -207,21 +212,21 @@ def test_escape_blank_text_and_failed_moves_change_nothing(tmp_path, monkeypatch
 
     def script(root):
         cv = gallery_canvas(root)
-        click(cv, texts(cv, "Unknown series")[0])
+        click(cv, first_unknown(cv))
         pump(root, 0.2)
         type_into(editor(cv), "Fate")
         editor(cv).event_generate("<Escape>")
         pump(root, 0.2)
         assert editor(cv) is None and calls == []                      # Esc only closes the input
 
-        click(cv, texts(cv, "Unknown series")[0])
+        click(cv, first_unknown(cv))
         pump(root, 0.2)
         type_into(editor(cv), "   ")
         editor(cv).event_generate("<Return>")
         pump(root, 0.2)
         assert calls == []                                             # blank: nothing to assign
 
-        click(cv, texts(cv, "Unknown series")[0])
+        click(cv, first_unknown(cv))
         pump(root, 0.2)
         type_into(editor(cv), "..")                                    # the mover refuses this one
         editor(cv).event_generate("<Return>")
@@ -307,5 +312,105 @@ def test_a_card_without_a_cover_says_so(tmp_path, monkeypatch):
         cv = gallery_canvas(root)
         pump(root, 0.8)
         assert texts(cv, "no\npreview")
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def _highlighted(cv):
+    """Name of the card whose tile has the highlight border (None if no tile does)."""
+    accents = {mgd._LIGHT["accent"], mgd._DARK["accent"]}
+    boxes = [cv.bbox(i) for i in cv.find_all()
+             if cv.type(i) == "polygon" and cv.itemcget(i, "outline") in accents and not cv.itemcget(i, "fill")]
+    assert len(boxes) <= 1
+    if not boxes:
+        return None
+    x1, y1, x2, y2 = boxes[0]
+    inside = [cv.itemcget(i, "text") for i in cv.find_all() if cv.type(i) == "text"
+              and cv.itemcget(i, "text").startswith("Char ") and x1 <= cv.bbox(i)[0] <= x2 and y1 <= cv.bbox(i)[1] <= y2]
+    return inside[0] if inside else None
+
+
+def _press(cv, keysym):
+    cv.focus_force()
+    cv.update()
+    cv.event_generate("<KeyPress>", keysym=keysym)
+    pump(cv.winfo_toplevel(), 0.25)
+
+
+def test_click_selects_and_keys_move_the_selection_and_enter_edits(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 14)
+    calls = []
+
+    def script(root):
+        cv = gallery_canvas(root)
+        assert _highlighted(cv) is None
+        name_id = texts(cv, "Char 013")[0]                           # newest = first tile
+        click(cv, name_id)                                           # click the card, not its series
+        pump(root, 0.2)
+        assert _highlighted(cv) == "Char 013" and editor(cv) is None
+
+        _press(cv, "d")
+        assert _highlighted(cv) == "Char 012"
+        _press(cv, "Right")
+        assert _highlighted(cv) == "Char 011"
+        _press(cv, "a")
+        _press(cv, "Left")
+        assert _highlighted(cv) == "Char 013"
+        _press(cv, "Left")
+        assert _highlighted(cv) == "Char 013"                        # no wrap off the start
+        _press(cv, "s")                                              # one row down (same column)
+        below = _highlighted(cv)
+        assert below not in (None, "Char 013")
+        _press(cv, "Up")
+        assert _highlighted(cv) == "Char 013"
+        _press(cv, "w")
+        assert _highlighted(cv) == "Char 013"                        # nothing above the first row
+
+        _press(cv, "d")
+        _press(cv, "Return")                                         # Enter: the series input of Char 012
+        pump(root, 0.2)
+        entry = editor(cv)
+        assert entry is not None and root.focus_get() is entry
+        type_into(entry, "Fate")
+        entry.event_generate("<Return>")
+        pump(root, 0.4)
+        assert calls == [("Char 012", "Fate")] and _highlighted(cv) == "Char 012"
+
+        _press(cv, "Return")                                         # focus is back on the gallery
+        pump(root, 0.2)
+        assert editor(cv) is not None
+        editor(cv).event_generate("<Escape>")
+        pump(root, 0.2)
+        assert editor(cv) is None and root.focus_get() is cv
+        _press(cv, "d")
+        assert _highlighted(cv) == "Char 011"
+
+    run_dialog(monkeypatch, items, lambda t: [], mover(calls), script)
+
+
+def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_view(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 60)
+
+    def script(root):
+        cv = gallery_canvas(root)
+        for _ in range(3):
+            _press(cv, "Down")                                       # first press selects, the rest move
+        assert cv.canvasy(0) > 0 or _highlighted(cv) is not None
+        for _ in range(12):
+            _press(cv, "s")
+        name = _highlighted(cv)
+        assert name is not None                                      # still visible: the view followed it
+        assert cv.canvasy(0) > 0
+
+        button(root, "Untagged").invoke()
+        pump(root, 0.3)
+        _press(cv, "Return")
+        pump(root, 0.2)
+        before = _highlighted(cv)
+        type_into(editor(cv), "Fate")
+        editor(cv).event_generate("<Return>")
+        pump(root, 0.5)
+        after = _highlighted(cv)
+        assert after is not None and after != before                 # the assigned card left Untagged; next selected
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
