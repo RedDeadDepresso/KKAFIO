@@ -578,3 +578,27 @@ def test_the_series_dialog_can_be_cancelled_and_a_partial_failure_is_reported(tm
         assert label_text(root, "Moved") == ["Moved 1 characters → Fate · 1 could not be moved"]
 
     assert run_dialog(monkeypatch, items, lambda t: [], flaky, script) == 1
+
+
+def test_sort_menu_options_order_default_and_effect(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 4)
+    for i, item in enumerate(items):                 # created order is the reverse of updated order
+        item.ctime = 1_600_000_000 + (10 - i)
+        item.mtime = 1_700_000_000 + i
+
+    def first_name(cv):
+        return min((i for i in cv.find_all() if cv.type(i) == "text" and cv.itemcget(i, "text").startswith("Char ")),
+                   key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0]))
+
+    def script(root):
+        cv = gallery_canvas(root)
+        menu = next(w for w in walk(root) if w.__class__.__name__ == "CTkOptionMenu")
+        assert list(menu.cget("values")) == ["Created date", "Updated date", "Name", "File name", "File size"]
+        assert menu.get() == "Updated date"
+        assert cv.itemcget(first_name(cv), "text") == "Char 003"          # newest updated first
+        menu.set("Created date")
+        menu.cget("command")("Created date")
+        pump(root, 0.4)
+        assert cv.itemcget(first_name(cv), "text") == "Char 000"          # newest created first
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)

@@ -38,10 +38,12 @@ from kkafio.system.similar_chara_dialog import format_size
 # Data + what is shown (no GUI)
 # ---------------------------------------------------------------------------
 
+SORT_CREATED = "created"
 SORT_UPDATED = "updated"
 SORT_NAME = "name"
+SORT_FILENAME = "filename"
 SORT_SIZE = "size"
-SORT_KEYS = (SORT_UPDATED, SORT_NAME, SORT_SIZE)
+SORT_KEYS = (SORT_CREATED, SORT_UPDATED, SORT_NAME, SORT_FILENAME, SORT_SIZE)    # the order of the menu
 
 VIEW_ALL = "all"
 VIEW_UNTAGGED = "untagged"
@@ -57,7 +59,8 @@ class CharaItem:
     name: str                  # shown under the cover
     series: str | None         # its series folder (first folder under `root`); None = untagged
     size: int                  # bytes
-    mtime: float
+    mtime: float               # updated
+    ctime: float = 0.0         # created (0: unknown)
 
 
 class GalleryModel:
@@ -89,8 +92,10 @@ class GalleryModel:
             if needle and needle not in f"{item.name}\n{item.path.name}\n{item.series or ''}".casefold():
                 continue
             out.append(item)
-        keys = {SORT_UPDATED: lambda i: i.mtime,
+        keys = {SORT_CREATED: lambda i: i.ctime or i.mtime,
+                SORT_UPDATED: lambda i: i.mtime,
                 SORT_NAME: lambda i: (i.name.casefold(), i.path.name.casefold()),
+                SORT_FILENAME: lambda i: (i.path.name.casefold(), i.name.casefold()),
                 SORT_SIZE: lambda i: i.size}
         out.sort(key=keys.get(self.sort_key, keys[SORT_UPDATED]), reverse=self.descending)
         return out
@@ -390,7 +395,8 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
     bar.grid_columnconfigure(3, weight=1)
     ctk.CTkLabel(bar, text=t("dialog.manual.sort_by"), text_color=pair("muted")).grid(row=0, column=0, padx=(0, 8))
-    sort_labels = {t("dialog.manual.sort_updated"): SORT_UPDATED, t("dialog.manual.sort_name"): SORT_NAME,
+    sort_labels = {t("dialog.manual.sort_created"): SORT_CREATED, t("dialog.manual.sort_updated"): SORT_UPDATED,
+                   t("dialog.manual.sort_name"): SORT_NAME, t("dialog.manual.sort_filename"): SORT_FILENAME,
                    t("dialog.manual.sort_size"): SORT_SIZE}
     sort_menu = ctk.CTkOptionMenu(bar, values=list(sort_labels), width=150, command=lambda _v: on_sort())
     sort_menu.set(t("dialog.manual.sort_updated"))

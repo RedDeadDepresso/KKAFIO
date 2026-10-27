@@ -15,7 +15,7 @@ from kkafio.cards.agv_text import norm
 from kkafio.cards.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
 from kkafio.system.manual_group_dialog import (
-    SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
+    SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
 from kkafio.tasks import group_chara
 
 from test_agv_index import _index
@@ -77,6 +77,14 @@ def test_model_search_looks_at_name_filename_and_series_and_sorts():
     assert {i.name for i in m.visible()} == {"Rin", "Zed"}
     m.search = "other"                                                  # series of c
     assert [i.name for i in m.visible()] == ["Zed"]
+    m.search = ""
+    m.sort_key, m.descending = SORT_FILENAME, False
+    assert [i.path.name for i in m.visible()] == ["Asuka.png", "Rin.png", "rin_copy.png"]
+    a.ctime, b.ctime, c.ctime = 30, 10, 20
+    m.sort_key, m.descending = SORT_CREATED, True
+    assert [i.name for i in m.visible()] == ["Rin", "Zed", "Asuka"]
+    c.ctime = 0                                                         # unknown creation time: falls back to updated
+    assert [i.name for i in m.visible()] == ["Rin", "Asuka", "Zed"]
     m.sort_key = SORT_UPDATED
 
 
