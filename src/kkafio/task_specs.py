@@ -588,7 +588,8 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     TaskSpec(
         name="GroupChara", command="group-chara",
         help="Move character cards into series subfolders using an LLM "
-             "(shows a native Copy/Paste dialog when it runs)",
+             "(shows a native Copy/Paste dialog when it runs) and/or by hand "
+             "(a gallery dialog where you type each character's series)",
         target="kkafio.tasks.group_chara:GroupChara",
         options=(
             Value("--chara-dir", "--input", "-i", key="CharaDir", ignore_blank=True, metavar="DIR",
@@ -596,6 +597,15 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "pointing it at the game's chara folder also uses female/ and male/; "
                        "--input is an alias)"),
+            Toggle("llm", key="UseLlm",
+                   help="Group with an LLM: shows the Copy/Paste dialog (default: on)",
+                   off_help="Don't use an LLM"),
+            Toggle("manual", key="UseManual",
+                   help="Group by hand: opens a gallery where you type each character's series, with "
+                        "suggestions; a confirmed card is moved into that series folder at once. With "
+                        "--llm too, the LLM goes first and the gallery shows the cards it left "
+                        "(default: off)",
+                   off_help="Don't open the manual gallery"),
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Include character cards from subfolders when scanning (overrides config)"),
             Toggle("use-cache", key="UseCache",

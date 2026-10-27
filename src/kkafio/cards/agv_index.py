@@ -49,6 +49,7 @@ def set_index_path(path: Path | None) -> None:
     _index_path = Path(path) if path is not None else None
     _load.cache_clear()
     _title_keys.cache_clear()
+    _series_popularity.cache_clear()
 
 
 def _path() -> Path:
@@ -171,6 +172,52 @@ def canonical_series(name: str, lang: str | None = None, cutoff: float = 0.9) ->
     return dict(zip(idx["langs"], idx["series"][hit])).get(lang or DEFAULT_LANGUAGE) or name
 
 
+@lru_cache(maxsize=1)
+def _series_popularity() -> tuple[int, ...]:
+    """Per series id: the summed favorites of its characters (how well known the series is)."""
+    idx = _load()
+    if not idx:
+        return ()
+    total = [0] * len(idx["series"])
+    for _names, series_ids, score, *_birth in idx["chars"]:
+        for sid in series_ids:
+            if 0 <= sid < len(total):
+                total[sid] += score if isinstance(score, int) else 0
+    return tuple(total)
+
+
+def suggest_series(query: str, lang: str | None = None, limit: int = 8) -> list[str]:
+    """Series titles (in `lang`, English where the index has none) that match what the user has
+    typed so far, for autocompletion.
+
+    A title matches when the normalised query (see agv_text.norm) is a prefix of, or contained in,
+    any of the series' titles in any language, so "fate" and "フェイト" both find Fate/stay night.
+    Prefix matches come first, then the better known series (sum of its characters' favorites).
+    An empty query, or no index, gives [].
+    """
+    idx = _load()
+    q = norm(query)
+    if not idx or not q:
+        return []
+    rank: dict[int, int] = {}                  # series id -> 0 (prefix) / 1 (contained)
+    for key, sid in idx["aliases"].items():
+        if q in key:
+            r = 0 if key.startswith(q) else 1
+            if rank.get(sid, 2) > r:
+                rank[sid] = r
+    popularity = _series_popularity()
+    out: list[str] = []
+    seen: set[str] = set()
+    for sid in sorted(rank, key=lambda i: (rank[i], -(popularity[i] if i < len(popularity) else 0), i)):
+        title = _text(idx, idx["series"][sid], lang)
+        if title and title.casefold() not in seen:
+            seen.add(title.casefold())
+            out.append(title)
+            if len(out) >= limit:
+                break
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Download / cache
 # ---------------------------------------------------------------------------
@@ -243,6 +290,7 @@ def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
 
         _load.cache_clear()
         _title_keys.cache_clear()
+        _series_popularity.cache_clear()
         idx = _load()
         logger.info(tag, f"Anime, games, vtubers character index downloaded: {len(idx['chars']) if idx else 0} characters.")
         return available()

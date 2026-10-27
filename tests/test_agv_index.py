@@ -169,3 +169,42 @@ def test_refresh_rejects_bad_download_and_keeps_cache(cache):
     assert agv_index.refresh("T", client=_Client("bbb", {"version": 99}))
     assert (cache.parent / agv_index.COMMIT_FILE).read_text() == "aaa"    # will retry next time
     assert agv_index.lookup("Tohsaka | Rin |  | x | y")
+
+
+# ---- suggest_series: autocompletion of series titles ---------------------------------------------
+
+def test_suggest_series_prefix_then_contained_then_popularity(index_file):
+    assert agv_index.suggest_series("fate") == ["Fate/stay night"]
+    assert agv_index.suggest_series("FATE/") == ["Fate/stay night"]            # case and punctuation don't matter
+    assert agv_index.suggest_series("night") == ["Fate/stay night"]            # contained, not a prefix
+    assert agv_index.suggest_series("sword art online ii") == ["Sword Art Online"]
+
+
+def test_suggest_series_prefix_beats_better_known_series(tmp_path):
+    idx = _index(chars=[[["A", ""], [0], 1], [["B", ""], [1], 99999]])
+    idx["series"] = [["Online Heroes", ""], ["Heroes Online", ""]]
+    idx["aliases"] = {norm("Online Heroes"): 0, norm("Heroes Online"): 1}
+    p = tmp_path / "i.json"
+    p.write_text(json.dumps(idx), encoding="utf-8")
+    agv_index.set_index_path(p)
+    try:
+        assert agv_index.suggest_series("online") == ["Online Heroes", "Heroes Online"]   # prefix first
+        assert agv_index.suggest_series("heroes") == ["Heroes Online", "Online Heroes"]
+    finally:
+        agv_index.set_index_path(None)
+
+
+def test_suggest_series_language_limit_and_nothing(index_file):
+    assert agv_index.suggest_series("bebop", "ja_jp") == ["カウボーイビバップ"]
+    assert agv_index.suggest_series("fate", "ja_jp") == ["フェイト/ステイナイト"]
+    assert agv_index.suggest_series("o", limit=1) and len(agv_index.suggest_series("o", limit=1)) == 1
+    assert agv_index.suggest_series("") == [] and agv_index.suggest_series("  ") == []
+    assert agv_index.suggest_series("zzzz") == []
+
+
+def test_suggest_series_without_an_index_is_empty(tmp_path):
+    agv_index.set_index_path(tmp_path / "missing.json")
+    try:
+        assert agv_index.suggest_series("fate") == []
+    finally:
+        agv_index.set_index_path(None)
