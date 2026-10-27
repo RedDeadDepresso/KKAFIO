@@ -262,7 +262,10 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                  "pad": px(10), "gap": px(12), "series_y": 0, "region_h": 1}
     drawn: dict[int, list[int]] = {}               # tile index -> its canvas items
     cover_item: dict[int, tuple[int, int]] = {}    # tile index -> (cover image item, "no preview" text item)
-    sel: dict = {"item": None}                     # the selected card (highlighted; Enter edits its series)
+    # Selection: `picked` are the selected cards (accent border); `item` is the keyboard cursor, the
+    # card the arrow keys move from. Ctrl+arrows move the cursor without changing `picked`.
+    sel: dict = {"item": None, "picked": {}}         # picked: id(card) -> card
+    multi: dict = {"dlg": None}                      # the series dialog for several cards, while open
     edit: dict = {"idx": None, "entry": None, "lb": None, "suggestions": [], "after": None}
     timers: dict[str, str | None] = {"poll": None, "search": None, "layout": None,
                                      "sidebar": None, "draw": None}
@@ -444,8 +447,10 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         tile_h = img_h + px(8) + lh_name + row_series + 2 * lh_small + pad
         lay.update(items=model.visible(), img_w=img_w, img_h=img_h, tile_w=tile_w, tile_h=tile_h,
                    cols=cols, series_y=img_h + px(8) + lh_name)
-        if sel["item"] is not None and index_of(sel["item"]) is None:
+        shown_ids = {id(i) for i in lay["items"]}
+        if sel["item"] is not None and id(sel["item"]) not in shown_ids:
             sel["item"] = None
+        sel["picked"] = {k: v for k, v in sel["picked"].items() if k in shown_ids}
         n = len(lay["items"])
         rows = -(-n // lay["cols"])
         total = gap + rows * (tile_h + gap)
@@ -524,11 +529,13 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                                       text=format_size(item.size)))
         ids.append(canvas.create_text(tx + pad, y + lh_small, anchor="nw", fill=pal["muted"], font=f_small,
                                       text=ellipsize(f_small.measure, format_stamp(item.mtime), text_w)))
-        if sel["item"] is item:                    # highlight: an accent border over the whole tile
-            half = px(3) / 2
+        picked, cursor = id(item) in sel["picked"], sel["item"] is item
+        if picked or cursor:                       # an accent border over the whole tile; the cursor
+            half = px(3) / 2                       # alone (not picked) gets a thin dashed one
             ids.append(canvas.create_polygon(
                 rounded_rect_points(tx + half, ty + half, tx + tile_w - half, ty + lay["tile_h"] - half, radius),
-                smooth=True, splinesteps=24, fill="", outline=pal["accent"], width=px(3), joinstyle="round"))
+                smooth=True, splinesteps=24, fill="", outline=pal["accent"], width=px(3) if picked else px(1),
+                joinstyle="round", dash=() if picked else (px(4), px(3))))
         drawn[idx] = ids
 
     def index_of(item) -> int | None:
@@ -544,22 +551,30 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
             cover_item.pop(idx, None)
             draw_tile(idx)
 
-    def set_selected(item) -> None:
-        old = sel["item"]
-        if old is item:
-            return
-        sel["item"] = item
-        for it in (old, item):
-            i = index_of(it) if it is not None else None
-            if i is not None:
-                redraw_tile(i)
+    def apply_selection(cursor, picked) -> None:
+        """Make `cursor` the keyboard cursor and `picked` the selected cards; redraws what changed."""
+        old_picked, old_cursor = sel["picked"], sel["item"]
+        sel["item"] = cursor
+        sel["picked"] = {id(i): i for i in picked}
+        changed = set(old_picked.keys() ^ sel["picked"].keys())
+        changed |= {id(c) for c in (old_cursor, cursor) if c is not None}
+        for idx in list(drawn):
+            if idx < len(lay["items"]) and id(lay["items"][idx]) in changed:
+                redraw_tile(idx)
+        update_status()
+
+    def select_only(item) -> None:
+        apply_selection(item, [item] if item is not None else [])
+
+    def picked_in_order() -> list:
+        return [i for i in lay["items"] if id(i) in sel["picked"]]
 
     def first_visible_index() -> int:
         step = lay["tile_h"] + lay["gap"]
         row = max(0, int(-(-(canvas.canvasy(0) - lay["gap"]) // step)))
         return min(row * lay["cols"], len(lay["items"]) - 1)
 
-    def move_card_selection(dx: int, dy: int) -> None:
+    def move_card_selection(dx: int, dy: int, keep_picked: bool = False) -> None:
         items = lay["items"]
         n = len(items)
         if not n:
@@ -574,8 +589,27 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                 new = cur
             elif new >= n:                         # down into a short last row lands on its last card
                 new = n - 1 if dy > 0 and cur // cols < (n - 1) // cols else cur
-        set_selected(items[new])
+        if keep_picked:
+            apply_selection(items[new], list(sel["picked"].values()))
+        else:
+            select_only(items[new])
         ensure_visible(new)
+
+    def toggle_cursor() -> None:
+        cur = sel["item"]
+        if cur is None:
+            return
+        picked = dict(sel["picked"])
+        if id(cur) in picked:
+            del picked[id(cur)]
+        else:
+            picked[id(cur)] = cur
+        apply_selection(cur, picked.values())
+
+    def select_all() -> None:
+        items = lay["items"]
+        if items:
+            apply_selection(sel["item"] or items[first_visible_index()], items)
 
     def locate(ex: int, ey: int) -> tuple[int, bool] | None:
         """(tile index, over its series line?) for a point in the canvas window, or None."""
@@ -631,8 +665,11 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     def update_status() -> None:
         total, untagged = model.counts()
         shown = len(lay["items"])
-        status.configure(text=t("dialog.manual.status", total=total, untagged=untagged) if shown == total
-                         else t("dialog.manual.status_filtered", shown=shown, total=total, untagged=untagged))
+        text = (t("dialog.manual.status", total=total, untagged=untagged) if shown == total
+                else t("dialog.manual.status_filtered", shown=shown, total=total, untagged=untagged))
+        if len(sel["picked"]) > 1:
+            text += " · " + t("dialog.manual.selected", count=len(sel["picked"]))
+        status.configure(text=text)
 
     def choose_view(mode: str, series: str = "") -> None:
         model.set_view(mode, series)
@@ -814,10 +851,19 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         canvas.focus_set()
         if not text:
             return
-        result = assign(item, text)
-        if result is None:
+        series = assign_one(item, text)
+        if series is None:
             status.configure(text=t("dialog.manual.move_failed", name=item.name))
             return
+        finish_assignment(idx)
+        status.configure(text=t("dialog.manual.moved", name=item.name, series=series))
+
+    def assign_one(item, text: str) -> str | None:
+        """Move `item` into the series `text` (via `assign`) and update the model; the series
+        folder it ended up in, or None if it couldn't be moved."""
+        result = assign(item, text)
+        if result is None:
+            return None
         new_path, series = result
         old_path = item.path
         if new_path != old_path:
@@ -825,16 +871,23 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                 pil_cache[new_path] = pil_cache.pop(old_path)
             moved["count"] += 1
         model.assigned(item, new_path, series)
+        return series
+
+    def finish_assignment(first_idx: int) -> None:
+        """Refresh sidebar and grid after cards were moved. A card that left this view (e.g.
+        Untagged) takes the selection with it, so the next card (at `first_idx`) is selected."""
         refresh_sidebar()
         if model.mode == VIEW_SERIES and model.series_count(model.series_filter) == 0:
             model.set_view(VIEW_ALL)
             refresh_sidebar()
         relayout(keep_scroll=True)
-        if sel["item"] is None and lay["items"]:    # it left this view (e.g. Untagged): select the next card
-            nxt = min(idx, len(lay["items"]) - 1)
-            set_selected(lay["items"][nxt])
+        items = lay["items"]
+        if sel["item"] is None and items:
+            nxt = min(first_idx, len(items) - 1)
+            select_only(items[nxt])
             ensure_visible(nxt)
-        status.configure(text=t("dialog.manual.moved", name=item.name, series=series))
+        elif sel["item"] is not None:
+            select_only(sel["item"])                       # back to the one card
 
     # -----------------------------------------------------------------------
     # events
@@ -847,27 +900,186 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         if hit is None:
             return
         idx, in_series = hit
-        set_selected(lay["items"][idx])
+        item = lay["items"][idx]
+        if event.state & 0x4:                      # Ctrl+click adds / removes the card
+            picked = dict(sel["picked"])
+            if id(item) in picked:
+                del picked[id(item)]
+            else:
+                picked[id(item)] = item
+            apply_selection(item, picked.values())
+            return
+        select_only(item)
         if in_series:
             start_edit(idx)
 
     def on_enter_key(_event=None) -> str:
         items = lay["items"]
-        if items:
-            idx = index_of(sel["item"])
-            if idx is None:
-                idx = first_visible_index()
-                set_selected(items[idx])
-            start_edit(idx)
+        if not items:
+            return "break"
+        targets = picked_in_order()
+        if len(targets) > 1:
+            open_multi_dialog(targets)
+            return "break"
+        if targets:
+            idx = index_of(targets[0])
+        else:
+            idx = index_of(sel["item"]) if sel["item"] is not None else first_visible_index()
+            select_only(items[idx])
+        start_edit(idx)
         return "break"
 
     def nav(dx: int, dy: int):
-        def handler(event) -> str | None:
-            if event.state & 0x4:                  # Ctrl+A etc. are not navigation
-                return None
-            move_card_selection(dx, dy)
+        def handler(event) -> str:
+            move_card_selection(dx, dy, keep_picked=bool(event.state & 0x4))     # Ctrl: cursor only
             return "break"
         return handler
+
+    def on_space(_event=None) -> str:
+        toggle_cursor()
+        return "break"
+
+    def on_select_all(_event=None) -> str:
+        select_all()
+        return "break"
+
+    def on_escape(_event=None) -> str | None:
+        """Esc on the gallery: a multi-selection shrinks to the cursor card; otherwise it closes."""
+        cur = sel["item"]
+        if len(sel["picked"]) > 1 or (cur is not None and id(cur) not in sel["picked"] and sel["picked"]):
+            select_only(cur if cur is not None else picked_in_order()[0])
+            return "break"
+        return None
+
+    # ---- one series for several cards ---------------------------------------------------------------------
+    def open_multi_dialog(targets: list) -> None:
+        """A small dialog with the series input for all of `targets`; Enter moves them."""
+        if multi["dlg"] is not None:
+            return
+        cancel_edit()
+        count = len(targets)
+        dlg = ctk.CTkToplevel(root)
+        multi["dlg"] = dlg
+        dlg.title(t("dialog.manual.multi_title"))
+        dlg.transient(root)
+        dlg.resizable(False, False)
+        dlg.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(dlg, text=t("dialog.manual.multi_prompt", count=count), anchor="w").grid(
+            row=0, column=0, padx=16, pady=(16, 6), sticky="ew")
+        entry = ctk.CTkEntry(dlg, width=px(420), height=34)
+        entry.grid(row=1, column=0, padx=16, sticky="ew")
+        box = tk.Listbox(dlg, height=_SHOWN_SUGGESTIONS, bg=pal["input"], fg=pal["text"],
+                         selectbackground=pal["sel"], selectforeground=pal["text"], activestyle="none",
+                         exportselection=False, relief="flat", borderwidth=0, highlightthickness=1,
+                         highlightbackground=pal["border"], highlightcolor=pal["border"], font=f_small, takefocus=0)
+        names: list[str] = []
+
+        def refresh(_event=None) -> None:
+            names[:] = list(suggest(entry.get()))[:_MAX_SUGGESTIONS]
+            box.delete(0, "end")
+            for name in names:
+                box.insert("end", name)
+            if names:
+                box.configure(height=min(len(names), _SHOWN_SUGGESTIONS))
+                box.grid(row=2, column=0, padx=16, pady=(4, 0), sticky="ew")
+            else:
+                box.grid_remove()
+
+        def chosen() -> str | None:
+            sel_idx = box.curselection()
+            return names[sel_idx[0]] if sel_idx and sel_idx[0] < len(names) else None
+
+        def close() -> None:
+            multi["dlg"] = None
+            try:
+                dlg.grab_release()
+            except tk.TclError:
+                pass
+            dlg.destroy()
+            canvas.focus_set()
+
+        def move_choice(step: int):
+            def handler(_e=None) -> str:
+                if box.size():
+                    cur = box.curselection()
+                    nxt = (0 if step > 0 else box.size() - 1) if not cur else cur[0] + step
+                    if 0 <= nxt < box.size():
+                        box.selection_clear(0, "end")
+                        box.selection_set(nxt)
+                        box.see(nxt)
+                return "break"
+            return handler
+
+        def complete(_e=None) -> str:
+            pick = chosen() or (names[0] if names else None)
+            if pick:
+                entry.delete(0, "end")
+                entry.insert(0, pick)
+                refresh()
+            return "break"
+
+        def confirm_multi(text: str | None = None) -> str:
+            text = (text if text is not None else (chosen() or entry.get())).strip()
+            if not text:
+                return "break"
+            close()
+            apply_many(targets, text)
+            return "break"
+
+        def click_choice(event) -> str:
+            i = box.nearest(event.y)
+            if 0 <= i < len(names):
+                confirm_multi(names[i])
+            return "break"
+
+        def on_return(_event=None) -> str:                  # Tk passes the event; confirm_multi takes a text
+            return confirm_multi()
+
+        buttons = ctk.CTkFrame(dlg, fg_color="transparent")
+        buttons.grid(row=3, column=0, padx=16, pady=16, sticky="e")
+        ctk.CTkButton(buttons, text=t("dialog.manual.multi_cancel"), width=90, fg_color=pair("sel"),
+                      text_color=pair("text"), hover_color=pair("border"), command=close).grid(row=0, column=0, padx=(0, 8))
+        ctk.CTkButton(buttons, text=t("dialog.manual.multi_ok"), width=90, command=on_return).grid(row=0, column=1)
+
+        for seq, fn in (("<Return>", on_return), ("<KP_Enter>", on_return), ("<Escape>", lambda _e: (close(), "break")[1]),
+                        ("<Down>", move_choice(+1)), ("<Up>", move_choice(-1)), ("<Tab>", complete)):
+            entry.bind(seq, fn)
+        entry.bind("<KeyRelease>", lambda e: refresh() if e.keysym not in (
+            "Up", "Down", "Return", "Escape", "Tab", "Shift_L", "Shift_R", "Control_L", "Control_R") else None)
+        box.bind("<Button-1>", click_choice)
+        dlg.protocol("WM_DELETE_WINDOW", close)
+        refresh()
+
+        dlg.update_idletasks()
+        w, h = dlg.winfo_reqwidth(), dlg.winfo_reqheight()
+        x = root.winfo_rootx() + max(0, (root.winfo_width() - w) // 2)
+        y = root.winfo_rooty() + max(0, (root.winfo_height() - h) // 3)
+        dlg.geometry(f"+{x}+{y}")
+
+        def focus_it() -> None:
+            try:
+                dlg.grab_set()
+            except tk.TclError:
+                pass
+            entry.focus_force()
+        dlg.after(120, focus_it)
+
+    def apply_many(targets: list, text: str) -> None:
+        first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
+        done, failed, series = 0, 0, ""
+        for item in targets:
+            result = assign_one(item, text)
+            if result is None:
+                failed += 1
+            else:
+                done, series = done + 1, result
+        finish_assignment(first_idx)
+        if not done:
+            status.configure(text=t("dialog.manual.move_failed", name=targets[0].name))
+        elif failed:
+            status.configure(text=t("dialog.manual.multi_moved_partial", count=done, series=series, failed=failed))
+        else:
+            status.configure(text=t("dialog.manual.multi_moved", count=done, series=series))
 
     def on_motion(event) -> None:
         hit = locate(event.x, event.y)
@@ -938,6 +1150,12 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         schedule_layout(80, keep_scroll=True)
 
     def on_close(_event=None) -> None:
+        if multi["dlg"] is not None:
+            try:
+                multi["dlg"].destroy()
+            except tk.TclError:
+                pass
+            multi["dlg"] = None
         root.quit()
 
     canvas.configure(yscrollcommand=on_yscroll)
@@ -950,6 +1168,11 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                          (("Up", "w", "W"), 0, -1), (("Down", "s", "S"), 0, 1)):
         for key in keys:
             canvas.bind(f"<{key}>", nav(dx, dy))
+    canvas.bind("<space>", on_space)
+    canvas.bind("<Control-space>", on_space)
+    canvas.bind("<Control-a>", on_select_all)
+    canvas.bind("<Control-A>", on_select_all)
+    canvas.bind("<Escape>", on_escape)
     canvas.bind("<Return>", on_enter_key)
     canvas.bind("<KP_Enter>", on_enter_key)
     canvas.bind("<Home>", scroll_key(home=0.0))

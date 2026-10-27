@@ -414,3 +414,167 @@ def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_v
         assert after is not None and after != before                 # the assigned card left Untagged; next selected
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+# ---------------------------------------------------------------------------
+# several cards at once
+# ---------------------------------------------------------------------------
+
+def _picked(cv):
+    """Names of the cards with the solid (selected) border, in reading order; dashed = cursor only."""
+    accents = {mgd._LIGHT["accent"], mgd._DARK["accent"]}
+    names = []
+    for i in cv.find_all():
+        if cv.type(i) == "polygon" and cv.itemcget(i, "outline") in accents and not cv.itemcget(i, "fill") \
+                and not cv.itemcget(i, "dash"):
+            x1, y1, x2, y2 = cv.bbox(i)
+            names += [(cv.bbox(t)[1], cv.bbox(t)[0], cv.itemcget(t, "text")) for t in cv.find_all()
+                      if cv.type(t) == "text" and cv.itemcget(t, "text").startswith("Char ")
+                      and x1 <= cv.bbox(t)[0] <= x2 and y1 <= cv.bbox(t)[1] <= y2]
+    return [n for _y, _x, n in sorted(names)]
+
+
+def _cursor_only(cv):
+    return [i for i in cv.find_all() if cv.type(i) == "polygon" and cv.itemcget(i, "dash")]
+
+
+def _ctrl_click(cv, item_id):
+    x1, y1, x2, y2 = cv.bbox(item_id)
+    cv.event_generate("<Control-Button-1>", x=int((x1 + x2) / 2 - cv.canvasx(0)), y=int((y1 + y2) / 2 - cv.canvasy(0)))
+
+
+def _ctrl_press(cv, keysym):
+    cv.focus_force()
+    cv.update()
+    cv.event_generate(f"<Control-Key-{keysym}>")
+    pump(cv.winfo_toplevel(), 0.25)
+
+
+def _series_dialog(root):
+    found = [w for w in walk(root) if w is not root and w.__class__.__name__ == "CTkToplevel"]
+    return found[0] if found else None
+
+
+def test_ctrl_click_adds_cards_and_a_plain_click_goes_back_to_one(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 8)
+
+    def script(root):
+        cv = gallery_canvas(root)
+        click(cv, texts(cv, "Char 007")[0])
+        _ctrl_click(cv, texts(cv, "Char 005")[0])
+        _ctrl_click(cv, texts(cv, "Char 004")[0])
+        pump(root, 0.2)
+        assert _picked(cv) == ["Char 007", "Char 005", "Char 004"]
+        assert label_text(root, "8 characters")[0].endswith("3 selected")
+        _ctrl_click(cv, texts(cv, "Char 005")[0])                    # Ctrl+click again removes it
+        pump(root, 0.2)
+        assert _picked(cv) == ["Char 007", "Char 004"]
+        click(cv, texts(cv, "Char 006")[0])
+        pump(root, 0.2)
+        assert _picked(cv) == ["Char 006"]
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_ctrl_arrows_space_ctrl_a_and_escape(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 8)
+
+    def script(root):
+        cv = gallery_canvas(root)
+        click(cv, texts(cv, "Char 007")[0])
+        _ctrl_press(cv, "Right")                                     # cursor moves, selection stays
+        assert _picked(cv) == ["Char 007"] and len(_cursor_only(cv)) == 1
+        _press(cv, "space")                                          # Space picks the card under the cursor
+        assert _picked(cv) == ["Char 007", "Char 006"]
+        _ctrl_press(cv, "Right")
+        _ctrl_press(cv, "space")
+        assert _picked(cv) == ["Char 007", "Char 006", "Char 005"]
+        _press(cv, "Right")                                          # a plain move selects just that card
+        assert _picked(cv) == ["Char 004"]
+
+        _ctrl_press(cv, "a")                                         # Ctrl+A: everything shown
+        assert len(_picked(cv)) == 8
+        cv.event_generate("<Key>", keysym="Escape")                  # Esc: back to the cursor card only
+        pump(root, 0.2)
+        assert _picked(cv) == ["Char 004"]
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_enter_with_several_cards_opens_a_dialog_and_enter_moves_them_all(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 8)
+    calls = []
+
+    def script(root):
+        cv = gallery_canvas(root)
+        click(cv, texts(cv, "Char 007")[0])
+        _ctrl_click(cv, texts(cv, "Char 005")[0])
+        _ctrl_click(cv, texts(cv, "Char 002")[0])
+        _press(cv, "Return")
+        pump(root, 0.5)
+        dlg = _series_dialog(root)
+        assert dlg is not None and editor(cv) is None                # a dialog, not the inline input
+        entry = next(w for w in walk(dlg) if w.__class__.__name__ == "CTkEntry")
+        entry._entry.focus_force()
+        pump(root, 0.1)
+        entry.insert(0, "fa")
+        entry._entry.event_generate("<KeyRelease>", keysym="a")
+        pump(root, 0.2)
+        box = next(w for w in walk(dlg) if isinstance(w, tk.Listbox))
+        assert list(box.get(0, "end")) == ["Fate", "Fate Grand Order"]
+        entry._entry.event_generate("<Down>")
+        entry._entry.event_generate("<Return>")
+        pump(root, 0.5)
+        assert _series_dialog(root) is None
+        assert calls == [("Char 007", "Fate"), ("Char 005", "Fate"), ("Char 002", "Fate")]   # in reading order
+        assert label_text(root, "Moved") == ["Moved 3 characters → Fate"]
+        assert root.focus_get() is cv
+        assert len(texts(cv, "Fate")) == 3
+        assert len(_picked(cv)) == 1                                  # selection collapses to one card
+
+    suggest = lambda t: ["Fate", "Fate Grand Order"] if t else []
+    assert run_dialog(monkeypatch, items, suggest, mover(calls), script) == 3
+    assert sorted(p.name for p in (tmp_path / "Fate").iterdir()) == ["card_002.png", "card_005.png", "card_007.png"]
+
+
+def test_the_series_dialog_can_be_cancelled_and_a_partial_failure_is_reported(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 5)
+    calls = []
+
+    def flaky(item, text):
+        if item.name == "Char 003":
+            calls.append((item.name, text))
+            return None                                              # this one can't be moved
+        return mover(calls)(item, text)
+
+    def open_dialog(root, cv, names):
+        click(cv, texts(cv, names[0])[0])
+        for name in names[1:]:
+            _ctrl_click(cv, texts(cv, name)[0])
+        _press(cv, "Return")
+        pump(root, 0.5)
+        dlg = _series_dialog(root)
+        entry = next(w for w in walk(dlg) if w.__class__.__name__ == "CTkEntry")
+        entry._entry.focus_force()
+        pump(root, 0.1)
+        return dlg, entry
+
+    def script(root):
+        cv = gallery_canvas(root)
+        dlg, entry = open_dialog(root, cv, ["Char 004", "Char 003"])
+        entry.insert(0, "Nope")
+        entry._entry.event_generate("<Escape>")
+        pump(root, 0.3)
+        assert _series_dialog(root) is None and calls == [] and root.focus_get() is cv
+
+        dlg, entry = open_dialog(root, cv, ["Char 004", "Char 003"])
+        entry._entry.event_generate("<Return>")                       # empty text: nothing happens, stays open
+        pump(root, 0.2)
+        assert _series_dialog(root) is not None and calls == []
+        entry.insert(0, "Fate")
+        entry._entry.event_generate("<Return>")
+        pump(root, 0.5)
+        assert [c[0] for c in calls] == ["Char 004", "Char 003"]
+        assert label_text(root, "Moved") == ["Moved 1 characters → Fate · 1 could not be moved"]
+
+    assert run_dialog(monkeypatch, items, lambda t: [], flaky, script) == 1
