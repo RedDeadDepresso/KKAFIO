@@ -124,7 +124,7 @@
   "option.GroupCharaMode.case.LLM.label": "LLM",
   "option.GroupCharaMode.case.Manual.label": "手動",
   "option.GroupCharaIncludeSubfolders.label": "サブフォルダを含める",
-  "option.GroupCharaIncludeSubfolders.description": "サブフォルダ内のキャラカードもエクスポート対象にします。既に整理済みのカードをスキップするにはオフにしてください。",
+  "option.GroupCharaIncludeSubfolders.description": "サブフォルダ内のキャラカードもエクスポート対象にします。既に整理済みのカードをスキップするにはオフにしてください。LLM モード用の設定です。手動ギャラリーは常にサブフォルダを含みます。",
   "option.GroupCharaIncludeSubfolders.case.Yes.label": "含める",
   "option.GroupCharaIncludeSubfolders.case.No.label": "サブフォルダをスキップ",
   "option.GroupCharaResolveLocally.label": "ローカルで解決",

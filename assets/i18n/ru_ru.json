@@ -124,7 +124,7 @@
   "option.GroupCharaMode.case.LLM.label": "LLM",
   "option.GroupCharaMode.case.Manual.label": "Вручную",
   "option.GroupCharaIncludeSubfolders.label": "Включить подпапки",
-  "option.GroupCharaIncludeSubfolders.description": "Также экспортировать карточки персонажей из подпапок. Отключите, чтобы пропустить уже отсортированные карточки.",
+  "option.GroupCharaIncludeSubfolders.description": "Также экспортировать карточки персонажей из подпапок. Отключите, чтобы пропустить уже отсортированные карточки. Относится к режиму LLM; ручная галерея всегда включает подпапки.",
   "option.GroupCharaIncludeSubfolders.case.Yes.label": "Включить",
   "option.GroupCharaIncludeSubfolders.case.No.label": "Пропустить подпапки",
   "option.GroupCharaResolveLocally.label": "Определять локально",

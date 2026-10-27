@@ -326,3 +326,50 @@ def test_round_corners_and_polygon_points():
     assert out.getpixel((30, 40)) == (200, 10, 10, 255) and out.getpixel((30, 0))[3] == 255
     pts = rounded_rect_points(0, 0, 10, 20, 3)
     assert len(pts) == 24 and min(pts[0::2]) == 0 and max(pts[0::2]) == 10 and max(pts[1::2]) == 20
+
+
+def test_manual_mode_always_includes_subfolders(tmp_path):
+    _cards(tmp_path, top="Rin")
+    _file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
+    seen = {}
+
+    def fake_dialog(title, items, suggest, assign):
+        seen["items"] = sorted((i.name, i.series) for i in items)
+        return 0
+
+    task = _task(tmp_path, UseLlm=False, UseManual=True, IncludeSubfolders=False)     # the option is off
+    with manual_fakes(), \
+         mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
+         mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
+         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", fake_dialog):
+        task.run()
+    assert seen["items"] == [("Rin", None), ("Saber", "Fate")]
+
+
+def test_maximize_uses_zoomed_state_then_the_x11_attribute():
+    import tkinter as tk
+    from kkafio.system.dialog_common import maximize
+
+    class Win:
+        def __init__(self, zoomed_ok):
+            self.calls, self.zoomed_ok = [], zoomed_ok
+
+        def wm_state(self, s):
+            self.calls.append(("state", s))
+            if not self.zoomed_ok:
+                raise tk.TclError("bad argument")
+
+        def wm_attributes(self, *a):
+            self.calls.append(("attr",) + a)
+
+    win = Win(True)
+    maximize(win)
+    assert win.calls == [("state", "zoomed")]
+    win = Win(False)
+    maximize(win)
+    assert win.calls == [("state", "zoomed"), ("attr", "-zoomed", True)]
+
+    class Neither(Win):
+        def wm_attributes(self, *a):
+            raise tk.TclError("nope")
+    maximize(Neither(False))                                                           # no error

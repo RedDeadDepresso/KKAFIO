@@ -146,7 +146,7 @@ def test_tiles_show_name_unknown_series_and_covers_even_when_they_load_late(tmp_
         assert texts(cv, "Char 011")                                  # newest first by default
         images = [i for i in cv.find_all() if cv.type(i) == "image"]
         assert len(images) == 12 and all(cv.itemcget(i, "image") for i in images)    # every cover arrived
-        assert label_text(root, "12 characters") == ["12 characters · 11 untagged"]
+        assert label_text(root, "12 characters") == ["12 characters · 11 unknown series"]
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
 
@@ -172,7 +172,7 @@ def test_click_type_pick_a_suggestion_and_enter_moves_the_card(tmp_path, monkeyp
         assert editor(cv) is None
         assert texts(cv, "Fate Grand Order")                           # the tile now shows its series
         assert label_text(root, "Moved") == ["Moved Char 003 → Fate Grand Order"]
-        assert button(root, "Untagged").cget("text").endswith("3")
+        assert button(root, "Unknown series").cget("text").endswith("3")
 
     moved = run_dialog(monkeypatch, items, lambda t: ["Fate", "Fate Grand Order"] if t else [], mover(calls), script)
     assert moved == 1
@@ -245,11 +245,11 @@ def test_sidebar_views_search_and_sort(tmp_path, monkeypatch):
     def script(root):
         cv = gallery_canvas(root)
         assert button(root, "All characters").cget("text").endswith("6")
-        assert button(root, "Untagged").cget("text").endswith("3")
+        assert button(root, "Unknown series").cget("text").endswith("3")
         series_box = next(w for w in walk(root) if isinstance(w, tk.Listbox) and w.master.master.__class__.__name__ == "CTkFrame")
         assert list(series_box.get(0, "end")) == ["Fate   (2)", "SAO   (1)"]
 
-        button(root, "Untagged").invoke()
+        button(root, "Unknown series").invoke()
         pump(root, 0.3)
         assert len(texts(cv, "Unknown series")) == 3 and not texts(cv, "Fate")
 
@@ -266,7 +266,7 @@ def test_sidebar_views_search_and_sort(tmp_path, monkeypatch):
         search._entry.event_generate("<KeyRelease>", keysym="4")
         pump(root, 0.6)
         assert texts(cv, "Char 004") and not texts(cv, "Char 003")
-        assert label_text(root, "showing") == ["showing 1 of 6 characters · 3 untagged"]
+        assert label_text(root, "showing") == ["showing 1 of 6 characters · 3 unknown series"]
 
         search._entry.focus_force()
         search.delete(0, "end")
@@ -402,7 +402,7 @@ def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_v
         assert name is not None                                      # still visible: the view followed it
         assert cv.canvasy(0) > 0
 
-        button(root, "Untagged").invoke()
+        button(root, "Unknown series").invoke()
         pump(root, 0.3)
         _press(cv, "Return")
         pump(root, 0.2)
@@ -411,7 +411,7 @@ def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_v
         editor(cv).event_generate("<Return>")
         pump(root, 0.5)
         after = _highlighted(cv)
-        assert after is not None and after != before                 # the assigned card left Untagged; next selected
+        assert after is not None and after != before                 # the assigned card left Unknown series; next selected
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
 
@@ -600,5 +600,32 @@ def test_sort_menu_options_order_default_and_effect(tmp_path, monkeypatch):
         menu.cget("command")("Created date")
         pump(root, 0.4)
         assert cv.itemcget(first_name(cv), "text") == "Char 000"          # newest created first
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_series_rows_highlight_under_the_pointer(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 4, tagged={0: "Fate", 1: "Fate", 2: "SAO"})
+    hover = {mgd._LIGHT["hover"], mgd._DARK["hover"]}
+    plain = {mgd._LIGHT["side"], mgd._DARK["side"]}
+
+    def script(root):
+        box = next(w for w in walk(root) if isinstance(w, tk.Listbox) and w.master.master.__class__.__name__ == "CTkFrame")
+        assert list(box.get(0, "end")) == ["Fate   (2)", "SAO   (1)"]
+        x, y, w, h = box.bbox(1)
+        box.event_generate("<Motion>", x=x + 5, y=y + h // 2)
+        pump(root, 0.1)
+        assert box.itemcget(1, "background") in hover and box.itemcget(0, "background") not in hover
+        x, y, w, h = box.bbox(0)
+        box.event_generate("<Motion>", x=x + 5, y=y + h // 2)         # moving on moves the highlight
+        pump(root, 0.1)
+        assert box.itemcget(0, "background") in hover and box.itemcget(1, "background") in plain
+        box.event_generate("<Motion>", x=5, y=box.winfo_height() - 2)   # empty space below the rows
+        pump(root, 0.1)
+        assert box.itemcget(0, "background") in plain
+        box.event_generate("<Motion>", x=x + 5, y=y + h // 2)
+        box.event_generate("<Leave>")
+        pump(root, 0.1)
+        assert box.itemcget(0, "background") in plain and box.itemcget(1, "background") in plain
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)

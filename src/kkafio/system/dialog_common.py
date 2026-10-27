@@ -89,6 +89,20 @@ def _center_on_screen(root) -> None:
     root.wm_geometry(f"{w}x{h}+{x}+{y}")
 
 
+def maximize(root) -> None:
+    """Fill the screen (maximized: the title bar and taskbar stay). Windows / macOS know the
+    "zoomed" state; on X11 it is the -zoomed attribute. Does nothing where neither works."""
+    import tkinter as tk
+
+    try:
+        root.wm_state("zoomed")
+    except tk.TclError:
+        try:
+            root.wm_attributes("-zoomed", True)
+        except tk.TclError:
+            pass
+
+
 def _grab_foreground(root, focus_widget, on_shown) -> None:
     import tkinter as tk
 

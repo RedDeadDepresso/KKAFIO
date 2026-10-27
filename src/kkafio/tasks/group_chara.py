@@ -670,7 +670,9 @@ class GroupChara(BaseTask):
 
         key_cache = CharaKeyCache(folders, self.use_cache, "GROUP")
         try:
-            items = scan_manual_items(folders, self.include_subfolders, key_cache)
+            # Always with subfolders: the gallery is the whole library, with each card's series
+            # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
+            items = scan_manual_items(folders, True, key_cache)
             if not items:
                 logger.warning("GROUP", "No readable character cards found")
                 return

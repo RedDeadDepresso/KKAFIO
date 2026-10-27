@@ -124,7 +124,7 @@
   "option.GroupCharaMode.case.LLM.label": "LLM",
   "option.GroupCharaMode.case.Manual.label": "手動",
   "option.GroupCharaIncludeSubfolders.label": "包含子資料夾",
-  "option.GroupCharaIncludeSubfolders.description": "同時匯出子資料夾中的角色卡。關閉此項可跳過已分類的卡片。",
+  "option.GroupCharaIncludeSubfolders.description": "同時匯出子資料夾中的角色卡。關閉此項可跳過已分類的卡片。僅適用於 LLM 模式；手動圖庫一律包含子資料夾。",
   "option.GroupCharaIncludeSubfolders.case.Yes.label": "包含",
   "option.GroupCharaIncludeSubfolders.case.No.label": "跳過子資料夾",
   "option.GroupCharaResolveLocally.label": "本地解析",

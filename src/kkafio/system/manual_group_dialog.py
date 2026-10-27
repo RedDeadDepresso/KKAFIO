@@ -1,7 +1,7 @@
 """
 manual_group_dialog.py — The gallery dialog of Group Characters' Manual mode.
 
-A library-style window: a search bar on top, a sidebar (All characters, Untagged and the series
+A library-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
 folders that exist) and a grid of character covers. Under every cover is the character's name and
 its series — "Unknown series" until it has one. Click that text to type a series (with
 suggestions); Enter confirms it and the card is moved straight into that series' folder, which is
@@ -30,7 +30,7 @@ from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
-from kkafio.system.dialog_common import new_window, show_and_wait
+from kkafio.system.dialog_common import maximize, new_window, show_and_wait
 from kkafio.system.similar_chara_dialog import format_size
 
 
@@ -198,9 +198,9 @@ def ellipsize(measure: Callable[[str], int], text: str, max_px: int) -> str:
 # (light, dark) palettes; the canvas and the plain Tk widgets take the one matching the theme,
 # CustomTkinter widgets take both.
 _LIGHT = dict(bg="#eef0f3", side="#e4e7ec", tile="#ffffff", text="#1b1f24", muted="#667085",
-              accent="#3556d8", sel="#d3dcfb", input="#ffffff", border="#c9ced6", cover="#d9dde4")
+              accent="#3556d8", sel="#d3dcfb", hover="#d3d8e2", input="#ffffff", border="#c9ced6", cover="#d9dde4")
 _DARK = dict(bg="#17181c", side="#1d1f24", tile="#25282f", text="#e6e8ee", muted="#8a92a3",
-             accent="#8ea6ff", sel="#2f3d6b", input="#12131a", border="#3a3f4b", cover="#33363f")
+             accent="#8ea6ff", sel="#2f3d6b", hover="#2b2e37", input="#12131a", border="#3a3f4b", cover="#33363f")
 
 
 # ---------------------------------------------------------------------------
@@ -384,6 +384,26 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     series_sb.grid(row=0, column=1, sticky="ns")
     series_box.configure(yscrollcommand=series_sb.set)
     series_names: list[str] = []                   # what each row of series_box stands for
+    hover_row: dict = {"idx": None}                # the series row under the pointer (highlighted)
+
+    def set_hover(idx: int | None) -> None:
+        old = hover_row["idx"]
+        if old == idx:
+            return
+        if old is not None and old < series_box.size():
+            series_box.itemconfigure(old, background=pal["side"])
+        if idx is not None and idx < series_box.size():
+            series_box.itemconfigure(idx, background=pal["hover"])
+        hover_row["idx"] = idx
+        series_box.configure(cursor="hand2" if idx is not None else "")
+
+    def on_series_motion(event) -> None:
+        i = series_box.nearest(event.y)
+        box = series_box.bbox(i) if i >= 0 else None          # below the last row nearest() still answers
+        set_hover(i if box is not None and box[1] <= event.y < box[1] + box[3] else None)
+
+    series_box.bind("<Motion>", on_series_motion)
+    series_box.bind("<Leave>", lambda _e: set_hover(None))
 
     # main area: toolbar + gallery
     main = ctk.CTkFrame(body, fg_color="transparent")
@@ -415,7 +435,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     scroll_sb = ctk.CTkScrollbar(main, command=canvas.yview)
     scroll_sb.grid(row=1, column=1, sticky="ns", padx=(4, 0))
 
-    hint = ctk.CTkLabel(root, text=t("dialog.manual.hint"), anchor="w", justify="left", wraplength=px(1000),
+    hint = ctk.CTkLabel(root, text=t("dialog.manual.hint"), anchor="w", justify="left", wraplength=1000,
                         text_color=pair("muted"), font=ctk.CTkFont(size=11))
     hint.grid(row=2, column=0, padx=14, pady=(8, 0), sticky="ew")
     foot = ctk.CTkFrame(root, fg_color="transparent")
@@ -659,6 +679,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         untagged_btn.configure(fg_color=pair("sel") if model.mode == VIEW_UNTAGGED else "transparent")
         entries = model.series_list(series_filter_entry.get())
         series_names[:] = [name for name, _n in entries]
+        hover_row["idx"] = None                    # the rows are rebuilt
         series_box.delete(0, "end")
         for name, n in entries:
             series_box.insert("end", f"{name}   ({n})")
@@ -881,7 +902,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
 
     def finish_assignment(first_idx: int) -> None:
         """Refresh sidebar and grid after cards were moved. A card that left this view (e.g.
-        Untagged) takes the selection with it, so the next card (at `first_idx`) is selected."""
+        Unknown series) takes the selection with it, so the next card (at `first_idx`) is selected."""
         refresh_sidebar()
         if model.mode == VIEW_SERIES and model.series_count(model.series_filter) == 0:
             model.set_view(VIEW_ALL)
@@ -1153,6 +1174,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         timers["sidebar"] = root.after(150, refresh_sidebar)
 
     def on_canvas_configure(_event=None) -> None:
+        hint.configure(wraplength=max(300, int(root.winfo_width() / scale) - 40))      # the hint follows the width
         schedule_layout(80, keep_scroll=True)
 
     def on_close(_event=None) -> None:
@@ -1197,7 +1219,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     schedule_layout(0, keep_scroll=False)
 
     try:
-        show_and_wait(root, canvas)
+        show_and_wait(root, canvas, on_shown=lambda: maximize(root))      # always full screen
     finally:
         for name, after_id in timers.items():
             if after_id is not None:

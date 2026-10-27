@@ -124,7 +124,7 @@
   "option.GroupCharaMode.case.LLM.label": "LLM",
   "option.GroupCharaMode.case.Manual.label": "手动",
   "option.GroupCharaIncludeSubfolders.label": "包含子文件夹",
-  "option.GroupCharaIncludeSubfolders.description": "同时导出子文件夹中的角色卡。关闭此项可跳过已分类的卡片。",
+  "option.GroupCharaIncludeSubfolders.description": "同时导出子文件夹中的角色卡。关闭此项可跳过已分类的卡片。仅适用于 LLM 模式；手动图库始终包含子文件夹。",
   "option.GroupCharaIncludeSubfolders.case.Yes.label": "包含",
   "option.GroupCharaIncludeSubfolders.case.No.label": "跳过子文件夹",
   "option.GroupCharaResolveLocally.label": "本地解析",

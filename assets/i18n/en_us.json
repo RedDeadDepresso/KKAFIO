@@ -124,7 +124,7 @@
   "option.GroupCharaMode.case.LLM.label": "LLM",
   "option.GroupCharaMode.case.Manual.label": "Manual",
   "option.GroupCharaIncludeSubfolders.label": "Include subfolders",
-  "option.GroupCharaIncludeSubfolders.description": "Also export character cards from subfolders. Disable to skip already-sorted cards.",
+  "option.GroupCharaIncludeSubfolders.description": "Also export character cards from subfolders. Disable to skip already-sorted cards. Applies to LLM mode; the Manual gallery always includes subfolders.",
   "option.GroupCharaIncludeSubfolders.case.Yes.label": "Include",
   "option.GroupCharaIncludeSubfolders.case.No.label": "Skip subfolders",
   "option.GroupCharaResolveLocally.label": "Resolve Locally",
