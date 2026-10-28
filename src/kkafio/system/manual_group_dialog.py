@@ -1,5 +1,5 @@
 """
-manual_group_dialog.py — The gallery dialog of Group Characters' Manual mode.
+manual_group_dialog.py — The gallery dialog of the Manual modes (Group Characters, Group Coordinates).
 
 A library-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
 folders that exist) and a grid of character covers. Under every cover is the character's name and
@@ -14,6 +14,12 @@ just draws the tiles that come into view, and covers are decoded on worker threa
 
 `GalleryModel` (what is shown: view, search, sort) has no GUI dependency; the window is built in
 `_ctk_dialog()` (see dialog_common.py for the shared window behaviour).
+
+The dialog doesn't know what a "series" is: a card's `series` is just the folder it sits in under
+`CharaItem.root`, and every sentence that names things (the sidebar buttons, the status line, the
+hint ...) comes from a `DialogText`. Group Characters uses the defaults (series folders of
+characters); Group Coordinates passes its own `DialogText` (character folders of coordinates).
+Moving and suggesting are callbacks, so a task only has to supply `items`, `suggest` and `assign`.
 """
 
 from __future__ import annotations
@@ -204,6 +210,62 @@ _DARK = dict(bg="#17181c", side="#1d1f24", tile="#25282f", text="#e6e8ee", muted
 
 
 # ---------------------------------------------------------------------------
+# The sentences the dialog shows
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class DialogText:
+    """The words of one use of the gallery. Plain translated strings; the ones with `{...}` in them
+    are str.format templates:
+      status / status_filtered   {total} {untagged}  /  {shown} {total} {untagged}
+      moved                      {name} {series}
+      move_failed                {name}
+      multi_prompt               {count}
+      multi_moved                {count} {series}
+      multi_moved_partial        {count} {series} {failed}
+    """
+
+    search_placeholder: str
+    all: str                    # sidebar: every card
+    untagged: str               # sidebar: the cards that aren't in a folder yet
+    series_header: str          # sidebar: heading of the folder list
+    filter_series: str          # sidebar: placeholder of the folder filter
+    unknown_series: str         # under a cover that isn't in a folder yet
+    no_cards: str
+    hint: str
+    status: str
+    status_filtered: str
+    moved: str
+    move_failed: str
+    multi_title: str
+    multi_prompt: str
+    multi_moved: str
+    multi_moved_partial: str
+
+
+def chara_dialog_text() -> DialogText:
+    """The words of Group Characters: characters sorted into series folders."""
+    return DialogText(
+        search_placeholder=t("dialog.manual.search_placeholder"),
+        all=t("dialog.manual.all"),
+        untagged=t("dialog.manual.untagged"),
+        series_header=t("dialog.manual.series_header"),
+        filter_series=t("dialog.manual.filter_series"),
+        unknown_series=t("dialog.manual.unknown_series"),
+        no_cards=t("dialog.manual.no_cards"),
+        hint=t("dialog.manual.hint"),
+        status=t("dialog.manual.status"),
+        status_filtered=t("dialog.manual.status_filtered"),
+        moved=t("dialog.manual.moved"),
+        move_failed=t("dialog.manual.move_failed"),
+        multi_title=t("dialog.manual.multi_title"),
+        multi_prompt=t("dialog.manual.multi_prompt"),
+        multi_moved=t("dialog.manual.multi_moved"),
+        multi_moved_partial=t("dialog.manual.multi_moved_partial"),
+    )
+
+
+# ---------------------------------------------------------------------------
 # The dialog
 # ---------------------------------------------------------------------------
 
@@ -212,20 +274,22 @@ AssignFn = Callable[[CharaItem, str], "tuple[Path, str] | None"]
 
 
 def manual_dialog(title: str, items: Sequence[CharaItem],
-                  suggest: Callable[[str], list[str]], assign: AssignFn) -> int:
+                  suggest: Callable[[str], list[str]], assign: AssignFn,
+                  text: DialogText | None = None) -> int:
     """Show the gallery; returns how many cards were moved into a series before it was closed.
 
     suggest   text typed so far -> series names to offer (best first)
     assign    (item, text typed) -> (new path, series folder) after moving the card there, or
               None if it couldn't be done. The dialog only shows; this does the moving.
+    text      the dialog's sentences (default: Group Characters')
     """
     try:
-        return _ctk_dialog(title, items, suggest, assign)
+        return _ctk_dialog(title, items, suggest, assign, text if text is not None else chara_dialog_text())
     except ImportError as e:                       # tkinter / customtkinter missing
         raise TaskFailedError(f"The character gallery needs tkinter and customtkinter: {e}") from e
 
 
-def _ctk_dialog(title, items, suggest, assign) -> int:
+def _ctk_dialog(title, items, suggest, assign, txt: DialogText) -> int:
     import tkinter as tk
     from tkinter import font as tkfont
     import customtkinter as ctk
@@ -345,7 +409,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     top = ctk.CTkFrame(root, fg_color="transparent")
     top.grid(row=0, column=0, padx=12, pady=(12, 8), sticky="ew")
     top.grid_columnconfigure(0, weight=1)
-    search_entry = ctk.CTkEntry(top, placeholder_text=t("dialog.manual.search_placeholder"), height=34)
+    search_entry = ctk.CTkEntry(top, placeholder_text=txt.search_placeholder, height=34)
     search_entry.grid(row=0, column=0, sticky="ew")
 
     body = ctk.CTkFrame(root, fg_color="transparent")
@@ -368,9 +432,9 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
 
     all_btn = side_button(0, lambda: choose_view(VIEW_ALL))
     untagged_btn = side_button(1, lambda: choose_view(VIEW_UNTAGGED))
-    ctk.CTkLabel(side, text=t("dialog.manual.series_header"), anchor="w", text_color=pair("muted"),
+    ctk.CTkLabel(side, text=txt.series_header, anchor="w", text_color=pair("muted"),
                  font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=0, padx=14, pady=(14, 2), sticky="ew")
-    series_filter_entry = ctk.CTkEntry(side, placeholder_text=t("dialog.manual.filter_series"), height=30)
+    series_filter_entry = ctk.CTkEntry(side, placeholder_text=txt.filter_series, height=30)
     series_filter_entry.grid(row=3, column=0, padx=8, pady=(0, 6), sticky="ew")
     list_frame = tk.Frame(side, bg=pal["side"])
     list_frame.grid(row=4, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
@@ -435,7 +499,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     scroll_sb = ctk.CTkScrollbar(main, command=canvas.yview)
     scroll_sb.grid(row=1, column=1, sticky="ns", padx=(4, 0))
 
-    hint = ctk.CTkLabel(root, text=t("dialog.manual.hint"), anchor="w", justify="left", wraplength=1000,
+    hint = ctk.CTkLabel(root, text=txt.hint, anchor="w", justify="left", wraplength=1000,
                         text_color=pair("muted"), font=ctk.CTkFont(size=11))
     hint.grid(row=2, column=0, padx=14, pady=(8, 0), sticky="ew")
     foot = ctk.CTkFrame(root, fg_color="transparent")
@@ -488,7 +552,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         canvas.configure(scrollregion=(0, 0, cw, region_h))
         canvas.yview_moveto(min(max(0.0, y0 / region_h), 1.0) if keep_scroll else 0.0)
         if n == 0:
-            canvas.create_text(cw // 2, ch // 3, text=t("dialog.manual.no_cards"), fill=pal["muted"], font=f_name)
+            canvas.create_text(cw // 2, ch // 3, text=txt.no_cards, fill=pal["muted"], font=f_name)
         draw_visible()
         update_status()
 
@@ -549,7 +613,7 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                                           text=ellipsize(f_small.measure, item.series, text_w)))
         else:
             ids.append(canvas.create_text(tx + pad, y + px(2), anchor="nw", fill=pal["muted"], font=f_italic,
-                                          text=t("dialog.manual.unknown_series")))
+                                          text=txt.unknown_series))
         y += row_series
         ids.append(canvas.create_text(tx + pad, y, anchor="nw", fill=pal["muted"], font=f_small,
                                       text=format_size(item.size)))
@@ -673,8 +737,8 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     def refresh_sidebar() -> None:
         timers["sidebar"] = None
         total, untagged = model.counts()
-        all_btn.configure(text=f"{t('dialog.manual.all')}   {total:,}")
-        untagged_btn.configure(text=f"{t('dialog.manual.untagged')}   {untagged:,}")
+        all_btn.configure(text=f"{txt.all}   {total:,}")
+        untagged_btn.configure(text=f"{txt.untagged}   {untagged:,}")
         all_btn.configure(fg_color=pair("sel") if model.mode == VIEW_ALL else "transparent")
         untagged_btn.configure(fg_color=pair("sel") if model.mode == VIEW_UNTAGGED else "transparent")
         entries = model.series_list(series_filter_entry.get())
@@ -692,8 +756,8 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
     def update_status() -> None:
         total, untagged = model.counts()
         shown = len(lay["items"])
-        text = (t("dialog.manual.status", total=total, untagged=untagged) if shown == total
-                else t("dialog.manual.status_filtered", shown=shown, total=total, untagged=untagged))
+        text = (txt.status.format(total=total, untagged=untagged) if shown == total
+                else txt.status_filtered.format(shown=shown, total=total, untagged=untagged))
         if len(sel["picked"]) > 1:
             text += " · " + t("dialog.manual.selected", count=len(sel["picked"]))
         status.configure(text=text)
@@ -880,10 +944,10 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
             return
         series = assign_one(item, text)
         if series is None:
-            status.configure(text=t("dialog.manual.move_failed", name=item.name))
+            status.configure(text=txt.move_failed.format(name=item.name))
             return
         finish_assignment(idx)
-        status.configure(text=t("dialog.manual.moved", name=item.name, series=series))
+        status.configure(text=txt.moved.format(name=item.name, series=series))
 
     def assign_one(item, text: str) -> str | None:
         """Move `item` into the series `text` (via `assign`) and update the model; the series
@@ -987,11 +1051,11 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
         count = len(targets)
         dlg = ctk.CTkToplevel(root)
         multi["dlg"] = dlg
-        dlg.title(t("dialog.manual.multi_title"))
+        dlg.title(txt.multi_title)
         dlg.transient(root)
         dlg.resizable(False, False)
         dlg.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(dlg, text=t("dialog.manual.multi_prompt", count=count), anchor="w").grid(
+        ctk.CTkLabel(dlg, text=txt.multi_prompt.format(count=count), anchor="w").grid(
             row=0, column=0, padx=16, pady=(16, 6), sticky="ew")
         entry = ctk.CTkEntry(dlg, width=px(420), height=34)
         entry.grid(row=1, column=0, padx=16, sticky="ew")
@@ -1102,11 +1166,11 @@ def _ctk_dialog(title, items, suggest, assign) -> int:
                 done, series = done + 1, result
         finish_assignment(first_idx)
         if not done:
-            status.configure(text=t("dialog.manual.move_failed", name=targets[0].name))
+            status.configure(text=txt.move_failed.format(name=targets[0].name))
         elif failed:
-            status.configure(text=t("dialog.manual.multi_moved_partial", count=done, series=series, failed=failed))
+            status.configure(text=txt.multi_moved_partial.format(count=done, series=series, failed=failed))
         else:
-            status.configure(text=t("dialog.manual.multi_moved", count=done, series=series))
+            status.configure(text=txt.multi_moved.format(count=done, series=series))
 
     def on_motion(event) -> None:
         hit = locate(event.x, event.y)

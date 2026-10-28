@@ -629,3 +629,47 @@ def test_series_rows_highlight_under_the_pointer(tmp_path, monkeypatch):
         assert box.itemcget(0, "background") in plain and box.itemcget(1, "background") in plain
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_the_gallery_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch):
+    """Group Coordinates reuses the gallery with its own sentences: nothing says "series" or "characters"."""
+    from kkafio.tasks import group_coordinates as gc
+    items = make_items(tmp_path, 6, tagged={0: "Rin"})
+    text = gc.coordinate_dialog_text()
+    calls = []
+
+    def script(root):
+        cv = gallery_canvas(root)
+        pump(root, 0.8)
+        assert len(texts(cv, text.unknown_series)) == 5 and texts(cv, "Rin")
+        assert not texts(cv, "Unknown series")
+        assert button(root, text.all).cget("text") == f"{text.all}   6"
+        assert button(root, text.untagged).cget("text") == f"{text.untagged}   5"
+        assert label_text(root, text.series_header) == [text.series_header]
+        assert label_text(root, "6 coordinates") == [text.status.format(total=6, untagged=5)]
+        assert label_text(root, "Select a card")[0] == text.hint
+        click(cv, min(texts(cv, text.unknown_series), key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0])))
+        type_into(editor(cv), "Saber")
+        editor(cv).event_generate("<Return>")
+        pump(root, 0.5)
+        assert label_text(root, "Moved") == [text.moved.format(name="Char 005", series="Saber")]
+        assert calls == [("Char 005", "Saber")]
+        assert button(root, text.untagged).cget("text") == f"{text.untagged}   4"
+
+    errors = []
+
+    def fake_show(root, focus_widget=None, on_shown=None):
+        def go():
+            try:
+                pump(root, 0.6)
+                script(root)
+            except BaseException as e:
+                errors.append(e)
+            finally:
+                root.quit()
+        real_show_and_wait(root, focus_widget, on_shown=lambda: root.after(150, go))
+
+    monkeypatch.setattr(mgd, "show_and_wait", fake_show)
+    assert mgd.manual_dialog("test", items, lambda t: ["Saber"], mover(calls), text) == 1
+    if errors:
+        raise errors[0]

@@ -740,6 +740,28 @@
         }
       ]
     },
+    "GroupCoordinatesMode": {
+      "type": "checkbox",
+      "label": "$option.GroupCoordinatesMode.label",
+      "description": "$option.GroupCoordinatesMode.description",
+      "default_case": ["Automatic"],
+      "cases": [
+        {
+          "name": "Automatic",
+          "label": "$option.GroupCoordinatesMode.case.Automatic.label",
+          "pipeline_override": {
+            "UseAutomatic": true
+          }
+        },
+        {
+          "name": "Manual",
+          "label": "$option.GroupCoordinatesMode.case.Manual.label",
+          "pipeline_override": {
+            "UseManual": true
+          }
+        }
+      ]
+    },
     "GroupCoordinatesIncludeSubfolders": {
       "type": "switch",
       "label": "$option.GroupCoordinatesIncludeSubfolders.label",
@@ -1544,6 +1566,7 @@
       "option": [
         "CharaDir",
         "CoordDir",
+        "GroupCoordinatesMode",
         "GroupCoordinatesIncludeSubfolders",
         "GroupCoordinatesClothesTolerance",
         "GroupCoordinatesIgnoreAccessories",

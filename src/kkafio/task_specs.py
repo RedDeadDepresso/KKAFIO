@@ -480,9 +480,20 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
 
     TaskSpec(
         name="GroupCoordinates", command="group-coordinates",
-        help="Move coordinate cards into per-character subfolders named after the matching chara card",
+        help="Move coordinate cards into per-character subfolders named after the matching chara card "
+             "(automatically and/or by hand in a gallery dialog)",
         target="kkafio.tasks.group_coordinates:GroupCoordinates",
         options=(
+            Toggle("automatic", key="UseAutomatic",
+                   help="Group automatically by matching hair, outfits and head mods with the chara cards "
+                        "(default: on)",
+                   off_help="Don't group automatically"),
+            Toggle("manual", key="UseManual",
+                   help="Group by hand: opens a gallery of the coordinates where you type each one's "
+                        "character, with the chara filenames (without .png) as suggestions; a confirmed "
+                        "coordinate is moved into that character's folder at once. With --automatic too, "
+                        "the automatic grouping goes first (default: off)",
+                   off_help="Don't open the manual gallery"),
             Toggle("use-cache", key="UseCache",
                    help="Reuse cached chara/coordinate outfit digests for unchanged files (default: on)",
                    off_help="Disable cache and re-read every card"),
