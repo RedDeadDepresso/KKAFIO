@@ -696,6 +696,28 @@
         }
       ]
     },
+    "GroupScenesMode": {
+      "type": "checkbox",
+      "label": "$option.GroupScenesMode.label",
+      "description": "$option.GroupScenesMode.description",
+      "default_case": ["Automatic"],
+      "cases": [
+        {
+          "name": "Automatic",
+          "label": "$option.GroupScenesMode.case.Automatic.label",
+          "pipeline_override": {
+            "UseAutomatic": true
+          }
+        },
+        {
+          "name": "Manual",
+          "label": "$option.GroupScenesMode.case.Manual.label",
+          "pipeline_override": {
+            "UseManual": true
+          }
+        }
+      ]
+    },
     "GroupScenesIncludeSubfolders": {
       "type": "switch",
       "label": "$option.GroupScenesIncludeSubfolders.label",
@@ -1532,6 +1554,7 @@
       "group": ["scene-management"],
       "option": [
         "SceneDir",
+        "GroupScenesMode",
         "GroupScenesIncludeSubfolders",
         "GroupScenesSubgroupByYear",
         "UseCache"

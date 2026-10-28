@@ -578,9 +578,19 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
 
     TaskSpec(
         name="GroupScenes", command="group-scenes",
-        help="Move Studio scenes into per-author folders using the pepper-scene-index",
+        help="Move Studio scenes into per-author folders using the pepper-scene-index "
+             "(automatically and/or by hand in a gallery dialog)",
         target="kkafio.tasks.group_scenes:GroupScenes",
         options=(
+            Toggle("automatic", key="UseAutomatic",
+                   help="Group automatically using the pepper-scene-index (default: on)",
+                   off_help="Don't group automatically"),
+            Toggle("manual", key="UseManual",
+                   help="Group by hand: opens a gallery of the scenes where you type each one's author, "
+                        "with the authors of assets/data/authors.json as suggestions; a confirmed scene is "
+                        "moved into that author's folder at once. With --automatic too, the automatic "
+                        "grouping goes first (default: off)",
+                   off_help="Don't open the manual gallery"),
             Value("--scene-dir", "--input", "-i", key="SceneDir", ignore_blank=True, metavar="DIR",
                   default=None,
                   help="Custom scene directory (default: the game's Studio scene folder; "

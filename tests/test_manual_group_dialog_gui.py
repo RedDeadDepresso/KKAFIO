@@ -108,6 +108,12 @@ def button(root, start):
     return next(w for w in walk(root) if w.__class__.__name__ == "CTkButton" and str(w.cget("text")).startswith(start))
 
 
+def show_all(root, label="All"):
+    """The gallery opens on the untagged cards; switch to the "All" tab."""
+    button(root, label).invoke()
+    pump(root, 0.4)
+
+
 def run_dialog(monkeypatch, items, suggest, assign, script):
     """Open the gallery; `script(root)` runs once it is up (and must not close it)."""
     errors = []
@@ -141,6 +147,7 @@ def test_tiles_show_name_unknown_series_and_covers_even_when_they_load_late(tmp_
 
     def script(root):
         cv = gallery_canvas(root)
+        show_all(root)
         pump(root, 1.5)
         assert len(texts(cv, "Unknown series")) == 11 and texts(cv, "Fate")
         assert texts(cv, "Char 011")                                  # newest first by default
@@ -157,6 +164,7 @@ def test_click_type_pick_a_suggestion_and_enter_moves_the_card(tmp_path, monkeyp
 
     def script(root):
         cv = gallery_canvas(root)
+        show_all(root)
         click(cv, first_unknown(cv))
         pump(root, 0.2)
         entry = editor(cv)
@@ -343,6 +351,7 @@ def test_click_selects_and_keys_move_the_selection_and_enter_edits(tmp_path, mon
 
     def script(root):
         cv = gallery_canvas(root)
+        show_all(root)
         assert _highlighted(cv) is None
         name_id = texts(cv, "Char 013")[0]                           # newest = first tile
         click(cv, name_id)                                           # click the card, not its series
@@ -507,6 +516,7 @@ def test_enter_with_several_cards_opens_a_dialog_and_enter_moves_them_all(tmp_pa
 
     def script(root):
         cv = gallery_canvas(root)
+        show_all(root)
         click(cv, texts(cv, "Char 007")[0])
         _ctrl_click(cv, texts(cv, "Char 005")[0])
         _ctrl_click(cv, texts(cv, "Char 002")[0])
@@ -640,6 +650,7 @@ def test_the_gallery_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch)
 
     def script(root):
         cv = gallery_canvas(root)
+        show_all(root, text.all)
         pump(root, 0.8)
         assert len(texts(cv, text.unknown_series)) == 5 and texts(cv, "Rin")
         assert not texts(cv, "Unknown series")
@@ -673,3 +684,55 @@ def test_the_gallery_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch)
     assert mgd.manual_dialog("test", items, lambda t: ["Saber"], mover(calls), text) == 1
     if errors:
         raise errors[0]
+
+
+def test_cover_ratio_makes_landscape_tiles(tmp_path, monkeypatch):
+    """Scenes are landscape: the cover is as wide as the tile and 9/16 as tall (portrait by default)."""
+    items = make_items(tmp_path, 3)
+    heights = {}
+
+    def script(root):
+        cv = gallery_canvas(root)
+        pump(root, 0.8)
+        for i in cv.find_all():
+            if cv.type(i) == "image":
+                x1, y1, x2, y2 = cv.bbox(i)
+                heights[round((y2 - y1) / (x2 - x1), 2)] = True
+
+    assert run_dialog_ratio(monkeypatch, items, script, 180 / 320) == 0
+    assert list(heights) == [0.56]
+
+
+def run_dialog_ratio(monkeypatch, items, script, ratio):
+    errors = []
+
+    def fake_show(root, focus_widget=None, on_shown=None):
+        def go():
+            try:
+                pump(root, 0.6)
+                script(root)
+            except BaseException as e:
+                errors.append(e)
+            finally:
+                root.quit()
+        real_show_and_wait(root, focus_widget, on_shown=lambda: root.after(150, go))
+
+    monkeypatch.setattr(mgd, "show_and_wait", fake_show)
+    moved = mgd.manual_dialog("test", items, lambda t: [], mover([]), cover_ratio=ratio)
+    if errors:
+        raise errors[0]
+    return moved
+
+
+def test_the_gallery_always_opens_on_the_untagged_tab(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 6, tagged={0: "Rin", 1: "Rin"})
+
+    def script(root):
+        cv = gallery_canvas(root)
+        pump(root, 0.8)
+        assert len(texts(cv, "Unknown series")) == 4 and not texts(cv, "Rin")
+        button(root, "All").invoke()                                 # the other tab is one click away
+        pump(root, 0.4)
+        assert len(texts(cv, "Unknown series")) == 4 and texts(cv, "Rin")
+
+    assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0

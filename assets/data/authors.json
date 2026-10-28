@@ -1,0 +1,1392 @@
+{
+  "version": 1,
+  "authors": [
+    {
+      "name": "0864",
+      "alias": ["864"]
+    },
+    {
+      "name": "10月绝不摆烂",
+      "alias": ["oct-nolazy"]
+    },
+    {
+      "name": "123sir"
+    },
+    {
+      "name": "A-fan"
+    },
+    {
+      "name": "ABCEEFG"
+    },
+    {
+      "name": "AcaCia"
+    },
+    {
+      "name": "agentstaid",
+      "alias": ["AgaentSaid"]
+    },
+    {
+      "name": "Akiwax"
+    },
+    {
+      "name": "Aliceさん",
+      "alias": ["SolitudeAlice"]
+    },
+    {
+      "name": "Alucid"
+    },
+    {
+      "name": "Alvarna"
+    },
+    {
+      "name": "AmazingCatbug",
+      "alias": ["Amazing Catbug"]
+    },
+    {
+      "name": "Ameki"
+    },
+    {
+      "name": "AniAnon",
+      "alias": ["Ani Anon"]
+    },
+    {
+      "name": "AnnaAnon",
+      "alias": ["Anna Anon", "TheSafeAnnaAnon", "anna-anon"]
+    },
+    {
+      "name": "Aomi"
+    },
+    {
+      "name": "APURIあぷり",
+      "alias": ["あぷり", "APURI", "apuriarise"]
+    },
+    {
+      "name": "arisaka",
+      "alias": ["arisaka00", "arisaka190"]
+    },
+    {
+      "name": "ArthurKing"
+    },
+    {
+      "name": "As-sin",
+      "alias": ["As_sin"]
+    },
+    {
+      "name": "As@hi",
+      "alias": ["asahi"]
+    },
+    {
+      "name": "atNilla"
+    },
+    {
+      "name": "AX_MMD"
+    },
+    {
+      "name": "Ayakasi"
+    },
+    {
+      "name": "AzerarQ"
+    },
+    {
+      "name": "Azmo"
+    },
+    {
+      "name": "Bazett"
+    },
+    {
+      "name": "BDTorpedo",
+      "alias": ["BDTorpedudu"]
+    },
+    {
+      "name": "BellingBelle"
+    },
+    {
+      "name": "BlackFlames3",
+      "alias": ["BlackFlames"]
+    },
+    {
+      "name": "BoiMeows",
+      "alias": ["BoiTheMews", "BOI THE MEWS", "MeowiehBois", "BoiMeowieh"]
+    },
+    {
+      "name": "boss_kudo"
+    },
+    {
+      "name": "BPG"
+    },
+    {
+      "name": "BT1",
+      "alias": ["bluetimez72", "bt1z"]
+    },
+    {
+      "name": "bu==n",
+      "alias": ["ぶ＝＝ん"]
+    },
+    {
+      "name": "Buns",
+      "alias": ["bunskk", "Bunscomics"]
+    },
+    {
+      "name": "Buttercrab",
+      "alias": ["Ooxx紳士", "Butterxiexie"]
+    },
+    {
+      "name": "Carl950"
+    },
+    {
+      "name": "Catstiche"
+    },
+    {
+      "name": "CephalonWilzuki",
+      "alias": ["Cephalon", "Wilzuki"]
+    },
+    {
+      "name": "Cetol"
+    },
+    {
+      "name": "chinman",
+      "alias": ["chinnmannkakumei"]
+    },
+    {
+      "name": "Choirbox"
+    },
+    {
+      "name": "Chris",
+      "alias": ["chrisflandre"]
+    },
+    {
+      "name": "CinCaoizz"
+    },
+    {
+      "name": "Ciryu"
+    },
+    {
+      "name": "ClubNTR"
+    },
+    {
+      "name": "COOL_V",
+      "alias": ["CoolV", "CoolVibesDude", "Cool_Vibes_Dude", "COOL VIBRATIONS"]
+    },
+    {
+      "name": "Cue Que",
+      "alias": ["gue", "cue", "ponponPaine"]
+    },
+    {
+      "name": "Darwin_P",
+      "alias": ["darwin7103"]
+    },
+    {
+      "name": "Dayfu"
+    },
+    {
+      "name": "Debu"
+    },
+    {
+      "name": "Decopong"
+    },
+    {
+      "name": "Dekimasu",
+      "alias": ["Dekima", "aivampire"]
+    },
+    {
+      "name": "Deliriumベア",
+      "alias": ["DeliriumベアNTR", "Deliriumbear", "Delirium_Bear"]
+    },
+    {
+      "name": "denkimiso"
+    },
+    {
+      "name": "Dio",
+      "alias": ["diego", "Dio_mmd"]
+    },
+    {
+      "name": "DNP"
+    },
+    {
+      "name": "DOBOO",
+      "alias": [" DUNNE"]
+    },
+    {
+      "name": "DokiGirl",
+      "alias": ["Doki Girl"]
+    },
+    {
+      "name": "Dolores",
+      "alias": ["Dolores0"]
+    },
+    {
+      "name": "Dorcas",
+      "alias": ["多尔克斯"]
+    },
+    {
+      "name": "DoriDoriko",
+      "alias": ["Midorimint"]
+    },
+    {
+      "name": "Dorime"
+    },
+    {
+      "name": "Dr.Charlie",
+      "alias": ["DrCharlie"]
+    },
+    {
+      "name": "Dr.GM",
+      "alias": ["Mr.GD", "doctor gm", "Dr GM", "Mr. GD"]
+    },
+    {
+      "name": "DV8",
+      "alias": ["DV8Animations"]
+    },
+    {
+      "name": "earthship"
+    },
+    {
+      "name": "EatWaffles",
+      "alias": ["DoujinWaffles"]
+    },
+    {
+      "name": "eLLine",
+      "alias": ["greenskin"]
+    },
+    {
+      "name": "Emi"
+    },
+    {
+      "name": "Erena"
+    },
+    {
+      "name": "Erio"
+    },
+    {
+      "name": "erokky"
+    },
+    {
+      "name": "ErosEnro",
+      "alias": ["Eros"]
+    },
+    {
+      "name": "Evaan"
+    },
+    {
+      "name": "EveKaczmarek"
+    },
+    {
+      "name": "E_QAQ",
+      "alias": ["frank02tw", "Σ(Q皿Q"]
+    },
+    {
+      "name": "FGMz",
+      "alias": ["fgmntz"]
+    },
+    {
+      "name": "FissyStash",
+      "alias": ["fissera", "fissy"]
+    },
+    {
+      "name": "Format_Max",
+      "alias": ["FormatMax", "Format"]
+    },
+    {
+      "name": "Frostation",
+      "alias": ["Frosturian"]
+    },
+    {
+      "name": "Fushuu",
+      "alias": ["Fushu", "fushunova"]
+    },
+    {
+      "name": "Fworks_sky",
+      "alias": ["Sky_Fworks"]
+    },
+    {
+      "name": "Giddora",
+      "alias": ["giddora34"]
+    },
+    {
+      "name": "Gin26"
+    },
+    {
+      "name": "GiraN"
+    },
+    {
+      "name": "GuRuO"
+    },
+    {
+      "name": "Gylthas",
+      "alias": ["ジャッツ"]
+    },
+    {
+      "name": "H-Axiom",
+      "alias": ["H axiom", "haxiom"]
+    },
+    {
+      "name": "HACHIKAA",
+      "alias": ["Hachikka", "beasthachikaa", "hachika"]
+    },
+    {
+      "name": "hajx098",
+      "alias": ["hajx"]
+    },
+    {
+      "name": "Hanami",
+      "alias": ["hanamii"]
+    },
+    {
+      "name": "HaniiYuzu 蜂蜜",
+      "alias": ["HaniiYuzu", "蜂蜜"]
+    },
+    {
+      "name": "Happy Dolly",
+      "alias": ["HappyDolly", "HAPPYDOLLY_kk"]
+    },
+    {
+      "name": "Harada"
+    },
+    {
+      "name": "HATOKO"
+    },
+    {
+      "name": "hc-aruyo",
+      "alias": ["usaruna"]
+    },
+    {
+      "name": "Hefe"
+    },
+    {
+      "name": "Hekcshin"
+    },
+    {
+      "name": "HeuEung"
+    },
+    {
+      "name": "HIMIKO"
+    },
+    {
+      "name": "HIPHOP6"
+    },
+    {
+      "name": "Hitori"
+    },
+    {
+      "name": "Hoksi",
+      "alias": ["Hoppouru"]
+    },
+    {
+      "name": "holomonx",
+      "alias": ["みん兎", "みんと", "ホロモンX", "Holomon X", "haku-to"]
+    },
+    {
+      "name": "HONGCHA"
+    },
+    {
+      "name": "Hoptia"
+    },
+    {
+      "name": "Hoshino Homura"
+    },
+    {
+      "name": "Hotaru"
+    },
+    {
+      "name": "Hudson",
+      "alias": ["Mushi", "mushihimesamas", "mushihimes"]
+    },
+    {
+      "name": "Hung",
+      "alias": ["hung98"]
+    },
+    {
+      "name": "Ichimiso"
+    },
+    {
+      "name": "IdolA",
+      "alias": ["idola_en"]
+    },
+    {
+      "name": "ImSayaa34",
+      "alias": ["ImSaya"]
+    },
+    {
+      "name": "IseeU",
+      "alias": ["IseeU317", "KevinTom963480"]
+    },
+    {
+      "name": "Istia"
+    },
+    {
+      "name": "izakami san",
+      "alias": ["izakami", "izakami09"]
+    },
+    {
+      "name": "Izu_914",
+      "alias": ["izu914", "Izu", "イズ"]
+    },
+    {
+      "name": "Jabobco"
+    },
+    {
+      "name": "jagerbae"
+    },
+    {
+      "name": "Japs8005",
+      "alias": ["Japs"]
+    },
+    {
+      "name": "Jase",
+      "alias": ["ジェイス"]
+    },
+    {
+      "name": "jeger"
+    },
+    {
+      "name": "JMC",
+      "alias": ["JMC_NSFW", "sweii1"]
+    },
+    {
+      "name": "Jotorola"
+    },
+    {
+      "name": "K.I.D",
+      "alias": ["Kozlov", "kogrebnev"]
+    },
+    {
+      "name": "KaosKatsu"
+    },
+    {
+      "name": "Kazuma",
+      "alias": ["IKazumal", "Kaz"]
+    },
+    {
+      "name": "keiyuu"
+    },
+    {
+      "name": "Keyk",
+      "alias": ["Keyk_"]
+    },
+    {
+      "name": "kiapS",
+      "alias": ["kiapS0"]
+    },
+    {
+      "name": "kibashin"
+    },
+    {
+      "name": "KIM"
+    },
+    {
+      "name": "Kingcolmena"
+    },
+    {
+      "name": "Kinkatsu",
+      "alias": ["kinkatsukk"]
+    },
+    {
+      "name": "KIRBRO"
+    },
+    {
+      "name": "KiRyX"
+    },
+    {
+      "name": "Klanayo3D",
+      "alias": ["Klanayo"]
+    },
+    {
+      "name": "ko671"
+    },
+    {
+      "name": "Kodoki",
+      "alias": ["Kodoki3d", "Kodoki16"]
+    },
+    {
+      "name": "KoiAnimex",
+      "alias": ["Animex"]
+    },
+    {
+      "name": "Koiking",
+      "alias": ["koikingu"]
+    },
+    {
+      "name": "KoiKoiS",
+      "alias": ["Koi_S3"]
+    },
+    {
+      "name": "Koillusion",
+      "alias": ["IllusionKoi"]
+    },
+    {
+      "name": "Kojirekittahito",
+      "alias": ["拗れ切った人 KJ", "kojire"]
+    },
+    {
+      "name": "kokon"
+    },
+    {
+      "name": "KosoruCG"
+    },
+    {
+      "name": "Koyuki"
+    },
+    {
+      "name": "Kur"
+    },
+    {
+      "name": "lanzfh"
+    },
+    {
+      "name": "Lazy Ahoge",
+      "alias": ["LazyAhoge", "namakeru_megane"]
+    },
+    {
+      "name": "Lazy Melon",
+      "alias": ["LM"]
+    },
+    {
+      "name": "Ldki",
+      "alias": ["Ldki1018"]
+    },
+    {
+      "name": "Ledah",
+      "alias": ["duskkoi", "LEDAHGRIM"]
+    },
+    {
+      "name": "LEE"
+    },
+    {
+      "name": "LEE2",
+      "alias": ["LeetwoR"]
+    },
+    {
+      "name": "Leoool",
+      "alias": ["rleoool", "Leoool2", "Leoooll", "Releo"]
+    },
+    {
+      "name": "Liquid-cat",
+      "alias": ["liquidcat", "Liquid_cat"]
+    },
+    {
+      "name": "Locke3K"
+    },
+    {
+      "name": "LookMe"
+    },
+    {
+      "name": "Ltsuki"
+    },
+    {
+      "name": "LuminousAxis",
+      "alias": ["AxisLuminous"]
+    },
+    {
+      "name": "MagicA Mar",
+      "alias": ["MagicaMar"]
+    },
+    {
+      "name": "Makise",
+      "alias": ["makise123"]
+    },
+    {
+      "name": "manul"
+    },
+    {
+      "name": "Marega S.A.",
+      "alias": ["Marega"]
+    },
+    {
+      "name": "Marojiro Edo",
+      "alias": ["Vanilla Maro", "VanillaMarOwO"]
+    },
+    {
+      "name": "mashimaro时屿燕",
+      "alias": ["mashimaros"]
+    },
+    {
+      "name": "MastaPov"
+    },
+    {
+      "name": "MDR",
+      "alias": ["MMDDRR"]
+    },
+    {
+      "name": "Meddle",
+      "alias": ["beslanred"]
+    },
+    {
+      "name": "Mekeni"
+    },
+    {
+      "name": "MG-Sago",
+      "alias": ["MG_Sago"]
+    },
+    {
+      "name": "Mica"
+    },
+    {
+      "name": "Mightymeat",
+      "alias": [
+        "マイティーミート",
+        "マイティー ・ ミート",
+        "Mightyniku",
+        "Mighty Meats",
+        "MihtyMet"
+      ]
+    },
+    {
+      "name": "Mikael",
+      "alias": ["mikale881", "mikale"]
+    },
+    {
+      "name": "Mike Oxlong"
+    },
+    {
+      "name": "mikhgugu"
+    },
+    {
+      "name": "MILFBISC"
+    },
+    {
+      "name": "MiscSFM",
+      "alias": ["MiscSFMPorn"]
+    },
+    {
+      "name": "Miyumi69"
+    },
+    {
+      "name": "Moktelu（モクテル）",
+      "alias": ["Moktelu", "モクテル", "mokutelu"]
+    },
+    {
+      "name": "Moonlightmask",
+      "alias": ["moonlightmask4", "moonlight mask"]
+    },
+    {
+      "name": "Mr. K",
+      "alias": ["MrK", "skmrk", "skmrkoi"]
+    },
+    {
+      "name": "MrDelegado",
+      "alias": ["Mr Delegado"]
+    },
+    {
+      "name": "MrImpy",
+      "alias": ["MrImp", "Mr. Impy", "Mrlmpy"]
+    },
+    {
+      "name": "Mugenalien"
+    },
+    {
+      "name": "Naier Serpfire",
+      "alias": ["Naier"]
+    },
+    {
+      "name": "nanasi"
+    },
+    {
+      "name": "Nari"
+    },
+    {
+      "name": "Naru6",
+      "alias": ["Naru"]
+    },
+    {
+      "name": "ᴺᵃᶤᵐᵘ-Micco",
+      "alias": ["naimu-micco"]
+    },
+    {
+      "name": "Neighzorr"
+    },
+    {
+      "name": "NekoMaruSan"
+    },
+    {
+      "name": "Neolnk"
+    },
+    {
+      "name": "Neto",
+      "alias": ["NetoGermano"]
+    },
+    {
+      "name": "Newbie",
+      "alias": ["NewBie_7586"]
+    },
+    {
+      "name": "NHM-Cards"
+    },
+    {
+      "name": "NightOwlZzz",
+      "alias": ["Owl", "N_Owl_Zz"]
+    },
+    {
+      "name": "Ninetail00"
+    },
+    {
+      "name": "Niza"
+    },
+    {
+      "name": "Norma32"
+    },
+    {
+      "name": "Nosoka"
+    },
+    {
+      "name": "Nozodora"
+    },
+    {
+      "name": "Numb"
+    },
+    {
+      "name": "Numbersguy"
+    },
+    {
+      "name": "Nyako",
+      "alias": ["nyakos", "Ko Nya", "NyakoSbo"]
+    },
+    {
+      "name": "Nyanify"
+    },
+    {
+      "name": "Nylon",
+      "alias": ["Nylon_KOI"]
+    },
+    {
+      "name": "ORT"
+    },
+    {
+      "name": "Otsukira Koi",
+      "alias": ["Otsukira"]
+    },
+    {
+      "name": "PAKAPAKA"
+    },
+    {
+      "name": "panda",
+      "alias": ["panda123"]
+    },
+    {
+      "name": "Pandora",
+      "alias": ["Pandora4717"]
+    },
+    {
+      "name": "PastaPaprika"
+    },
+    {
+      "name": "paul99"
+    },
+    {
+      "name": "PervyVicky",
+      "alias": ["VickyPervy"]
+    },
+    {
+      "name": "Peter247"
+    },
+    {
+      "name": "Phantom",
+      "alias": ["PhantomKK", "PhantomKoikatsu"]
+    },
+    {
+      "name": "pinkzgales"
+    },
+    {
+      "name": "PiS"
+    },
+    {
+      "name": "Poison",
+      "alias": ["PoisonAhe", "poison0215", "KoikatsuLoop", "poison_kk"]
+    },
+    {
+      "name": "POKO"
+    },
+    {
+      "name": "Polarisakura"
+    },
+    {
+      "name": "Pori",
+      "alias": ["mokusheepIV", "Moku"]
+    },
+    {
+      "name": "Professor Cow",
+      "alias": ["VanserYuen"]
+    },
+    {
+      "name": "prPanda",
+      "alias": ["prpnd"]
+    },
+    {
+      "name": "Punyuz"
+    },
+    {
+      "name": "QSX3"
+    },
+    {
+      "name": "Rafistev",
+      "alias": ["RAFts In STEVe"]
+    },
+    {
+      "name": "Rail2"
+    },
+    {
+      "name": "REI-F",
+      "alias": ["REIF", "SneakySwordFox"]
+    },
+    {
+      "name": "Reta",
+      "alias": ["Reta221"]
+    },
+    {
+      "name": "rhino"
+    },
+    {
+      "name": "RHL",
+      "alias": ["RHL_90"]
+    },
+    {
+      "name": "RiceMan"
+    },
+    {
+      "name": "Rinu"
+    },
+    {
+      "name": "Rinyu"
+    },
+    {
+      "name": "Riri",
+      "alias": ["リリ"]
+    },
+    {
+      "name": "Rohss",
+      "alias": ["R[OH]ss", "RohssM3"]
+    },
+    {
+      "name": "Roku",
+      "alias": ["Roku40"]
+    },
+    {
+      "name": "Rurri00"
+    },
+    {
+      "name": "Ryoukai"
+    },
+    {
+      "name": "Ryuga"
+    },
+    {
+      "name": "Saeong",
+      "alias": ["ww2099", "ww3037"]
+    },
+    {
+      "name": "Sagelantropus"
+    },
+    {
+      "name": "Sam Cos Myson",
+      "alias": ["SamCosMyson", "Sam", "oOSamOo"]
+    },
+    {
+      "name": "SandKoi"
+    },
+    {
+      "name": "Sankuku"
+    },
+    {
+      "name": "Scratch-Key",
+      "alias": ["SK", "ScratchKey"]
+    },
+    {
+      "name": "Secundus",
+      "alias": ["Ravenant"]
+    },
+    {
+      "name": "Seimei Abe",
+      "alias": ["doctor001", "seimeiabe"]
+    },
+    {
+      "name": "Seth Reloaded",
+      "alias": ["Abigail", "Seth o Night", "SethoNight"]
+    },
+    {
+      "name": "Sev7n"
+    },
+    {
+      "name": "Sexpert"
+    },
+    {
+      "name": "Shawn_Something",
+      "alias": ["Shawn Something", "ShawnSenpai"]
+    },
+    {
+      "name": "Shibal"
+    },
+    {
+      "name": "Shyaz",
+      "alias": ["Shyazx"]
+    },
+    {
+      "name": "Silly Cat",
+      "alias": ["SillyCat653", "饲主的笨喵"]
+    },
+    {
+      "name": "Simple Life",
+      "alias": ["Simple-Life", "simplelazylife"]
+    },
+    {
+      "name": "SingerYue",
+      "alias": ["Singer Yue"]
+    },
+    {
+      "name": "Sinnai"
+    },
+    {
+      "name": "Sirius",
+      "alias": ["enjoliao"]
+    },
+    {
+      "name": "sixpluswan"
+    },
+    {
+      "name": "Skebe",
+      "alias": ["skebe555"]
+    },
+    {
+      "name": "SKtuna",
+      "alias": ["sk27"]
+    },
+    {
+      "name": "Skull Prince ",
+      "alias": ["SkullPrince", "Skull_Prince"]
+    },
+    {
+      "name": "SKYARCADIA",
+      "alias": ["SkyArcadia8843"]
+    },
+    {
+      "name": "SolityL"
+    },
+    {
+      "name": "Sowen",
+      "alias": ["Sowenn"]
+    },
+    {
+      "name": "spmchat"
+    },
+    {
+      "name": "Stacy Spencer",
+      "alias": ["Stacyyyxxzz"]
+    },
+    {
+      "name": "StarryUnicorn"
+    },
+    {
+      "name": "Stelaryx"
+    },
+    {
+      "name": "STR"
+    },
+    {
+      "name": "Sugardust"
+    },
+    {
+      "name": "Sugu",
+      "alias": ["sugup", "SuguTwit"]
+    },
+    {
+      "name": "Sunnyass"
+    },
+    {
+      "name": "Sunset Rayline",
+      "alias": ["SunsetRayline"]
+    },
+    {
+      "name": "Suou",
+      "alias": ["دائم", "sunseto10"]
+    },
+    {
+      "name": "SuperFaceBoom"
+    },
+    {
+      "name": "Sutekimeppou"
+    },
+    {
+      "name": "SweetGPT",
+      "alias": ["Sweet GPT", "Sweet"]
+    },
+    {
+      "name": "Tachumi"
+    },
+    {
+      "name": "tenghushouwei"
+    },
+    {
+      "name": "Tez",
+      "alias": ["Tezanimates"]
+    },
+    {
+      "name": "ThatDude",
+      "alias": ["Thatduude", "ThatDude758"]
+    },
+    {
+      "name": "ti090015"
+    },
+    {
+      "name": "TigerJr.",
+      "alias": ["Tigerjr"]
+    },
+    {
+      "name": "timemachinesama"
+    },
+    {
+      "name": "ToadLeBG"
+    },
+    {
+      "name": "tokiboy"
+    },
+    {
+      "name": "Tomoshi"
+    },
+    {
+      "name": "TOSHI",
+      "alias": ["TOSHI72141903"]
+    },
+    {
+      "name": "TotheMoon",
+      "alias": ["TotheMoon5222"]
+    },
+    {
+      "name": "toukyou"
+    },
+    {
+      "name": "TSR"
+    },
+    {
+      "name": "Valiance"
+    },
+    {
+      "name": "vanivani"
+    },
+    {
+      "name": "VioletRose34"
+    },
+    {
+      "name": "violet_v3",
+      "alias": ["backviolet"]
+    },
+    {
+      "name": "Virgoblack69"
+    },
+    {
+      "name": "void叶",
+      "alias": ["void_Ye"]
+    },
+    {
+      "name": "WammonTusk",
+      "alias": ["wammon", "Wammon_Tusk"]
+    },
+    {
+      "name": "Watamage",
+      "alias": ["Wataaamage", "WataaMagnus"]
+    },
+    {
+      "name": "Waxreplica",
+      "alias": ["ShiShigaJ5", "J5Shi", "ShigaJ5"]
+    },
+    {
+      "name": "wegoing2hell"
+    },
+    {
+      "name": "willdie",
+      "alias": ["will_die"]
+    },
+    {
+      "name": "Wily27"
+    },
+    {
+      "name": "xbrand"
+    },
+    {
+      "name": "Xcalibur"
+    },
+    {
+      "name": "Xion",
+      "alias": ["XION75714241", "BeastKingXion", "xionsgirls"]
+    },
+    {
+      "name": "xKazz",
+      "alias": ["Drewwkoi"]
+    },
+    {
+      "name": "XWyvernx",
+      "alias": ["Wyvern93"]
+    },
+    {
+      "name": "Yakimoon"
+    },
+    {
+      "name": "YariGGuri",
+      "alias": ["Yrggr2014"]
+    },
+    {
+      "name": "Yata’Ryhna",
+      "alias": ["Yata69335476", "Yata_Durian", "yatadurian"]
+    },
+    {
+      "name": "YiMengZzz",
+      "alias": ["Yimeng"]
+    },
+    {
+      "name": "YLB",
+      "alias": ["YellowBird", "YLBNN"]
+    },
+    {
+      "name": "Yogurta"
+    },
+    {
+      "name": "YOurWaifu NTR-ed",
+      "alias": ["YourWaifuNTRed", "Ntrhater", "ntr3d"]
+    },
+    {
+      "name": "ytr",
+      "alias": ["ytre"]
+    },
+    {
+      "name": "yubao魚拿堡",
+      "alias": ["yubao", "魚拿堡", "yubao-sakana"]
+    },
+    {
+      "name": "Yurabe"
+    },
+    {
+      "name": "YuukiS"
+    },
+    {
+      "name": "YεεƬεɖ",
+      "alias": ["YeetedKoi", "Yeeted", "TriangleRated"]
+    },
+    {
+      "name": "zepi"
+    },
+    {
+      "name": "Zero3D",
+      "alias": ["ZeroKK"]
+    },
+    {
+      "name": "ZNany",
+      "alias": ["ZNany484", "ZNany336"]
+    },
+    {
+      "name": "zyzorix"
+    },
+    {
+      "name": "[RV]-Nobunaga",
+      "alias": ["RVN"]
+    },
+    {
+      "name": "●•●oO",
+      "alias": ["wssb"]
+    },
+    {
+      "name": "〇銭好",
+      "alias": ["xxx200785"]
+    },
+    {
+      "name": "うなじゅう",
+      "alias": ["unagi45dx", "unagi4545"]
+    },
+    {
+      "name": "うに科",
+      "alias": ["unica"]
+    },
+    {
+      "name": "きりくもり / 霧久",
+      "alias": ["Kirikumori", "きりくもり", "霧久", "kirikumorimori"]
+    },
+    {
+      "name": "けずりゃん"
+    },
+    {
+      "name": "すやすや酢屋",
+      "alias": ["Suyasuya Suya", "suyasuyasuya"]
+    },
+    {
+      "name": "たなゆう",
+      "alias": ["tanayu"]
+    },
+    {
+      "name": "ひがし",
+      "alias": ["Higashi"]
+    },
+    {
+      "name": "ふらっしゅさんぽ",
+      "alias": ["flashsanpo"]
+    },
+    {
+      "name": "アオ",
+      "alias": ["ao"]
+    },
+    {
+      "name": "イーオ・イーヨ"
+    },
+    {
+      "name": "ウミナエ",
+      "alias": ["uminaekurage"]
+    },
+    {
+      "name": "エッチの紙鳶",
+      "alias": ["zhezhicheny", "色色の纸鸢"]
+    },
+    {
+      "name": "エットレ/Ettore",
+      "alias": ["エットレ", "Ettore", "monster3323"]
+    },
+    {
+      "name": "エルデッキ"
+    },
+    {
+      "name": "カリーナ",
+      "alias": ["menthol", "yamapia"]
+    },
+    {
+      "name": "グラフ",
+      "alias": ["Grafko"]
+    },
+    {
+      "name": "サンバからす",
+      "alias": ["sanbakarasu"]
+    },
+    {
+      "name": "ディオネル",
+      "alias": ["Dionel"]
+    },
+    {
+      "name": "ハイネ"
+    },
+    {
+      "name": "フラットハンド",
+      "alias": ["flathand", "tomohiro"]
+    },
+    {
+      "name": "フート軍曹",
+      "alias": ["Sgt_foot"]
+    },
+    {
+      "name": "ヘルオド",
+      "alias": ["heluodo"]
+    },
+    {
+      "name": "マキス",
+      "alias": ["makisu", "makisudesu"]
+    },
+    {
+      "name": "ミスター承認欲求",
+      "alias": ["MrSyounin"]
+    },
+    {
+      "name": "ローズセラビ"
+    },
+    {
+      "name": "三島こねこ",
+      "alias": ["Cup_and_Cat"]
+    },
+    {
+      "name": "井戸掘ラー",
+      "alias": ["idohori"]
+    },
+    {
+      "name": "古屋としあき"
+    },
+    {
+      "name": "啤酒人",
+      "alias": ["qwqggqwq", "liulingqian"]
+    },
+    {
+      "name": "喚く狂人",
+      "alias": ["wamekukyouzin"]
+    },
+    {
+      "name": "嘤吟",
+      "alias": ["286Yingyin"]
+    },
+    {
+      "name": "夕水坊",
+      "alias": ["xishuifang"]
+    },
+    {
+      "name": "夜道白",
+      "alias": ["Haku", "jack61109205"]
+    },
+    {
+      "name": "審判",
+      "alias": ["juedge"]
+    },
+    {
+      "name": "昏睡红猹"
+    },
+    {
+      "name": "月风屿",
+      "alias": ["yuefengyu"]
+    },
+    {
+      "name": "朝暮"
+    },
+    {
+      "name": "棪糖",
+      "alias": ["u03w6"]
+    },
+    {
+      "name": "滑稽果"
+    },
+    {
+      "name": "琴觞",
+      "alias": ["qinshang"]
+    },
+    {
+      "name": "甲殻恐竜"
+    },
+    {
+      "name": "白5B",
+      "alias": ["white5b"]
+    },
+    {
+      "name": "米悠ch (JP) KKD",
+      "alias": ["米悠ch", "KKD"]
+    },
+    {
+      "name": "羽楓",
+      "alias": ["feathermapleleaf"]
+    },
+    {
+      "name": "萧寒清"
+    },
+    {
+      "name": "蒼茶",
+      "alias": ["Aoicha"]
+    },
+    {
+      "name": "蓬莱伝説",
+      "alias": ["houraidensetu"]
+    },
+    {
+      "name": "虚子",
+      "alias": ["Kyonko"]
+    },
+    {
+      "name": "阿当",
+      "alias": ["adang"]
+    },
+    {
+      "name": "雑植物",
+      "alias": ["zatsusyokubutsu"]
+    },
+    {
+      "name": "香蕉の捕手",
+      "alias": ["ylsama"]
+    },
+    {
+      "name": "魔翼1986"
+    },
+    {
+      "name": "黑色教长",
+      "alias": ["vortiger"]
+    },
+    {
+      "name": "黒ラット",
+      "alias": ["RatFlat"]
+    }
+  ]
+}

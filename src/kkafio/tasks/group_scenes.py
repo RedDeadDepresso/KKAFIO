@@ -18,7 +18,9 @@ from pathlib import Path
 
 from kkafio.cards.cache_io import file_fp
 from kkafio.core.errors import InputError, TaskFailedError
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
+from kkafio.services.scene_authors import canonical_name, load_authors, suggest_authors
 from kkafio.services.scene_index import load_scene_index
 from kkafio.tasks.base_task import BaseTask
 from kkafio.tasks.filter_duplicate_contents import (
@@ -29,6 +31,8 @@ from kkafio.tasks.filter_duplicate_contents import (
 TAG = "GRPSCN"
 
 UNSORTED_YEARS = "Unsorted Years"
+
+SCENE_COVER_RATIO = 180 / 320       # a scene card's picture is landscape (320x180)
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
@@ -43,11 +47,108 @@ def author_folder_name(author: str) -> str:
     return name
 
 
+def scene_dialog_text():
+    """The words of the gallery when it is sorting scenes into author folders."""
+    from kkafio.system.manual_group_dialog import DialogText
+    return DialogText(
+        search_placeholder=t("dialog.manual_scene.search_placeholder"),
+        all=t("dialog.manual_scene.all"),
+        untagged=t("dialog.manual_scene.untagged"),
+        series_header=t("dialog.manual_scene.series_header"),
+        filter_series=t("dialog.manual_scene.filter_series"),
+        unknown_series=t("dialog.manual_scene.unknown_series"),
+        no_cards=t("dialog.manual_scene.no_cards"),
+        hint=t("dialog.manual_scene.hint"),
+        status=t("dialog.manual_scene.status"),
+        status_filtered=t("dialog.manual_scene.status_filtered"),
+        moved=t("dialog.manual_scene.moved"),
+        move_failed=t("dialog.manual_scene.move_failed"),
+        multi_title=t("dialog.manual_scene.multi_title"),
+        multi_prompt=t("dialog.manual_scene.multi_prompt"),
+        multi_moved=t("dialog.manual_scene.multi_moved"),
+        multi_moved_partial=t("dialog.manual_scene.multi_moved_partial"),
+    )
+
+
+def _is_author_dir(name: str) -> bool:
+    """Folders starting with "_" or "." (e.g. _duplicates_) are not author folders."""
+    return not name.startswith(("_", "."))
+
+
+def existing_author_folders(folder: Path) -> dict[str, str]:
+    """{casefolded name: name} of the author folders directly inside the scene folder."""
+    known: dict[str, str] = {}
+    try:
+        for entry in sorted(folder.iterdir(), key=lambda e: e.name.casefold()):
+            if entry.is_dir() and _is_author_dir(entry.name):
+                known.setdefault(entry.name.casefold(), entry.name)
+    except OSError:
+        pass
+    return known
+
+
+def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str],
+                     max_suggestions: int = 8):
+    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the author
+    folders that exist and grows as folders are created; `authors` are the known authors (see
+    scene_authors). Every move `assign` makes is recorded in `moves` ({old path: new path}) so the
+    caller can bring the hash cache along."""
+
+    def suggest(text: str) -> list[str]:
+        q = text.strip().casefold()
+        out = suggest_authors(text, authors, max_suggestions)
+        seen = {n.casefold() for n in out}
+        if q:                                              # the existing folders that match too
+            local = sorted((n for n in known.values() if q in n.casefold() and n.casefold() not in seen),
+                           key=lambda n: (not n.casefold().startswith(q), n.casefold()))
+            out += local
+        else:
+            out = sorted(known.values(), key=str.casefold)
+        return out[:max_suggestions]
+
+    def assign(item, text: str):
+        name = author_folder_name(canonical_name(text, authors))
+        if not name:
+            logger.warning(TAG, f"'{text}' can't be used as a folder name")
+            return None
+        name = known.get(name.casefold(), name)            # spelled like the existing folder
+        dest_dir = item.root / name
+        if item.path.parent == dest_dir:
+            return item.path, name                         # already there
+        dest = _move_unique(item.path, dest_dir)
+        if dest is None:
+            return None
+        moves[str(item.path)] = str(dest)
+        known.setdefault(name.casefold(), name)
+        return dest, name
+
+    return suggest, assign
+
+
+def _move_unique(src: Path, dest_dir: Path) -> Path | None:
+    """Move `src` into `dest_dir` (created if needed; a taken name gets _1, _2 ...). The new path,
+    or None (after a warning) if it couldn't be moved."""
+    dest = dest_dir / src.name
+    counter = 1
+    while dest.exists():
+        dest = dest_dir / f"{src.stem}_{counter}{src.suffix}"
+        counter += 1
+    try:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(src), str(dest))
+    except Exception as e:
+        logger.warning(TAG, f"Could not move {src.name}: {e}")
+        return None
+    return dest
+
+
 class GroupScenes(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
         cfg = self.config.group_scenes
         self.scene_dir_str      : str  = cfg.get("SceneDir", "")
+        self.use_automatic      : bool = cfg.get("UseAutomatic", True)
+        self.use_manual         : bool = cfg.get("UseManual", False)
         self.use_cache          : bool = cfg.get("UseCache", True)
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.subgroup_by_year   : bool = cfg.get("SubgroupByYear", True)
@@ -69,16 +170,24 @@ class GroupScenes(BaseTask):
         folder = self._scene_dir()
 
         self.log_start(TAG, str(folder))
+        if not (self.use_automatic or self.use_manual):
+            logger.warning(TAG, "Neither Automatic nor Manual is selected — nothing to do.")
+            return
+        logger.info(TAG, f"Mode              : {' + '.join(m for m, on in (('Automatic', self.use_automatic), ('Manual', self.use_manual)) if on)}")
         logger.info(TAG, f"Use cache         : {self.use_cache}")
         logger.info(TAG, f"Include subfolders: {self.include_subfolders}")
         logger.info(TAG, f"Subgroup by year  : {self.subgroup_by_year}")
         logger.line()
 
-        index = load_scene_index()
-        if not index:
-            raise TaskFailedError("GroupScenes: the scene index is unavailable")
+        if self.use_automatic:
+            self._run_automatic(folder)
+        if self.use_manual:
+            self._run_manual(folder)
 
-        png_files = list(folder.rglob("*.png") if self.include_subfolders else folder.glob("*.png"))
+    def _scan(self, folder: Path, include_subfolders: bool):
+        """Hash the PNGs (reusing the shared cache) and pick out the scenes.
+        Returns (scenes [(path, digest)], cache as loaded, this scan's cache entries)."""
+        png_files = list(folder.rglob("*.png") if include_subfolders else folder.glob("*.png"))
         logger.info(TAG, f"Scanning {len(png_files)} PNG file(s) in {folder}")
 
         # Same cache file (and entry layout) as Filter Duplicate Contents, so
@@ -112,6 +221,24 @@ class GroupScenes(BaseTask):
                     scenes.append((path, digest))
         if reused:
             logger.info(TAG, f"Hash cache: {reused} unchanged, {len(png_files) - reused} new/changed")
+        return scenes, cache, new_entries
+
+    def _save_cache(self, folder: Path, cache: dict, new_entries: dict, moved_from: set[str]) -> None:
+        """Write a scan's entries to the cache file. It's merged into what's already
+        there, since the file also holds entries for files that scan didn't cover
+        (e.g. subfolders when they're excluded); the old path of a moved scene is dropped."""
+        merged = {k: v for k, v in cache.items()
+                  if k not in new_entries and k not in moved_from}
+        merged.update(new_entries)
+        _save_duplic_cache(folder, PNG_CACHE_FILE, merged)
+
+    def _run_automatic(self, folder: Path) -> None:
+        """Group the scenes the scene index knows into their author folders."""
+        index = load_scene_index()
+        if not index:
+            raise TaskFailedError("GroupScenes: the scene index is unavailable")
+
+        scenes, cache, new_entries = self._scan(folder, self.include_subfolders)
         logger.info(TAG, f"Scenes found: {len(scenes)}  (in the index: "
                          f"{sum(1 for _, d in scenes if d.lower() in index)})")
         logger.line()
@@ -119,13 +246,7 @@ class GroupScenes(BaseTask):
         moved_from: set[str] = set()      # old paths of scenes moved during this run
 
         def save_cache() -> None:
-            """Write this run's entries to the cache file. It's merged into what's already
-            there, since the file also holds entries for files this run didn't scan
-            (e.g. subfolders when they're excluded); the old path of a moved scene is dropped."""
-            merged = {k: v for k, v in cache.items()
-                      if k not in new_entries and k not in moved_from}
-            merged.update(new_entries)
-            _save_duplic_cache(folder, PNG_CACHE_FILE, merged)
+            self._save_cache(folder, cache, new_entries, moved_from)
 
         if self.use_cache:
             # Saved before anything is moved: the hashes are the expensive part, and a run
@@ -185,3 +306,52 @@ class GroupScenes(BaseTask):
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}, already in place/skipped: {skipped}, "
                             f"not in index: {unknown}")
+
+    def _run_manual(self, folder: Path) -> None:
+        """Open the gallery: the user names an author per scene and each card is moved at once."""
+        from kkafio.system.manual_group_dialog import CharaItem, manual_dialog
+
+        logger.line()
+        logger.info(TAG, "Manual: reading the scenes")
+        # Always with subfolders: the gallery is the whole library, with each scene's author (its
+        # folder) shown; "Include subfolders" only decides what the automatic grouping looks at.
+        scenes, cache, new_entries = self._scan(folder, True)
+        items = []
+        for path, _digest in sorted(scenes):
+            parts = path.relative_to(folder).parts
+            if not all(_is_author_dir(part) for part in parts[:-1]):
+                continue
+            try:
+                st = path.stat()
+            except OSError:
+                continue
+            items.append(CharaItem(path=path, root=folder, name=path.stem,
+                                   series=parts[0] if len(parts) > 1 else None,
+                                   size=st.st_size, mtime=st.st_mtime,
+                                   ctime=getattr(st, "st_birthtime", st.st_ctime)))
+        if self.use_cache:
+            self._save_cache(folder, cache, new_entries, set())     # hashing is the expensive part
+        if not items:
+            logger.warning(TAG, "No readable scenes found")
+            return
+
+        authors = load_authors()
+        known = existing_author_folders(folder)
+        for item in items:
+            if item.series:
+                known.setdefault(item.series.casefold(), item.series)
+        moves: dict[str, str] = {}
+        suggest, assign = manual_callbacks(known, authors, moves)
+        logger.info(TAG, f"Opening the gallery with {len(items)} scene(s) and {len(authors)} known author(s)")
+        try:
+            moved = manual_dialog(t("dialog.manual_scene.title"), items, suggest, assign, scene_dialog_text(),
+                                  cover_ratio=SCENE_COVER_RATIO)
+        finally:
+            if self.use_cache and moves:
+                for old, new in moves.items():                      # a move keeps mtime/size: the hash stays valid
+                    entry = new_entries.pop(old, None)
+                    if entry is not None:
+                        new_entries[new] = entry
+                self._save_cache(folder, cache, new_entries, set(moves))
+        logger.line()
+        logger.success(TAG, f"Done — moved: {moved}")

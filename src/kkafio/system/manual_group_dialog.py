@@ -275,27 +275,30 @@ AssignFn = Callable[[CharaItem, str], "tuple[Path, str] | None"]
 
 def manual_dialog(title: str, items: Sequence[CharaItem],
                   suggest: Callable[[str], list[str]], assign: AssignFn,
-                  text: DialogText | None = None) -> int:
+                  text: DialogText | None = None, cover_ratio: float = COVER_RATIO) -> int:
     """Show the gallery; returns how many cards were moved into a series before it was closed.
 
     suggest   text typed so far -> series names to offer (best first)
     assign    (item, text typed) -> (new path, series folder) after moving the card there, or
               None if it couldn't be done. The dialog only shows; this does the moving.
     text      the dialog's sentences (default: Group Characters')
+    cover_ratio  cover height / width (default: a character card's portrait; scenes are landscape)
     """
     try:
-        return _ctk_dialog(title, items, suggest, assign, text if text is not None else chara_dialog_text())
+        return _ctk_dialog(title, items, suggest, assign, text if text is not None else chara_dialog_text(), cover_ratio)
     except ImportError as e:                       # tkinter / customtkinter missing
         raise TaskFailedError(f"The character gallery needs tkinter and customtkinter: {e}") from e
 
 
-def _ctk_dialog(title, items, suggest, assign, txt: DialogText) -> int:
+def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: float) -> int:
     import tkinter as tk
     from tkinter import font as tkfont
     import customtkinter as ctk
     from PIL import Image, ImageOps, ImageTk
 
     model = GalleryModel(items)
+
+    model.set_view(VIEW_UNTAGGED)      # opens on the cards that still need a folder
     moved = {"count": 0}
 
     root = new_window(title, topmost=False)       # sorting a library takes a while
@@ -533,7 +536,7 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText) -> int:
         cols = max(1, (cw - gap) // (px(size_slider.get()) + 2 * pad + gap))
         tile_w = max(px(80), (cw - gap * (cols + 1)) // cols)
         img_w = tile_w                             # the cover fills the frame's width, edge to edge
-        img_h = int(round(img_w * COVER_RATIO))
+        img_h = int(round(img_w * cover_ratio))
         tile_h = img_h + px(8) + lh_name + row_series + 2 * lh_small + pad
         lay.update(items=model.visible(), img_w=img_w, img_h=img_h, tile_w=tile_w, tile_h=tile_h,
                    cols=cols, series_y=img_h + px(8) + lh_name)
