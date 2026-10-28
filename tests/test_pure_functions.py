@@ -14,7 +14,7 @@ import pytest
 
 # ---- where the code lives -----------------------------------------------------------
 from kkafio.cards import msgpack_min
-from kkafio.services.telegram import links as telegram_links
+from kkafio.services.mod_sources.telegram import links as telegram_links
 # -------------------------------------------------------------------------------------
 
 GOLDEN = json.loads((Path(__file__).parent / "golden" / "pure_functions.json").read_text(encoding="utf-8"))

@@ -103,11 +103,12 @@ KKAFIO-dev/
 │   │   │   ├── kkd.py               # koikatsucards.com session cookie management
 │   │   │   ├── pixiv.py             # pixiv.net PHPSESSID cookie management
 │   │   │   └── pawchive.py          # pawchive.pw session cookie management (t1 files only)
-│   │   ├── telegram/                # Telegram support for Download Missing Mods
-│   │   │   ├── config.py            # Telegram API credential storage
-│   │   │   ├── links.py             # Parsing Telegram links / the chat list (pure string handling)
-│   │   │   └── mods.py              # Searching Telegram chats and downloading mods (teleget)
-│   │   └── betterrepack.py          # BetterRepack downloads + the shared HTTP client for Download Missing Mods
+│   │   └── mod_sources/             # Where Download Missing Mods fetches mods from
+│   │       ├── betterrepack.py      # BetterRepack downloads + the shared HTTP client for Download Missing Mods
+│   │       └── telegram/            # Telegram support for Download Missing Mods
+│   │           ├── config.py        # Telegram API credential storage
+│   │           ├── links.py         # Parsing Telegram links / the chat list (pure string handling)
+│   │           └── mods.py          # Searching Telegram chats and downloading mods (teleget)
 │   │
 │   ├── dialogs/                     # CustomTkinter dialogs (run in-process, block the calling thread)
 │   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait

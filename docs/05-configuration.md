@@ -134,7 +134,7 @@ The cookie is scoped to `.pawchive.pw` and never sent to other hosts.
 { "api_id": 12345678, "api_hash": "abcdef0123456789..." }
 ```
 
-Written/read by `src/kkafio/services/telegram/config.py`. Used by **Download Missing
+Written/read by `src/kkafio/services/mod_sources/telegram/config.py`. Used by **Download Missing
 Mods** when a Telegram source is enabled. Only `api_id`/`api_hash` are
 ever actually written by `save()` in current usage — the module's docstring
 also mentions a `"session"` key as part of the intended shape, but nothing
