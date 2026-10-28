@@ -21,7 +21,7 @@ from kkafio.core.errors import InputError, TaskFailedError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.services.scene_authors import canonical_name, load_authors, suggest_authors
-from kkafio.services.scene_index import load_scene_index
+from kkafio.indices.scene import load_scene_index
 from kkafio.tasks.base_task import BaseTask
 from kkafio.tasks.filter_duplicate_contents import (
     PNG_CACHE_FILE, _classify, _get_png_payload, _load_duplic_cache,

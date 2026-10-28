@@ -182,13 +182,13 @@ def add_index_hints(json_str: str, lang: str, narrowed: dict | None = None) -> s
     (English where an index has none). Every card is sent, and a card the indexes don't know
     gets an empty list. `narrowed` (from Resolve Locally) maps a key to the only candidates to
     list for it, instead of everything the indexes have under that name."""
-    from kkafio.cards import char_index
-    if not json_str or not char_index.available():
+    from kkafio.indices import chara
+    if not json_str or not chara.available():
         return json_str
     out: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        h = [c.hint for c in narrowed[key]] if narrowed and key in narrowed else char_index.hints(key, lang)
+        h = [c.hint for c in narrowed[key]] if narrowed and key in narrowed else chara.hints(key, lang)
         hinted += bool(h)
         out[key] = {**value, "hints": h}
     logger.info("RENAME", f"Character index: {hinted} of {len(out)} character(s) have hints")
@@ -584,14 +584,14 @@ class RenameChara(BaseTask):
             return
 
         if hint_lang:
-            from kkafio.cards import char_index
-            char_index.refresh("RENAME")
-            if not char_index.supports(hint_lang):
+            from kkafio.indices import chara
+            chara.refresh("RENAME")
+            if not chara.supports(hint_lang):
                 logger.info("RENAME", f"The character indexes have no {hint_lang} text — hints are in English.")
             narrowed: dict = {}
-            if resolve and char_index.available():
+            if resolve and chara.available():
                 for key, births in birthdays.items():
-                    found = char_index.narrow(key, births, hint_lang)
+                    found = chara.narrow(key, births, hint_lang)
                     if found:
                         narrowed[key] = found
                 logger.info("RENAME", f"Resolve locally: {len(narrowed)} of {len(birthdays)} character(s) "

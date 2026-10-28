@@ -170,7 +170,7 @@ at the time the index was downloaded.
 Used by **Download Missing Mods** when the `KoikatsuCards` entry of
 Telegram Sources is checked. It replaces the old per-GUID lookup on
 koikatsucards.com. It is only read when at least one mod needs a Telegram
-download (`src/kkafio/tasks/download_missing_mods.py`, `load_kkc_mod_index()`):
+download (`src/kkafio/indices/kkc_mod.py`, `load_kkc_mod_index()`):
 
 1. The latest commit of `RedDeadDepresso/kkc-mod-scraper` is fetched from
    the GitHub API.
@@ -193,7 +193,7 @@ games from the Bangumi Archive) used for the
 `https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json`.
 `agv_character_index_last_commit.txt` holds the SHA of that repo's latest commit at the time the index was
 downloaded. It is refreshed when those tasks run with *Hints Language* set to anything but `no`
-(`src/kkafio/cards/agv_index.py`, `refresh()`), the same way as the KKC mod index:
+(`src/kkafio/indices/agv.py`, `refresh()`), the same way as the KKC mod index:
 
 1. The latest commit of `RedDeadDepresso/agv-character-scraper` is fetched from the GitHub API.
 2. If it matches the SHA in `agv_character_index_last_commit.txt` and the cached index loads, it is used.

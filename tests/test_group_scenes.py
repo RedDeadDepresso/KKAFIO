@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest import mock
 
 import card_factory as cf
-from kkafio.services import scene_index as si
+from kkafio.indices import scene as si
 from kkafio.tasks import group_scenes as gs
 from kkafio.tasks.filter_duplicate_contents import PNG_CACHE_FILE, _get_png_payload, _xxh
 

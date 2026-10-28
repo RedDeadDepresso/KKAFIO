@@ -10,15 +10,15 @@ from unittest import mock
 
 import pytest
 
-from kkafio.cards import agv_index
-from kkafio.cards.agv_text import norm
+from kkafio.indices import agv
+from kkafio.indices.text import norm
 from kkafio.cards.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
 from kkafio.system.manual_group_dialog import (
     SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
 from kkafio.tasks import group_chara
 
-from test_agv_index import _index
+from test_agv import _index
 from test_chara_key_cache import _cards, _file, fakes
 
 
@@ -34,12 +34,12 @@ def manual_fakes():
 
 
 @pytest.fixture
-def agv(tmp_path):
+def agv_file(tmp_path):
     p = tmp_path / "agv_character_index.json"
     p.write_text(json.dumps(_index(), ensure_ascii=False), encoding="utf-8")
-    agv_index.set_index_path(p)
+    agv.set_index_path(p)
     yield
-    agv_index.set_index_path(None)
+    agv.set_index_path(None)
 
 
 def _item(name, series=None, size=1, mtime=0.0, folder=Path("/chara")):
@@ -116,7 +116,7 @@ def test_resolve_series_folder_is_safe_and_reuses_existing_spelling():
         assert group_chara.resolve_series_folder(bad, known, None) == "", bad
 
 
-def test_resolve_series_folder_snaps_to_the_index_title(agv):
+def test_resolve_series_folder_snaps_to_the_index_title(agv_file):
     known = {}
     assert group_chara.resolve_series_folder("sword art online", known, "en_us") == "Sword Art Online"
     assert group_chara.resolve_series_folder("SWORD-ART ONLINE", known, "en_us") == "Sword Art Online"
@@ -131,7 +131,7 @@ def test_resolve_series_folder_snaps_to_the_index_title(agv):
 # suggestions and moving
 # ---------------------------------------------------------------------------
 
-def test_suggest_existing_folders_first_then_the_index(agv):
+def test_suggest_existing_folders_first_then_the_index(agv_file):
     known = {"fate grand order": "Fate Grand Order", "sao": "SAO"}
     suggest, _assign = group_chara.manual_callbacks(known, CharaKeyCache([], False), "en_us")
     assert suggest("") == ["Fate Grand Order", "SAO"]                   # nothing typed: the existing folders
@@ -142,7 +142,7 @@ def test_suggest_existing_folders_first_then_the_index(agv):
     assert suggest("fate") == ["Fate Grand Order", "Fatestay night"]
 
 
-def test_suggest_without_a_language_only_lists_folders(agv):
+def test_suggest_without_a_language_only_lists_folders(agv_file):
     suggest, _ = group_chara.manual_callbacks({"fate": "Fate"}, CharaKeyCache([], False), None)
     assert suggest("sword") == [] and suggest("fa") == ["Fate"]
 

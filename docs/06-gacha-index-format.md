@@ -4,7 +4,7 @@
 [gacha-character-scraper](https://github.com/RedDeadDepresso/gacha-character-scraper) repo (it scrapes popular gacha
 characters' wiki pages) and published on GitHub Pages at
 `https://reddeaddepresso.github.io/gacha-character-scraper/gacha_character_index.json`
-(`INDEX_URL` in `src/kkafio/cards/gacha_index.py`).
+(`INDEX_URL` in `src/kkafio/indices/gacha.py`).
 
 KKAFIO downloads it when **Group Characters** / **Rename Characters** run with
 *Hints Language* set to anything but `no`, caches it as `<config>/config/kkafio_gacha_index.json`, and
@@ -48,7 +48,7 @@ Group Characters' **Resolve Locally** compares a card's `birthMonth` / `birthDay
 several name matches (see the README); the hints sent to the LLM don't contain them.
 
 Nothing is resolved locally. Every card sent to the LLM gets a `hints` list: up to 5
-characters whose name matches the card (`kkafio.cards.char_index.lookup`), written
+characters whose name matches the card (`kkafio.indices.chara.lookup`), written
 `"Last, First (Series)"` in the hint language. The two indexes' scores aren't comparable,
 so the lists are merged, not sorted: an index whose best candidate dominates its others
 (5x the runner-up's `score`, or the only one) goes first, gacha before the anime, games, vtubers index, then the rest

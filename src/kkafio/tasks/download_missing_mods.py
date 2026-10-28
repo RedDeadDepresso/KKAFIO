@@ -41,11 +41,8 @@ from kkafio.cards.mods import build_mods_cache, load_modpack_index
 from kkafio.cards.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
-from kkafio.services.http_mod_sources import (
-    download_betterrepack,
-    load_kkc_mod_index,
-    make_http_client,
-)
+from kkafio.indices.kkc_mod import load_kkc_mod_index
+from kkafio.services.betterrepack import download_betterrepack, make_http_client
 from kkafio.services.telegram_links import (
     parse_chat_links,
     telegram_sources_label,

@@ -1,8 +1,8 @@
 """
-char_index.py — The character lookup Group Characters and Rename Characters use.
+chara.py — The character lookup Group Characters and Rename Characters use.
 
-Combines the gacha-game index (gacha_index, higher priority) with the anime, games, vtubers index
-(agv_index). Both degrade to "no help" when unavailable, so this does too.
+Combines the gacha-game index (gacha, higher priority) with the anime, games, vtubers index
+(agv). Both degrade to "no help" when unavailable, so this does too.
 """
 
 from __future__ import annotations
@@ -10,8 +10,8 @@ from __future__ import annotations
 from dataclasses import replace
 from itertools import zip_longest
 
-from kkafio.cards import gacha_index, agv_index
-from kkafio.cards.agv_index import DOMINANCE, MAX_HINTS, Candidate
+from kkafio.indices import gacha, agv
+from kkafio.indices.agv import DOMINANCE, MAX_HINTS, Candidate
 
 __all__ = ["Candidate", "MAX_HINTS", "RESOLVE_CANDIDATES", "available", "supports", "refresh", "lookup",
            "decide", "narrow", "hints", "canonical_series"]
@@ -20,18 +20,18 @@ RESOLVE_CANDIDATES = 50      # how many index matches Resolve Locally weighs (th
 
 
 def available() -> bool:
-    return gacha_index.available() or agv_index.available()
+    return gacha.available() or agv.available()
 
 
 def supports(lang: str) -> bool:
     """True if either index holds text in `lang`; otherwise its hints come back in English."""
-    return gacha_index.supports(lang) or agv_index.supports(lang)
+    return gacha.supports(lang) or agv.supports(lang)
 
 
 def refresh(tag: str) -> None:
     """Update the downloadable (gacha and anime, games, vtubers) indexes. Never raises; offline just uses the caches."""
-    gacha_index.refresh(tag)
-    agv_index.refresh(tag)
+    gacha.refresh(tag)
+    agv.refresh(tag)
 
 
 def _dominant(cands: list[Candidate]) -> bool:
@@ -48,7 +48,7 @@ def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[C
     way neither index can crowd the other out of the list. The same name + series from
     both indexes is listed once.
     """
-    lists = [list(gacha_index.lookup(key, lang, limit)), list(agv_index.lookup(key, lang, limit))]
+    lists = [list(gacha.lookup(key, lang, limit)), list(agv.lookup(key, lang, limit))]
     ordered: list[Candidate] = [lst.pop(0) for lst in lists if _dominant(lst)]
     ordered += [c for pair in zip_longest(*lists) for c in pair if c is not None]
 
@@ -98,4 +98,4 @@ def hints(key: str, lang: str | None = None) -> list[str]:
 def canonical_series(name: str, lang: str | None = None) -> str:
     """Snap a series name (in any language) to its canonical title in `lang`: gacha titles
     first, then the anime, games, vtubers index's series; anything neither knows is returned untouched."""
-    return gacha_index.snap_series(name, lang) or agv_index.canonical_series(name, lang)
+    return gacha.snap_series(name, lang) or agv.canonical_series(name, lang)

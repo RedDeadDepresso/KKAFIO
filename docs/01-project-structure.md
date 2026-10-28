@@ -83,6 +83,15 @@ KKAFIO-dev/
 │   │   ├── similarity.py            # pHash + leader clustering for cover comparison
 │   │   └── scene_version.py
 │   │
+│   ├── indices/                     # Remote lookup indices: downloaded on demand, cached in CONFIG_DIR, "no help" when unavailable
+│   │   ├── chara.py                 # Character lookup for Group / Rename Characters: gacha first, then AGV
+│   │   ├── gacha.py                 # Gacha-game character index (format: doc 06)
+│   │   ├── agv.py                   # Anime / visual novel / game character + series index (Bangumi Archive)
+│   │   ├── text.py                  # Text normalisation helpers for the two character indices
+│   │   ├── scene.py                 # pepper-scene-index: scene hash -> author / year (Group Scenes)
+│   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
+│   │   └── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
+│   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── kkd_session.py           # koikatsucards.com session cookie management
 │   │   ├── pixiv_session.py         # pixiv.net PHPSESSID cookie management
@@ -95,7 +104,7 @@ KKAFIO-dev/
 │   │   ├── telegram_config.py       # Telegram API credential storage
 │   │   ├── telegram_links.py        # Parsing Telegram links / the chat list (pure string handling)
 │   │   ├── telegram_mods.py         # Searching Telegram chats and downloading mods (teleget)
-│   │   └── http_mod_sources.py      # BetterRepack downloads + the koikatsucards.com GUID index
+│   │   └── betterrepack.py          # BetterRepack downloads + the shared HTTP client for Download Missing Mods
 │   │
 │   └── system/                      # OS-facing helpers (mostly Windows)
 │       ├── special_tasks.py         # Generic MXU automation primitives (sleep/notify/launch/power/etc.)

@@ -36,7 +36,7 @@ from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_ch
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key import birthday, make_key
 from kkafio.cards.chara_key_cache import CharaKeyCache
-from kkafio.cards.agv_index import Candidate
+from kkafio.indices.agv import Candidate
 from kkafio.cards import hint_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.i18n import t
@@ -82,13 +82,13 @@ def add_index_hints(json_str: str, lang: str,
     (English where an index has none). Every card is sent, and a card the indexes don't know
     gets an empty list. `narrowed` (from resolve_locally) maps a key to the only candidates
     to list for it, instead of everything the indexes have under that name."""
-    from kkafio.cards import char_index
-    if not json_str or not char_index.available():
+    from kkafio.indices import chara
+    if not json_str or not chara.available():
         return json_str
     out: dict[str, dict] = {}
     hinted = 0
     for key, value in json.loads(json_str).items():
-        h = [c.hint for c in narrowed[key]] if narrowed and key in narrowed else char_index.hints(key, lang)
+        h = [c.hint for c in narrowed[key]] if narrowed and key in narrowed else chara.hints(key, lang)
         hinted += bool(h)
         out[key] = {"series": value, "hints": h}
     logger.info("GROUP", f"Character index: {hinted} of {len(out)} character(s) have hints")
@@ -120,17 +120,17 @@ def resolve_locally(cards: dict[str, set[Birth]], lang: str,
     `narrowed` only holds keys whose every undecided card was narrowed this way; the other
     keys keep their full hint list.
     """
-    from kkafio.cards import char_index
+    from kkafio.indices import chara
     resolved: dict[tuple[str, Birth], str] = {}
     narrowed: dict[str, list[Candidate]] = {}
     for key, births in cards.items():
-        cands = char_index.lookup(key, lang, limit=char_index.RESOLVE_CANDIDATES)
+        cands = chara.lookup(key, lang, limit=chara.RESOLVE_CANDIDATES)
         if not cands:
             continue
         undecided_full = False
         picked: list[Candidate] = []
         for birth in births:
-            c = char_index.decide(cands, birth)
+            c = chara.decide(cands, birth)
             if c is None or not c.series:
                 undecided_full = True
             elif c.series_native:
@@ -367,8 +367,8 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     mapping: dict[str, str] = {k: v.get("series", "") if isinstance(v, dict) else v
                                for k, v in raw.items()}
     if hint_language:
-        from kkafio.cards import char_index
-        mapping = {k: char_index.canonical_series(v, hint_language) if isinstance(v, str) else v
+        from kkafio.indices import chara
+        mapping = {k: chara.canonical_series(v, hint_language) if isinstance(v, str) else v
                    for k, v in mapping.items()}
 
     # Build reverse map: key -> destination folder name (skip empty values)
@@ -477,7 +477,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
     folder has no series; one inside a folder has that (first) folder as its series."""
     import os
     from concurrent.futures import ThreadPoolExecutor
-    from kkafio.cards.agv_index import split_key
+    from kkafio.indices.agv import split_key
     from kkafio.system.manual_group_dialog import CharaItem
 
     found: list[tuple[Path, Path]] = []
@@ -517,8 +517,8 @@ def resolve_series_folder(text: str, known: dict[str, str], lang: str | None) ->
     when one with the same name (in any case) exists. "" if nothing usable is left."""
     name = text.strip()
     if lang and name:
-        from kkafio.cards import agv_index
-        name = agv_index.canonical_series(name, lang)
+        from kkafio.indices import agv
+        name = agv.canonical_series(name, lang)
     name = _safe_folder_name(name)
     return known.get(name.casefold(), name) if name else ""
 
@@ -537,9 +537,9 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
                            key=lambda n: (not n.casefold().startswith(q), n.casefold()))
         out = list(local)
         if lang and q:
-            from kkafio.cards import agv_index
+            from kkafio.indices import agv
             seen = {n.casefold() for n in out}
-            for title in agv_index.suggest_series(text, lang, limit=max_suggestions):
+            for title in agv.suggest_series(text, lang, limit=max_suggestions):
                 folder = _safe_folder_name(title)          # shown as the folder it would become
                 if folder and folder.casefold() not in seen:
                     seen.add(folder.casefold())
@@ -623,11 +623,11 @@ class GroupChara(BaseTask):
         local: dict[tuple[str, Birth], str] = {}
         narrowed: dict[str, list[Candidate]] = {}
         if hint_lang:
-            from kkafio.cards import char_index
-            char_index.refresh("GROUP")
-            if not char_index.supports(hint_lang):
+            from kkafio.indices import chara
+            chara.refresh("GROUP")
+            if not chara.supports(hint_lang):
                 logger.info("GROUP", f"The character indexes have no {hint_lang} text — hints are in English.")
-            if resolve and char_index.available():
+            if resolve and chara.available():
                 local, narrowed = resolve_locally(birthdays, hint_lang)
                 cards_n = sum(len(b) for b in birthdays.values())
                 logger.info("GROUP", f"Resolved locally: {len(local)} of {cards_n} character/birthday "
@@ -661,9 +661,9 @@ class GroupChara(BaseTask):
         """Open the gallery: the user types a series per character and each card is moved at once."""
         from kkafio.system.manual_group_dialog import manual_dialog
         if hint_lang:
-            from kkafio.cards import agv_index
-            agv_index.refresh("GROUP")
-            if not agv_index.available():
+            from kkafio.indices import agv
+            agv.refresh("GROUP")
+            if not agv.available():
                 logger.info("GROUP", "No anime, games, vtubers index — only existing series folders are suggested.")
         else:
             logger.info("GROUP", "Hints Language is 'no' — only existing series folders are suggested.")

@@ -1,5 +1,5 @@
 """
-agv_index.py — Look characters and series up in the AGV index (anime and visual novel / JRPG
+agv.py — Look characters and series up in the AGV index (anime and visual novel / JRPG
 games, built from the Bangumi Archive by https://github.com/RedDeadDepresso/agv-character-scraper
 and published on GitHub Pages).
 
@@ -24,7 +24,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from kkafio.cards.hint_language import DEFAULT_LANGUAGE, localized
-from kkafio.cards.agv_text import name_parts, norm
+from kkafio.indices.text import name_parts, norm
 from kkafio.core.logger import logger
 
 INDEX_URL = "https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json"
@@ -35,7 +35,7 @@ INDEX_VERSION = 1
 
 MAX_HINTS = 5          # candidates handed to the LLM per card
 
-# A first candidate counts as unambiguous (see char_index) if its score is at least this many
+# A first candidate counts as unambiguous (see chara) if its score is at least this many
 # times the runner-up's.
 DOMINANCE = 5
 
@@ -190,7 +190,7 @@ def suggest_series(query: str, lang: str | None = None, limit: int = 8) -> list[
     """Series titles (in `lang`, English where the index has none) that match what the user has
     typed so far, for autocompletion.
 
-    A title matches when the normalised query (see agv_text.norm) is a prefix of, or contained in,
+    A title matches when the normalised query (see text.norm) is a prefix of, or contained in,
     any of the series' titles in any language, so "fate" and "フェイト" both find Fate/stay night.
     Prefix matches come first, then the better known series (sum of its characters' favorites).
     An empty query, or no index, gives [].

@@ -7,8 +7,8 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from unittest import mock
 
-from kkafio.cards import char_index
-from kkafio.cards.agv_index import Candidate
+from kkafio.indices import chara
+from kkafio.indices.agv import Candidate
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES
@@ -30,8 +30,8 @@ def _file(path: Path, data: bytes = b"x") -> Path:
 
 @contextmanager
 def index(table):
-    """char_index.lookup answering from {key: [Candidate, ...]}."""
-    with mock.patch.object(char_index, "lookup", lambda key, lang=None, limit=5: tuple(table.get(key, ()))):
+    """chara.lookup answering from {key: [Candidate, ...]}."""
+    with mock.patch.object(chara, "lookup", lambda key, lang=None, limit=5: tuple(table.get(key, ()))):
         yield
 
 
@@ -126,8 +126,8 @@ def test_resolved_keys_are_dropped_from_the_prompt_and_hints_can_be_narrowed():
     assert set(left) == {"b", "c"}
 
     keep = _cand("Rin", ["Fate"], native=False)
-    with index({}), mock.patch.object(char_index, "available", lambda: True), \
-            mock.patch.object(char_index, "hints", lambda key, lang=None: ["full list"]):
+    with index({}), mock.patch.object(chara, "available", lambda: True), \
+            mock.patch.object(chara, "hints", lambda key, lang=None: ["full list"]):
         out = json.loads(group_chara.add_index_hints(json.dumps({"b": "", "c": ""}), "ja_jp", {"b": [keep]}))
     assert out["b"]["hints"] == [keep.hint] and out["c"]["hints"] == ["full list"]
 
@@ -233,18 +233,18 @@ from kkafio.tasks import rename_chara
 def test_narrow_returns_the_decided_candidates_or_nothing():
     sao, fate = _cand("Rin", ["SAO"], 9, 28), _cand("Rin", ["Fate"], 2, 2)
     with index({"one": [fate], "two": [sao, fate], "none": []}):
-        assert char_index.narrow("one", {(5, 5)}, "en_us") == [fate]             # single: any birthday
-        assert char_index.narrow("two", {(9, 28)}, "en_us") == [sao]
-        assert char_index.narrow("two", {(9, 28), (2, 2)}, "en_us") == [sao, fate] or \
-            char_index.narrow("two", {(9, 28), (2, 2)}, "en_us") == [fate, sao]   # each card decided
-        assert char_index.narrow("two", {(9, 28), (7, 7)}, "en_us") == []        # one card undecided
-        assert char_index.narrow("none", {(9, 28)}, "en_us") == []
+        assert chara.narrow("one", {(5, 5)}, "en_us") == [fate]             # single: any birthday
+        assert chara.narrow("two", {(9, 28)}, "en_us") == [sao]
+        assert chara.narrow("two", {(9, 28), (2, 2)}, "en_us") == [sao, fate] or \
+            chara.narrow("two", {(9, 28), (2, 2)}, "en_us") == [fate, sao]   # each card decided
+        assert chara.narrow("two", {(9, 28), (7, 7)}, "en_us") == []        # one card undecided
+        assert chara.narrow("none", {(9, 28)}, "en_us") == []
 
 
 def test_rename_hints_use_only_the_narrowed_candidates(tmp_path):
     keep = _cand("Tohsaka, Rin", ["Fate"], 2, 3)
-    with mock.patch.object(char_index, "available", lambda: True), \
-            mock.patch.object(char_index, "hints", lambda key, lang=None: ["a", "b", "c"]):
+    with mock.patch.object(chara, "available", lambda: True), \
+            mock.patch.object(chara, "hints", lambda key, lang=None: ["a", "b", "c"]):
         out = json.loads(rename_chara.add_index_hints(
             json.dumps({"x": {"lastname": ""}, "y": {"lastname": ""}}), "en_us", {"x": [keep]}))
     assert out["x"]["hints"] == [keep.hint] and out["y"]["hints"] == ["a", "b", "c"]

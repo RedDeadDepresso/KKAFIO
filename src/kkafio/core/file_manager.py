@@ -533,7 +533,7 @@ class FileManager:
         
         # Try the community password index (kk-password-scraper) before
         # bothering the user.
-        from kkafio.services.password_index import get_known_passwords
+        from kkafio.indices.password import get_known_passwords
 
         known = get_known_passwords(archive_name)
         if known:
