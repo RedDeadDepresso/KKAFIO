@@ -254,7 +254,7 @@ def test_sidebar_views_search_and_sort(tmp_path, monkeypatch):
         cv = gallery_canvas(root)
         assert button(root, "All characters").cget("text").endswith("6")
         assert button(root, "Unknown series").cget("text").endswith("3")
-        series_box = next(w for w in walk(root) if isinstance(w, tk.Listbox) and w.master.master.__class__.__name__ == "CTkFrame")
+        series_box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
         assert list(series_box.get(0, "end")) == ["Fate   (2)", "SAO   (1)"]
 
         button(root, "Unknown series").invoke()
@@ -616,27 +616,69 @@ def test_sort_menu_options_order_default_and_effect(tmp_path, monkeypatch):
 
 def test_series_rows_highlight_under_the_pointer(tmp_path, monkeypatch):
     items = make_items(tmp_path, 4, tagged={0: "Fate", 1: "Fate", 2: "SAO"})
-    hover = {mgd._LIGHT["hover"], mgd._DARK["hover"]}
-    plain = {mgd._LIGHT["side"], mgd._DARK["side"]}
 
     def script(root):
-        box = next(w for w in walk(root) if isinstance(w, tk.Listbox) and w.master.master.__class__.__name__ == "CTkFrame")
+        box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
         assert list(box.get(0, "end")) == ["Fate   (2)", "SAO   (1)"]
-        x, y, w, h = box.bbox(1)
+        pump(root, 0.2)
+        x, y, w, h = box.row_box(1)
         box.event_generate("<Motion>", x=x + 5, y=y + h // 2)
         pump(root, 0.1)
-        assert box.itemcget(1, "background") in hover and box.itemcget(0, "background") not in hover
-        x, y, w, h = box.bbox(0)
+        assert box._hover == 1
+        x, y, w, h = box.row_box(0)
         box.event_generate("<Motion>", x=x + 5, y=y + h // 2)         # moving on moves the highlight
         pump(root, 0.1)
-        assert box.itemcget(0, "background") in hover and box.itemcget(1, "background") in plain
+        assert box._hover == 0
+        gap_y = box.row_box(0)[1] + box.row_box(0)[3] + 1               # between two rows
+        box.event_generate("<Motion>", x=5, y=gap_y)
+        pump(root, 0.1)
+        assert box._hover is None
         box.event_generate("<Motion>", x=5, y=box.winfo_height() - 2)   # empty space below the rows
         pump(root, 0.1)
-        assert box.itemcget(0, "background") in plain
+        assert box._hover is None
         box.event_generate("<Motion>", x=x + 5, y=y + h // 2)
         box.event_generate("<Leave>")
         pump(root, 0.1)
-        assert box.itemcget(0, "background") in plain and box.itemcget(1, "background") in plain
+        assert box._hover is None
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_the_series_rows_are_as_big_and_as_far_apart_as_the_sidebar_buttons(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 4, tagged={0: "Fate", 1: "Fate", 2: "SAO"})
+
+    def script(root):
+        box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
+        pump(root, 0.3)
+        all_btn, untagged_btn = button(root, "All"), button(root, "Unknown")
+        btn_h = all_btn.winfo_height()
+        btn_gap = untagged_btn.winfo_y() - (all_btn.winfo_y() + btn_h)
+        (_, y0, w0, h0), (_, y1, _w, h1) = box.row_box(0), box.row_box(1)
+        assert h0 == h1 == btn_h and y1 - (y0 + h0) == btn_gap
+        assert w0 == box.winfo_width() > 0
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_a_long_series_list_scrolls_with_wheel_and_scrollbar_and_picks_by_click(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 40, tagged={i: f"Series {i:02d}" for i in range(40)})
+
+    def script(root):
+        cv = gallery_canvas(root)
+        box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
+        pump(root, 0.5)
+        assert box.size() == 40 and box.canvasy(0) == 0
+        box.event_generate("<Button-5>", x=10, y=10)                    # wheel down
+        pump(root, 0.1)
+        assert box.canvasy(0) > 0
+        box.yview("scroll", 1, "units")                                  # what the scrollbar sends
+        pump(root, 0.1)
+        box.yview_moveto(0)
+        pump(root, 0.1)
+        x, y, w, h = box.row_box(2)
+        box.event_generate("<Button-1>", x=x + 5, y=y + h // 2)
+        pump(root, 0.4)
+        assert box.curselection() == (2,) and texts(cv, "Series 02") and not texts(cv, "Series 03")
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
 
@@ -743,10 +785,33 @@ def test_the_series_list_uses_the_font_of_the_sidebar_buttons(tmp_path, monkeypa
     items = make_items(tmp_path, 3, tagged={0: "Rin"})
 
     def script(root):
-        box = next(w for w in walk(root) if w.__class__.__name__ == "Listbox")
+        box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
         btn = button(root, "All").cget("font")
         want = tkfont.Font(root=root, font=button(root, "All")._apply_font_scaling(btn))
-        got = tkfont.Font(root=root, font=box.cget("font"))
+        got = tkfont.Font(root=root, font=box._font)
         assert got.actual("family") == want.actual("family") and got.actual("size") == want.actual("size")
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
+
+
+def test_clicking_a_series_row_never_draws_an_empty_list_and_keeps_the_scroll_position(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 40, tagged={i: f"Series {i:02d}" for i in range(40)})
+
+    def script(root):
+        box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
+        pump(root, 0.5)
+        box.yview_moveto(0.5)
+        pump(root, 0.2)
+        top = box.canvasy(0)
+        assert top > 0
+        drawn = []
+        real = box._redraw
+        box._redraw = lambda: (drawn.append(len(box._rows)), real())      # what was in the list at each draw
+        x, y, w, h = box.row_box(int(top // box._step) + 2)
+        box.event_generate("<Button-1>", x=x + 5, y=y + h // 2)
+        pump(root, 0.5)
+        assert drawn and all(n == 40 for n in drawn), drawn
+        assert abs(box.canvasy(0) - top) < 1
+        assert len(box.curselection()) == 1
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)

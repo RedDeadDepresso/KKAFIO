@@ -25,6 +25,8 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Added
 
+- **Manual gallery dialog** — clicking a row in the sidebar list no longer flashes an empty list: the list is redrawn once after it is rebuilt, and keeps its scroll position.
+- **Manual gallery dialog** — the sidebar list rows now have the same height, rounded corners and spacing as the *All …* / *No …* buttons above it (the list is a small canvas widget, `SideList`, drawing only the rows in view, with its own wheel/scrollbar handling).
 - **Manual gallery dialog** — the sidebar's series / character / author list now uses the same font size as the *All …* and *No …* buttons above it.
 - **Manual gallery dialog** — always opens on the *no series / no character / no author* tab (the cards that still need a folder) instead of *All*.
 - **Group Scenes** — new **Mode** checkbox with **Automatic** (the existing scene-index grouping, on by default) and **Manual** (`--automatic` / `--no-automatic`, `--manual` / `--no-manual`). Manual opens the same gallery dialog as Group Characters, showing the scene cards (with landscape covers): the sidebar lists the author folders, *No author* replaces *Unknown series*, and typing suggests the authors of the new `assets/data/authors.json` (a name or an alias matches; an alias resolves to the author's name) plus your existing author folders. Confirming moves the scene into `<scene folder>/<author>/` at once (created if needed, a taken filename is numbered) and keeps the shared PNG hash cache in step. Manual needs no scene index and never adds a year folder. With both modes on, Automatic runs first and the gallery then shows every scene, subfolders included. Translated in all language files.

@@ -210,6 +210,187 @@ _DARK = dict(bg="#17181c", side="#1d1f24", tile="#25282f", text="#e6e8ee", muted
 
 
 # ---------------------------------------------------------------------------
+# The sidebar list
+# ---------------------------------------------------------------------------
+
+try:                                    # tkinter is optional: without it manual_dialog() falls back (see there)
+    import tkinter as tk
+except ImportError:                     # pragma: no cover - no Tk on this machine
+    tk = None
+
+
+class SideList(tk.Canvas if tk is not None else object):
+    """The sidebar's list of series/characters/authors: a single-selection list whose rows are drawn
+    like the CTkButtons above it (same height, same corner radius, same gap), which a tk.Listbox
+    can't do. Only the rows in view are drawn. It offers the part of the Listbox interface the
+    dialog needs (delete/insert/get/size/selection_*/curselection/see) and sends <<ListboxSelect>>
+    when a row is clicked."""
+
+    def __init__(self, master, *, bg, fg, sel_bg, hover_bg, font, row_h: int, gap: int, radius: int,
+                 pad_x: int, **kw):
+        super().__init__(master, bg=bg, highlightthickness=0, borderwidth=0, **kw)
+        self._fg, self._sel_bg, self._hover_bg, self._font = fg, sel_bg, hover_bg, font
+        self._row_h, self._gap, self._radius, self._pad_x = row_h, gap, radius, pad_x
+        self._rows: list[str] = []
+        self._selected: int | None = None
+        self._hover: int | None = None
+        self._ysb_command = None
+        self._redraw_job = None
+        self.bind("<Configure>", lambda _e: self._redraw())
+        self.bind("<Motion>", self._on_motion)
+        self.bind("<Leave>", lambda _e: self._set_hover(None))
+        self.bind("<Button-1>", self._on_click)
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.bind(seq, self._on_wheel)
+
+    # -- the Listbox interface the dialog uses ------------------------------
+
+    def configure(self, cnf=None, **kw):
+        if "yscrollcommand" in kw:                      # the scrollbar must follow our own drawing
+            self._ysb_command = kw.pop("yscrollcommand")
+            kw["yscrollcommand"] = self._on_yview
+        return super().configure(cnf, **kw)
+
+    config = configure
+
+    def delete(self, first, last=None) -> None:
+        self._rows.clear()
+        self._selected = self._hover = None
+        self._redraw_soon()                 # not now: the rows are usually refilled right away
+
+    def insert(self, _index, *texts: str) -> None:
+        self._rows.extend(texts)
+        self._redraw_soon()
+
+    def size(self) -> int:
+        return len(self._rows)
+
+    def get(self, first, last=None):
+        return tuple(self._rows)
+
+    def selection_set(self, index: int) -> None:
+        self._selected = index
+        self._redraw_soon()
+
+    def selection_clear(self, first=None, last=None) -> None:
+        self._selected = None
+        self._redraw_soon()
+
+    def curselection(self) -> tuple[int, ...]:
+        return () if self._selected is None else (self._selected,)
+
+    def see(self, index: int) -> None:
+        top, bottom = index * self._step, index * self._step + self._row_h
+        height = self.winfo_height()
+        if height <= 1:
+            return
+        view_top = self.canvasy(0)
+        if top < view_top:
+            self.yview_moveto(top / max(1, self._total_height()))
+        elif bottom > view_top + height:
+            self.yview_moveto((bottom - height) / max(1, self._total_height()))
+
+    # -- layout and drawing ----------------------------------------------------
+
+    @property
+    def _step(self) -> int:
+        return self._row_h + self._gap
+
+    def _total_height(self) -> int:
+        return max(0, len(self._rows) * self._step - self._gap)
+
+    def row_box(self, index: int) -> tuple[int, int, int, int]:
+        """(x, y, width, height) of a row in widget coordinates (y follows the scroll position)."""
+        return 0, int(index * self._step - self.canvasy(0)), self.winfo_width(), self._row_h
+
+    def _row_at(self, event_y: int) -> int | None:
+        y = self.canvasy(event_y)
+        i = int(y // self._step)
+        return i if 0 <= i < len(self._rows) and y - i * self._step < self._row_h else None   # not in a gap
+
+    def _on_yview(self, first, last) -> None:
+        if self._ysb_command is not None:
+            self._ysb_command(first, last)
+
+    def _round_rect(self, x1, y1, x2, y2, fill) -> None:
+        r = max(0, min(self._radius, (x2 - x1) // 2, (y2 - y1) // 2))
+        pts = [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
+               x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
+        self.create_polygon(pts, smooth=True, fill=fill, outline="")
+
+    def _redraw_soon(self) -> None:
+        """Redraw once, after whatever is changing the rows is done — so a rebuild (delete, insert,
+        select) never paints the empty or half-filled list in between, and the scroll position
+        isn't touched until the final rows are known."""
+        if self._redraw_job is None:
+            self._redraw_job = self.after_idle(self._redraw)
+
+    def _redraw(self) -> None:
+        if self._redraw_job is not None:
+            try:
+                self.after_cancel(self._redraw_job)
+            except tk.TclError:
+                pass
+            self._redraw_job = None
+        tk.Canvas.delete(self, "all")
+        width, height = self.winfo_width(), self.winfo_height()
+        total = self._total_height()
+        self.configure(scrollregion=(0, 0, max(1, width), max(total, height)))
+        if total <= height:
+            self.yview_moveto(0)
+        if not self._rows or height <= 1:
+            return
+        top = self.canvasy(0)
+        first = max(0, int(top // self._step))
+        last = min(len(self._rows) - 1, int((top + height) // self._step))
+        for i in range(first, last + 1):
+            y = i * self._step
+            fill = self._sel_bg if i == self._selected else self._hover_bg if i == self._hover else None
+            if fill:
+                self._round_rect(0, y, width, y + self._row_h, fill)
+            self.create_text(self._pad_x, y + self._row_h // 2, anchor="w", text=self._rows[i],
+                             fill=self._fg, font=self._font)
+
+    def _set_hover(self, index: int | None) -> None:
+        if index != self._hover:
+            self._hover = index
+            tk.Canvas.configure(self, cursor="hand2" if index is not None else "")
+            self._redraw()
+
+    def _on_motion(self, event) -> None:
+        self._set_hover(self._row_at(event.y))
+
+    def _on_click(self, event) -> None:
+        index = self._row_at(event.y)
+        if index is not None:
+            self._selected = index
+            self._redraw()
+            self.event_generate("<<ListboxSelect>>")
+
+    def _on_wheel(self, event) -> str:
+        if self._total_height() > self.winfo_height():
+            num = getattr(event, "num", 0)
+            step = -1 if num == 4 else 1 if num == 5 else (-1 if event.delta > 0 else 1)
+            self.yview_scroll(step * 2, "units")
+            self._redraw()
+            self._set_hover(self._row_at(event.y))
+        return "break"
+
+    def yview_scroll(self, number, what) -> None:          # the scrollbar and the wheel both come here
+        if what == "units":
+            self.yview_moveto((self.canvasy(0) + number * self._step) / max(1, self._total_height()))
+        else:
+            super().yview_scroll(number, what)
+        self._redraw()
+
+    def yview(self, *args):
+        result = super().yview(*args)
+        if args:
+            self._redraw()
+        return result
+
+
+# ---------------------------------------------------------------------------
 # The sentences the dialog shows
 # ---------------------------------------------------------------------------
 
@@ -443,40 +624,19 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
     list_frame.grid(row=4, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
     list_frame.grid_columnconfigure(0, weight=1)
     list_frame.grid_rowconfigure(0, weight=1)
-    # the list uses the same font as the "All ..." / "No ..." buttons above it (a CTkButton's default,
-    # pixel-sized and scaled like any CTk widget)
+    # the list looks like the buttons above it: their font, height, corner radius and gap
     btn_font = all_btn.cget("font")
     scaling = ctk.ScalingTracker.get_widget_scaling(all_btn)
     f_side = tkfont.Font(root=root, family=btn_font.cget("family"),
                          size=-max(1, round(abs(btn_font.cget("size")) * scaling)))
-    series_box = tk.Listbox(list_frame, bg=pal["side"], fg=pal["text"], selectbackground=pal["sel"],
-                            selectforeground=pal["text"], highlightthickness=0, borderwidth=0,
-                            activestyle="none", exportselection=False, font=f_side)
+    series_box = SideList(list_frame, bg=pal["side"], fg=pal["text"], sel_bg=pal["sel"], hover_bg=pal["hover"],
+                          font=f_side, row_h=round(all_btn.cget("height") * scaling), gap=round(2 * scaling),
+                          radius=round(all_btn.cget("corner_radius") * scaling), pad_x=round(12 * scaling))
     series_box.grid(row=0, column=0, sticky="nsew")
     series_sb = ctk.CTkScrollbar(list_frame, command=series_box.yview)
     series_sb.grid(row=0, column=1, sticky="ns")
     series_box.configure(yscrollcommand=series_sb.set)
     series_names: list[str] = []                   # what each row of series_box stands for
-    hover_row: dict = {"idx": None}                # the series row under the pointer (highlighted)
-
-    def set_hover(idx: int | None) -> None:
-        old = hover_row["idx"]
-        if old == idx:
-            return
-        if old is not None and old < series_box.size():
-            series_box.itemconfigure(old, background=pal["side"])
-        if idx is not None and idx < series_box.size():
-            series_box.itemconfigure(idx, background=pal["hover"])
-        hover_row["idx"] = idx
-        series_box.configure(cursor="hand2" if idx is not None else "")
-
-    def on_series_motion(event) -> None:
-        i = series_box.nearest(event.y)
-        box = series_box.bbox(i) if i >= 0 else None          # below the last row nearest() still answers
-        set_hover(i if box is not None and box[1] <= event.y < box[1] + box[3] else None)
-
-    series_box.bind("<Motion>", on_series_motion)
-    series_box.bind("<Leave>", lambda _e: set_hover(None))
 
     # main area: toolbar + gallery
     main = ctk.CTkFrame(body, fg_color="transparent")
@@ -752,7 +912,6 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
         untagged_btn.configure(fg_color=pair("sel") if model.mode == VIEW_UNTAGGED else "transparent")
         entries = model.series_list(series_filter_entry.get())
         series_names[:] = [name for name, _n in entries]
-        hover_row["idx"] = None                    # the rows are rebuilt
         series_box.delete(0, "end")
         for name, n in entries:
             series_box.insert("end", f"{name}   ({n})")
