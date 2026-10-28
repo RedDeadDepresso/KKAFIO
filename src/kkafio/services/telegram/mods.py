@@ -8,7 +8,7 @@ from pathlib import Path
 from kkafio.cards.mods import guid_from_zipmod
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.services.telegram_links import parse_tme_link
+from kkafio.services.telegram.links import parse_tme_link
 
 
 async def _retry_flood_wait(coro_fn, *args, context: str, max_wait: int = 300, **kwargs):

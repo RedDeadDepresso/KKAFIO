@@ -88,7 +88,7 @@ from kkafio.services.content_sources.pixiv import (
     download_pixiv,
     is_pixiv_url,
 )
-from kkafio.services.pawchive_session import USER_AGENT as PAWCHIVE_USER_AGENT
+from kkafio.services.sessions.pawchive import USER_AGENT as PAWCHIVE_USER_AGENT
 from kkafio.tasks.base_task import BaseTask, open_in_default_app
 
 if TYPE_CHECKING:
@@ -385,7 +385,7 @@ class DownloadContents(BaseTask):
         expired. None when no link needs it or the prompt is cancelled."""
         if not any(KOIKATSU_URL in url_str for url_str, *_ in urls):
             return None
-        import kkafio.services.kkd_session as _kkd
+        import kkafio.services.sessions.kkd as _kkd
         kkd_session = _kkd.get_or_prompt()
         if not kkd_session:
             logger.warning("DLOAD",
@@ -398,7 +398,7 @@ class DownloadContents(BaseTask):
         are reachable, so cancelling the dialog is not fatal."""
         if not any(is_pixiv_url(url_str) for url_str, *_ in urls):
             return None
-        import kkafio.services.pixiv_session as _pxv
+        import kkafio.services.sessions.pixiv as _pxv
         return _pxv.get_or_prompt()
 
     # -- the run -------------------------------------------------------------

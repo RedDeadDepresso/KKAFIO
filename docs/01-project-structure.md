@@ -83,27 +83,30 @@ KKAFIO-dev/
 │   │   ├── similarity.py            # pHash + leader clustering for cover comparison
 │   │   └── scene_version.py
 │   │
-│   ├── indices/                     # Remote lookup indices: downloaded on demand, cached in CONFIG_DIR, "no help" when unavailable
+│   ├── indices/                     # Lookup indices (downloaded on demand and cached in CONFIG_DIR, or shipped in assets/); "no help" when unavailable
 │   │   ├── chara.py                 # Character lookup for Group / Rename Characters: gacha first, then AGV
 │   │   ├── gacha.py                 # Gacha-game character index (format: doc 06)
 │   │   ├── agv.py                   # Anime / visual novel / game character + series index (Bangumi Archive)
 │   │   ├── text.py                  # Text normalisation helpers for the two character indices
 │   │   ├── scene.py                 # pepper-scene-index: scene hash -> author / year (Group Scenes)
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
-│   │   └── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
+│   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
+│   │   └── authors.py               # Known scene authors and their aliases (assets/data/authors.json), for Group Scenes' Manual mode
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
-│   │   ├── kkd_session.py           # koikatsucards.com session cookie management
-│   │   ├── pixiv_session.py         # pixiv.net PHPSESSID cookie management
-│   │   ├── pawchive_session.py      # pawchive.pw session cookie management (t1 files only)
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
 │   │   │   ├── net.py / history.py / transfer.py   # Shared: retry + HTTP client, download history, streaming downloads and paged listings
 │   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
 │   │   │   ├── bepis.py  koikatsu.py  pixiv.py  gofile.py  mega.py  gdrive.py   # One module per site
 │   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session) · files · posts · downloader
-│   │   ├── telegram_config.py       # Telegram API credential storage
-│   │   ├── telegram_links.py        # Parsing Telegram links / the chat list (pure string handling)
-│   │   ├── telegram_mods.py         # Searching Telegram chats and downloading mods (teleget)
+│   │   ├── sessions/                # Cookie stores for the sites Download Contents logs in to
+│   │   │   ├── kkd.py               # koikatsucards.com session cookie management
+│   │   │   ├── pixiv.py             # pixiv.net PHPSESSID cookie management
+│   │   │   └── pawchive.py          # pawchive.pw session cookie management (t1 files only)
+│   │   ├── telegram/                # Telegram support for Download Missing Mods
+│   │   │   ├── config.py            # Telegram API credential storage
+│   │   │   ├── links.py             # Parsing Telegram links / the chat list (pure string handling)
+│   │   │   └── mods.py              # Searching Telegram chats and downloading mods (teleget)
 │   │   └── betterrepack.py          # BetterRepack downloads + the shared HTTP client for Download Missing Mods
 │   │
 │   ├── dialogs/                     # CustomTkinter dialogs (run in-process, block the calling thread)
@@ -205,8 +208,8 @@ in the subpackage that fits it:
 |---|---|
 | `core/` | configuration, logging, paths, or generic file operations |
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
-| `services/` | tied to an external account, credential store or remote mod source (BetterRepack, Telegram, koikatsucards.com) |
-| `indices/` | a remote lookup index that is downloaded on demand and cached (characters, scenes, archive passwords, kkc mods) |
+| `services/` | tied to an external account, credential store or remote mod source (site sessions, Telegram, BetterRepack, the Download Contents sites) |
+| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, kkc mods), or a shipped one (scene authors) |
 | `dialogs/` | a CustomTkinter window the user interacts with (prompts, galleries, review screens) |
 | `system/` | an OS-facing helper (job objects, subprocess quirks, MXU automation, context-menu batching) |
 

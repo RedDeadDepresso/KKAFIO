@@ -1,4 +1,4 @@
-"""scene_authors.py — The known scene authors (assets/data/authors.json), for Group Scenes' Manual mode.
+"""authors.py — The known scene authors (assets/data/authors.json), for Group Scenes' Manual mode.
 
 The file is {"version": 1, "updated": "...", "authors": [{"name": "...", "alias": ["...", ...]}, ...]}:
 the name is the folder an author's scenes are grouped under, the aliases are other names the author

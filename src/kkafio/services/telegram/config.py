@@ -1,5 +1,5 @@
 """
-telegram_config.py — Load and save Telegram API credentials.
+config.py — Load and save Telegram API credentials.
 
 Credentials are stored in %APPDATA%/KKAFIO/config/telegram.json:
   {

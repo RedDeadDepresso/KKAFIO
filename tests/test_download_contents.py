@@ -184,7 +184,7 @@ def test_pixiv_cookie_is_scoped_to_pixiv_only():
 
 
 def test_pixiv_session_cleaning_and_shape():
-    from kkafio.services import pixiv_session as ps
+    from kkafio.services.sessions import pixiv as ps
     good = "12345678_AbCdEf0123456789AbCdEf0123456789"
     assert ps.looks_valid(good)
     assert ps.clean_session(f"PHPSESSID={good}; path=/") == good
@@ -1884,7 +1884,7 @@ def test_pawchive_auth_scopes_the_cookie_to_pawchive():
 
 
 def test_pawchive_session_cleaning_and_shape():
-    from kkafio.services import pawchive_session as ps
+    from kkafio.services.sessions import pawchive as ps
     tok = "eyJhbGciOiJIUzI1NiJ9.abc-DEF_123.sig456"
     assert ps.looks_valid(tok) and not ps.looks_valid("") and not ps.looks_valid("short")
     assert not ps.looks_valid("has space in it, not a token")
@@ -1897,7 +1897,7 @@ def test_pawchive_session_cleaning_and_shape():
 
 
 def test_pawchive_session_get_or_prompt(monkeypatch):
-    from kkafio.services import pawchive_session as ps
+    from kkafio.services.sessions import pawchive as ps
     tok, new = "eyJ" + "a" * 30, "eyJ" + "n" * 30
     saved: list[str] = []
     prompts: list[int] = []
@@ -1941,7 +1941,7 @@ def test_pawchive_session_get_or_prompt(monkeypatch):
 
 def test_pawchive_session_validation_status_mapping(monkeypatch):
     import httpx
-    from kkafio.services import pawchive_session as ps
+    from kkafio.services.sessions import pawchive as ps
     seen: dict = {}
 
     def fake_get(status):

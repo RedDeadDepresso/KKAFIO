@@ -35,7 +35,7 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
-import kkafio.services.telegram_config as tg_cfg
+import kkafio.services.telegram.config as tg_cfg
 
 from kkafio.cards.mods import build_mods_cache, load_modpack_index
 from kkafio.cards.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
@@ -43,12 +43,12 @@ from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.indices.kkc_mod import load_kkc_mod_index
 from kkafio.services.betterrepack import download_betterrepack, make_http_client
-from kkafio.services.telegram_links import (
+from kkafio.services.telegram.links import (
     parse_chat_links,
     telegram_sources_label,
     DEFAULT_TELEGRAM_CHAT_LINKS,
 )
-from kkafio.services.telegram_mods import (
+from kkafio.services.telegram.mods import (
     download_via_teleget,
     ensure_session,
     search_chat_links_and_download,

@@ -20,7 +20,7 @@ from kkafio.cards.cache_io import file_fp
 from kkafio.core.errors import InputError, TaskFailedError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.services.scene_authors import canonical_name, load_authors, suggest_authors
+from kkafio.indices.authors import canonical_name, load_authors, suggest_authors
 from kkafio.indices.scene import load_scene_index
 from kkafio.tasks.base_task import BaseTask
 from kkafio.tasks.filter_duplicate_contents import (
@@ -91,7 +91,7 @@ def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str]
                      max_suggestions: int = 8):
     """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the author
     folders that exist and grows as folders are created; `authors` are the known authors (see
-    scene_authors). Every move `assign` makes is recorded in `moves` ({old path: new path}) so the
+    indices/authors). Every move `assign` makes is recorded in `moves` ({old path: new path}) so the
     caller can bring the hash cache along."""
 
     def suggest(text: str) -> list[str]:
