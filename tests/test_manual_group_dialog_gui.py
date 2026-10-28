@@ -736,3 +736,17 @@ def test_the_gallery_always_opens_on_the_untagged_tab(tmp_path, monkeypatch):
         assert len(texts(cv, "Unknown series")) == 4 and texts(cv, "Rin")
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
+
+
+def test_the_series_list_uses_the_font_of_the_sidebar_buttons(tmp_path, monkeypatch):
+    from tkinter import font as tkfont
+    items = make_items(tmp_path, 3, tagged={0: "Rin"})
+
+    def script(root):
+        box = next(w for w in walk(root) if w.__class__.__name__ == "Listbox")
+        btn = button(root, "All").cget("font")
+        want = tkfont.Font(root=root, font=button(root, "All")._apply_font_scaling(btn))
+        got = tkfont.Font(root=root, font=box.cget("font"))
+        assert got.actual("family") == want.actual("family") and got.actual("size") == want.actual("size")
+
+    assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0

@@ -443,9 +443,15 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
     list_frame.grid(row=4, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
     list_frame.grid_columnconfigure(0, weight=1)
     list_frame.grid_rowconfigure(0, weight=1)
+    # the list uses the same font as the "All ..." / "No ..." buttons above it (a CTkButton's default,
+    # pixel-sized and scaled like any CTk widget)
+    btn_font = all_btn.cget("font")
+    scaling = ctk.ScalingTracker.get_widget_scaling(all_btn)
+    f_side = tkfont.Font(root=root, family=btn_font.cget("family"),
+                         size=-max(1, round(abs(btn_font.cget("size")) * scaling)))
     series_box = tk.Listbox(list_frame, bg=pal["side"], fg=pal["text"], selectbackground=pal["sel"],
                             selectforeground=pal["text"], highlightthickness=0, borderwidth=0,
-                            activestyle="none", exportselection=False, font=f_small)
+                            activestyle="none", exportselection=False, font=f_side)
     series_box.grid(row=0, column=0, sticky="nsew")
     series_sb = ctk.CTkScrollbar(list_frame, command=series_box.yview)
     series_sb.grid(row=0, column=1, sticky="ns")
