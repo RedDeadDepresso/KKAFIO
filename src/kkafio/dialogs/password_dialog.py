@@ -1,7 +1,7 @@
 """
 password_dialog.py — Show a native-looking input prompt (masked by default).
 
-On Windows uses a CustomTkinter window (see dialog_common.py for the shared
+On Windows uses a CustomTkinter window (see common.py for the shared
 always-on-top / foreground / centering behaviour). It runs in-process and blocks
 the calling thread until the user answers, so it disappears automatically if
 this process is killed — no child process or Job Object is involved.
@@ -11,7 +11,7 @@ On macOS/Linux falls back to a terminal prompt.
 import sys
 
 from kkafio.core.i18n import t
-from kkafio.system.dialog_common import new_window, show_and_wait
+from kkafio.dialogs.common import new_window, show_and_wait
 
 
 def password_dialog(title: str, content: str, mask: bool = True) -> str:

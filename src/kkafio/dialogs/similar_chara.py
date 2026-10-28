@@ -1,5 +1,5 @@
 """
-similar_chara_dialog.py — The review dialog of Review Similar Characters.
+similar_chara.py — The review dialog of Review Similar Characters.
 
 Shows groups of character cards that look like the same character saved more
 than once. For every card there is a lock, a checkbox ("remove this one"), a
@@ -21,7 +21,7 @@ How the lock works (one lock per group, in the group's header):
 dialog was closed without trashing). The dialog itself never deletes anything.
 
 The selection logic lives in `ReviewState`, which has no GUI dependency; the
-CustomTkinter window (see dialog_common.py for the shared window behaviour)
+CustomTkinter window (see common.py for the shared window behaviour)
 is built inside `_ctk_dialog()`.
 """
 
@@ -40,7 +40,7 @@ from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
-from kkafio.system.dialog_common import new_window, show_and_wait
+from kkafio.dialogs.common import new_window, show_and_wait
 
 
 # ---------------------------------------------------------------------------

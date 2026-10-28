@@ -10,7 +10,7 @@ from unittest import mock
 import pytest
 from PIL import Image
 
-from kkafio.system.similar_chara_dialog import (
+from kkafio.dialogs.similar_chara import (
     ReviewGroup, ReviewState, fit_image, format_size, is_plain_key, reveal_command,
 )
 from kkafio.tasks import review_similar_chara as rsc
@@ -354,7 +354,7 @@ def test_selected_cards_are_handed_to_delete_cards_with_this_tasks_options(tmp_p
         return [tmp_path / "Rin_1.png", tmp_path / "Rin_2.png"]
 
     delete_cards = mock.Mock()
-    with mock.patch("kkafio.system.similar_chara_dialog.review_dialog", fake_dialog), \
+    with mock.patch("kkafio.dialogs.similar_chara.review_dialog", fake_dialog), \
          mock.patch("kkafio.tasks.delete_cards.DeleteCards", delete_cards):
         _task(tmp_path, Mode=rsc.MODE_FILENAME, CheckSharedMods=True, ModsDir="/my/mods").run()
 
@@ -370,7 +370,7 @@ def test_nothing_is_deleted_when_the_dialog_returns_nothing_or_nothing_matches(t
     for name in ("Rin.png", "Rin_1.png"):
         _card(tmp_path / name)
     delete_cards = mock.Mock()
-    with mock.patch("kkafio.system.similar_chara_dialog.review_dialog", return_value=[]), \
+    with mock.patch("kkafio.dialogs.similar_chara.review_dialog", return_value=[]), \
          mock.patch("kkafio.tasks.delete_cards.DeleteCards", delete_cards):
         _task(tmp_path, Mode=rsc.MODE_FILENAME).run()
     delete_cards.assert_not_called()
@@ -378,7 +378,7 @@ def test_nothing_is_deleted_when_the_dialog_returns_nothing_or_nothing_matches(t
     only = tmp_path / "only"
     _card(only / "Solo.png")
     dialog = mock.Mock()
-    with mock.patch("kkafio.system.similar_chara_dialog.review_dialog", dialog):
+    with mock.patch("kkafio.dialogs.similar_chara.review_dialog", dialog):
         _task(only, Mode=rsc.MODE_FILENAME).run()
     dialog.assert_not_called()                           # no groups -> no dialog
 

@@ -1,5 +1,5 @@
 """
-manual_group_dialog.py — The gallery dialog of the Manual modes (Group Characters, Group Coordinates).
+manual_group.py — The gallery dialog of the Manual modes (Group Characters, Group Coordinates).
 
 A library-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
 folders that exist) and a grid of character covers. Under every cover is the character's name and
@@ -13,7 +13,7 @@ canvas), so the grid is drawn on one plain Tk canvas and only the tiles in view 
 just draws the tiles that come into view, and covers are decoded on worker threads.
 
 `GalleryModel` (what is shown: view, search, sort) has no GUI dependency; the window is built in
-`_ctk_dialog()` (see dialog_common.py for the shared window behaviour).
+`_ctk_dialog()` (see common.py for the shared window behaviour).
 
 The dialog doesn't know what a "series" is: a card's `series` is just the folder it sits in under
 `CharaItem.root`, and every sentence that names things (the sidebar buttons, the status line, the
@@ -36,8 +36,8 @@ from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
-from kkafio.system.dialog_common import maximize, new_window, show_and_wait
-from kkafio.system.similar_chara_dialog import format_size
+from kkafio.dialogs.common import maximize, new_window, show_and_wait
+from kkafio.dialogs.similar_chara import format_size
 
 
 # ---------------------------------------------------------------------------

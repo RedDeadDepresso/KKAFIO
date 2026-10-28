@@ -14,7 +14,7 @@ from kkafio.indices import agv
 from kkafio.indices.text import norm
 from kkafio.cards.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
-from kkafio.system.manual_group_dialog import (
+from kkafio.dialogs.manual_group import (
     SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
 from kkafio.tasks import group_chara
 
@@ -298,7 +298,7 @@ def test_run_manual_opens_the_gallery_and_saves_the_cache(tmp_path):
     with manual_fakes(), \
          mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
          mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
-         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", fake_dialog):
+         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
         task.run()
     assert shown["names"] == ["Rin"] and shown["moved"][1] == "Fate"
     assert (tmp_path / "Fate" / "a.png").exists()
@@ -312,14 +312,14 @@ def test_run_manual_with_no_cards_does_not_open_the_gallery(tmp_path):
     with manual_fakes(), \
          mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
          mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
-         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", lambda *a: opened.append(a)):
+         mock.patch("kkafio.dialogs.manual_group.manual_dialog", lambda *a: opened.append(a)):
         task.run()
     assert opened == []
 
 
 def test_round_corners_and_polygon_points():
     from PIL import Image
-    from kkafio.system.manual_group_dialog import round_corners, rounded_rect_points
+    from kkafio.dialogs.manual_group import round_corners, rounded_rect_points
     out = round_corners(Image.new("RGB", (60, 80), (200, 10, 10)), 12)
     assert out.mode == "RGBA" and out.size == (60, 80)
     assert out.getpixel((0, 0))[3] == 0 and out.getpixel((59, 79))[3] == 0     # corners cut away
@@ -341,14 +341,14 @@ def test_manual_mode_always_includes_subfolders(tmp_path):
     with manual_fakes(), \
          mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
          mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
-         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", fake_dialog):
+         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
         task.run()
     assert seen["items"] == [("Rin", None), ("Saber", "Fate")]
 
 
 def test_maximize_uses_zoomed_state_then_the_x11_attribute():
     import tkinter as tk
-    from kkafio.system.dialog_common import maximize
+    from kkafio.dialogs.common import maximize
 
     class Win:
         def __init__(self, zoomed_ok):

@@ -88,7 +88,7 @@ downloading from koikatsucards.com (not by Download Missing Mods, which
 uses the KKC mod index above). Validated against
 `koikatsucards.com/api/session` before each use; if invalid, the user is
 prompted to paste a fresh cookie via a native dialog
-(`src/kkafio/system/password_dialog.py`) and the file is overwritten.
+(`src/kkafio/dialogs/password_dialog.py`) and the file is overwritten.
 
 ### Gofile environment variables
 

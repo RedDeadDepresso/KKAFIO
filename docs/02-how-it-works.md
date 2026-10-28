@@ -118,11 +118,11 @@ just parsed log text and the process's final exit code.
 
 ## 7. Some tasks pause for human input
 
-`GroupChara`/`RenameChara`'s `.run()` calls `kkafio.system.llm_dialog.llm_dialog()`,
+`GroupChara`/`RenameChara`'s `.run()` calls `kkafio.dialogs.llm.llm_dialog()`,
 which shells out to `powershell.exe` to show a native WinForms
 Copy/Paste dialog and **blocks** until the user closes it or clicks Paste.
 Archive-password and session-cookie prompts work the same way via
-`kkafio.system.password_dialog.password_dialog()`. From the GUI's perspective this
+`kkafio.dialogs.password_dialog.password_dialog()`. From the GUI's perspective this
 just looks like the subprocess going quiet for a while — there's no special
 handling on the GUI side for "a task is waiting on a dialog"; the dialog
 itself is a separate OS-level window, not something rendered inside MXU.

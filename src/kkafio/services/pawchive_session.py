@@ -37,7 +37,7 @@ import httpx
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.core.paths import CONFIG_DIR
-from kkafio.system.password_dialog import password_dialog
+from kkafio.dialogs.password_dialog import password_dialog
 
 SESSION_FILE      = CONFIG_DIR / "config" / "pawchive_session.json"
 PAWCHIVE_LOGIN_URL = "https://pawchive.pw/account/login"

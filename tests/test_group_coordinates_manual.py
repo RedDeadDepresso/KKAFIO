@@ -183,7 +183,7 @@ def test_run_manual_opens_the_gallery_and_updates_the_caches(tmp_path):
     with mock.patch.object(gc, "resolve_chara_dirs", return_value=[chara]), \
          mock.patch.object(gc, "build_coord_cache", return_value={str(loose): "k"}), \
          mock.patch.object(gc, "_update_coord_cache") as update, \
-         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", fake_dialog):
+         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
         task.run()
     assert shown["names"] == ["a"]
     assert shown["suggested"] == ["Old Folder", "Rin", "Saber"]    # existing folders + chara filenames
@@ -197,7 +197,7 @@ def test_run_manual_with_no_coordinates_does_not_open_the_gallery(tmp_path):
     task = _task(tmp_path, UseAutomatic=False, UseManual=True)
     with mock.patch.object(gc, "resolve_chara_dirs", return_value=[tmp_path]), \
          mock.patch.object(gc, "build_coord_cache", return_value={}), \
-         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", lambda *a: opened.append(a)):
+         mock.patch("kkafio.dialogs.manual_group.manual_dialog", lambda *a: opened.append(a)):
         task.run()
     assert opened == []
 

@@ -600,7 +600,7 @@ class RenameChara(BaseTask):
 
         prompt_text = prompt.rstrip("\n") + "\n" + json_str
 
-        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+        from kkafio.dialogs.llm import llm_dialog, open_llm_website
         if self.open_llm_website:
             open_llm_website("RENAME", self.llm_website_url)
         response = llm_dialog(t("dialog.llm.rename_title"), prompt_text)

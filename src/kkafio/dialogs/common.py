@@ -1,6 +1,6 @@
 """
-dialog_common.py — Shared helpers for the CustomTkinter dialogs
-(password_dialog.py, llm_dialog.py).
+common.py — Shared helpers for the CustomTkinter dialogs
+(password_dialog.py, llm.py).
 
 Everything here exists to reproduce the window behaviour the old PowerShell
 WinForms dialogs had:

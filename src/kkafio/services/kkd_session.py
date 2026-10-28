@@ -21,7 +21,7 @@ import httpx
 from kkafio.core.i18n import t
 from kkafio.core.paths import CONFIG_DIR
 from kkafio.core.logger import logger
-from kkafio.system.password_dialog import password_dialog
+from kkafio.dialogs.password_dialog import password_dialog
 
 SESSION_FILE   = CONFIG_DIR / "config" / "kkd_session.json"
 SESSION_API    = "https://koikatsucards.com/api/session"

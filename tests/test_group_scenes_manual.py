@@ -163,7 +163,7 @@ def test_manual_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_path):
 
     with mock.patch.object(gs, "load_authors", return_value=AUTHORS), \
          mock.patch.object(gs, "load_scene_index", side_effect=AssertionError("Manual needs no index")), \
-         mock.patch("kkafio.system.manual_group_dialog.manual_dialog", fake_dialog):
+         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
         _task(tmp_path, UseAutomatic=False, UseManual=True).run()
 
     assert shown["items"] == [("s1", None), ("s2", "Bob")]
@@ -177,7 +177,7 @@ def test_manual_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_path):
 def test_manual_with_no_scenes_does_not_open_the_gallery(tmp_path):
     opened = []
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))
-    with mock.patch("kkafio.system.manual_group_dialog.manual_dialog", lambda *a, **k: opened.append(a)):
+    with mock.patch("kkafio.dialogs.manual_group.manual_dialog", lambda *a, **k: opened.append(a)):
         _task(tmp_path, UseAutomatic=False, UseManual=True).run()
     assert opened == []
 

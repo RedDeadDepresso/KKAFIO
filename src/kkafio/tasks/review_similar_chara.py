@@ -35,7 +35,7 @@ from kkafio.cards.similarity import fuzzy_group, phash_of_file
 from kkafio.core.errors import ConfigError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.system.similar_chara_dialog import ReviewGroup
+from kkafio.dialogs.similar_chara import ReviewGroup
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 from kkafio.tasks.filter_duplicate_contents import (
     KEEP_FIRST_LEX, KEEP_LAST_LEX, KEEP_NEWEST, KEEP_NONE, KEEP_OLDEST,
@@ -339,7 +339,7 @@ class ReviewSimilarChara(BaseTask):
         logger.info(TAG, f"{len(groups)} group(s) of similar characters "
                          f"({sum(len(g.paths) for g in groups)} cards) - opening the review dialog...")
 
-        from kkafio.system.similar_chara_dialog import review_dialog
+        from kkafio.dialogs.similar_chara import review_dialog
         selected = review_dialog(t("dialog.review.title"), groups, keep_choices(), select_keep,
                                  self._extra_details)
         if not selected:

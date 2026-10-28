@@ -49,7 +49,7 @@ def author_folder_name(author: str) -> str:
 
 def scene_dialog_text():
     """The words of the gallery when it is sorting scenes into author folders."""
-    from kkafio.system.manual_group_dialog import DialogText
+    from kkafio.dialogs.manual_group import DialogText
     return DialogText(
         search_placeholder=t("dialog.manual_scene.search_placeholder"),
         all=t("dialog.manual_scene.all"),
@@ -309,7 +309,7 @@ class GroupScenes(BaseTask):
 
     def _run_manual(self, folder: Path) -> None:
         """Open the gallery: the user names an author per scene and each card is moved at once."""
-        from kkafio.system.manual_group_dialog import CharaItem, manual_dialog
+        from kkafio.dialogs.manual_group import CharaItem, manual_dialog
 
         logger.line()
         logger.info(TAG, "Manual: reading the scenes")

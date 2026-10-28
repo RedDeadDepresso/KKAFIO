@@ -320,7 +320,7 @@ async def ensure_session(tg_data: dict) -> bool:
         PhoneNumberInvalidError,
         FloodWaitError,
     )
-    from kkafio.system.password_dialog import password_dialog
+    from kkafio.dialogs.password_dialog import password_dialog
     from kkafio.core.paths import CONFIG_DIR
 
     session_dir  = CONFIG_DIR / "config" / "tg_session"

@@ -31,7 +31,7 @@ pieces:
 | `src-tauri/src/commands/kkafio.rs` | Spawns/stops the `kkafio_cli.exe` subprocess, streams its output, runs `Run Game`/`Run Studio`. |
 | `src-tauri/src/commands/state.rs` | The in-memory + on-disk runtime log buffer (`push_log`/`get_all_logs`), used for both live log display and `export_logs`. |
 | `src/utils/useKkafioLogger.ts` | Listens for `kkafio-output` events from Rust and feeds parsed log lines into the app state. |
-| `src/utils/llm_dialog` interactions | None on the GUI side — the Group Chara / Rename Chara Copy/Paste dialog is a **native OS dialog spawned by Python** (`src/kkafio/system/llm_dialog.py`), not a React component. The GUI has no code for it at all. |
+| `src/utils/llm_dialog` interactions | None on the GUI side — the Group Chara / Rename Chara Copy/Paste dialog is a **native OS dialog spawned by Python** (`src/kkafio/dialogs/llm.py`), not a React component. The GUI has no code for it at all. |
 
 Everything else — how an option of type `folder`/`switch`/`checkbox`/etc.
 gets rendered and stored — is generic MXU code, unaware it's editing KKAFIO

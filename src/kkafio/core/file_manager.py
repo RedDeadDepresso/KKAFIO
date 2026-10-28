@@ -550,7 +550,7 @@ class FileManager:
         # Failed — may need a password
         text = t("dialog.password.archive_body", archive=archive_name)
 
-        from kkafio.system.password_dialog import password_dialog
+        from kkafio.dialogs.password_dialog import password_dialog
 
         while True:
             password = password_dialog(t("dialog.password.archive_title"), text)

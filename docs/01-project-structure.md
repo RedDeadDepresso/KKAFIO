@@ -106,12 +106,16 @@ KKAFIO-dev/
 │   │   ├── telegram_mods.py         # Searching Telegram chats and downloading mods (teleget)
 │   │   └── betterrepack.py          # BetterRepack downloads + the shared HTTP client for Download Missing Mods
 │   │
+│   ├── dialogs/                     # CustomTkinter dialogs (run in-process, block the calling thread)
+│   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait
+│   │   ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
+│   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
+│   │   ├── manual_group.py          # Gallery dialog of the Manual modes (Group Characters / Coordinates / Scenes)
+│   │   └── similar_chara.py         # Review dialog (Review Similar Characters)
+│   │
 │   └── system/                      # OS-facing helpers (mostly Windows)
 │       ├── special_tasks.py         # Generic MXU automation primitives (sleep/notify/launch/power/etc.)
 │       ├── subprocess_utils.py      # Windows-console-encoding-safe subprocess.run/Popen wrappers
-│       ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
-│       ├── llm_dialog.py            # Copy/Paste dialog (Group Chara / Rename Chara)
-│       ├── similar_chara_dialog.py  # Review dialog (Review Similar Characters)
 │       └── context_menu_batch.py    # Coalesces multi-select Explorer context-menu invocations
 │
 ├── docs/                            # You are here
@@ -131,7 +135,7 @@ Every entry in the `src/kkafio/tasks/` folder maps 1:1 to a task declared in
 - **A pair of module-level functions**, `export()` + `process()` — used by
   `group_chara.py` and `rename_chara.py` in addition to their `GroupChara`/
   `RenameChara` classes, because the LLM round-trip dialog (see
-  [`llm_dialog.py`](../src/kkafio/system/llm_dialog.py)) needs to build a prompt, hand
+  [`llm.py`](../src/kkafio/dialogs/llm.py)) needs to build a prompt, hand
   control to the user, and then process whatever they paste back — the
   class's `run()` just calls both in sequence.
 
@@ -202,7 +206,9 @@ in the subpackage that fits it:
 | `core/` | configuration, logging, paths, or generic file operations |
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
 | `services/` | tied to an external account, credential store or remote mod source (BetterRepack, Telegram, koikatsucards.com) |
-| `system/` | an OS-facing helper (dialogs, job objects, subprocess quirks, MXU automation) |
+| `indices/` | a remote lookup index that is downloaded on demand and cached (characters, scenes, archive passwords, kkc mods) |
+| `dialogs/` | a CustomTkinter window the user interacts with (prompts, galleries, review screens) |
+| `system/` | an OS-facing helper (job objects, subprocess quirks, MXU automation, context-menu batching) |
 
 Task modules should mostly be: read config → validate input → call into the
 shared subpackages → log results.

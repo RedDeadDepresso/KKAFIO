@@ -1,7 +1,7 @@
 import os, signal, sys, threading, time
 sys.path.insert(0, "/home/claude/k/KKAFIO-refactor/src")
 import tkinter as tk
-from kkafio.system import dialog_common, password_dialog as pd, llm_dialog as ld
+from kkafio.dialogs import common as dialog_common, password_dialog as pd, llm as ld
 
 def drive(module, script):
     """Patch module.show_and_wait so `script(root, info)` runs once the window is up."""

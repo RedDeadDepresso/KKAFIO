@@ -18,8 +18,8 @@ except tk.TclError:
 
 from PIL import Image
 
-from kkafio.system import manual_group_dialog as mgd
-from kkafio.system.dialog_common import show_and_wait as real_show_and_wait
+from kkafio.dialogs import manual_group as mgd
+from kkafio.dialogs.common import show_and_wait as real_show_and_wait
 
 
 # ---------------------------------------------------------------------------

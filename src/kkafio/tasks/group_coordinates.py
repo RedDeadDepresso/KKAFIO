@@ -46,7 +46,7 @@ UNKNOWN_<n> folder. Hair that appears in several folders is ambiguous, so those
 coordinates stay where they are.
 
 Mode: Automatic (the matching described above, on by default) and/or Manual. Manual opens the
-gallery dialog of Group Characters (system/manual_group_dialog.py) with the coordinate cards, where
+gallery dialog of Group Characters (dialogs/manual_group.py) with the coordinate cards, where
 each coordinate gets a character by hand: the sidebar lists the coordinate folders (the characters'
 filenames) instead of series, and typing a name suggests the filenames, without ".png", of the
 characters in the chara folder(s). A confirmed coordinate is moved to <coordinate folder>/<name>/ at
@@ -530,7 +530,7 @@ def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
 
 def coordinate_dialog_text():
     """The words of the gallery when it is sorting coordinates into character folders."""
-    from kkafio.system.manual_group_dialog import DialogText
+    from kkafio.dialogs.manual_group import DialogText
     return DialogText(
         search_placeholder=t("dialog.manual_coord.search_placeholder"),
         all=t("dialog.manual_coord.all"),
@@ -581,7 +581,7 @@ def scan_manual_items(coord_dir: Path, use_cache: bool) -> list:
     """The coordinate cards under coord_dir (subfolders included) for the gallery, as CharaItems:
     named after the file, in the folder directly under coord_dir that holds it (None: directly
     in coord_dir)."""
-    from kkafio.system.manual_group_dialog import CharaItem
+    from kkafio.dialogs.manual_group import CharaItem
 
     items = []
     for sp, key in sorted(build_coord_cache(coord_dir, use_cache=use_cache).items()):
@@ -972,7 +972,7 @@ class GroupCoordinates(BaseTask):
 
     def _run_manual(self, chara_dirs: list[Path], coord_dir: Path) -> None:
         """Open the gallery: the user names a character per coordinate and each card is moved at once."""
-        from kkafio.system.manual_group_dialog import manual_dialog
+        from kkafio.dialogs.manual_group import manual_dialog
 
         logger.line()
         logger.info(TAG, "Manual: reading the coordinate cards")

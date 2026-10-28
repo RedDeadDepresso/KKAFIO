@@ -19,7 +19,7 @@ import webbrowser
 from kkafio.core.i18n import t
 from kkafio.core.paths import TELEGRAM_CONFIG
 from kkafio.core.logger import logger
-from kkafio.system.password_dialog import password_dialog
+from kkafio.dialogs.password_dialog import password_dialog
 
 
 def load() -> dict:

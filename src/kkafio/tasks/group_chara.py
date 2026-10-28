@@ -2,7 +2,7 @@
 group_chara.py — Group character cards into folders by series, with an LLM and/or by hand.
 
 Two modes (the "Mode" option; both can be on): LLM runs the workflow below; Manual opens a
-gallery dialog (src/kkafio/system/manual_group_dialog.py) where the user types each character's
+gallery dialog (src/kkafio/dialogs/manual_group.py) where the user types each character's
 series, with suggestions from the anime, games, vtubers index and the series folders that already
 exist; a confirmed card is moved into <chara_folder>/<series>/ at once. With both on, the LLM
 goes first and the gallery then opens for whatever it left without a series.
@@ -15,7 +15,7 @@ Workflow (all handled inside run()):
 1. export() scans the folder for KK chara PNGs and builds a JSON dict
    {key: ""} where key encodes lastname + firstname + nickname + personality + hair colour. With the
    default (game) chara folders, both female/ and male/ are scanned.
-2. run() shows a native Copy/Paste dialog (src/kkafio/system/llm_dialog.py) with the
+2. run() shows a native Copy/Paste dialog (src/kkafio/dialogs/llm.py) with the
    prompt + JSON. The user copies it into their LLM, pastes the reply back
    into the dialog, and clicks Paste.
 3. process(folder_path, json_str) takes that JSON response (key → series
@@ -478,7 +478,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
     import os
     from concurrent.futures import ThreadPoolExecutor
     from kkafio.indices.agv import split_key
-    from kkafio.system.manual_group_dialog import CharaItem
+    from kkafio.dialogs.manual_group import CharaItem
 
     found: list[tuple[Path, Path]] = []
     for root in folders:
@@ -645,7 +645,7 @@ class GroupChara(BaseTask):
 
         prompt_text = prompt.rstrip("\n") + "\n" + json_str
 
-        from kkafio.system.llm_dialog import llm_dialog, open_llm_website
+        from kkafio.dialogs.llm import llm_dialog, open_llm_website
         if self.open_llm_website:
             open_llm_website("GROUP", self.llm_website_url)
         response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
@@ -659,7 +659,7 @@ class GroupChara(BaseTask):
 
     def _run_manual(self, folders: list[Path], hint_lang: str | None) -> None:
         """Open the gallery: the user types a series per character and each card is moved at once."""
-        from kkafio.system.manual_group_dialog import manual_dialog
+        from kkafio.dialogs.manual_group import manual_dialog
         if hint_lang:
             from kkafio.indices import agv
             agv.refresh("GROUP")

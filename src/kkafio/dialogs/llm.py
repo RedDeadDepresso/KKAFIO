@@ -1,5 +1,5 @@
 """
-llm_dialog.py — Show a "Copy prompt / Paste LLM response" dialog.
+llm.py — Show a "Copy prompt / Paste LLM response" dialog.
 
 Used by tasks that need a human to relay text through an external LLM
 (GroupChara, RenameChara): the task builds a prompt + JSON blob, shows it in
@@ -8,7 +8,7 @@ the reply, and clicks Paste — which reads the clipboard and returns it to the
 caller so the task can immediately process it (move/rename files) in the same
 run.
 
-On Windows uses a CustomTkinter window (see dialog_common.py for the shared
+On Windows uses a CustomTkinter window (see common.py for the shared
 always-on-top / foreground / centering behaviour). It runs in-process and blocks
 the calling thread until the user answers, so it disappears automatically if
 this process is killed — no child process or Job Object is involved.
@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.system.dialog_common import new_window, show_and_wait
+from kkafio.dialogs.common import new_window, show_and_wait
 
 _COPIED_FEEDBACK_MS = 1500  # how long the Copy button reads "Copied!"
 
