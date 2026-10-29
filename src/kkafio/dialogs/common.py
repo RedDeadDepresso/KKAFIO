@@ -1,9 +1,9 @@
 """
 common.py — Shared helpers for the CustomTkinter dialogs
-(password_dialog.py, llm.py).
+(password_dialog.py, llm.py, similar_chara.py, manual_group.py).
 
-Everything here exists to reproduce the window behaviour the old PowerShell
-WinForms dialogs had:
+Mostly window behaviour, reproducing what the old PowerShell WinForms dialogs
+had (plus `format_size`, a pure helper several dialogs use to label file sizes):
 
 * always on top, centered on the screen;
 * forced to the foreground even when the CLI was launched from a hidden /
@@ -160,3 +160,12 @@ def show_and_wait(root, focus_widget=None, on_shown=None) -> None:
             root.destroy()
         except tk.TclError:
             pass
+
+
+def format_size(num_bytes: int) -> str:
+    size = float(num_bytes)
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{int(size)} B" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"  # unreachable; keeps type checkers happy

@@ -37,7 +37,7 @@ from pathlib import Path
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
-from kkafio.dialogs.similar_chara import format_size
+from kkafio.dialogs.common import format_size
 
 
 # ---------------------------------------------------------------------------

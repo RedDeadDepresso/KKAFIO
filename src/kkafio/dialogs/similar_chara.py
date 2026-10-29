@@ -40,7 +40,7 @@ from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
-from kkafio.dialogs.common import new_window, show_and_wait
+from kkafio.dialogs.common import format_size, new_window, show_and_wait
 
 
 # ---------------------------------------------------------------------------
@@ -148,15 +148,6 @@ DETAILS_MAX = (340, 460)       # the cover in the Details window is scaled to fi
 # putting every card in one scrolling list makes scrolling and restoring the window
 # stutter; a page keeps the live widget count small.
 GROUPS_PER_PAGE = 6
-
-
-def format_size(num_bytes: int) -> str:
-    size = float(num_bytes)
-    for unit in ("B", "KB", "MB", "GB"):
-        if size < 1024 or unit == "GB":
-            return f"{int(size)} B" if unit == "B" else f"{size:.1f} {unit}"
-        size /= 1024
-    return f"{size:.1f} GB"  # unreachable; keeps type checkers happy
 
 
 def format_date(timestamp: float) -> str:

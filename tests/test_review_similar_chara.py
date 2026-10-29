@@ -10,8 +10,9 @@ from unittest import mock
 import pytest
 from PIL import Image
 
+from kkafio.dialogs.common import format_size
 from kkafio.dialogs.similar_chara import (
-    ReviewGroup, ReviewState, fit_image, format_size, is_plain_key, reveal_command,
+    ReviewGroup, ReviewState, fit_image, is_plain_key, reveal_command,
 )
 from kkafio.tasks import review_similar_chara as rsc
 from kkafio.tasks.filter_duplicate_contents import (

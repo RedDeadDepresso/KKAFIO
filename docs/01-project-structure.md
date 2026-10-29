@@ -116,7 +116,7 @@ KKAFIO-dev/
 │   │           └── mods.py          # Searching Telegram chats and downloading mods (teleget)
 │   │
 │   ├── dialogs/                     # CustomTkinter dialogs (run in-process, block the calling thread)
-│   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait
+│   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait · format_size
 │   │   ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
 │   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
 │   │   ├── manual_group.py          # Gallery dialog of the Manual modes (Group Characters / Coordinates / Scenes)
