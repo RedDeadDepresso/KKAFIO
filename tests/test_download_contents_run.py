@@ -37,7 +37,7 @@ def rig(monkeypatch, tmp_path):
     monkeypatch.setattr(history_store, "load_history", lambda: {})
     monkeypatch.setattr(history_store, "save_history", lambda h: saves.append(dict(h)))
 
-    import kkafio.services.content_sources.koikatsu.session as kkd
+    import kkafio.services.content_sources.koikatsucards.session as kkd
     import kkafio.services.content_sources.pixiv.session as pxv
     session = {"kkd": None}
     monkeypatch.setattr(kkd, "get_or_prompt", lambda: session["kkd"])

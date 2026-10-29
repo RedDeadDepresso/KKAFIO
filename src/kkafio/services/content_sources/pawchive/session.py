@@ -17,7 +17,7 @@ Lookup order (same idea as pixiv/session.py):
   3. a dialog asking the user to paste the cookie
 
 A stored or pasted cookie is checked against pawchive.pw/account (like
-koikatsu/session.py checks koikatsucards.com/api/session): a redirect or 401 means
+koikatsucards/session.py checks koikatsucards.com/api/session): a redirect or 401 means
 the session is invalid or expired and a new one is asked for; any other
 answer that is not a clear "yes" (network error, 403, 5xx) is not evidence
 that the cookie is bad, so the cookie is used as it is. Cancelling the dialog

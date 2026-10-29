@@ -71,7 +71,7 @@ from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.bepis import BEPIS_URL, download_bepis
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.gofile import GOFILE_USER_AGENT, download_gofile, is_gofile_url
-from kkafio.services.content_sources.koikatsu import KOIKATSU_URL, download_koikatsu
+from kkafio.services.content_sources.koikatsucards import KOIKATSU_URL, download_koikatsu
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
 from kkafio.services.content_sources.net import make_client
 from kkafio.services.content_sources.pawchive import (
@@ -385,7 +385,7 @@ class DownloadContents(BaseTask):
         expired. None when no link needs it or the prompt is cancelled."""
         if not any(KOIKATSU_URL in url_str for url_str, *_ in urls):
             return None
-        import kkafio.services.content_sources.koikatsu.session as _kkd
+        import kkafio.services.content_sources.koikatsucards.session as _kkd
         kkd_session = _kkd.get_or_prompt()
         if not kkd_session:
             logger.warning("DLOAD",

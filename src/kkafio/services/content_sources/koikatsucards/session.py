@@ -1,5 +1,5 @@
 """
-koikatsu/session.py — Manage the koikatsucards.com kkd_session cookie.
+koikatsucards/session.py — Manage the koikatsucards.com kkd_session cookie.
 
 The session is stored in %APPDATA%/KKAFIO/config/kkd_session.json:
   {

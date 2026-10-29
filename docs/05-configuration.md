@@ -83,7 +83,7 @@ subcommand that needs config, via `--config`/`--instance`).
 { "session": "<kkd_session cookie value>" }
 ```
 
-Written/read by `src/kkafio/services/content_sources/koikatsu/session.py`. Used by **Download Contents** when
+Written/read by `src/kkafio/services/content_sources/koikatsucards/session.py`. Used by **Download Contents** when
 downloading from koikatsucards.com (not by Download Missing Mods, which
 uses the KKC mod index above). Validated against
 `koikatsucards.com/api/session` before each use; if invalid, the user is

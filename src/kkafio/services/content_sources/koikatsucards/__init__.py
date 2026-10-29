@@ -1,6 +1,6 @@
 """koikatsucards.com — card pages (/contents/) and listing pages.
 
-Needs the ``kkd_session`` cookie (see ``kkafio.services.content_sources.koikatsu.session``).
+Needs the ``kkd_session`` cookie (see ``kkafio.services.content_sources.koikatsucards.session``).
 """
 
 from __future__ import annotations
