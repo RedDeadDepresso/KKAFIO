@@ -587,7 +587,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    off_help="Don't group automatically"),
             Toggle("manual", key="UseManual",
                    help="Group by hand: opens a gallery of the scenes where you type each one's author, "
-                        "with the authors of assets/data/authors.json as suggestions; a confirmed scene is "
+                        "with the authors of assets/data/author_index.json as suggestions; a confirmed scene is "
                         "moved into that author's folder at once. With --automatic too, the automatic "
                         "grouping goes first (default: off)",
                    off_help="Don't open the manual gallery"),

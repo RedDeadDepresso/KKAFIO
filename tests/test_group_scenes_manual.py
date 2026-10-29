@@ -9,8 +9,8 @@ from unittest import mock
 import card_factory as cf
 from kkafio.core.config import _build_task_config
 from kkafio.core.paths import ASSETS_DATA_DIR
-from kkafio.indices import authors as sa
-from kkafio.indices.authors import Author
+from kkafio.indices import author as sa
+from kkafio.indices.author import Author
 from kkafio.tasks import group_scenes as gs
 from kkafio.tasks.filter_duplicate_contents import PNG_CACHE_FILE
 

@@ -97,7 +97,7 @@ KKAFIO-dev/
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
 │   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> path inside the modpack
-│   │   └── authors.py               # Known scene authors and their aliases (assets/data/authors.json), for Group Scenes' Manual mode
+│   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for Group Scenes' Manual mode
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)

@@ -1,4 +1,4 @@
-"""authors.py — The known scene authors (assets/data/authors.json), for Group Scenes' Manual mode.
+"""author.py — The known scene authors (assets/data/author_index.json), for Group Scenes' Manual mode.
 
 The file is {"version": 1, "updated": "...", "authors": [{"name": "...", "alias": ["...", ...]}, ...]}:
 the name is the folder an author's scenes are grouped under, the aliases are other names the author
@@ -14,7 +14,7 @@ from pathlib import Path
 from kkafio.core.logger import logger
 from kkafio.core.paths import ASSETS_DATA_DIR
 
-AUTHORS_FILE = "authors.json"
+AUTHORS_FILE = "author_index.json"
 
 TAG = "AUTHORS"
 
