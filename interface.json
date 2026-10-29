@@ -859,7 +859,9 @@
           "name": "tolerance",
           "label": "$option.GroupCoordinatesClothesTolerance.input.tolerance.label",
           "default": "1",
-          "pipeline_type": "string"
+          "pipeline_type": "int",
+          "verify": "^\\d+$",
+          "pattern_msg": "$option.GroupCoordinatesClothesTolerance.input.tolerance.pattern_msg"
         }
       ],
       "pipeline_override": {

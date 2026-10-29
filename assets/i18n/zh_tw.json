@@ -162,6 +162,7 @@
   "option.GroupCoordinatesClothesTolerance.label": "服裝容差",
   "option.GroupCoordinatesClothesTolerance.description": "如果服裝卡與角色卡中的某套服裝相比，服裝部件（上衣、下身、手套、連褲襪等）的差異（物品或顏色）不超過此數量，也會移動該服裝卡。可與忽略配飾同時使用。1（預設）表示允許一個服裝部件不同，0 表示服裝必須完全相同。建議使用較小的值（1-2）：值過大可能會比對到實際上是不同服裝的服裝卡。",
   "option.GroupCoordinatesClothesTolerance.input.tolerance.label": "允許不同的服裝部件數量",
+  "option.GroupCoordinatesClothesTolerance.input.tolerance.pattern_msg": "請輸入整數（0 或更大）。",
   "option.DeleteEmptyFolders.label": "刪除空資料夾",
   "option.DeleteEmptyFolders.description": "取消分組後移除空的子資料夾",
   "option.DeleteEmptyFolders.case.Yes.label": "刪除",

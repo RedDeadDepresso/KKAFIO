@@ -162,6 +162,7 @@
   "option.GroupCoordinatesClothesTolerance.label": "Clothes Tolerance",
   "option.GroupCoordinatesClothesTolerance.description": "Also move a coordinate that differs from one of a character's outfits in up to this many clothes parts (top, bottom, gloves, pantyhose...), whether in item or colours. Works together with Ignore Accessories. 1 (default) allows one clothes part to differ; 0 requires identical clothes. Keep it small (1-2): a higher value can match coordinates that are really different outfits.",
   "option.GroupCoordinatesClothesTolerance.input.tolerance.label": "Max different clothes parts",
+  "option.GroupCoordinatesClothesTolerance.input.tolerance.pattern_msg": "Please enter a whole number (0 or greater).",
   "option.DeleteEmptyFolders.label": "Delete Empty Folders",
   "option.DeleteEmptyFolders.description": "Remove empty subfolders after ungrouping",
   "option.DeleteEmptyFolders.case.Yes.label": "Delete",

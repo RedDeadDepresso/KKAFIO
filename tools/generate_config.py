@@ -137,7 +137,16 @@ def _default_for(option: dict):
     t = option["type"]
     if t == "input":
         inputs = option.get("inputs", [])
-        return inputs[0].get("default", "") if inputs else ""
+        if not inputs:
+            return ""
+        first = inputs[0]
+        default = first.get("default", "")
+        if first.get("pipeline_type") == "int":
+            try:
+                return int(str(default).strip() or 0)
+            except ValueError:
+                return 0
+        return default
     if t == "switch":
         return option.get("default_case") == "Yes"
     if t in ("select", "checkbox"):
@@ -188,7 +197,12 @@ def resolve_option(option_id: str, option: dict) -> ResolvedOption:
     # checkboxes) is a single scalar/list value under one config key.
     config_key = _override_target_key(option_id, option)
     default = _default_for(option)
-    lines = [f'_set("{config_key}", "{option_id}")']
+    cast = ""
+    if option["type"] == "input":
+        inputs = option.get("inputs", [])
+        if inputs and inputs[0].get("pipeline_type") == "int":
+            cast = ", int"
+    lines = [f'_set("{config_key}", "{option_id}"{cast})']
     return ResolvedOption("scalar", [config_key], lines, [(config_key, default)])
 
 
@@ -243,9 +257,14 @@ def build_task_config_fn(tasks: list[dict], options: dict, warnings: list[str]) 
         "    cfg = dict(_TASK_DEFAULTS.get(task_name, {}))",
         '    cfg["Enable"] = enabled',
         "",
-        "    def _set(config_key, option_key):",
+        "    def _set(config_key, option_key, cast=None):",
         "        v = _extract_opt(opt_values, option_key)",
         "        if v is not None:",
+        "            if cast is not None:",
+        "                try:",
+        "                    v = cast(str(v).strip() or 0)",
+        "                except (TypeError, ValueError):",
+        "                    pass  # keep the raw value; the task reports it as an input error",
         "            cfg[config_key] = v",
         "",
     ]

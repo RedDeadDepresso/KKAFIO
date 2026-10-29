@@ -647,19 +647,28 @@ class GroupCoordinates(BaseTask):
         self.coord_dir_str  : str  = cfg.get("CoordDir", "")
         self.include_subfolders: bool = cfg.get("IncludeSubfolders", False)
         self.ignore_accessories: bool = cfg.get("IgnoreAccessories", False)
-        self.clothes_tolerance_raw = cfg.get("ClothesTolerance", 0)
+        self.clothes_tolerance_raw: int | str | None = cfg.get("ClothesTolerance", 0)
         self.group_by_hair: bool = cfg.get("GroupByHair", False)
 
     @staticmethod
     def _tolerance(raw, label: str) -> int:
         if raw is None:
             return 0
+        if isinstance(raw, int) and not isinstance(raw, bool):
+            value = raw
+        else:
+            value = GroupCoordinates._parse_tolerance(raw, label)
+        if value < 0:
+            raise InputError(f"{label} tolerance can't be negative, got {value}.", tag=TAG)
+        return value
+
+    @staticmethod
+    def _parse_tolerance(raw, label: str) -> int:
+        # Strings still arrive from the CLI/old configs, so keep accepting them.
         try:
             value = int(str(raw).strip() or 0)
         except (TypeError, ValueError):
             raise InputError(f"{label} tolerance must be a whole number, got {raw!r}.", tag=TAG) from None
-        if value < 0:
-            raise InputError(f"{label} tolerance can't be negative, got {value}.", tag=TAG)
         return value
 
     def _clothes_tolerance(self) -> int:

@@ -162,6 +162,7 @@
   "option.GroupCoordinatesClothesTolerance.label": "Допуск по одежде",
   "option.GroupCoordinatesClothesTolerance.description": "Также переносить координату, у которой отличается не больше указанного числа частей одежды (верх, низ, перчатки, колготки и т. д.) — предметом или цветом — от одного из нарядов персонажа. Можно использовать вместе с «Игнорировать аксессуары». 1 (по умолчанию) — может отличаться одна часть одежды, 0 — одежда должна совпадать полностью. Лучше использовать небольшие значения (1–2): при большем значении могут совпасть координаты, которые на самом деле являются другими нарядами.",
   "option.GroupCoordinatesClothesTolerance.input.tolerance.label": "Макс. число отличающихся частей одежды",
+  "option.GroupCoordinatesClothesTolerance.input.tolerance.pattern_msg": "Введите целое число (0 или больше).",
   "option.DeleteEmptyFolders.label": "Удалять пустые папки",
   "option.DeleteEmptyFolders.description": "Удалять пустые подпапки после разгруппировки",
   "option.DeleteEmptyFolders.case.Yes.label": "Удалить",
