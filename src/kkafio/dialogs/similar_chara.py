@@ -176,7 +176,7 @@ def load_thumbnail(path: Path):
     """The card's cover as a small RGBA PIL image, or None. Safe to call from
     a worker thread (touches no Tk objects). Reads only the PNG part of the file."""
     from PIL import Image
-    from kkafio.cards.similarity import read_png_preview
+    from kkafio.cards.chara.similarity import read_png_preview
 
     data = read_png_preview(path)
     if not data:
@@ -663,7 +663,7 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
         try:
             from PIL import Image
-            from kkafio.cards.similarity import read_png_preview
+            from kkafio.cards.chara.similarity import read_png_preview
             data = read_png_preview(path)
             if data:
                 with Image.open(io.BytesIO(data)) as im:

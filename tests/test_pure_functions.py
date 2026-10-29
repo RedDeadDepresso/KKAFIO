@@ -13,7 +13,7 @@ import msgpack
 import pytest
 
 # ---- where the code lives -----------------------------------------------------------
-from kkafio.cards import msgpack_min
+from kkafio.cards.scenes import msgpack_min
 from kkafio.services.mod_sources.telegram import links as telegram_links
 # -------------------------------------------------------------------------------------
 

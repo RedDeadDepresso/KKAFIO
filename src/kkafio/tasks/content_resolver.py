@@ -15,7 +15,7 @@ from pathlib import Path
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate, is_male
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
-from kkafio.cards.scene_version import is_kks_scene
+from kkafio.cards.scenes.scene_version import is_kks_scene
 
 
 class ContentTypeResolver:

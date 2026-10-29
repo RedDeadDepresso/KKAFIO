@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 
 import card_factory as cf
-from kkafio.cards import outfits
+from kkafio.cards.chara import outfits
 from kkafio.core.errors import InputError
 from kkafio.tasks import group_coordinates as gc
 

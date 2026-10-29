@@ -71,17 +71,22 @@ KKAFIO-dev/
 │   │
 │   ├── cards/                       # Card (PNG) domain logic
 │   │   ├── classifier.py            # get_card_type() / is_male() / is_coordinate() — PNG card sniffing
-│   │   ├── parsing.py               # Reading mod GUIDs out of card files (chara / scene / coordinate)
-│   │   ├── png_guids.py             # Per-folder GUID collection + its caches
-│   │   ├── mods.py                  # Zipmod scanning, mods cache, Sideloader Modpack index
-│   │   ├── outfits.py               # Coordinate outfit digests + matching a chara's outfits to coordinates
 │   │   ├── cache_io.py              # Atomic JSON writes / file fingerprints shared by the caches
-│   │   ├── kks_scene.py             # Converting a KKS Studio scene to KK
-│   │   ├── msgpack_min.py           # Byte-exact MessagePack codec used by the scene converter
-│   │   ├── chara_key.py
-│   │   ├── chara_key_cache.py       # per-card key cache for Group / Rename Characters
-│   │   ├── similarity.py            # pHash + leader clustering for cover comparison
-│   │   └── scene_version.py
+│   │   ├── mods/                    # Which zipmods a card needs, and which are installed
+│   │   │   ├── parsing.py           # Reading mod GUIDs out of card files (chara / scene / coordinate)
+│   │   │   ├── png_guids.py         # Per-folder GUID collection + its caches
+│   │   │   ├── zipmods.py           # Zipmod scanning, mods cache, Sideloader Modpack index
+│   │   │   └── shared_mods.py       # "Is this zipmod still used by a remaining card?" check
+│   │   ├── scenes/                  # Studio scene handling
+│   │   │   ├── scene_version.py     # KK vs KKS scene detection
+│   │   │   ├── kks_scene.py         # Converting a KKS Studio scene to KK
+│   │   │   └── msgpack_min.py       # Byte-exact MessagePack codec used by the scene converter
+│   │   └── chara/                   # Identifying and comparing characters
+│   │       ├── chara_key.py         # "last | first | nick | personality | hair" key for LLM matching
+│   │       ├── chara_key_cache.py   # per-card key cache for Group / Rename Characters
+│   │       ├── hint_language.py     # Language of the character-index hints
+│   │       ├── similarity.py        # pHash + leader clustering for cover comparison
+│   │       └── outfits.py           # Coordinate outfit digests + matching a chara's outfits to coordinates
 │   │
 │   ├── indices/                     # Lookup indices (downloaded on demand and cached in CONFIG_DIR, or shipped in assets/); "no help" when unavailable
 │   │   ├── chara.py                 # Character lookup for Group / Rename Characters: gacha first, then AGV

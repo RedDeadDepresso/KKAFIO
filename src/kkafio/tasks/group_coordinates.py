@@ -69,7 +69,7 @@ from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
-from kkafio.cards.outfits import (
+from kkafio.cards.chara.outfits import (
     COORD_CACHE_FILE, COORD_CACHE_VERSION, HAIR_CACHE_FILE, HAIR_CACHE_VERSION, MOD_CACHE_FILE,
     MOD_CACHE_VERSION, SIG_CACHE_FILE, SIG_CACHE_VERSION, OutfitSignature,
     accessory_difference, build_coord_cache, build_coord_hair_cache, build_coord_mod_cache,

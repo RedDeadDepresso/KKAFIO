@@ -12,7 +12,7 @@ import pytest
 
 from kkafio.indices import agv
 from kkafio.indices.text import norm
-from kkafio.cards.chara_key_cache import CACHE_FILE, CharaKeyCache
+from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
 from kkafio.dialogs.manual_group import (
     SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)

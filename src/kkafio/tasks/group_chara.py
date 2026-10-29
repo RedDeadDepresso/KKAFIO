@@ -34,10 +34,10 @@ from kkloader import KoikatuCharaData
 
 from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
-from kkafio.cards.chara_key import birthday, make_key
-from kkafio.cards.chara_key_cache import CharaKeyCache
+from kkafio.cards.chara.chara_key import birthday, make_key
+from kkafio.cards.chara.chara_key_cache import CharaKeyCache
 from kkafio.indices.agv import Candidate
-from kkafio.cards import hint_language
+from kkafio.cards.chara import hint_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger

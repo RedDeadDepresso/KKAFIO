@@ -15,8 +15,8 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.tasks.base_task import BaseTask
-from kkafio.cards.mods import build_mods_cache, in_modpack_folder, load_modpack_index
-from kkafio.cards.png_guids import (
+from kkafio.cards.mods.zipmods import build_mods_cache, in_modpack_folder, load_modpack_index
+from kkafio.cards.mods.png_guids import (
     collect_chara_guids, collect_coord_guids, collect_scene_guids,
 )
 from kkafio.core.config import GameType

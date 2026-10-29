@@ -3,8 +3,8 @@
 import struct
 from typing import Callable
 
-from kkafio.cards.msgpack_min import _mp_decode, _mp_encode, _MpMap
-from kkafio.cards.scene_version import (
+from kkafio.cards.scenes.msgpack_min import _mp_decode, _mp_encode, _MpMap
+from kkafio.cards.scenes.scene_version import (
     _png_length,
     _Reader,
     _ver,

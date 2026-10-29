@@ -13,7 +13,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
-from kkafio.cards.parsing import _coord_kkex_bytes, _find_iend_end, _unpack_kkex, uar_resolve_infos
+from kkafio.cards.mods.parsing import _coord_kkex_bytes, _find_iend_end, _unpack_kkex, uar_resolve_infos
 from kkafio.core.logger import logger
 from kkafio.core.paths import ASSETS_DATA_DIR
 

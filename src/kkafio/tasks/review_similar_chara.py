@@ -31,7 +31,7 @@ from pathlib import Path
 
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
-from kkafio.cards.similarity import fuzzy_group, phash_of_file
+from kkafio.cards.chara.similarity import fuzzy_group, phash_of_file
 from kkafio.core.errors import ConfigError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger

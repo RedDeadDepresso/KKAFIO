@@ -17,7 +17,11 @@ import pytest
 import card_factory as cf
 
 # ---- where the code lives -----------------------------------------------------------
-from kkafio.cards import cache_io, mods, outfits, parsing, png_guids
+from kkafio.cards import cache_io
+from kkafio.cards.mods import zipmods
+from kkafio.cards.chara import outfits
+from kkafio.cards.mods import parsing
+from kkafio.cards.mods import png_guids
 # -------------------------------------------------------------------------------------
 
 G1, G2, G3 = "mod.one", "mod.two", "mod.three"
@@ -217,12 +221,12 @@ def test_file_fingerprint_is_int_mtime_and_size(tmp_path):
 # --- zipmods -----------------------------------------------------------------------------------
 
 def test_guid_from_zipmod(tmp_path):
-    assert mods.guid_from_zipmod(cf.zipmod(tmp_path / "a.zipmod", "g.a")) == "g.a"
-    assert mods.guid_from_zipmod(cf.zipmod(tmp_path / "b.zipmod", "g.b", manifest_name="sub/MANIFEST.XML")) == "g.b"
-    assert mods.guid_from_zipmod(cf.zipmod(tmp_path / "c.zipmod", None)) is None
+    assert zipmods.guid_from_zipmod(cf.zipmod(tmp_path / "a.zipmod", "g.a")) == "g.a"
+    assert zipmods.guid_from_zipmod(cf.zipmod(tmp_path / "b.zipmod", "g.b", manifest_name="sub/MANIFEST.XML")) == "g.b"
+    assert zipmods.guid_from_zipmod(cf.zipmod(tmp_path / "c.zipmod", None)) is None
     (tmp_path / "d.zipmod").write_bytes(b"not a zip")
-    assert mods.guid_from_zipmod(tmp_path / "d.zipmod") is None
-    assert mods.guid_from_zipmod(tmp_path / "missing.zipmod") is None
+    assert zipmods.guid_from_zipmod(tmp_path / "d.zipmod") is None
+    assert zipmods.guid_from_zipmod(tmp_path / "missing.zipmod") is None
 
 
 def test_iter_mod_files_includes_plain_zip_with_manifest_only(tmp_path):
@@ -230,17 +234,17 @@ def test_iter_mod_files_includes_plain_zip_with_manifest_only(tmp_path):
     cf.zipmod(tmp_path / "deep" / "b.zipmod", "g.b")
     cf.zipmod(tmp_path / "plain_mod.zip", "g.c")
     cf.zipmod(tmp_path / "just_files.zip", None)
-    found = sorted(p.name for p in mods.iter_mod_files(tmp_path))
+    found = sorted(p.name for p in zipmods.iter_mod_files(tmp_path))
     assert found == ["a.zipmod", "b.zipmod", "plain_mod.zip"]
 
 
 def test_in_modpack_folder(tmp_path):
     md = tmp_path / "mods"
-    assert mods.in_modpack_folder(md / "Sideloader Modpack - Foo" / "a.zipmod", md)
-    assert mods.in_modpack_folder(md / "Sideloader Modpack" / "x" / "a.zipmod", md)
-    assert not mods.in_modpack_folder(md / "a.zipmod", md)                       # directly in mods dir
-    assert not mods.in_modpack_folder(md / "Other" / "Sideloader Modpack" / "a.zipmod", md)   # not first level
-    assert not mods.in_modpack_folder(tmp_path / "elsewhere" / "a.zipmod", md)
+    assert zipmods.in_modpack_folder(md / "Sideloader Modpack - Foo" / "a.zipmod", md)
+    assert zipmods.in_modpack_folder(md / "Sideloader Modpack" / "x" / "a.zipmod", md)
+    assert not zipmods.in_modpack_folder(md / "a.zipmod", md)                       # directly in mods dir
+    assert not zipmods.in_modpack_folder(md / "Other" / "Sideloader Modpack" / "a.zipmod", md)   # not first level
+    assert not zipmods.in_modpack_folder(tmp_path / "elsewhere" / "a.zipmod", md)
 
 
 def _mods_tree(root: Path):
@@ -252,8 +256,8 @@ def _mods_tree(root: Path):
 
 def test_build_mods_cache_modpack_scopes(tmp_path):
     root = _mods_tree(tmp_path / "mods")
-    without = mods.build_mods_cache(root, include_modpack=False, use_cache=False)
-    with_pack = mods.build_mods_cache(root, include_modpack=True, use_cache=False)
+    without = zipmods.build_mods_cache(root, include_modpack=False, use_cache=False)
+    with_pack = zipmods.build_mods_cache(root, include_modpack=True, use_cache=False)
     assert set(without) == {"local.a", "local.b"}
     assert set(with_pack) == {"local.a", "local.b", "pack.c"}
     assert Path(with_pack["local.a"]) == root / "own" / "a.zipmod"
@@ -261,25 +265,25 @@ def test_build_mods_cache_modpack_scopes(tmp_path):
 
 def test_build_mods_cache_uses_and_writes_cache_file(tmp_path):
     root = _mods_tree(tmp_path / "mods")
-    mods.build_mods_cache(root, include_modpack=True, use_cache=True)
-    assert (root / mods.MODS_CACHE_FILE).exists()
-    again = mods.build_mods_cache(root, include_modpack=True, use_cache=True)
+    zipmods.build_mods_cache(root, include_modpack=True, use_cache=True)
+    assert (root / zipmods.MODS_CACHE_FILE).exists()
+    again = zipmods.build_mods_cache(root, include_modpack=True, use_cache=True)
     assert set(again) == {"local.a", "local.b", "pack.c"}
-    mods.build_mods_cache(root, include_modpack=True, use_cache=False)        # must not crash on existing cache
+    zipmods.build_mods_cache(root, include_modpack=True, use_cache=False)        # must not crash on existing cache
 
 
 @pytest.mark.parametrize("use_cache", [False, True])
 def test_scan_mods_local_fallback(tmp_path, use_cache):
     root = _mods_tree(tmp_path / "mods")
-    found = mods.scan_mods(root, {"local.a", "pack.c", "absent.guid"}, include_modpack=False, use_cache=use_cache)
+    found = zipmods.scan_mods(root, {"local.a", "pack.c", "absent.guid"}, include_modpack=False, use_cache=use_cache)
     assert set(found) == {"local.a"}
-    found = mods.scan_mods(root, {"local.a", "pack.c", "absent.guid"}, include_modpack=True, use_cache=use_cache)
+    found = zipmods.scan_mods(root, {"local.a", "pack.c", "absent.guid"}, include_modpack=True, use_cache=use_cache)
     assert set(found) == {"local.a", "pack.c"}
-    assert mods.scan_mods(tmp_path / "missing", {"x"}) == {}
+    assert zipmods.scan_mods(tmp_path / "missing", {"x"}) == {}
 
 
 def test_load_modpack_index_reads_bundled_index():
-    index = mods.load_modpack_index("Koikatsu")
+    index = zipmods.load_modpack_index("Koikatsu")
     assert isinstance(index, dict) and len(index) > 1000
     assert all(isinstance(k, str) and isinstance(v, str) for k, v in list(index.items())[:50])
 
@@ -291,12 +295,12 @@ def test_resolve_paths(tmp_path):
     inside = game / "UserData" / "chara" / "female" / "c.png"
     outside = tmp_path / "loose" / "c.png"
     outside.parent.mkdir()
-    assert mods.resolve_paths(inside, game, True, None, None) == (game / "mods", game / "UserData" / "coordinate")
-    assert mods.resolve_paths(outside, game, True, None, None) == (outside.parent, outside.parent)
-    assert mods.resolve_paths(outside, game, False, Path("M"), Path("C")) == (Path("M"), Path("C"))
+    assert zipmods.resolve_paths(inside, game, True, None, None) == (game / "mods", game / "UserData" / "coordinate")
+    assert zipmods.resolve_paths(outside, game, True, None, None) == (outside.parent, outside.parent)
+    assert zipmods.resolve_paths(outside, game, False, Path("M"), Path("C")) == (Path("M"), Path("C"))
     bare = tmp_path / "bare"
     bare.mkdir()
-    assert mods.resolve_paths(bare / "x.png", bare, True, None, None) == (None, None)
+    assert zipmods.resolve_paths(bare / "x.png", bare, True, None, None) == (None, None)
 
 
 # --- outfit digests (their values are persisted in users' caches: they must not drift) -------------

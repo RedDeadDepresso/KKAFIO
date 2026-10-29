@@ -38,7 +38,7 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from kkafio.cards.outfits import DEFAULT_CLOTHES_FILE, coord_digest  # noqa: E402
+from kkafio.cards.chara.outfits import DEFAULT_CLOTHES_FILE, coord_digest  # noqa: E402
 
 DEFAULT_OUTPUT = _REPO_ROOT / "assets" / "data" / DEFAULT_CLOTHES_FILE
 

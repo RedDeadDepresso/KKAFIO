@@ -9,7 +9,7 @@ from typing import Literal
 import xxhash
 
 from kkafio.tasks.base_task import DEFAULT_DOWNLOADS_PATH
-from kkafio.cards.mods import in_modpack_folder
+from kkafio.cards.mods.zipmods import in_modpack_folder
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import Config

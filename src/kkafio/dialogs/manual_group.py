@@ -154,7 +154,7 @@ def load_cover(path: Path):
     """The card's cover as an RGBA PIL image (at most COVER_MAX), or None. Safe to call from a
     worker thread (touches no Tk objects); reads only the PNG part of the file."""
     from PIL import Image
-    from kkafio.cards.similarity import read_png_preview
+    from kkafio.cards.chara.similarity import read_png_preview
 
     data = read_png_preview(path)
     if not data:

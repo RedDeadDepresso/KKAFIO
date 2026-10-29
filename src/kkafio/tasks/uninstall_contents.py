@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from kkafio.cards.mods import build_mods_cache
-from kkafio.cards.shared_mods import find_guids_in_use, keep_unshared
+from kkafio.cards.mods.zipmods import build_mods_cache
+from kkafio.cards.mods.shared_mods import find_guids_in_use, keep_unshared
 from kkafio.tasks.base_task import DEFAULT_DOWNLOADS_PATH, validate_input_path
 from kkafio.tasks.content_resolver import ContentTypeResolver
 from kkafio.core.config import Config, GameType

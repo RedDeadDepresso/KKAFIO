@@ -35,8 +35,8 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.cards.classifier import CardType, get_card_type
-from kkafio.cards.kks_scene import convert_kks_scene
-from kkafio.cards.scene_version import (
+from kkafio.cards.scenes.kks_scene import convert_kks_scene
+from kkafio.cards.scenes.scene_version import (
     _ver,
     AlreadyKKSceneError,
     read_scene_version,

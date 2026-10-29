@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import Mapping, Sequence
 
-from kkafio.cards.png_guids import (
+from kkafio.cards.mods.png_guids import (
     collect_chara_guids_by_file, collect_coord_guids_by_file, collect_scene_guids_by_file,
 )
 from kkafio.core.logger import logger

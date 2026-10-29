@@ -5,7 +5,7 @@ session bootstrap, and the per-GUID download.
 import asyncio
 from pathlib import Path
 
-from kkafio.cards.mods import guid_from_zipmod
+from kkafio.cards.mods.zipmods import guid_from_zipmod
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.services.mod_sources.telegram.links import parse_tme_link

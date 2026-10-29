@@ -10,7 +10,7 @@ from unittest import mock
 from kkafio.indices import chara
 from kkafio.indices.agv import Candidate
 from kkafio.cards.cache_io import file_fp
-from kkafio.cards.chara_key_cache import CACHE_FILE, CharaKeyCache
+from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES
 from kkafio.tasks import group_chara
 

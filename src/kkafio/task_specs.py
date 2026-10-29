@@ -70,7 +70,7 @@ def _pause_if_context_menu(args: argparse.Namespace) -> None:
 
 
 def _hint_language_choices() -> list[str]:
-    from kkafio.cards.hint_language import choices
+    from kkafio.cards.chara.hint_language import choices
     return choices()
 
 

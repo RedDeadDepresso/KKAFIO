@@ -8,7 +8,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
-from kkafio.cards.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
+from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.core.logger import logger
 
 

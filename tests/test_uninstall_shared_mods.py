@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest import mock
 
-from kkafio.cards import shared_mods
+from kkafio.cards.mods import shared_mods
 from kkafio.tasks import uninstall_contents as uc
 
 

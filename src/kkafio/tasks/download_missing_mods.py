@@ -37,8 +37,8 @@ import sys
 
 import kkafio.services.mod_sources.telegram.config as tg_cfg
 
-from kkafio.cards.mods import build_mods_cache, load_modpack_index
-from kkafio.cards.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
+from kkafio.cards.mods.zipmods import build_mods_cache, load_modpack_index
+from kkafio.cards.mods.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.indices.kkc_mod import load_kkc_mod_index

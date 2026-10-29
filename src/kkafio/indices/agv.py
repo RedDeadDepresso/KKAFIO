@@ -23,7 +23,7 @@ from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
-from kkafio.cards.hint_language import DEFAULT_LANGUAGE, localized
+from kkafio.cards.chara.hint_language import DEFAULT_LANGUAGE, localized
 from kkafio.indices.text import name_parts, norm
 from kkafio.core.logger import logger
 
