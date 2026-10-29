@@ -15,38 +15,49 @@ def _digest(data: bytes) -> str:
 
 
 class _Resp:
-    def __init__(self, payload): self._p = payload
+    def __init__(self, payload, status=200, etag=None):
+        self._p, self.status_code = payload, status
+        self.headers = {"etag": etag} if etag else {}
     def raise_for_status(self): pass
     def json(self): return self._p
 
 
 class _Client:
-    """Fake httpx client: commits API -> [{"sha": sha}], index URL -> index."""
-    def __init__(self, sha, index):
-        self.sha, self.index, self.urls = sha, index, []
-    def get(self, url, **kw):
+    """Fake httpx client serving `index` with the given ETag; answers 304 to a matching If-None-Match."""
+    def __init__(self, etag, index):
+        self.etag, self.index, self.urls = etag, index, []
+    def get(self, url, headers=None, **kw):
         self.urls.append(url)
-        return _Resp([{"sha": self.sha}] if url == si.SCENE_INDEX_COMMITS_API else self.index)
+        if headers and headers.get("If-None-Match") == self.etag:
+            return _Resp(None, 304)
+        return _Resp(self.index, etag=self.etag)
 
 
 def _e(author, year=None):
     return {"author": author, "year": year}
 
 
-def test_index_downloaded_only_when_commit_changes(tmp_path):
+def test_index_is_revalidated_with_etag(tmp_path):
     index = {"AAAA": {"author": "Author One", "year": 2025}}
-    c = _Client("sha1", index)
+    c = _Client('"e1"', index)
     assert si.load_scene_index(c, tmp_path) == {"aaaa": _e("Author One", 2025)}
-    assert si.SCENE_INDEX_URL in c.urls
-    assert (tmp_path / si.COMMIT_FILENAME).read_text() == "sha1"
+    assert (tmp_path / "scene.json").exists()
+    assert (tmp_path / "scene.json.etag").read_text() == '"e1"'
 
-    same = _Client("sha1", {"BBBB": {"author": "Other", "year": None}})            # same commit -> cached copy, no download
+    same = _Client('"e1"', {"BBBB": {"author": "Other", "year": None}})            # same ETag -> 304, cached copy
     assert si.load_scene_index(same, tmp_path) == {"aaaa": _e("Author One", 2025)}
-    assert si.SCENE_INDEX_URL not in same.urls
 
-    new = _Client("sha2", {"BBBB": {"author": "Other", "year": None}})             # new commit -> re-download
+    new = _Client('"e2"', {"BBBB": {"author": "Other", "year": None}})             # new ETag -> re-download
     assert si.load_scene_index(new, tmp_path) == {"bbbb": _e("Other")}
-    assert (tmp_path / si.COMMIT_FILENAME).read_text() == "sha2"
+    assert (tmp_path / "scene.json.etag").read_text() == '"e2"'
+
+
+def test_offline_uses_cached_scene_index(tmp_path):
+    si.load_scene_index(_Client('"e1"', {"AAAA": {"author": "A", "year": None}}), tmp_path)
+
+    class _Down:
+        def get(self, *a, **kw): raise OSError("offline")
+    assert si.load_scene_index(_Down(), tmp_path) == {"aaaa": _e("A")}
 
 
 def test_normalize_index_tolerates_odd_values():

@@ -7,7 +7,7 @@ characters' wiki pages) and published on GitHub Pages at
 (`INDEX_URL` in `src/kkafio/indices/gacha.py`).
 
 KKAFIO downloads it when **Group Characters** / **Rename Characters** run with
-*Hints Language* set to anything but `no`, caches it as `<config>/config/kkafio_gacha_index.json`, and
+*Hints Language* set to anything but `no`, caches it as `<config>/indices/gacha.json`, and
 revalidates with an ETag (a 304 costs no download). Offline, the cached copy is used. (The anime, games, vtubers index it is
 merged with is downloaded separately from agv-character-scraper, see `docs/05-configuration.md`.)
 

@@ -155,58 +155,43 @@ same `"kkafio"` base name.
 > ⚠️ This file (and the API credentials above) grant full access to
 > whatever Telegram account authorized them. Never share this directory.
 
-### `config/kkc_mod_index.json` and `config/kkc_mod_index_last_commit.txt` — KKC mod index cache
+### `indices/` — downloaded index caches
 
-```json
-{ "com.AgiShark.Casual_Moves_Part2": "https://t.me/KK_archive_modlibrary/25" }
-```
+`%APPDATA%/KKAFIO/indices/` (under `CONFIG_DIR`, not inside `config/`) holds every index KKAFIO downloads.
+Each index is stored as `<name>.json`, named after the module in `src/kkafio/indices/` that downloads it,
+next to a `<name>.json.etag` file with the ETag of the copy on disk:
 
-`kkc_mod_index.json` maps mod GUIDs to Telegram message links. It is
-published by [kkc-mod-scraper](https://github.com/RedDeadDepresso/kkc-mod-scraper)
-at `https://reddeaddepresso.github.io/kkc-mod-scraper/kkc_mod_index.json`.
-`kkc_mod_index_last_commit.txt` holds the SHA of that repo's latest commit
-at the time the index was downloaded.
+| File | Module | Source | Used by |
+|---|---|---|---|
+| `agv.json` | `agv.py` | [agv-character-scraper](https://github.com/RedDeadDepresso/agv-character-scraper) | Group / Rename Characters hints |
+| `gacha.json` | `gacha.py` | [gacha-character-scraper](https://github.com/RedDeadDepresso/gacha-character-scraper) | Group / Rename Characters hints |
+| `kkc_mod.json` | `kkc_mod.py` | [kkc-mod-scraper](https://github.com/RedDeadDepresso/kkc-mod-scraper) | Download Missing Mods |
+| `password.json` | `password.py` | [kk-password-scraper](https://github.com/RedDeadDepresso/kk-password-scraper) | archive extraction |
+| `scene.json` | `scene.py` | [pepper-scene-hasher](https://github.com/RedDeadDepresso/pepper-scene-hasher) | Group Scenes |
 
-Used by **Download Missing Mods** when the `KoikatsuCards` entry of
-Telegram Sources is checked. It replaces the old per-GUID lookup on
-koikatsucards.com. It is only read when at least one mod needs a Telegram
-download (`src/kkafio/indices/kkc_mod.py`, `load_kkc_mod_index()`):
+All of them are refreshed the same way (`src/kkafio/indices/cache.py`):
 
-1. The latest commit of `RedDeadDepresso/kkc-mod-scraper` is fetched from
-   the GitHub API.
-2. If it matches the SHA in `kkc_mod_index_last_commit.txt` and
-   `kkc_mod_index.json` loads successfully, the cached file is used.
-3. Otherwise the index is downloaded again and both files are rewritten.
-4. If the commit can't be checked (e.g. offline or rate-limited), the cached
-   index is used if one exists.
+1. The cached copy is requested again with a conditional request (`If-None-Match` with the saved ETag).
+2. A `304` means the cached copy is current and nothing is downloaded.
+3. Otherwise the new index is validated, then written to `<name>.json` and its ETag to `<name>.json.etag`.
+   A download that fails validation (e.g. an `agv.json` that isn't format version 1) leaves the cached copy alone.
+4. If the server can't be reached (offline, rate-limited), the cached index is used if one exists; without one
+   the task runs without that index.
 
-Both files are safe to delete; the next run downloads a fresh copy.
+Formats:
 
-### `agv_character_index.json` and `agv_character_index_last_commit.txt` — AGV character index cache
+- `kkc_mod.json` maps mod GUIDs to Telegram message links, e.g.
+  `{ "com.AgiShark.Casual_Moves_Part2": "https://t.me/KK_archive_modlibrary/25" }`. It is only read when at
+  least one mod needs a Telegram download and the `KoikatsuCards` entry of Telegram Sources is checked.
+- `agv.json` is the character / series index (format version 1; anime and visual novel / JRPG games from the
+  Bangumi Archive) used for the `hints` that **Group Characters** and **Rename Characters** send to the LLM. It is
+  refreshed when those tasks run with *Hints Language* set to anything but `no`. An entry of `chars` is
+  `[names, series ids, score]`, optionally followed by `birthMonth` and `birthDay` (integers, month 1-12 and day
+  1-31): `[names, series ids, score, 9, 28]`. Both may be left out, and `null` stands for an unknown one
+  (`[names, series ids, score, null, 28]`). The format version stays 1.
+- `gacha.json`: see `docs/06-gacha-index-format.md`.
 
-Live directly under `CONFIG_DIR` (not inside `config/`): `%APPDATA%/KKAFIO/agv_character_index.json`.
-
-`agv_character_index.json` is the character / series index (format version 1; anime and visual novel / JRPG
-games from the Bangumi Archive) used for the
-`hints` that **Group Characters** and **Rename Characters** send to the LLM. It is built and published by
-[agv-character-scraper](https://github.com/RedDeadDepresso/agv-character-scraper) at
-`https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json`.
-`agv_character_index_last_commit.txt` holds the SHA of that repo's latest commit at the time the index was
-downloaded. It is refreshed when those tasks run with *Hints Language* set to anything but `no`
-(`src/kkafio/indices/agv.py`, `refresh()`), the same way as the KKC mod index:
-
-1. The latest commit of `RedDeadDepresso/agv-character-scraper` is fetched from the GitHub API.
-2. If it matches the SHA in `agv_character_index_last_commit.txt` and the cached index loads, it is used.
-3. Otherwise the index is downloaded again (a file that isn't version 1 is rejected and the cached copy
-   stays) and both files are rewritten.
-4. If the commit can't be checked (e.g. offline or rate-limited), the cached index is used if one exists;
-   without one, the tasks run without anime, games, vtubers hints.
-
-An entry of `chars` is `[names, series ids, score]`, optionally followed by `birthMonth` and `birthDay` (integers,
-month 1-12 and day 1-31): `[names, series ids, score, 9, 28]`. Both may be left out, and `null` stands for an unknown
-one (`[names, series ids, score, null, 28]`). The format version stays 1.
-
-Both files are safe to delete; the next run downloads a fresh copy.
+All files are safe to delete; the next run downloads a fresh copy.
 
 ### `download_history.json` — Download Contents dedup
 

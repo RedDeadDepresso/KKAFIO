@@ -29,7 +29,7 @@ def _index(chars=None):
 
 @pytest.fixture
 def index_file(tmp_path):
-    p = tmp_path / "agv_character_index.json"
+    p = tmp_path / "agv.json"
     p.write_text(json.dumps(_index(), ensure_ascii=False), encoding="utf-8")
     agv.set_index_path(p)
     yield p
@@ -39,7 +39,7 @@ def index_file(tmp_path):
 def test_default_path_is_config_dir():
     from kkafio.core.paths import CONFIG_DIR
     agv.set_index_path(None)
-    assert agv._path() == CONFIG_DIR / "agv_character_index.json"
+    assert agv._path() == CONFIG_DIR / "indices" / "agv.json"
 
 
 def test_lookup_full_name_both_orders_and_kanji(index_file):
@@ -98,7 +98,7 @@ def test_missing_index_degrades(tmp_path):
 
 class _Resp:
     def __init__(self, payload, status=200):
-        self._payload, self.status_code = payload, status
+        self._payload, self.status_code, self.headers = payload, status, {}
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -109,25 +109,27 @@ class _Resp:
 
 
 class _Client:
-    """Stands in for httpx.Client: a commits API answering `commit` and an index URL
-    answering `payload`; counts index downloads."""
+    """Stands in for httpx.Client: an index URL serving `payload` under ETag `etag`
+    (None = offline); answers 304 to a matching If-None-Match; counts downloads."""
 
-    def __init__(self, commit="aaa", payload=None):
-        self.commit, self.payload, self.downloads = commit, payload if payload is not None else _index(), 0
+    def __init__(self, etag='"aaa"', payload=None):
+        self.etag, self.payload, self.downloads = etag, payload if payload is not None else _index(), 0
 
-    def get(self, url, params=None, headers=None):
-        if url == agv.COMMITS_API:
-            if self.commit is None:
-                raise OSError("offline")
-            return _Resp([{"sha": self.commit}])
+    def get(self, url, headers=None):
         assert url == agv.INDEX_URL
+        if self.etag is None:
+            raise OSError("offline")
+        if headers and headers.get("If-None-Match") == self.etag:
+            return _Resp(None, 304)
         self.downloads += 1
-        return _Resp(self.payload)
+        r = _Resp(self.payload)
+        r.headers = {"etag": self.etag}
+        return r
 
 
 @pytest.fixture
 def cache(tmp_path):
-    p = tmp_path / "kkafio" / "agv_character_index.json"
+    p = tmp_path / "indices" / "agv.json"
     agv.set_index_path(p)
     yield p
     agv.set_index_path(None)
@@ -135,21 +137,20 @@ def cache(tmp_path):
 
 def test_urls():
     assert agv.INDEX_URL == "https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json"
-    assert agv.COMMITS_API == "https://api.github.com/repos/RedDeadDepresso/agv-character-scraper/commits"
 
 
-def test_refresh_downloads_then_only_when_commit_changes(cache):
-    c = _Client("aaa")
+def test_refresh_downloads_then_only_when_etag_changes(cache):
+    c = _Client('"aaa"')
     assert agv.refresh("T", client=c) and agv.available()
-    assert cache.exists() and (cache.parent / agv.COMMIT_FILE).read_text() == "aaa"
-    assert agv.refresh("T", client=c) and c.downloads == 1          # same commit: cached
-    c.commit = "bbb"
-    assert agv.refresh("T", client=c) and c.downloads == 2          # new commit: downloaded
-    assert (cache.parent / agv.COMMIT_FILE).read_text() == "bbb"
+    assert cache.exists() and (cache.parent / "agv.json.etag").read_text() == '"aaa"'
+    assert agv.refresh("T", client=c) and c.downloads == 1          # same ETag: 304, cached
+    c.etag = '"bbb"'
+    assert agv.refresh("T", client=c) and c.downloads == 2          # new ETag: downloaded
+    assert (cache.parent / "agv.json.etag").read_text() == '"bbb"'
 
 
 def test_refresh_redownloads_when_cache_file_is_gone(cache):
-    c = _Client("aaa")
+    c = _Client('"aaa"')
     agv.refresh("T", client=c)
     cache.unlink()
     agv.set_index_path(cache)
@@ -158,16 +159,16 @@ def test_refresh_redownloads_when_cache_file_is_gone(cache):
 
 def test_refresh_offline_uses_cache_or_degrades(cache):
     assert not agv.refresh("T", client=_Client(None))               # nothing cached yet
-    agv.refresh("T", client=_Client("aaa"))
+    agv.refresh("T", client=_Client('"aaa"'))
     c = _Client(None)
     assert agv.refresh("T", client=c) and c.downloads == 0          # cached copy serves
     assert agv.lookup("Tohsaka | Rin |  | x | y")
 
 
 def test_refresh_rejects_bad_download_and_keeps_cache(cache):
-    agv.refresh("T", client=_Client("aaa"))
-    assert agv.refresh("T", client=_Client("bbb", {"version": 99}))
-    assert (cache.parent / agv.COMMIT_FILE).read_text() == "aaa"    # will retry next time
+    agv.refresh("T", client=_Client('"aaa"'))
+    assert agv.refresh("T", client=_Client('"bbb"', {"version": 99}))
+    assert (cache.parent / "agv.json.etag").read_text() == '"aaa"'  # will retry next time
     assert agv.lookup("Tohsaka | Rin |  | x | y")
 
 
@@ -208,3 +209,12 @@ def test_suggest_series_without_an_index_is_empty(tmp_path):
         assert agv.suggest_series("fate") == []
     finally:
         agv.set_index_path(None)
+
+
+def test_all_indices_default_to_the_indices_folder():
+    from kkafio.core.paths import CONFIG_DIR
+    from kkafio.indices import cache, gacha, kkc_mod, password, scene
+    assert cache.default_dir() == CONFIG_DIR / "indices"
+    assert (agv.INDEX_FILE, gacha.INDEX_FILE, kkc_mod.INDEX_FILENAME,
+            password.INDEX_FILENAME, scene.INDEX_FILENAME) == (
+        "agv.json", "gacha.json", "kkc_mod.json", "password.json", "scene.json")

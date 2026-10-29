@@ -3,10 +3,9 @@ agv.py — Look characters and series up in the AGV index (anime and visual nove
 games, built from the Bangumi Archive by https://github.com/RedDeadDepresso/agv-character-scraper
 and published on GitHub Pages).
 
-The index is downloaded on demand and cached as agv_character_index.json in CONFIG_DIR
-(the per-user KKAFIO folder, e.g. %APPDATA%/KKAFIO). It is only downloaded again when the
-repo's latest commit differs from the one recorded in agv_character_index_last_commit.txt
-(same scheme as the kkc mod index and the scene index).
+The index is downloaded on demand and cached as indices/agv.json in CONFIG_DIR (the
+per-user KKAFIO folder, e.g. %APPDATA%/KKAFIO). It is only downloaded again when its ETag
+changes (see kkafio.indices.cache).
 
 Used by Group Characters and Rename Characters to (1) give the LLM up to MAX_HINTS
 candidate characters ("hints") for every card and (2) snap the LLM's series name to one
@@ -17,20 +16,18 @@ file is missing, so the tasks behave exactly as before without it.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
 from kkafio.cards.chara.hint_language import DEFAULT_LANGUAGE, localized
+from kkafio.indices import cache
 from kkafio.indices.text import name_parts, norm
 from kkafio.core.logger import logger
 
 INDEX_URL = "https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json"
-COMMITS_API = "https://api.github.com/repos/RedDeadDepresso/agv-character-scraper/commits"
-INDEX_FILE = "agv_character_index.json"
-COMMIT_FILE = "agv_character_index_last_commit.txt"
+INDEX_FILE = "agv.json"
 INDEX_VERSION = 1
 
 MAX_HINTS = 5          # candidates handed to the LLM per card
@@ -44,7 +41,7 @@ _index_path: Path | None = None
 
 def set_index_path(path: Path | None) -> None:
     """Point at another index file (tests / a user-built index), or back at the cached
-    download (None), and drop the cache. The commit file lives next to the index."""
+    download (None), and drop the cache."""
     global _index_path
     _index_path = Path(path) if path is not None else None
     _load.cache_clear()
@@ -55,8 +52,7 @@ def set_index_path(path: Path | None) -> None:
 def _path() -> Path:
     if _index_path is not None:
         return _index_path
-    from kkafio.core.paths import CONFIG_DIR
-    return CONFIG_DIR / INDEX_FILE
+    return cache.default_dir() / INDEX_FILE
 
 
 @lru_cache(maxsize=1)
@@ -222,32 +218,14 @@ def suggest_series(query: str, lang: str | None = None, limit: int = 8) -> list[
 # Download / cache
 # ---------------------------------------------------------------------------
 
-def _fetch_latest_commit(client) -> str | None:
-    """SHA of the repo's latest commit, or None if it couldn't be determined."""
-    try:
-        r = client.get(
-            COMMITS_API,
-            params={"per_page": 1},
-            headers={"Accept": "application/vnd.github+json"},
-        )
-        r.raise_for_status()
-        data = r.json()
-        return data[0]["sha"].strip() if data else None
-    except Exception as e:
-        logger.warning("AGVIDX", f"Could not fetch latest agv-character-scraper commit: {e}")
-        return None
-
-
 def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
     """Bring the cached index up to date. Returns True if a usable index exists afterwards.
 
-    The cached copy is kept only if the commit saved next to it matches the repo's latest
-    commit and it loads; otherwise the index is downloaded again and the commit updated.
-    If the latest commit can't be checked (offline, rate limit), the cached copy is used.
-    Never raises.
+    Uses a conditional request (ETag), so an unchanged index costs a 304 and no download.
+    Any network problem just leaves the cached copy (if any) in use. Never raises.
     """
     path = _path()
-    commit_path = path.with_name(COMMIT_FILE)
+    headers = cache.conditional_headers(path) if available() else {}
 
     own_client = client is None
     try:
@@ -255,34 +233,17 @@ def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
             import httpx
             client = httpx.Client(follow_redirects=True, timeout=timeout)
 
-        latest = _fetch_latest_commit(client)
-        saved = ""
         try:
-            saved = commit_path.read_text(encoding="utf-8").strip()
-        except OSError:
-            pass
-
-        if latest and saved == latest and available():
-            logger.info(tag, "Anime, games, vtubers character index is up to date (cached).")
-            return True
-        if latest is None:
-            if available():
-                logger.warning(tag, "Could not check for anime, games, vtubers index updates — using the cached copy.")
-            return available()
-        logger.info(tag, "Anime, games, vtubers character index is new or outdated — downloading...")
-
-        try:
-            r = client.get(INDEX_URL)
+            r = client.get(INDEX_URL, headers=headers)
+            if r.status_code == 304:
+                logger.info(tag, "Anime, games, vtubers character index is up to date (cached).")
+                return available()
             r.raise_for_status()
             data = r.json()
             if not isinstance(data, dict) or data.get("version") != INDEX_VERSION:
                 raise ValueError("unsupported index version "
                                  f"{data.get('version') if isinstance(data, dict) else '?'}")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = path.with_name(path.name + ".part")
-            tmp.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-            os.replace(tmp, path)
-            commit_path.write_text(latest, encoding="utf-8")
+            cache.save(path, data, r.headers.get("etag"))
         except Exception as e:
             logger.warning(tag, f"Could not download the anime, games, vtubers character index: {e}"
                                 + (" — using the cached copy." if available() else ""))

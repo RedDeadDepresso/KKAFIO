@@ -2,111 +2,65 @@
 
 The index is published by https://github.com/RedDeadDepresso/kkc-mod-scraper and tells
 Download Missing Mods which Telegram message holds a given mod. A copy is kept in
-CONFIG_DIR/config and only re-downloaded when the repo's latest commit differs from the
-one recorded in kkc_mod_index_last_commit.txt (the scene and password indices use the same scheme).
+CONFIG_DIR/indices/kkc_mod.json and only re-downloaded when its ETag changes
+(see kkafio.indices.cache).
 """
 
-import os
+import json
 from pathlib import Path
 
 from kkafio.core.logger import logger
+from kkafio.indices import cache
 
-KKC_INDEX_URL   = "https://reddeaddepresso.github.io/kkc-mod-scraper/kkc_mod_index.json"
-KKC_COMMITS_API = "https://api.github.com/repos/RedDeadDepresso/kkc-mod-scraper/commits"
+KKC_INDEX_URL = "https://reddeaddepresso.github.io/kkc-mod-scraper/kkc_mod_index.json"
 
-
-async def _fetch_latest_index_commit(client) -> str | None:
-    """Return the SHA of the latest commit of the kkc-mod-scraper repo, or
-    None if it couldn't be determined."""
-    try:
-        r = await client.get(
-            KKC_COMMITS_API,
-            params={"per_page": 1},
-            headers={"Accept": "application/vnd.github+json"},
-        )
-        r.raise_for_status()
-        data = r.json()
-        return data[0]["sha"].strip() if data else None
-    except Exception as e:
-        logger.warning("DLMOD", f"Could not fetch latest kkc-mod-scraper commit: {e}")
-        return None
+INDEX_FILENAME = "kkc_mod.json"
 
 
 def _load_cached_kkc_index(index_path: Path) -> dict[str, str] | None:
-    """Load the cached kkc_mod_index.json. None if missing or unreadable."""
-    import json
+    """Load the cached kkc_mod.json. None if missing or unreadable."""
     if not index_path.exists():
         return None
     try:
-        with index_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = json.loads(index_path.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             return data
-        logger.warning("DLMOD", "Cached kkc_mod_index.json is not a JSON object.")
+        logger.warning("DLMOD", f"Cached {index_path.name} is not a JSON object.")
     except Exception as e:
-        logger.warning("DLMOD", f"Could not load cached kkc_mod_index.json: {e}")
+        logger.warning("DLMOD", f"Could not load cached {index_path.name}: {e}")
     return None
 
 
-async def load_kkc_mod_index(client) -> dict[str, str]:
+async def load_kkc_mod_index(client, index_dir: Path | None = None) -> dict[str, str]:
     """Return the {guid: t.me link} index from kkc-mod-scraper.
 
-    The cached copy (CONFIG_DIR/config/kkc_mod_index.json) is used only if
-    the commit recorded in kkc_mod_index_last_commit.txt matches the repo's
-    latest commit and the cached file loads successfully. Otherwise the
-    index is downloaded again and the commit file is updated.
+    Uses a conditional request (ETag) against the cached copy, so an unchanged index
+    costs a 304 and no download. If the download fails, the cached copy is used.
 
     Returns an empty dict if the index is unavailable.
     """
-    import json
-    from kkafio.core.paths import CONFIG_DIR
+    index_path = (index_dir or cache.default_dir()) / INDEX_FILENAME
+    cached = _load_cached_kkc_index(index_path)
+    headers = cache.conditional_headers(index_path) if cached is not None else {}
 
-    cfg_dir     = CONFIG_DIR / "config"
-    index_path  = cfg_dir / "kkc_mod_index.json"
-    commit_path = cfg_dir / "kkc_mod_index_last_commit.txt"
-
-    latest_commit = await _fetch_latest_index_commit(client)
-
-    saved_commit = ""
     try:
-        if commit_path.exists():
-            saved_commit = commit_path.read_text(encoding="utf-8").strip()
-    except OSError:
-        pass
-
-    if latest_commit and saved_commit == latest_commit:
-        cached = _load_cached_kkc_index(index_path)
-        if cached is not None:
+        r = await client.get(KKC_INDEX_URL, headers=headers)
+        if r.status_code == 304 and cached is not None:
             logger.info("DLMOD", f"kkc mod index up to date: {len(cached)} GUIDs (cached)")
             return cached
-        logger.info("DLMOD", "kkc mod index cache missing or unreadable — downloading...")
-    elif latest_commit is None:
-        # Can't tell whether the cache is current; use it rather than fail.
-        cached = _load_cached_kkc_index(index_path)
-        if cached is not None:
-            logger.warning("DLMOD",
-                "Could not check for kkc mod index updates — using cached copy.")
-            return cached
-    else:
-        logger.info("DLMOD", "kkc mod index is new or outdated — downloading...")
-
-    try:
-        r = await client.get(KKC_INDEX_URL)
         r.raise_for_status()
         index = r.json()
         if not isinstance(index, dict):
             raise ValueError("index is not a JSON object")
     except Exception as e:
+        if cached is not None:
+            logger.warning("DLMOD", f"Could not check for kkc mod index updates ({e}) — using cached copy.")
+            return cached
         logger.error("DLMOD", f"Failed to download kkc mod index: {e}")
         return {}
 
     try:
-        cfg_dir.mkdir(parents=True, exist_ok=True)
-        tmp = index_path.with_name(index_path.name + ".part")
-        tmp.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
-        os.replace(tmp, index_path)
-        if latest_commit:
-            commit_path.write_text(latest_commit, encoding="utf-8")
+        cache.save(index_path, index, r.headers.get("etag"))
     except OSError as e:
         logger.warning("DLMOD", f"Could not save kkc mod index cache: {e}")
 

@@ -1,27 +1,24 @@
 """kk-password-scraper index: {archive filename: [passwords]}.
 
 The index is published by https://github.com/RedDeadDepresso/kk-password-scraper.
-A copy is kept in CONFIG_DIR/config and only re-downloaded when the repo's
-latest commit differs from the one recorded in
-kk_password_index_last_commit.txt (same scheme as the scene index).
+A copy is kept in CONFIG_DIR/indices/password.json and only re-downloaded when its ETag
+changes (see kkafio.indices.cache).
 """
 
 import json
-import os
 from pathlib import Path
 
 from kkafio.core.logger import logger
+from kkafio.indices import cache
 
 PASSWORD_INDEX_URL = "https://reddeaddepresso.github.io/kk-password-scraper/kk_password_index.json"
-PASSWORD_INDEX_COMMITS_API = "https://api.github.com/repos/RedDeadDepresso/kk-password-scraper/commits"
 
-INDEX_FILENAME = "kk_password_index.json"
-COMMIT_FILENAME = "kk_password_index_last_commit.txt"
+INDEX_FILENAME = "password.json"
 
 TAG = "PWDIDX"
 
 # Loaded at most once per process: extracting many archives must not hit the
-# GitHub API once per archive.
+# network once per archive.
 _session_index: "PasswordIndex | None" = None
 
 
@@ -42,22 +39,6 @@ class PasswordIndex:
         if filename in self._exact:
             return self._exact[filename]
         return self._folded.get(filename.strip().casefold(), [])
-
-
-def _fetch_latest_commit(client) -> str | None:
-    """SHA of the repo's latest commit, or None if it couldn't be determined."""
-    try:
-        r = client.get(
-            PASSWORD_INDEX_COMMITS_API,
-            params={"per_page": 1},
-            headers={"Accept": "application/vnd.github+json"},
-        )
-        r.raise_for_status()
-        data = r.json()
-        return data[0]["sha"].strip() if data else None
-    except Exception as e:
-        logger.warning(TAG, f"Could not fetch latest kk-password-scraper commit: {e}")
-        return None
 
 
 def _load_cached_index(index_path: Path) -> dict | None:
@@ -94,67 +75,41 @@ def normalize_index(raw: dict) -> dict[str, list[str]]:
     return index
 
 
-def load_password_index(client=None, config_dir: Path | None = None) -> PasswordIndex:
+def load_password_index(client=None, index_dir: Path | None = None) -> PasswordIndex:
     """Return the password index.
 
-    The cached copy is used only if the commit saved next to it matches the
-    repo's latest commit and it loads; otherwise the index is downloaded again
-    and the saved commit updated. If the latest commit can't be checked (e.g.
-    offline), a cached copy is used rather than failing. Returns an empty
-    index if none is available.
+    Uses a conditional request (ETag) against the cached copy, so an unchanged index
+    costs a 304 and no download. If the download fails (e.g. offline), the cached copy
+    is used. Returns an empty index if none is available.
     """
-    if config_dir is None:
-        from kkafio.core.paths import CONFIG_DIR
-        config_dir = CONFIG_DIR / "config"
-    index_path = config_dir / INDEX_FILENAME
-    commit_path = config_dir / COMMIT_FILENAME
+    index_path = (index_dir or cache.default_dir()) / INDEX_FILENAME
+    cached = _load_cached_index(index_path)
+    headers = cache.conditional_headers(index_path) if cached is not None else {}
 
     own_client = client is None
     if own_client:
         import httpx
         client = httpx.Client(follow_redirects=True, timeout=60)
     try:
-        latest = _fetch_latest_commit(client)
-
-        saved = ""
         try:
-            if commit_path.exists():
-                saved = commit_path.read_text(encoding="utf-8").strip()
-        except OSError:
-            pass
-
-        if latest and saved == latest:
-            cached = _load_cached_index(index_path)
-            if cached is not None:
+            r = client.get(PASSWORD_INDEX_URL, headers=headers)
+            if r.status_code == 304 and cached is not None:
                 index = normalize_index(cached)
                 logger.info(TAG, f"Password index up to date: {len(index)} archive(s) (cached)")
                 return PasswordIndex(index)
-            logger.info(TAG, "Password index cache missing or unreadable — downloading...")
-        elif latest is None:
-            cached = _load_cached_index(index_path)
-            if cached is not None:
-                logger.warning(TAG, "Could not check for password index updates — using cached copy.")
-                return PasswordIndex(normalize_index(cached))
-        else:
-            logger.info(TAG, "Password index is new or outdated — downloading...")
-
-        try:
-            r = client.get(PASSWORD_INDEX_URL)
             r.raise_for_status()
             raw = r.json()
             if not isinstance(raw, dict):
                 raise ValueError("index is not a JSON object")
         except Exception as e:
+            if cached is not None:
+                logger.warning(TAG, f"Could not check for password index updates ({e}) — using cached copy.")
+                return PasswordIndex(normalize_index(cached))
             logger.error(TAG, f"Failed to download password index: {e}")
             return PasswordIndex()
 
         try:
-            config_dir.mkdir(parents=True, exist_ok=True)
-            tmp = index_path.with_name(index_path.name + ".part")
-            tmp.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
-            os.replace(tmp, index_path)
-            if latest:
-                commit_path.write_text(latest, encoding="utf-8")
+            cache.save(index_path, raw, r.headers.get("etag"))
         except OSError as e:
             logger.warning(TAG, f"Could not save password index cache: {e}")
 

@@ -35,7 +35,7 @@ def manual_fakes():
 
 @pytest.fixture
 def agv_file(tmp_path):
-    p = tmp_path / "agv_character_index.json"
+    p = tmp_path / "agv.json"
     p.write_text(json.dumps(_index(), ensure_ascii=False), encoding="utf-8")
     agv.set_index_path(p)
     yield

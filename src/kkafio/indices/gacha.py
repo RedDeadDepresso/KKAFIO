@@ -3,7 +3,7 @@ gacha.py — Look characters and series up in the gacha-game index.
 
 The index is built from popular gacha characters' wiki pages by a separate repo and
 published on GitHub Pages (see docs/06-gacha-index-format.md for the file format). It is
-downloaded on demand and cached in CONFIG_DIR/config, the same way kkc_mod_index.json is.
+downloaded on demand and cached in CONFIG_DIR/indices/gacha.json (see kkafio.indices.cache).
 
 It has the same shape of API as kkafio.indices.agv (available / lookup /
 canonical_series) so kkafio.indices.chara can consult both, gacha first. Everything
@@ -13,19 +13,19 @@ degrades to "no help" when the index can't be downloaded and isn't cached.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
 
 from kkafio.cards.chara.hint_language import DEFAULT_LANGUAGE, localized
+from kkafio.indices import cache
 from kkafio.indices.agv import MAX_HINTS, Candidate, optional_int, split_key
 from kkafio.indices.text import name_parts, norm
 from kkafio.core.logger import logger
 
 INDEX_URL = "https://reddeaddepresso.github.io/gacha-character-scraper/gacha_character_index.json"
-INDEX_FILE = "kkafio_gacha_index.json"
+INDEX_FILE = "gacha.json"
 INDEX_VERSION = 1
 SOURCE = "gacha"
 
@@ -42,8 +42,7 @@ def set_index_path(path: Path | None) -> None:
 def _path() -> Path:
     if _index_path is not None:
         return _index_path
-    from kkafio.core.paths import CONFIG_DIR
-    return CONFIG_DIR / "config" / INDEX_FILE
+    return cache.default_dir() / INDEX_FILE
 
 
 def _per_language(value) -> dict[str, str]:
@@ -173,15 +172,7 @@ def refresh(tag: str = "GACHA", timeout: float = 6.0) -> bool:
     Any network problem just leaves the cached copy (if any) in use.
     """
     path = _path()
-    etag_path = path.with_name(path.name + ".etag")
-    headers: dict[str, str] = {}
-    if available():
-        try:
-            etag = etag_path.read_text(encoding="utf-8").strip()
-            if etag:
-                headers["If-None-Match"] = etag
-        except OSError:
-            pass
+    headers = cache.conditional_headers(path) if available() else {}
 
     try:
         r = _fetch(INDEX_URL, headers, timeout)
@@ -202,15 +193,7 @@ def refresh(tag: str = "GACHA", timeout: float = 6.0) -> bool:
         if not isinstance(data, dict) or data.get("version") != INDEX_VERSION:
             raise ValueError(f"unsupported index version {data.get('version') if isinstance(data, dict) else '?'}")
         _build(data)      # reject a malformed file before it replaces a good cache
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(path.name + ".part")
-        tmp.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        os.replace(tmp, path)
-        etag = r.headers.get("etag")
-        if etag:
-            etag_path.write_text(etag, encoding="utf-8")
-        else:
-            etag_path.unlink(missing_ok=True)
+        cache.save(path, data, r.headers.get("etag"))
     except (ValueError, KeyError, TypeError, AttributeError, OSError) as e:
         logger.warning(tag, f"Could not use the downloaded gacha index: {e}")
         return available()
