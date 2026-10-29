@@ -13,40 +13,15 @@ is prompted to paste a new one.
 
 from __future__ import annotations
 
-import json
-import webbrowser
-
 import httpx
 
-from kkafio.core.i18n import t
-from kkafio.core.paths import SESSIONS_DIR
 from kkafio.core.logger import logger
-from kkafio.dialogs.password_dialog import password_dialog
+from kkafio.core.paths import SESSIONS_DIR
+from kkafio.core.session_store import SessionStore
+from kkafio.services.content_sources.session_flow import SessionSpec, obtain_session
 
-SESSION_FILE   = SESSIONS_DIR / "koikatsucards.json"
 SESSION_API    = "https://koikatsucards.com/api/session"
 KKD_LOGIN_URL  = "https://koikatsucards.com/login"
-
-
-def _load() -> dict:
-    try:
-        return json.loads(SESSION_FILE.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return {}
-    except Exception as e:
-        logger.warning("KKDSES", f"Could not read koikatsucards.json: {e}")
-        return {}
-
-
-def _save(session: str) -> None:
-    try:
-        SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
-        SESSION_FILE.write_text(
-            json.dumps({"session": session}, indent=2),
-            encoding="utf-8",
-        )
-    except Exception as e:
-        logger.warning("KKDSES", f"Could not save koikatsucards.json: {e}")
 
 
 def _is_valid(session: str) -> bool | None:
@@ -93,66 +68,27 @@ def _is_valid(session: str) -> bool | None:
     return data.get("user") is not None
 
 
-def _prompt() -> str | None:
-    """Open koikatsucards.com/login and ask the user to paste the cookie."""
-    logger.info("KKDSES",
-        "Opening koikatsucards.com — log in, then copy the kkd_session cookie value.")
-    webbrowser.open(KKD_LOGIN_URL)
-
-    value = password_dialog(
-        t("dialog.password.kkd_title"),
-        t("dialog.password.kkd_body"),
-    ).strip()
-
-    return value if value else None
+SPEC = SessionSpec(
+    tag="KKDSES",
+    label="kkd_session",
+    store=SessionStore(SESSIONS_DIR / "koikatsucards.json", "KKDSES"),
+    login_url=KKD_LOGIN_URL,
+    login_hint="Opening koikatsucards.com — log in, then copy the kkd_session cookie value.",
+    dialog_key="kkd",
+    cancel_message="No kkd_session provided — koikatsucards.com downloads skipped.",
+    malformed_message="",           # no shape check
+    is_valid=_is_valid,
+    rejected_message=("The provided kkd_session is not valid. "
+                      "Make sure you are logged in and copied the correct cookie value."),
+)
 
 
 def get_or_prompt() -> str | None:
+    """Return a valid kkd_session cookie value.
+
+    Loads the stored session and validates it against /api/session. If invalid
+    or missing, opens the browser and prompts the user to paste a new cookie,
+    then validates the new one before returning. Returns None if the user
+    cancels or the new session is also invalid.
     """
-    Return a valid kkd_session cookie value.
-
-    Loads the stored session and validates it against /api/session.
-    If invalid or missing, opens the browser and prompts the user to
-    paste a new cookie, then validates the new one before returning.
-    Returns None if the user cancels or the new session is also invalid.
-    """
-    data    = _load()
-    session = data.get("session", "")
-
-    if session:
-        logger.info("KKDSES", "Validating kkd_session against koikatsucards.com...")
-        valid = _is_valid(session)
-        if valid is True:
-            logger.info("KKDSES", "kkd_session is valid.")
-            return session
-        if valid is None:
-            # Couldn't reach the validation endpoint — that's not evidence
-            # the cookie is bad, so use the stored one rather than prompting
-            # the user for a cookie we can't confirm is any better.
-            logger.warning("KKDSES",
-                "Could not validate kkd_session (network issue) — using stored session as-is.")
-            return session
-        logger.warning("KKDSES", "kkd_session is invalid or expired.")
-
-    # Need a new session
-    new_session = _prompt()
-    if not new_session:
-        logger.error("KKDSES",
-            "No kkd_session provided — koikatsucards.com downloads skipped.")
-        return None
-
-    logger.info("KKDSES", "Validating new kkd_session...")
-    valid = _is_valid(new_session)
-    if valid is False:
-        logger.error("KKDSES",
-            "The provided kkd_session is not valid. "
-            "Make sure you are logged in and copied the correct cookie value.")
-        return None
-    if valid is None:
-        logger.warning("KKDSES",
-            "Could not confirm the new kkd_session is valid (network issue) — "
-            "saving it anyway; downloads will simply fail if it turns out to be wrong.")
-
-    _save(new_session)
-    logger.success("KKDSES", "kkd_session saved and validated.")
-    return new_session
+    return obtain_session(SPEC)

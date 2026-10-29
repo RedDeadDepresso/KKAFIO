@@ -350,7 +350,7 @@ def test_gofile_url_parsing():
 
 @pytest.fixture(autouse=True)
 def _reset_gofile_secret_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr(gofile, "GOFILE_STATE_FILE", tmp_path / "gofile.json")   # never touch the real one
+    monkeypatch.setattr(gofile.GOFILE_STORE, "path", tmp_path / "gofile.json")   # never touch the real one
     gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
     yield
     gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
@@ -1897,16 +1897,26 @@ def test_pawchive_session_cleaning_and_shape():
 
 
 def test_pawchive_session_get_or_prompt(monkeypatch):
+    import dataclasses
+    from kkafio.services.content_sources import session_flow
     from kkafio.services.content_sources.pawchive import session as ps
     tok, new = "eyJ" + "a" * 30, "eyJ" + "n" * 30
     saved: list[str] = []
     prompts: list[int] = []
     state = {"stored": tok, "valid": {tok: True, new: True}, "paste": new}
+
+    class FakeStore:
+        def load(self):
+            return {"session": state["stored"]} if state["stored"] else {}
+
+        def save(self, data):
+            saved.append(data["session"])
+            return True
+
     monkeypatch.delenv(ps.ENV_VAR, raising=False)
-    monkeypatch.setattr(ps, "_load", lambda: {"session": state["stored"]} if state["stored"] else {})
-    monkeypatch.setattr(ps, "_save", saved.append)
-    monkeypatch.setattr(ps, "_is_valid", lambda s: state["valid"].get(s))
-    monkeypatch.setattr(ps, "_prompt", lambda: (prompts.append(1), state["paste"])[1])
+    monkeypatch.setattr(ps, "SPEC", dataclasses.replace(
+        ps.SPEC, store=FakeStore(), is_valid=lambda s: state["valid"].get(s)))
+    monkeypatch.setattr(session_flow, "_prompt", lambda spec: (prompts.append(1), state["paste"])[1])
 
     assert ps.get_or_prompt() == tok and prompts == []               # stored + valid: no dialog
 
@@ -1937,6 +1947,82 @@ def test_pawchive_session_get_or_prompt(monkeypatch):
     state["valid"][tok] = True
     prompts.clear()
     assert ps.get_or_prompt() == tok and prompts == []
+
+
+def test_session_store_roundtrip_and_failures(tmp_path):
+    from kkafio.core.session_store import SessionStore
+    store = SessionStore(tmp_path / "sub" / "svc.json", "TEST")
+    assert store.load() == {}                                         # missing file
+    assert store.save({"session": "abc"}) and store.load() == {"session": "abc"}
+    assert store.update(extra=1) and store.load() == {"session": "abc", "extra": 1}   # merged
+    assert not list((tmp_path / "sub").glob("*.part"))                # atomic write leaves no temp file
+    store.path.write_text("{not json", encoding="utf-8")
+    assert store.load() == {}                                         # corrupt -> as if empty
+    store.path.write_text("[1, 2]", encoding="utf-8")
+    assert store.load() == {}                                         # not an object -> as if empty
+    blocked = SessionStore(tmp_path / "svc.json" / "x.json", "TEST")  # parent is a file: write fails softly
+    (tmp_path / "svc.json").write_text("", encoding="utf-8")
+    assert blocked.save({"a": 1}) is False
+
+
+def test_session_flow_without_site_check_and_with_env(monkeypatch):
+    import dataclasses
+    from kkafio.services.content_sources import session_flow
+    from kkafio.services.content_sources.pixiv import session as px
+    good, other = "12345678_" + "a" * 20, "87654321_" + "b" * 20
+    saved: list[str] = []
+    state = {"stored": good, "paste": other}
+
+    class FakeStore:
+        def load(self):
+            return {"session": state["stored"]} if state["stored"] else {}
+
+        def save(self, data):
+            saved.append(data["session"])
+            return True
+
+    prompts: list[int] = []
+    monkeypatch.delenv(px.ENV_VAR, raising=False)
+    monkeypatch.setattr(px, "SPEC", dataclasses.replace(px.SPEC, store=FakeStore()))
+    monkeypatch.setattr(session_flow, "_prompt", lambda spec: (prompts.append(1), state["paste"])[1])
+
+    assert px.get_or_prompt() == good and prompts == []               # shape alone decides: no network check
+    monkeypatch.setenv(px.ENV_VAR, f"PHPSESSID={other}; path=/")
+    assert px.get_or_prompt() == other and prompts == []              # environment first, cleaned
+    monkeypatch.setenv(px.ENV_VAR, "garbage")
+    assert px.get_or_prompt() == good                                 # malformed env ignored, stored used
+    state["stored"] = "garbage"
+    assert px.get_or_prompt() == other and prompts == [1] and saved == [other]   # malformed stored -> asked
+    state["paste"] = "garbage"; saved.clear()
+    assert px.get_or_prompt() is None and saved == []                 # pasted junk is not saved
+    state["paste"] = None
+    assert px.get_or_prompt() is None and saved == []                 # dialog cancelled
+
+
+def test_session_flow_kkd_site_check(monkeypatch):
+    import dataclasses
+    from kkafio.services.content_sources import session_flow
+    from kkafio.services.content_sources.koikatsucards import session as kk
+    saved: list[str] = []
+    state = {"stored": "old", "valid": {"old": False, "new": True}, "paste": "  new "}
+
+    class FakeStore:
+        def load(self):
+            return {"session": state["stored"]} if state["stored"] else {}
+
+        def save(self, data):
+            saved.append(data["session"])
+            return True
+
+    monkeypatch.setattr(kk, "SPEC", dataclasses.replace(
+        kk.SPEC, store=FakeStore(), is_valid=lambda s: state["valid"].get(s)))
+    monkeypatch.setattr(session_flow, "_prompt", lambda spec: spec.clean(state["paste"]) or None)
+
+    assert kk.get_or_prompt() == "new" and saved == ["new"]           # expired -> new one, trimmed, saved
+    state["valid"]["new"] = False; saved.clear()
+    assert kk.get_or_prompt() is None and saved == []                 # new one rejected too
+    state["valid"]["new"] = None
+    assert kk.get_or_prompt() == "new" and saved == ["new"]           # cannot be checked: saved anyway
 
 
 def test_pawchive_session_validation_status_mapping(monkeypatch):

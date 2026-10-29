@@ -20,17 +20,12 @@ Cancelling the dialog therefore means "continue without a session".
 
 from __future__ import annotations
 
-import json
-import os
 import re
-import webbrowser
 
-from kkafio.core.i18n import t
-from kkafio.core.logger import logger
 from kkafio.core.paths import SESSIONS_DIR
-from kkafio.dialogs.password_dialog import password_dialog
+from kkafio.core.session_store import SessionStore
+from kkafio.services.content_sources.session_flow import SessionSpec, obtain_session
 
-SESSION_FILE    = SESSIONS_DIR / "pixiv.json"
 PIXIV_LOGIN_URL = "https://accounts.pixiv.net/login"
 ENV_VAR         = "PIXIV_PHPSESSID"
 
@@ -54,76 +49,30 @@ def looks_valid(session: str) -> bool:
     return bool(_SESSION_RE.match(session or ""))
 
 
-def _load() -> dict:
-    try:
-        return json.loads(SESSION_FILE.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return {}
-    except Exception as e:
-        logger.warning("PXVSES", f"Could not read pixiv.json: {e}")
-        return {}
-
-
-def _save(session: str) -> None:
-    try:
-        SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
-        SESSION_FILE.write_text(
-            json.dumps({"session": session}, indent=2),
-            encoding="utf-8",
-        )
-    except Exception as e:
-        logger.warning("PXVSES", f"Could not save pixiv.json: {e}")
-
-
-def _prompt() -> str | None:
-    """Open accounts.pixiv.net/login and ask the user to paste the cookie."""
-    logger.info("PXVSES",
-        "Opening pixiv.net — log in, then copy the PHPSESSID cookie value.")
-    webbrowser.open(PIXIV_LOGIN_URL)
-
-    value = clean_session(password_dialog(
-        t("dialog.password.pixiv_title"),
-        t("dialog.password.pixiv_body"),
-    ))
-    return value or None
+SPEC = SessionSpec(
+    tag="PXVSES",
+    label="pixiv PHPSESSID",
+    store=SessionStore(SESSIONS_DIR / "pixiv.json", "PXVSES"),
+    env_var=ENV_VAR,
+    login_url=PIXIV_LOGIN_URL,
+    login_hint="Opening pixiv.net — log in, then copy the PHPSESSID cookie value.",
+    dialog_key="pixiv",
+    clean=clean_session,
+    looks_valid=looks_valid,
+    cancel_message=("No PHPSESSID provided — continuing without login "
+                    "(R-18 / restricted pixiv works will not be accessible)."),
+    malformed_message=("That does not look like a PHPSESSID (expected something like "
+                       "'12345678_AbCdEf...'). Continuing without login."),
+    rejected_message="",            # no site check
+)
 
 
 def get_or_prompt() -> str | None:
+    """Return a PHPSESSID cookie value, or None to continue without a login.
+
+    Uses the environment variable or the stored session when well-formed;
+    otherwise opens the browser and asks the user to paste one. Returns None if
+    the user cancels or pastes something that is clearly not a PHPSESSID
+    (public artworks can still be downloaded in that case).
     """
-    Return a PHPSESSID cookie value, or None to continue without a login.
-
-    Uses the environment variable or the stored session when present and
-    well-formed; otherwise opens the browser and asks the user to paste one.
-    Returns None if the user cancels or pastes something that is clearly not a
-    PHPSESSID (public artworks can still be downloaded in that case).
-    """
-    env_value = clean_session(os.environ.get(ENV_VAR, ""))
-    if env_value:
-        if looks_valid(env_value):
-            logger.info("PXVSES", f"Using PHPSESSID from {ENV_VAR}.")
-            return env_value
-        logger.warning("PXVSES", f"{ENV_VAR} does not look like a PHPSESSID — ignoring it.")
-
-    session = clean_session(_load().get("session", ""))
-    if session:
-        if looks_valid(session):
-            logger.info("PXVSES", "Using stored pixiv PHPSESSID.")
-            return session
-        logger.warning("PXVSES", "Stored pixiv session is malformed — asking for a new one.")
-
-    new_session = _prompt()
-    if not new_session:
-        logger.warning("PXVSES",
-            "No PHPSESSID provided — continuing without login "
-            "(R-18 / restricted pixiv works will not be accessible).")
-        return None
-
-    if not looks_valid(new_session):
-        logger.error("PXVSES",
-            "That does not look like a PHPSESSID (expected something like "
-            "'12345678_AbCdEf...'). Continuing without login.")
-        return None
-
-    _save(new_session)
-    logger.success("PXVSES", "pixiv PHPSESSID saved.")
-    return new_session
+    return obtain_session(SPEC)

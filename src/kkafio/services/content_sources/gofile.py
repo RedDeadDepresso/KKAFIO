@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import json
 import os
 import re
 import time
@@ -32,6 +31,7 @@ from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
 
 from kkafio.core.logger import logger
 from kkafio.core.paths import SESSIONS_DIR
+from kkafio.core.session_store import SessionStore
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.net import RETRY_ATTEMPTS, get_with_retry, is_transient, resolve_filename, retry_delay, safe_filename
 
@@ -46,7 +46,7 @@ GOFILE_LANG        = "en-US"
 GOFILE_USER_AGENT  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 GOFILE_PAGE_SIZE   = 1000
 GOFILE_MAX_DEPTH   = 8                # nested folder levels followed
-GOFILE_STATE_FILE  = SESSIONS_DIR / "gofile.json"   # guest token + last rejection, kept between runs
+GOFILE_STORE       = SessionStore(SESSIONS_DIR / "gofile.json", "DLOAD")   # guest token + last rejection, kept between runs
 GOFILE_TOKEN_TTL   = 10800            # reuse a guest account this long (s); gofile allows ~6h
 GOFILE_PARALLEL    = 4                # files downloaded at once from gofile
 GOFILE_BUSY_BASE   = 5                # first wait when a storage server is busy (s), then doubling
@@ -232,24 +232,12 @@ async def _gofile_ensure_secret(client) -> str:
 
 
 def _gofile_load_state() -> dict:
-    try:
-        data = json.loads(GOFILE_STATE_FILE.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except (OSError, ValueError):
-        return {}
+    return GOFILE_STORE.load()
 
 
 def _gofile_save_state(**updates) -> None:
     """Merge `updates` into the state file (best effort: it is only an optimisation)."""
-    try:
-        state = _gofile_load_state()
-        state.update(updates)
-        GOFILE_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        tmp = GOFILE_STATE_FILE.with_name(GOFILE_STATE_FILE.name + ".part")
-        tmp.write_text(json.dumps(state), encoding="utf-8")
-        os.replace(tmp, GOFILE_STATE_FILE)
-    except OSError as e:
-        logger.warning("DLOAD", f"  Could not save Gofile state: {e}")
+    GOFILE_STORE.update(**updates)
 
 
 def _gofile_signature_rejected() -> None:

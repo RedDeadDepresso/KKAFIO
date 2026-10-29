@@ -62,7 +62,7 @@ KKAFIO-dev/
 │   │   ├── ungroup_cards.py
 │   │   └── uninstall_contents.py
 │   │
-│   ├── core/                        # Configuration, logging, paths, file operations
+│   ├── core/                        # Configuration, logging, paths, file operations, session_store.py (JSON state files under sessions/)
 │   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
 │   │   ├── errors.py                # KKAFIOError / UserError / ConfigError / InputError / ToolNotFoundError / TaskFailedError
 │   │   ├── paths.py                 # Shipped-file paths (APP_DIR / ASSETS_DIR, frozen vs. source) and the per-user config dir (CONFIG_DIR)
@@ -104,6 +104,7 @@ KKAFIO-dev/
 │   │   │   ├── net.py / history.py / transfer.py   # Shared: retry + HTTP client, download history, streaming downloads and paged listings
 │   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
 │   │   │   ├── bepis.py  gofile.py  mega.py  gdrive.py   # One module per site
+│   │   │   ├── session_flow.py      # Shared "stored / env / ask for the cookie, validate, save" flow for the session.py files below
 │   │   │   ├── koikatsu/            # koikatsucards.com: downloader (__init__) + session.py (kkd_session cookie)
 │   │   │   ├── pixiv/               # pixiv.net: downloader (__init__) + session.py (PHPSESSID cookie)
 │   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session use) · files · posts · downloader · session.py (session cookie, t1 files only)

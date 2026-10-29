@@ -26,20 +26,16 @@ means "continue without a session" — the temporary files then fail.
 
 from __future__ import annotations
 
-import json
-import os
 import re
-import webbrowser
 from importlib import metadata
 
 import httpx
 
-from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.core.paths import SESSIONS_DIR
-from kkafio.dialogs.password_dialog import password_dialog
+from kkafio.core.session_store import SessionStore
+from kkafio.services.content_sources.session_flow import SessionSpec, obtain_session
 
-SESSION_FILE      = SESSIONS_DIR / "pawchive.json"
 PAWCHIVE_LOGIN_URL = "https://pawchive.pw/account/login"
 ACCOUNT_URL       = "https://pawchive.pw/account"
 COOKIE_NAME       = "session"
@@ -83,27 +79,6 @@ def looks_valid(session: str) -> bool:
     return bool(_SESSION_RE.match(session or ""))
 
 
-def _load() -> dict:
-    try:
-        return json.loads(SESSION_FILE.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return {}
-    except Exception as e:
-        logger.warning("PAWSES", f"Could not read pawchive.json: {e}")
-        return {}
-
-
-def _save(session: str) -> None:
-    try:
-        SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
-        SESSION_FILE.write_text(
-            json.dumps({"session": session}, indent=2),
-            encoding="utf-8",
-        )
-    except Exception as e:
-        logger.warning("PAWSES", f"Could not save pawchive.json: {e}")
-
-
 def _is_valid(session: str) -> bool | None:
     """Check whether pawchive.pw accepts the session cookie.
 
@@ -136,76 +111,31 @@ def _is_valid(session: str) -> bool | None:
     return None
 
 
-def _prompt() -> str | None:
-    """Open pawchive.pw/account/login and ask the user to paste the cookie."""
-    logger.info("PAWSES",
-        "Opening pawchive.pw — log in, then copy the session cookie value.")
-    webbrowser.open(PAWCHIVE_LOGIN_URL)
-
-    value = clean_session(password_dialog(
-        t("dialog.password.pawchive_title"),
-        t("dialog.password.pawchive_body"),
-    ))
-    return value or None
+SPEC = SessionSpec(
+    tag="PAWSES",
+    label="pawchive session",
+    store=SessionStore(SESSIONS_DIR / "pawchive.json", "PAWSES"),
+    env_var=ENV_VAR,
+    login_url=PAWCHIVE_LOGIN_URL,
+    login_hint="Opening pawchive.pw — log in, then copy the session cookie value.",
+    dialog_key="pawchive",
+    clean=clean_session,
+    looks_valid=looks_valid,
+    is_valid=_is_valid,
+    cancel_message=("No pawchive session provided — oversized temporary files "
+                    "(t1.pawchive.pw) will not be downloaded."),
+    malformed_message="That does not look like a pawchive session cookie. Continuing without login.",
+    rejected_message=("The provided pawchive session is not valid. "
+                      "Make sure you are logged in and copied the value of the 'session' cookie."),
+)
 
 
 def get_or_prompt() -> str | None:
+    """Return a pawchive.pw ``session`` cookie value, or None to continue without one.
+
+    Uses the environment variable or the stored session when pawchive.pw accepts
+    it (or when that can't be checked); otherwise opens the browser and asks the
+    user to paste one. Returns None if the user cancels, or pastes something that
+    is clearly not a session cookie or that pawchive.pw rejects.
     """
-    Return a pawchive.pw ``session`` cookie value, or None to continue without one.
-
-    Uses the environment variable or the stored session when it is accepted by
-    pawchive.pw (or when that can't be checked); otherwise opens the browser and
-    asks the user to paste one. Returns None if the user cancels, or pastes
-    something that is clearly not a session cookie or that pawchive.pw rejects.
-    """
-    candidates: list[tuple[str, str]] = []
-    env_value = clean_session(os.environ.get(ENV_VAR, ""))
-    if env_value:
-        candidates.append((f"{ENV_VAR}", env_value))
-    stored = clean_session(_load().get("session", ""))
-    if stored:
-        candidates.append(("stored", stored))
-
-    for source, session in candidates:
-        if not looks_valid(session):
-            logger.warning("PAWSES", f"The {source} pawchive session is malformed — ignoring it.")
-            continue
-        logger.info("PAWSES", f"Validating the {source} pawchive session...")
-        valid = _is_valid(session)
-        if valid is True:
-            logger.info("PAWSES", "pawchive session is valid.")
-            return session
-        if valid is None:
-            # Not evidence the cookie is bad — don't nag for a replacement.
-            logger.warning("PAWSES",
-                "Could not validate the pawchive session — using it as it is.")
-            return session
-        logger.warning("PAWSES", f"The {source} pawchive session is invalid or expired.")
-
-    new_session = _prompt()
-    if not new_session:
-        logger.warning("PAWSES",
-            "No pawchive session provided — oversized temporary files "
-            "(t1.pawchive.pw) will not be downloaded.")
-        return None
-
-    if not looks_valid(new_session):
-        logger.error("PAWSES",
-            "That does not look like a pawchive session cookie. Continuing without login.")
-        return None
-
-    logger.info("PAWSES", "Validating new pawchive session...")
-    valid = _is_valid(new_session)
-    if valid is False:
-        logger.error("PAWSES",
-            "The provided pawchive session is not valid. "
-            "Make sure you are logged in and copied the value of the 'session' cookie.")
-        return None
-    if valid is None:
-        logger.warning("PAWSES",
-            "Could not confirm the new pawchive session is valid (network issue) — "
-            "saving it anyway; the downloads will simply fail if it turns out to be wrong.")
-
-    _save(new_session)
-    logger.success("PAWSES", "pawchive session saved.")
-    return new_session
+    return obtain_session(SPEC)
