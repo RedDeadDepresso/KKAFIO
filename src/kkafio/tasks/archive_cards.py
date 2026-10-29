@@ -12,7 +12,7 @@ from typing import Literal
 
 from kkafio.tasks.base_task import BaseTask
 from kkafio.cards.mods.zipmods import (
-    build_mods_cache, in_modpack_folder, iter_mod_files, load_modpack_index, resolve_paths,
+    build_mods_cache, in_modpack_folder, iter_mod_files, resolve_paths,
 )
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
@@ -20,6 +20,7 @@ from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import GameType
 from kkafio.core.errors import InputError, TaskFailedError
 from kkafio.core.logger import logger
+from kkafio.indices.modpack import load_modpack_index
 
 ArchiveFormat = Literal["7z", "zip", "copy"]
 

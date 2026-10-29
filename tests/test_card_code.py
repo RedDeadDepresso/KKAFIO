@@ -19,6 +19,7 @@ import card_factory as cf
 # ---- where the code lives -----------------------------------------------------------
 from kkafio.cards import cache_io
 from kkafio.cards.mods import zipmods
+from kkafio.indices.modpack import load_modpack_index
 from kkafio.cards.chara import outfits
 from kkafio.cards.mods import parsing
 from kkafio.cards.mods import png_guids
@@ -283,7 +284,7 @@ def test_scan_mods_local_fallback(tmp_path, use_cache):
 
 
 def test_load_modpack_index_reads_bundled_index():
-    index = zipmods.load_modpack_index("Koikatsu")
+    index = load_modpack_index("Koikatsu")
     assert isinstance(index, dict) and len(index) > 1000
     assert all(isinstance(k, str) and isinstance(v, str) for k, v in list(index.items())[:50])
 

@@ -75,7 +75,7 @@ KKAFIO-dev/
 │   │   ├── mods/                    # Which zipmods a card needs, and which are installed
 │   │   │   ├── parsing.py           # Reading mod GUIDs out of card files (chara / scene / coordinate)
 │   │   │   ├── png_guids.py         # Per-folder GUID collection + its caches
-│   │   │   ├── zipmods.py           # Zipmod scanning, mods cache, Sideloader Modpack index
+│   │   │   ├── zipmods.py           # Zipmod scanning, mods cache, resolving a card's mods/coordinate folders
 │   │   │   └── shared_mods.py       # "Is this zipmod still used by a remaining card?" check
 │   │   ├── scenes/                  # Studio scene handling
 │   │   │   ├── scene_version.py     # KK vs KKS scene detection
@@ -96,6 +96,7 @@ KKAFIO-dev/
 │   │   ├── scene.py                 # pepper-scene-index: scene hash -> author / year (Group Scenes)
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
+│   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> path inside the modpack
 │   │   └── authors.py               # Known scene authors and their aliases (assets/data/authors.json), for Group Scenes' Manual mode
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
@@ -213,7 +214,7 @@ in the subpackage that fits it:
 | `core/` | configuration, logging, paths, or generic file operations |
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
 | `services/` | tied to an external account, credential store or remote mod source (site sessions, Telegram, BetterRepack, the Download Contents sites) |
-| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, kkc mods), or a shipped one (scene authors) |
+| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, kkc mods), or a shipped one (scene authors, the Sideloader Modpack) |
 | `dialogs/` | a CustomTkinter window the user interacts with (prompts, galleries, review screens) |
 | `system/` | an OS-facing helper (job objects, subprocess quirks, MXU automation, context-menu batching) |
 

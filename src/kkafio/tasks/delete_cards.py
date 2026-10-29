@@ -10,13 +10,14 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.tasks.base_task import BaseTask
-from kkafio.cards.mods.zipmods import build_mods_cache, load_modpack_index, resolve_paths
+from kkafio.cards.mods.zipmods import build_mods_cache, resolve_paths
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.cards.mods.shared_mods import find_guids_in_use, keep_unshared, path_key
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
+from kkafio.indices.modpack import load_modpack_index
 
 
 class DeleteCards(BaseTask):
