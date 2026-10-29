@@ -263,7 +263,7 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/data/modpack_index_kk.json` / `assets/data/modpack_index_kks.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/indices/modpack.py`'s `load_modpack_index()`. |
+| `assets/data/kk_modpack_index.json` / `assets/data/kks_modpack_index.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/indices/modpack.py`'s `load_modpack_index()`. |
 | `assets/data/default_clothes.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_clothes.py`; see [Default Clothes](#default-clothes) below. Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
 | `assets/data/author_index.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Group Scenes' Manual mode suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/services/scene_authors.py`. |
 | `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/classifier.py`. Never modified at runtime. |
@@ -302,8 +302,8 @@ KKAFIO ships with two pre-built modpack index files:
 
 | File | Game |
 |---|---|
-| `assets/data/modpack_index_kk.json` | Koikatsu / Koikatsu Party |
-| `assets/data/modpack_index_kks.json` | Koikatsu Sunshine |
+| `assets/data/kk_modpack_index.json` | Koikatsu / Koikatsu Party |
+| `assets/data/kks_modpack_index.json` | Koikatsu Sunshine |
 
 Archive Cards, Delete Cards, and Download Missing Mods use the index for
 the configured game type to instantly identify which required mods are
@@ -314,10 +314,10 @@ To regenerate the index after updating the Sideloader Modpack, run:
 
 ```
 # Koikatsu / Koikatsu Party
-python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/modpack_index_kk.json
+python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/kk_modpack_index.json
 
 # Koikatsu Sunshine
-python tools/build_modpack_index.py "C:/KKS/mods" --game-type kks --output assets/data/modpack_index_kks.json
+python tools/build_modpack_index.py "C:/KKS/mods" --game-type kks --output assets/data/kks_modpack_index.json
 ```
 
 **Incremental updates** — if the index file already exists,
@@ -329,7 +329,7 @@ Modpack takes seconds rather than minutes.
 Use `--full` to force a complete rescan and ignore the previous index:
 
 ```
-python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/modpack_index_kk.json --full
+python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/kk_modpack_index.json --full
 ```
 
 Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to

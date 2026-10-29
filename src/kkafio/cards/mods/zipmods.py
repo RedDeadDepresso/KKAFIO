@@ -196,7 +196,7 @@ def scan_mods(mods_dir: Path, required: set[str],
               game_type: str = GameType.KOIKATSU.value) -> dict[str, Path]:
     """Scan mods_dir for zipmods providing the required GUIDs.
 
-    Fast path: if modpack_index.json exists, GUIDs found there are
+    Fast path: if the bundled modpack index exists, GUIDs found there are
     resolved instantly (no file I/O per zipmod). GUIDs not in the index are
     resolved by scanning local non-modpack folders.
 

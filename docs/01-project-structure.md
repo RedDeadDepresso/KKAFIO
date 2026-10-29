@@ -17,15 +17,15 @@ KKAFIO-dev/
 │
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
 │   ├── build_default_clothes.py     # Records a folder of default-clothes coordinates in assets/data/default_clothes.json (Group Coordinates leaves those coordinates alone)
-│   ├── build_modpack_index.py       # Regenerates assets/data/modpack_index_*.json
+│   ├── build_modpack_index.py       # Regenerates assets/data/*_modpack_index.json
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
 │   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
 │   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
 │
 ├── assets/                          # Static data shipped with every release
 │   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
-│   ├── modpack_index_kk.json  # Pre-built Sideloader Modpack index for Koikatsu/Party
-│   ├── modpack_index_kks.json # Pre-built Sideloader Modpack index for Koikatsu Sunshine
+│   ├── kk_modpack_index.json        # Pre-built Sideloader Modpack index for Koikatsu/Party
+│   ├── kks_modpack_index.json       # Pre-built Sideloader Modpack index for Koikatsu Sunshine
 │   ├── default_clothes.json  # Optional, written by tools/build_default_clothes.py: outfit digests of the default coordinates Group Coordinates skips
 │   ├── xkcd_colors.json             # Named colour list used by the coordinate colour-fingerprint matcher
 │   └── i18n/                        # GUI translation strings, one file per language (see doc 03)

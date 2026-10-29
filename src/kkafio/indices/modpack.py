@@ -13,17 +13,17 @@ from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.core.paths import ASSETS_DATA_DIR
 
-MODPACK_INDEX_FILE_KK  = "modpack_index_kk.json"
+MODPACK_INDEX_FILE_KK  = "kk_modpack_index.json"
 
-MODPACK_INDEX_FILE_KKS = "modpack_index_kks.json"
+MODPACK_INDEX_FILE_KKS = "kks_modpack_index.json"
 
 
 @cache
 def load_modpack_index(game_type: str = GameType.KOIKATSU.value) -> dict[str, str] | None:
     """Load the pre-built Sideloader Modpack GUID index for the given game type.
 
-    Uses modpack_index_kks.json for KoikatsuSunshine,
-    and modpack_index_kk.json for all other variants.
+    Uses kks_modpack_index.json for KoikatsuSunshine,
+    and kk_modpack_index.json for all other variants.
 
     Looked up at assets/<index_file> next to the running exe / script (this
     is always where it's shipped with the release — see docs/01-project-

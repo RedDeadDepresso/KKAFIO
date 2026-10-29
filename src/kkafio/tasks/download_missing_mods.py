@@ -342,7 +342,7 @@ class DownloadMissingMods(BaseTask):
             logger.info("DLMOD", f"Modpack index loaded: {len(modpack_index)} GUIDs")
         else:
             logger.warning("DLMOD",
-                "modpack_index_kk/kks.json not found — "
+                "kk_modpack_index.json / kks_modpack_index.json not found — "
                 "BetterRepack downloads unavailable.")
 
         # ── Step 3: chara + scene + coord GUIDs ─────────────────────────────
