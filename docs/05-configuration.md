@@ -77,7 +77,13 @@ used here.
 close; read once at the start of every `kkafio_cli run` (or any other
 subcommand that needs config, via `--config`/`--instance`).
 
-### `config/kkd_session.json` — koikatsucards.com session
+### `sessions/` — service sessions
+
+All login sessions live in `%APPDATA%/KKAFIO/sessions/`, one `<service>.json` per
+service (`koikatsucards.json`, `pixiv.json`, `pawchive.json`, `gofile.json`). Telegram is the exception:
+it has its own folder, `sessions/telegram/`.
+
+### `sessions/koikatsucards.json` — koikatsucards.com session
 
 ```json
 { "session": "<kkd_session cookie value>" }
@@ -93,11 +99,12 @@ prompted to paste a fresh cookie via a native dialog
 ### Gofile environment variables
 
 **Download Contents** needs no stored configuration for `gofile.io` links (a guest
-account is created per run). Optional environment variables: `GOFILE_TOKEN` (use a
+account is created per run; its token and the signature-rejection cooldown are kept in
+`sessions/gofile.json` between runs). Optional environment variables: `GOFILE_TOKEN` (use a
 real account's token) and `GOFILE_SALT` (override the website-token salt when gofile
 rotates it; the symptom of a stale salt is an `error-notPremium` error).
 
-### `config/pixiv_session.json` — pixiv.net session
+### `sessions/pixiv.json` — pixiv.net session
 
 ```json
 { "session": "<PHPSESSID cookie value>" }
@@ -111,7 +118,7 @@ an error — public works still download, only R-18 / restricted ones need it �
 so cancelling the dialog continues without a login. The cookie is scoped to
 `.pixiv.net` and never sent to the image host (`i.pximg.net`).
 
-### `config/pawchive_session.json` — pawchive.pw session
+### `sessions/pawchive.json` — pawchive.pw session
 
 ```json
 { "session": "<session cookie value>" }
@@ -128,7 +135,7 @@ one is asked for); a network error or a 403 proves nothing, so the value is used
 is. Cancelling the dialog continues without a login (the temporary files then fail).
 The cookie is scoped to `.pawchive.pw` and never sent to other hosts.
 
-### `config/telegram.json` — Telegram API credentials
+### `sessions/telegram/telegram.json` — Telegram API credentials
 
 ```json
 { "api_id": 12345678, "api_hash": "abcdef0123456789..." }
@@ -141,14 +148,14 @@ also mentions a `"session"` key as part of the intended shape, but nothing
 in the codebase currently populates it there; the real Telegram session
 lives separately (see next entry).
 
-### `config/tg_session/kkafio.session` — Telethon session
+### `sessions/telegram/kkafio.session` — Telethon session
 
 A [Telethon](https://github.com/LonamiWebs/Telethon) SQLite session file
 (not JSON), created and managed entirely by the Telethon library itself via
 `TelegramClient(str(session_dir / "kkafio"), api_id, api_hash)`. This is
 what actually keeps the user logged in to Telegram between runs — losing
 this file means going through the phone-number/verification-code (/2FA)
-dialogs again. Same directory, `tg_session/`, is also where
+dialogs again. Same directory, `sessions/telegram/`, is also where
 `teleget9527`'s multi-connection downloader looks for the session by the
 same `"kkafio"` base name.
 

@@ -1,7 +1,7 @@
 """
 config.py — Load and save Telegram API credentials.
 
-Credentials are stored in %APPDATA%/KKAFIO/config/telegram.json:
+Credentials are stored in %APPDATA%/KKAFIO/sessions/telegram/telegram.json:
   {
     "api_id":   12345678,
     "api_hash": "abcdef...",

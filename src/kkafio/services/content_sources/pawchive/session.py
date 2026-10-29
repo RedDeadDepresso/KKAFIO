@@ -1,7 +1,7 @@
 """
 pawchive/session.py — Manage the pawchive.pw ``session`` cookie.
 
-The session is stored in %APPDATA%/KKAFIO/config/pawchive_session.json:
+The session is stored in %APPDATA%/KKAFIO/sessions/pawchive.json:
   {
     "session": "<session cookie value>"
   }
@@ -36,10 +36,10 @@ import httpx
 
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.core.paths import CONFIG_DIR
+from kkafio.core.paths import SESSIONS_DIR
 from kkafio.dialogs.password_dialog import password_dialog
 
-SESSION_FILE      = CONFIG_DIR / "config" / "pawchive_session.json"
+SESSION_FILE      = SESSIONS_DIR / "pawchive.json"
 PAWCHIVE_LOGIN_URL = "https://pawchive.pw/account/login"
 ACCOUNT_URL       = "https://pawchive.pw/account"
 COOKIE_NAME       = "session"
@@ -89,7 +89,7 @@ def _load() -> dict:
     except FileNotFoundError:
         return {}
     except Exception as e:
-        logger.warning("PAWSES", f"Could not read pawchive_session.json: {e}")
+        logger.warning("PAWSES", f"Could not read pawchive.json: {e}")
         return {}
 
 
@@ -101,7 +101,7 @@ def _save(session: str) -> None:
             encoding="utf-8",
         )
     except Exception as e:
-        logger.warning("PAWSES", f"Could not save pawchive_session.json: {e}")
+        logger.warning("PAWSES", f"Could not save pawchive.json: {e}")
 
 
 def _is_valid(session: str) -> bool | None:

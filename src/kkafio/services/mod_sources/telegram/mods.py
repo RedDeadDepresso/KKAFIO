@@ -321,9 +321,9 @@ async def ensure_session(tg_data: dict) -> bool:
         FloodWaitError,
     )
     from kkafio.dialogs.password_dialog import password_dialog
-    from kkafio.core.paths import CONFIG_DIR
+    from kkafio.core.paths import TELEGRAM_SESSION_DIR
 
-    session_dir  = CONFIG_DIR / "config" / "tg_session"
+    session_dir  = TELEGRAM_SESSION_DIR
     session_dir.mkdir(parents=True, exist_ok=True)
     # Name the session file "kkafio" so TGDownloader finds it as "kkafio.session"
     session_file = session_dir / "kkafio"   # Telethon appends .session

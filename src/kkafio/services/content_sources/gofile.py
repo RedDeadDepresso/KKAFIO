@@ -31,7 +31,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
 
 from kkafio.core.logger import logger
-from kkafio.core.paths import CONFIG_DIR
+from kkafio.core.paths import SESSIONS_DIR
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.net import RETRY_ATTEMPTS, get_with_retry, is_transient, resolve_filename, retry_delay, safe_filename
 
@@ -46,7 +46,7 @@ GOFILE_LANG        = "en-US"
 GOFILE_USER_AGENT  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 GOFILE_PAGE_SIZE   = 1000
 GOFILE_MAX_DEPTH   = 8                # nested folder levels followed
-GOFILE_STATE_FILE  = CONFIG_DIR / "gofile_state.json"   # guest token + last rejection, kept between runs
+GOFILE_STATE_FILE  = SESSIONS_DIR / "gofile.json"   # guest token + last rejection, kept between runs
 GOFILE_TOKEN_TTL   = 10800            # reuse a guest account this long (s); gofile allows ~6h
 GOFILE_PARALLEL    = 4                # files downloaded at once from gofile
 GOFILE_BUSY_BASE   = 5                # first wait when a storage server is busy (s), then doubling

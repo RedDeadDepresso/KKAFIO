@@ -350,7 +350,7 @@ def test_gofile_url_parsing():
 
 @pytest.fixture(autouse=True)
 def _reset_gofile_secret_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr(gofile, "GOFILE_STATE_FILE", tmp_path / "gofile_state.json")   # never touch the real one
+    monkeypatch.setattr(gofile, "GOFILE_STATE_FILE", tmp_path / "gofile.json")   # never touch the real one
     gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)
     yield
     gofile._gofile_secret_cache.update(secret="", until=0.0, rejected_at=0.0, error="", error_until=0.0)

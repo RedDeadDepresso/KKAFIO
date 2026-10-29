@@ -16,7 +16,11 @@ packages can never silently break asset lookup.
 
 Per-user config
 ---------------
-`CONFIG_DIR` is the *per-user* config directory (e.g. %APPDATA%/KKAFIO). `CONFIG_PATH` and `TELEGRAM_CONFIG` live inside it.
+`CONFIG_DIR` is the *per-user* config directory (e.g. %APPDATA%/KKAFIO). `CONFIG_PATH` lives inside it.
+
+`SESSIONS_DIR` (``<CONFIG_DIR>/sessions``) holds the login sessions of the
+services: one ``<service>.json`` per service (``pixiv.json``, ...). Telegram is
+the exception: it gets its own folder, `TELEGRAM_SESSION_DIR`.
 """
 
 import functools
@@ -54,7 +58,12 @@ def _config_dir() -> Path:
 CONFIG_DIR = _config_dir()
 # MXU saves config as  <CONFIG_DIR>/config/mxu-KKAFIO.json
 CONFIG_PATH      = CONFIG_DIR / "config" / "mxu-KKAFIO.json"
-TELEGRAM_CONFIG  = CONFIG_DIR / "config" / "telegram.json"
+
+# Service sessions: <SESSIONS_DIR>/<service>.json, except Telegram, which owns
+# the <SESSIONS_DIR>/telegram folder (API credentials + Telethon .session file).
+SESSIONS_DIR          = CONFIG_DIR / "sessions"
+TELEGRAM_SESSION_DIR  = SESSIONS_DIR / "telegram"
+TELEGRAM_CONFIG       = TELEGRAM_SESSION_DIR / "telegram.json"
 
 
 # src/kkafio/core/paths.py -> parents: core, kkafio, src, <repo root>

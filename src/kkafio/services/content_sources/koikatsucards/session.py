@@ -1,7 +1,7 @@
 """
 koikatsucards/session.py — Manage the koikatsucards.com kkd_session cookie.
 
-The session is stored in %APPDATA%/KKAFIO/config/kkd_session.json:
+The session is stored in %APPDATA%/KKAFIO/sessions/koikatsucards.json:
   {
     "session": "<cookie value>"
   }
@@ -19,11 +19,11 @@ import webbrowser
 import httpx
 
 from kkafio.core.i18n import t
-from kkafio.core.paths import CONFIG_DIR
+from kkafio.core.paths import SESSIONS_DIR
 from kkafio.core.logger import logger
 from kkafio.dialogs.password_dialog import password_dialog
 
-SESSION_FILE   = CONFIG_DIR / "config" / "kkd_session.json"
+SESSION_FILE   = SESSIONS_DIR / "koikatsucards.json"
 SESSION_API    = "https://koikatsucards.com/api/session"
 KKD_LOGIN_URL  = "https://koikatsucards.com/login"
 
@@ -34,7 +34,7 @@ def _load() -> dict:
     except FileNotFoundError:
         return {}
     except Exception as e:
-        logger.warning("KKDSES", f"Could not read kkd_session.json: {e}")
+        logger.warning("KKDSES", f"Could not read koikatsucards.json: {e}")
         return {}
 
 
@@ -46,7 +46,7 @@ def _save(session: str) -> None:
             encoding="utf-8",
         )
     except Exception as e:
-        logger.warning("KKDSES", f"Could not save kkd_session.json: {e}")
+        logger.warning("KKDSES", f"Could not save koikatsucards.json: {e}")
 
 
 def _is_valid(session: str) -> bool | None:

@@ -1,7 +1,7 @@
 """
 pixiv/session.py — Manage the pixiv.net PHPSESSID cookie.
 
-The session is stored in %APPDATA%/KKAFIO/config/pixiv_session.json:
+The session is stored in %APPDATA%/KKAFIO/sessions/pixiv.json:
   {
     "session": "<PHPSESSID cookie value>"
   }
@@ -27,10 +27,10 @@ import webbrowser
 
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.core.paths import CONFIG_DIR
+from kkafio.core.paths import SESSIONS_DIR
 from kkafio.dialogs.password_dialog import password_dialog
 
-SESSION_FILE    = CONFIG_DIR / "config" / "pixiv_session.json"
+SESSION_FILE    = SESSIONS_DIR / "pixiv.json"
 PIXIV_LOGIN_URL = "https://accounts.pixiv.net/login"
 ENV_VAR         = "PIXIV_PHPSESSID"
 
@@ -60,7 +60,7 @@ def _load() -> dict:
     except FileNotFoundError:
         return {}
     except Exception as e:
-        logger.warning("PXVSES", f"Could not read pixiv_session.json: {e}")
+        logger.warning("PXVSES", f"Could not read pixiv.json: {e}")
         return {}
 
 
@@ -72,7 +72,7 @@ def _save(session: str) -> None:
             encoding="utf-8",
         )
     except Exception as e:
-        logger.warning("PXVSES", f"Could not save pixiv_session.json: {e}")
+        logger.warning("PXVSES", f"Could not save pixiv.json: {e}")
 
 
 def _prompt() -> str | None:
