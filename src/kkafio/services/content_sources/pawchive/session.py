@@ -1,5 +1,5 @@
 """
-pawchive.py — Manage the pawchive.pw ``session`` cookie.
+pawchive/session.py — Manage the pawchive.pw ``session`` cookie.
 
 The session is stored in %APPDATA%/KKAFIO/config/pawchive_session.json:
   {
@@ -11,13 +11,13 @@ Only needed for the oversized files Pawchive keeps in its temporary storage on
 pawchive.pw downloads without a login, so Download Contents asks for the cookie
 only when it is about to download such a file (never up front).
 
-Lookup order (same idea as pixiv.py):
+Lookup order (same idea as pixiv/session.py):
   1. the PAWCHIVE_SESSION environment variable, if set
   2. the stored session file
   3. a dialog asking the user to paste the cookie
 
 A stored or pasted cookie is checked against pawchive.pw/account (like
-kkd.py checks koikatsucards.com/api/session): a redirect or 401 means
+koikatsu/session.py checks koikatsucards.com/api/session): a redirect or 401 means
 the session is invalid or expired and a new one is asked for; any other
 answer that is not a clear "yes" (network error, 403, 5xx) is not evidence
 that the cookie is bad, so the cookie is used as it is. Cancelling the dialog

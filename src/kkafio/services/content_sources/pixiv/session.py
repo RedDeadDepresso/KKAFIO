@@ -1,5 +1,5 @@
 """
-pixiv.py — Manage the pixiv.net PHPSESSID cookie.
+pixiv/session.py — Manage the pixiv.net PHPSESSID cookie.
 
 The session is stored in %APPDATA%/KKAFIO/config/pixiv_session.json:
   {

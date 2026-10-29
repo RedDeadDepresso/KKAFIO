@@ -83,7 +83,7 @@ subcommand that needs config, via `--config`/`--instance`).
 { "session": "<kkd_session cookie value>" }
 ```
 
-Written/read by `src/kkafio/services/sessions/kkd.py`. Used by **Download Contents** when
+Written/read by `src/kkafio/services/content_sources/koikatsu/session.py`. Used by **Download Contents** when
 downloading from koikatsucards.com (not by Download Missing Mods, which
 uses the KKC mod index above). Validated against
 `koikatsucards.com/api/session` before each use; if invalid, the user is
@@ -103,7 +103,7 @@ rotates it; the symptom of a stale salt is an `error-notPremium` error).
 { "session": "<PHPSESSID cookie value>" }
 ```
 
-Written/read by `src/kkafio/services/sessions/pixiv.py`. Used by **Download Contents**
+Written/read by `src/kkafio/services/content_sources/pixiv/session.py`. Used by **Download Contents**
 for `pixiv.net` links. Lookup order: the `PIXIV_PHPSESSID` environment variable,
 this file, then a native dialog. The value is only checked for its shape
 (`<user id>_<token>`); there is no online validation. A missing session is not
@@ -117,7 +117,7 @@ so cancelling the dialog continues without a login. The cookie is scoped to
 { "session": "<session cookie value>" }
 ```
 
-Written/read by `src/kkafio/services/sessions/pawchive.py`. Used by **Download Contents**
+Written/read by `src/kkafio/services/content_sources/pawchive/session.py`. Used by **Download Contents**
 for the oversized files Pawchive keeps in temporary storage (`t1.pawchive.pw`), which
 are only served to a logged-in account. Unlike the other sessions it is asked for
 lazily: only when such a file is about to be downloaded, and at most once per run.

@@ -174,7 +174,7 @@ class PawchiveAuth:
             self.asked = True
             resolver = self._resolver
             if resolver is None:
-                from kkafio.services.sessions import pawchive as pawchive_session
+                from kkafio.services.content_sources.pawchive import session as pawchive_session
                 resolver = pawchive_session.get_or_prompt
             self.cookie = resolver() or None
         if self.cookie:

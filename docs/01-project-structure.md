@@ -97,12 +97,10 @@ KKAFIO-dev/
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
 │   │   │   ├── net.py / history.py / transfer.py   # Shared: retry + HTTP client, download history, streaming downloads and paged listings
 │   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
-│   │   │   ├── bepis.py  koikatsu.py  pixiv.py  gofile.py  mega.py  gdrive.py   # One module per site
-│   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session) · files · posts · downloader
-│   │   ├── sessions/                # Cookie stores for the sites Download Contents logs in to
-│   │   │   ├── kkd.py               # koikatsucards.com session cookie management
-│   │   │   ├── pixiv.py             # pixiv.net PHPSESSID cookie management
-│   │   │   └── pawchive.py          # pawchive.pw session cookie management (t1 files only)
+│   │   │   ├── bepis.py  gofile.py  mega.py  gdrive.py   # One module per site
+│   │   │   ├── koikatsu/            # koikatsucards.com: downloader (__init__) + session.py (kkd_session cookie)
+│   │   │   ├── pixiv/               # pixiv.net: downloader (__init__) + session.py (PHPSESSID cookie)
+│   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session use) · files · posts · downloader · session.py (session cookie, t1 files only)
 │   │   └── mod_sources/             # Where Download Missing Mods fetches mods from
 │   │       ├── betterrepack.py      # BetterRepack downloads + the shared HTTP client for Download Missing Mods
 │   │       └── telegram/            # Telegram support for Download Missing Mods
