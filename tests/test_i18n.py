@@ -28,14 +28,45 @@ def _fields(template: str) -> set[str]:
     return {name for _, name, _, _ in string.Formatter().parse(template) if name}
 
 
-def _keys_used_in_source() -> set[str]:
-    used: set[str] = set()
+def _dialog_keys_in_source() -> set[str]:
+    """The `dialog_key="..."` values of the session specs (see services/content_sources/session_flow.py)."""
+    keys: set[str] = set()
     for path in SRC.rglob("*.py"):
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "t"
-                    and node.args and isinstance(node.args[0], ast.Constant)
-                    and isinstance(node.args[0].value, str)):
-                used.add(node.args[0].value)
+            if (isinstance(node, ast.keyword) and node.arg == "dialog_key"
+                    and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)):
+                keys.add(node.value.value)
+    return keys
+
+
+def _expand_fstring(node: ast.JoinedStr, dialog_keys: set[str]) -> set[str]:
+    """Every key a t(f"...{x.dialog_key}...") call can name. Any other interpolation is refused,
+    so a new dynamic key has to be taught here instead of silently hiding orphans."""
+    out = {""}
+    for part in node.values:
+        if isinstance(part, ast.Constant):
+            out = {o + part.value for o in out}
+        elif (isinstance(part, ast.FormattedValue)
+              and isinstance(part.value, ast.Attribute) and part.value.attr == "dialog_key"):
+            out = {o + k for o in out for k in dialog_keys}
+        else:
+            raise AssertionError(f"t() called with an f-string key this test can't resolve: {ast.unparse(node)}")
+    return out
+
+
+def _keys_used_in_source() -> set[str]:
+    used: set[str] = set()
+    dialog_keys = _dialog_keys_in_source()
+    for path in SRC.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "t"
+                    and node.args):
+                continue
+            key = node.args[0]
+            if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                used.add(key.value)
+            elif isinstance(key, ast.JoinedStr):
+                used |= _expand_fstring(key, dialog_keys)
     return used
 
 

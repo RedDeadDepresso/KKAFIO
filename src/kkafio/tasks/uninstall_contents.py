@@ -76,7 +76,7 @@ class UninstallContents(ContentTypeResolver):
 
         mods: list[Path] = []
         for path in file_list:
-            match path.suffix:
+            match path.suffix.lower():
                 case ".zipmod" | ".zip":
                     # A plain .zip only reaches file_list (as opposed to
                     # being extracted as an archive) when find_supported_files has

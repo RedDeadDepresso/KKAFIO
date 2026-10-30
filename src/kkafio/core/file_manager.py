@@ -43,13 +43,13 @@ class FileManager:
         """Find installable files and archive files in the given directory.
 
         Only .png, .zipmod, .zip, .rar and .7z files are considered (matched
-        case-insensitively; the returned extension is lower-cased). Everything
-        else is ignored.
+        case-insensitively on every platform). Everything else is ignored.
 
         Returns:
             Tuple containing:
-            - A list of regular files (path, size, extension)
-            - A list of archive files (path, size, extension)
+            - A list of regular files (.png, .zipmod, and .zip files that are really mods)
+            - A list of archive files (.zip, .rar, .7z)
+            Both hold Paths; compare `path.suffix.lower()` to classify them.
         """
         directory = Path(directory)
         file_list: list[Path] = []
@@ -59,7 +59,7 @@ class FileManager:
 
         # Target only the specific extensions recursively
         for ext in supported_extensions:
-            for file_path in directory.rglob(f"*{ext}"):
+            for file_path in directory.rglob(f"*{ext}", case_sensitive=False):
                 if ext == ".zip" and is_mod_archive(file_path):
                     file_list.append(file_path)
                 elif ext in archive_extensions:
@@ -73,20 +73,19 @@ class FileManager:
         """Find only the archive files (.zip, .rar, .7z) under a directory.
 
         Same rules as the archive list from `find_supported_files` — extensions are
-        matched case-insensitively, a .zip that is really a mod (contains a
-        manifest.xml) is left out, and the result is sorted by size — but
-        without collecting or stat-ing the .png / .zipmod files, so it's the
-        cheaper choice when archives are all you need.
+        matched case-insensitively and a .zip that is really a mod (contains a
+        manifest.xml) is left out — but without collecting the .png / .zipmod
+        files, so it's the cheaper choice when archives are all you need.
 
         Returns:
-            A list of archive files (path, size, extension)
+            A list of archive file Paths
         """
         directory = Path(directory)
         archive_extensions = {".rar", ".zip", ".7z"}
         archive_list: list[Path] = []
 
         for ext in archive_extensions:
-            for file_path in directory.rglob(f"*{ext}"):
+            for file_path in directory.rglob(f"*{ext}", case_sensitive=False):
 
                 if ext == ".zip" and is_mod_archive(file_path):
                     continue

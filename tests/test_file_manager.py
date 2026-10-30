@@ -32,10 +32,10 @@ def test_find_supported_files_restricted_to_supported_extensions(tmp_path):
 
     files, archives = FileManager(config=None).find_supported_files(tmp_path)
 
-    assert sorted((p.name, ext) for p, _, ext in files) == [
+    assert sorted((p.name, p.suffix.lower()) for p in files) == [
         ("UPPER.PNG", ".png"), ("card.png", ".png"),
         ("mod.zipmod", ".zipmod"), ("plainmod.zip", ".zip"),
     ]
-    assert sorted((p.name, ext) for p, _, ext in archives) == [
+    assert sorted((p.name, p.suffix.lower()) for p in archives) == [
         ("a.rar", ".rar"), ("b.7z", ".7z"), ("c.zip", ".zip"),
     ]

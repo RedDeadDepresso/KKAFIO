@@ -1,20 +1,33 @@
-import os, signal, sys, threading, time
-sys.path.insert(0, "/home/claude/k/KKAFIO-refactor/src")
-import tkinter as tk
+"""The password and LLM dialogs, driven with synthetic events. Needs a display (xvfb-run is
+enough); skipped where Tk can't open one. Runs as it is imported: each check() asserts."""
+import os, signal, threading, time
+
+import pytest
+
+tk = pytest.importorskip("tkinter")
+pytest.importorskip("customtkinter")
+
+try:                                    # is there a display at all?
+    _probe = tk.Tk()
+    _probe.destroy()
+except tk.TclError:
+    pytest.skip("no display available for Tk", allow_module_level=True)
+
+from kkafio.core.i18n import t
 from kkafio.dialogs import common as dialog_common, password_dialog as pd, llm as ld
 
 def drive(module, script):
     """Patch module.show_and_wait so `script(root, info)` runs once the window is up."""
     real = dialog_common.show_and_wait
     info = {}
-    def fake(root, focus_widget=None):
+    def fake(root, focus_widget=None, on_shown=None):
         info["root"] = root
         def run():
             try: script(root, info)
             except BaseException as e:
                 info["err"] = e; root.quit()
         root.after(300, run)
-        real(root, focus_widget)
+        real(root, focus_widget, on_shown)
         if "err" in info: raise info["err"]
     module.show_and_wait = fake
     return info
@@ -25,6 +38,11 @@ def walk(w):
 
 def find(root, cls):
     return [w for w in walk(root) if w.__class__.__name__ == cls]
+
+def button(root, *keys):
+    """The CTkButton whose label is any of the i18n `keys` (the Copy button reads "Copied!" right after opening)."""
+    texts = {t(k) for k in keys}
+    return [b for b in find(root, "CTkButton") if b.cget("text") in texts][0]
 
 def press(root, seq):
     root.focus_force(); root.update(); root.event_generate(seq)
@@ -95,11 +113,11 @@ def s(root, info):
     info["text"] = box.get("1.0", "end-1c"); info["state"] = str(box._textbox.cget("state"))
     info["wrap"] = str(box._textbox.cget("wrap")); info["minsize"] = root.wm_minsize()
     info["resizable"] = root.resizable(); info["topmost"] = bool(root.attributes("-topmost"))
-    [b for b in find(root, "CTkButton") if b.cget("text") == "Copy"][0].invoke()
+    button(root, "dialog.llm.copy", "dialog.llm.copied").invoke()
     info["clip_after_copy"] = root.clipboard_get()
     # simulate user copying the LLM reply elsewhere
     root.clipboard_clear(); root.clipboard_append("\n  {\"reply\": \"日本\"}  \n"); root.update()
-    [b for b in find(root, "CTkButton") if b.cget("text") == "Paste"][0].invoke()
+    button(root, "dialog.llm.paste").invoke()
 info = drive(ld, s)
 r = ld._ctk_dialog("T", PROMPT)
 check("textbox shows prompt", info["text"] == PROMPT)
@@ -115,7 +133,7 @@ drive(ld, s); check("llm Esc -> ''", ld._ctk_dialog("T", "p") == "")
 def s(root, info):
     root.clipboard_clear(); root.update(); press(root, "<Return>")
 drive(ld, s); check("llm Enter w/ empty clipboard -> '' (no crash)", ld._ctk_dialog("T", "p") == "")
-def s(root, info): [b for b in find(root, "CTkButton") if b.cget("text") == "Cancel"][0].invoke()
+def s(root, info): button(root, "dialog.cancel").invoke()
 drive(ld, s); check("llm Cancel -> ''", ld._ctk_dialog("T", "p") == "")
 
 # ---- selectable read-only: click focuses the text widget

@@ -12,14 +12,15 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = {
     "version": 1,
     "series": [
-        {"title": "Genshin Impact", "aliases": ["Genshin", "原神"]},
-        {"title": "Fate/Grand Order", "aliases": ["FGO"]},
+        {"title": {"en_us": "Genshin Impact", "ja_jp": "原神"}, "aliases": ["Genshin"]},
+        {"title": {"en_us": "Fate/Grand Order"}, "aliases": ["FGO"]},
     ],
     "chars": [
-        {"name": "Ganyu", "series": [0], "score": 100, "aliases": ["甘雨"]},
-        {"name": "Kamisato, Ayaka", "series": [0], "score": 90, "aliases": ["神里綾華", "Ayaka"]},
-        {"name": "Rin", "series": [1], "score": 10},
-        {"name": "Rin", "series": [0], "score": 9},
+        {"name": {"en_us": "Ganyu"}, "series": [0], "score": 100, "aliases": ["甘雨"]},
+        {"name": {"en_us": "Kamisato, Ayaka", "ja_jp": "神里, 綾華"}, "series": [0], "score": 90,
+         "aliases": ["神里綾華", "Ayaka"], "birthMonth": 9, "birthDay": 28},
+        {"name": {"en_us": "Rin"}, "series": [1], "score": 10},
+        {"name": {"en_us": "Rin"}, "series": [0], "score": 9},
     ],
 }
 
@@ -33,61 +34,87 @@ def gacha_file(tmp_path):
     gacha.set_index_path(None)
 
 
-def test_mononym_is_confident_with_one_field(gacha_file):
-    m = gacha.lookup("Ganyu |  |  | Pure Heart | blue hair")
-    assert (m.tier, m.source, m.best.series) == ("confident", "gacha", ("Genshin Impact",))
+def _names(cands):
+    return [c.name for c in cands]
+
+
+def test_mononym_matches_with_one_field(gacha_file):
+    (c,) = gacha.lookup("Ganyu |  |  | Pure Heart | blue hair")
+    assert (c.name, c.series, c.score) == ("Ganyu", ("Genshin Impact",), 100)
 
 
 def test_native_alias_and_either_name_order(gacha_file):
-    assert gacha.lookup("甘雨 |  |  | x | y").best.name == "Ganyu"
+    assert _names(gacha.lookup("甘雨 |  |  | x | y")) == ["Ganyu"]
     for k in ("神里 | 綾華 |  | x | y", "Ayaka | Kamisato |  | x | y", "Kamisato | Ayaka |  | x | y"):
-        assert gacha.lookup(k).tier == "confident"
+        assert _names(gacha.lookup(k)) == ["Kamisato, Ayaka"], k
 
 
-def test_one_field_never_confident_for_a_character_with_a_family_name(gacha_file):
-    assert gacha.lookup("Ayaka |  |  | x | y").tier == "ambiguous"
+def test_alias_alone_finds_a_character_with_a_family_name(gacha_file):
+    (c,) = gacha.lookup("Ayaka |  |  | x | y")
+    assert (c.lastname, c.firstname) == ("Kamisato", "Ayaka")
+    assert (c.birth_month, c.birth_day) == (9, 28)
 
 
-def test_duplicate_names_are_ambiguous_unless_dominant(gacha_file):
-    m = gacha.lookup("Rin |  |  | x | y")
-    assert m.tier == "ambiguous" and len(m.candidates) == 2
+def test_names_and_series_come_back_in_the_requested_language(gacha_file):
+    (c,) = gacha.lookup("Kamisato | Ayaka |  | x | y", lang="ja_jp")
+    assert (c.name, c.series) == ("神里, 綾華", ("原神",))
+    (c,) = gacha.lookup("Ganyu |  |  | x | y", lang="ja_jp")      # no ja_jp name: falls back to English
+    assert c.name == "Ganyu"
+
+
+def test_duplicate_names_are_all_returned_most_popular_first(gacha_file):
+    cands = gacha.lookup("Rin |  |  | x | y")
+    assert [(c.name, c.series, c.score) for c in cands] == [
+        ("Rin", ("Fate/Grand Order",), 10), ("Rin", ("Genshin Impact",), 9)]
+    assert len(gacha.lookup("Rin |  |  | x | y", limit=1)) == 1
 
 
 def test_snap_series(gacha_file):
     assert gacha.snap_series("genshin") == "Genshin Impact"
+    assert gacha.snap_series("原神") == "Genshin Impact"
+    assert gacha.snap_series("原神", lang="ja_jp") == "原神"
     assert gacha.snap_series("FGO") == "Fate/Grand Order"
     assert gacha.snap_series("Not A Game") is None
 
 
 def test_gacha_beats_agv_and_falls_back(gacha_file):
-    # The anime, games, vtubers index also knows a confident "Rin Tohsaka"; the gacha index has the same card as Fate/Grand Order.
-    d = dict(DATA, chars=DATA["chars"] + [{"name": "Tohsaka, Rin", "series": [1], "score": 50}])
+    # The anime, games, vtubers index may also know a "Rin Tohsaka"; the gacha index has the same card as Fate/Grand Order.
+    d = dict(DATA, chars=DATA["chars"] + [
+        {"name": {"en_us": "Tohsaka, Rin"}, "series": [1], "score": 50}])
     gacha_file.write_text(json.dumps(d), encoding="utf-8")
     gacha.set_index_path(gacha_file)
-    m = chara.lookup("Tohsaka | Rin |  | x | y")
-    assert (m.source, m.best.series) == ("gacha", ("Fate/Grand Order",))
-    # Not in the gacha index -> the anime, games, vtubers index answers.
-    if agv.available():
-        m = chara.lookup("Yuuki | Asuna |  | x | y")
-        assert m.source == "mal"
+    cands = chara.lookup("Tohsaka | Rin |  | x | y")
+    assert (cands[0].name, cands[0].series) == ("Tohsaka, Rin", ("Fate/Grand Order",))
     # Series snapping tries gacha first, then the anime, games, vtubers index, then gives the name back.
     assert chara.canonical_series("原神") == "Genshin Impact"
     assert chara.canonical_series("Some Eroge Not In Any Index") == "Some Eroge Not In Any Index"
 
 
-def test_confident_agv_beats_ambiguous_gacha(gacha_file, monkeypatch):
-    amb = agv.Match("ambiguous", (agv.Candidate("X", "", "X", ("S",), 1),), "gacha")
-    sure = agv.Match("confident", (agv.Candidate("Y, Z", "Y", "Z", ("T",), 1),))
-    monkeypatch.setattr(gacha, "lookup", lambda k: amb)
-    monkeypatch.setattr(agv, "lookup", lambda k: sure)
-    assert chara.lookup("k").best.series == ("T",)
+def test_dominant_index_goes_first_then_the_lists_alternate(gacha_file, monkeypatch):
+    def cand(name, series, score):
+        return agv.Candidate(name, "", name, (series,), score)
+
+    g = (cand("G1", "S", 10), cand("G2", "S", 9))        # not dominant: 10 < 5 * 9
+    a = (cand("A1", "T", 1),)                            # the only candidate: dominant
+    monkeypatch.setattr(gacha, "lookup", lambda *args, **kw: g)
+    monkeypatch.setattr(agv, "lookup", lambda *args, **kw: a)
+    assert _names(chara.lookup("k")) == ["A1", "G1", "G2"]
+
+
+def test_the_same_character_from_both_indexes_is_listed_once(gacha_file, monkeypatch):
+    g = (agv.Candidate("Rin", "", "Rin", ("S",), 5),)
+    a = (agv.Candidate("Rin", "", "Rin", ("S",), 3, 5, 11),)
+    monkeypatch.setattr(gacha, "lookup", lambda *args, **kw: g)
+    monkeypatch.setattr(agv, "lookup", lambda *args, **kw: a)
+    (c,) = chara.lookup("k")
+    assert (c.score, c.birth_month, c.birth_day) == (5, 5, 11)      # gacha's entry, plus the birthday only agv had
 
 
 def test_unavailable_is_no_help(tmp_path):
     gacha.set_index_path(tmp_path / "nope.json")
     try:
         assert not gacha.available()
-        assert gacha.lookup("A | B |  | x | y").tier == "none"
+        assert gacha.lookup("A | B |  | x | y") == ()
         assert gacha.snap_series("Anything") is None
     finally:
         gacha.set_index_path(None)
@@ -127,7 +154,7 @@ def test_refresh_offline_keeps_cache_and_bad_data_is_rejected(gacha_file, monkey
     assert gacha.refresh("T")                       # cached copy still serves
     monkeypatch.setattr(gacha, "_fetch", lambda *a: _Resp(200, {"version": 99}))
     assert gacha.refresh("T")
-    assert gacha.lookup("Ganyu |  |  | x | y").tier == "confident"   # good cache untouched
+    assert _names(gacha.lookup("Ganyu |  |  | x | y")) == ["Ganyu"]   # good cache untouched
     monkeypatch.setattr(gacha, "_fetch", lambda *a: _Resp(200, {"version": 1, "series": [], "chars": [{}]}))
     assert gacha.refresh("T")
-    assert gacha.lookup("Ganyu |  |  | x | y").tier == "confident"
+    assert _names(gacha.lookup("Ganyu |  |  | x | y")) == ["Ganyu"]

@@ -160,6 +160,8 @@ def _task(chara_dir, coord_dir, ignore=False, sub=True, use_cache=True, clothes=
 
 
 def _run(tmp_path, chara_sigs, coord_sigs, ignore, sub=True, clothes=0):
+    # default_coordinate_digests is patched out: leaving default coordinates alone needs exact digests
+    # (build_coord_cache), which these tests make a tripwire for the outfit matching itself.
     chara_dir, coord_dir = tmp_path / "chara", tmp_path / "coord"
     chara_dir.mkdir(exist_ok=True)
     coord_dir.mkdir(exist_ok=True)
@@ -170,6 +172,7 @@ def _run(tmp_path, chara_sigs, coord_sigs, ignore, sub=True, clothes=0):
                            return_value={chara_dir / n: s for n, s in chara_sigs.items()}), \
          mock.patch.object(gc, "build_coord_sig_cache",
                            return_value={str(coord_dir / n): s for n, s in coord_sigs.items()}), \
+         mock.patch.object(gc, "default_coordinate_digests", return_value=frozenset()), \
          mock.patch.object(gc, "collect_chara_digests", side_effect=AssertionError("exact path used")), \
          mock.patch.object(gc, "build_coord_cache", side_effect=AssertionError("exact path used")):
         _task(chara_dir, coord_dir, ignore, sub, clothes=clothes).run()

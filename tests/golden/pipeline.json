@@ -5,6 +5,14 @@
    "events": [
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": true,
       "kk_action": "Keep",
@@ -52,6 +60,14 @@
    "events": [
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": true,
       "kk_action": "Keep",
@@ -101,6 +117,14 @@
    "events": [
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": false,
       "kk_action": "Keep",
@@ -148,6 +172,14 @@
    "events": [
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": true,
       "kk_action": "Keep",
@@ -242,6 +274,14 @@
     },
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": true,
       "kk_action": "Keep",
@@ -315,6 +355,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -326,6 +367,14 @@
     },
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": true,
       "kk_action": "Keep",
@@ -351,7 +400,7 @@
       "do_mods": true,
       "do_overlays": true,
       "do_scenes": true,
-      "duplicate_action": "Move & Rename",
+      "duplicate_action": "Delete",
       "keep": "Oldest",
       "mods_dir_str": "",
       "overlays_dir_str": "",
@@ -374,12 +423,15 @@
       ],
       "coord_dir_str": "",
       "input_mods_dir_str": "",
-      "modpack_mode": "Skip",
+      "modpack_mode": "OnlyUsed",
       "open_report": true,
       "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_source": "No",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
       "use_cache": true
      },
      "class": "DownloadMissingMods",
@@ -390,7 +442,7 @@
     },
     {
      "attrs": {
-      "delete_original": false,
+      "delete_original": true,
       "input_path_str": {
        "__path__": "<ROOT>/work"
       },
@@ -427,11 +479,13 @@
       "__effective_input_path__": {
        "__path__": "<ROOT>/work"
       },
+      "check_shared_mods": true,
       "do_chara": true,
       "do_coords": true,
       "do_mods": true,
       "do_overlays": true,
-      "do_scenes": true
+      "do_scenes": true,
+      "use_cache": true
      },
      "class": "UninstallContents",
      "enabled": true,
@@ -443,7 +497,10 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "<ROOT>/work",
-      "use_cache": true
+      "subgroup_by_year": true,
+      "use_automatic": true,
+      "use_cache": true,
+      "use_manual": false
      },
      "class": "GroupScenes",
      "enabled": true,
@@ -454,16 +511,38 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
+      "hints_language": "detect",
       "include_subfolders": false,
       "llm_website_url": "https://chat.deepseek.com/",
       "open_llm_website": true,
-      "use_cache": true
+      "resolve_locally": false,
+      "use_cache": true,
+      "use_llm": true,
+      "use_manual": false
      },
      "class": "GroupChara",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
      "task": "GroupChara"
+    },
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "clothes_tolerance_raw": 1,
+      "coord_dir_str": "",
+      "group_by_hair": true,
+      "ignore_accessories": true,
+      "include_subfolders": false,
+      "use_automatic": true,
+      "use_cache": true,
+      "use_manual": false
+     },
+     "class": "GroupCoordinates",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupCoordinates"
     },
     {
      "attrs": {
@@ -486,9 +565,11 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
+      "hints_language": "detect",
       "llm_website_url": "https://chat.deepseek.com/",
       "open_llm_website": true,
       "rename_files": true,
+      "resolve_locally": false,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -589,7 +670,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
-      "exception_list_raw": "BetterPenetration/\nClo/",
+      "exception_list_raw": "BetterPenetration/\nClo/\ncom.joan6694.dynamic_bone_collider",
       "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
@@ -615,7 +696,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
-      "exception_list_raw": "BetterPenetration/\nClo/",
+      "exception_list_raw": "BetterPenetration/\nClo/\ncom.joan6694.dynamic_bone_collider",
       "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
@@ -715,9 +796,11 @@
     {
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
+      "hints_language": "detect",
       "llm_website_url": "https://chat.deepseek.com/",
       "open_llm_website": true,
       "rename_files": true,
+      "resolve_locally": false,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -748,11 +831,33 @@
     },
     {
      "attrs": {
+      "chara_dir_str": "",
+      "clothes_tolerance_raw": 1,
+      "coord_dir_str": "",
+      "group_by_hair": true,
+      "ignore_accessories": true,
+      "include_subfolders": false,
+      "use_automatic": true,
+      "use_cache": true,
+      "use_manual": false
+     },
+     "class": "GroupCoordinates",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupCoordinates"
+    },
+    {
+     "attrs": {
       "chara_dir_str": "<ROOT>/work",
+      "hints_language": "detect",
       "include_subfolders": false,
       "llm_website_url": "https://chat.deepseek.com/",
       "open_llm_website": true,
-      "use_cache": true
+      "resolve_locally": false,
+      "use_cache": true,
+      "use_llm": true,
+      "use_manual": false
      },
      "class": "GroupChara",
      "enabled": true,
@@ -764,7 +869,10 @@
      "attrs": {
       "include_subfolders": false,
       "scene_dir_str": "<ROOT>/work",
-      "use_cache": true
+      "subgroup_by_year": true,
+      "use_automatic": true,
+      "use_cache": true,
+      "use_manual": false
      },
      "class": "GroupScenes",
      "enabled": true,
@@ -777,11 +885,13 @@
       "__effective_input_path__": {
        "__path__": "<ROOT>/work"
       },
+      "check_shared_mods": true,
       "do_chara": true,
       "do_coords": true,
       "do_mods": true,
       "do_overlays": true,
-      "do_scenes": true
+      "do_scenes": true,
+      "use_cache": true
      },
      "class": "UninstallContents",
      "enabled": true,
@@ -809,7 +919,7 @@
     },
     {
      "attrs": {
-      "delete_original": false,
+      "delete_original": true,
       "input_path_str": {
        "__path__": "<ROOT>/work"
       },
@@ -831,12 +941,15 @@
       ],
       "coord_dir_str": "",
       "input_mods_dir_str": "",
-      "modpack_mode": "Skip",
+      "modpack_mode": "OnlyUsed",
       "open_report": true,
       "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_source": "No",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
       "use_cache": true
      },
      "class": "DownloadMissingMods",
@@ -854,7 +967,7 @@
       "do_mods": true,
       "do_overlays": true,
       "do_scenes": true,
-      "duplicate_action": "Move & Rename",
+      "duplicate_action": "Delete",
       "keep": "Oldest",
       "mods_dir_str": "",
       "overlays_dir_str": "",
@@ -869,6 +982,14 @@
     },
     {
      "attrs": {
+      "_totals": {
+       "categories": {},
+       "converted_cards": 0,
+       "converted_scenes": 0,
+       "failed_cards": 0,
+       "failed_scenes": 0,
+       "folders": 0
+      },
       "convert": false,
       "extract_archive": true,
       "kk_action": "Keep",
@@ -888,6 +1009,7 @@
     {
      "attrs": {
       "links": "",
+      "open_report": true,
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
