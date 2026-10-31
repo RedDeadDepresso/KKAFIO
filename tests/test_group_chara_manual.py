@@ -1,6 +1,6 @@
 """Group Characters' manual gallery (opened from Run Gallery): the gallery's data (scan, series folder
 names, suggestions, moving) and the gallery model. Group Characters itself always runs the LLM
-workflow. The window itself is in test_manual_group_dialog_gui.py."""
+workflow. The window itself is in test_gallery_gui.py."""
 
 import json
 from contextlib import contextmanager

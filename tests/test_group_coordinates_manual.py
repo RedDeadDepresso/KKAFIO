@@ -1,6 +1,6 @@
 """Group Coordinates' manual gallery (opened from Run Gallery): the gallery's data (scan, folder names,
 suggestions, moving) and the coordinate wording. Group Coordinates itself always groups automatically.
-The gallery itself is shared with Group Characters (test_manual_group_dialog_gui.py)."""
+The gallery itself is shared with Group Characters (test_gallery_gui.py)."""
 
 import json
 from pathlib import Path
