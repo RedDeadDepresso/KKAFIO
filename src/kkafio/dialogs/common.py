@@ -1,6 +1,6 @@
 """
 common.py — Shared helpers for the CustomTkinter dialogs
-(password_dialog.py, llm.py, similar_chara.py, manual_group.py).
+(password_dialog.py, llm.py, similar_chara.py, gallery.py).
 
 Mostly window behaviour, reproducing what the old PowerShell WinForms dialogs
 had (plus `format_size`, a pure helper several dialogs use to label file sizes):

@@ -46,7 +46,7 @@ UNKNOWN_<n> folder. Hair that appears in several folders is ambiguous, so those
 coordinates stay where they are.
 
 Grouping by hand (naming a character for each coordinate in a gallery dialog) is not part of
-this task; it lives in the Run Gallery task (see run_gallery.py and dialogs/manual_group.py).
+this task; it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery.py).
 
 The chara folder(s) are always scanned recursively. With Include Subfolders off
 (the default) only coordinates directly inside the coordinate folder are
@@ -524,7 +524,7 @@ def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
 
 def coordinate_dialog_text():
     """The words of the gallery when it is sorting coordinates into character folders."""
-    from kkafio.dialogs.manual_group import DialogText
+    from kkafio.dialogs.gallery import DialogText
     return DialogText(
         search_placeholder=t("dialog.manual_coord.search_placeholder"),
         all=t("dialog.manual_coord.all"),
@@ -575,7 +575,7 @@ def scan_manual_items(coord_dir: Path, use_cache: bool) -> list:
     """The coordinate cards under coord_dir (subfolders included) for the gallery, as CharaItems:
     named after the file, in the folder directly under coord_dir that holds it (None: directly
     in coord_dir)."""
-    from kkafio.dialogs.manual_group import CharaItem
+    from kkafio.dialogs.gallery import CharaItem
 
     items = []
     for sp, key in sorted(build_coord_cache(coord_dir, use_cache=use_cache).items()):
@@ -638,7 +638,7 @@ def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
     Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
     must be called once the gallery is closed, also when it failed: it brings the coordinate
     caches along with the cards that were moved."""
-    from kkafio.dialogs.manual_group import COVER_RATIO, GalleryTab
+    from kkafio.dialogs.gallery import COVER_RATIO, GalleryTab
 
     logger.info(TAG, "Manual: reading the coordinate cards")
     items = scan_manual_items(coord_dir, use_cache)

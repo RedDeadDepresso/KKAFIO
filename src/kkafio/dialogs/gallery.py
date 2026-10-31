@@ -1,5 +1,5 @@
 """
-manual_group.py — The gallery dialog of the Manual modes (Group Characters, Group Coordinates).
+gallery.py — The gallery dialog of the Manual modes (Group Characters, Group Coordinates).
 
 A library-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
 folders that exist) and a grid of character covers. Under every cover is the character's name and

@@ -2,7 +2,7 @@
 group_chara.py — Group character cards into folders by series, with an LLM.
 
 Grouping by hand (typing each character's series in a gallery dialog) is not part of this task;
-it lives in the Run Gallery task (see run_gallery.py and dialogs/manual_group.py).
+it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery.py).
 
 With "Resolve Locally" on (and Hints Language not "no"), a card whose name matches exactly one
 character in the indexes, or one of several with the card's own birthMonth / birthDay, is
@@ -475,7 +475,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
     import os
     from concurrent.futures import ThreadPoolExecutor
     from kkafio.indices.agv import split_key
-    from kkafio.dialogs.manual_group import CharaItem
+    from kkafio.dialogs.gallery import CharaItem
 
     found: list[tuple[Path, Path]] = []
     for root in folders:
@@ -574,7 +574,7 @@ def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
     must be called once the gallery is closed, also when it failed: it saves the key cache.
     `hint_lang` is the language of the character index's series titles (None: no index, only the
     existing series folders are suggested)."""
-    from kkafio.dialogs.manual_group import COVER_RATIO, GalleryTab, chara_dialog_text
+    from kkafio.dialogs.gallery import COVER_RATIO, GalleryTab, chara_dialog_text
 
     if hint_lang:
         from kkafio.indices import agv

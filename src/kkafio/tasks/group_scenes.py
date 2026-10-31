@@ -10,7 +10,7 @@ aren't hashed again); scenes found in the index are moved to
 null), or just <scene folder>/<author>/ when "subgroup by year" is off.
 
 Grouping by hand (typing an author for each scene in a gallery dialog) is not part of this task;
-it lives in the Run Gallery task (see run_gallery.py and dialogs/manual_group.py).
+it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery.py).
 """
 
 import os
@@ -52,7 +52,7 @@ def author_folder_name(author: str) -> str:
 
 def scene_dialog_text():
     """The words of the gallery when it is sorting scenes into author folders."""
-    from kkafio.dialogs.manual_group import DialogText
+    from kkafio.dialogs.gallery import DialogText
     return DialogText(
         search_placeholder=t("dialog.manual_scene.search_placeholder"),
         all=t("dialog.manual_scene.all"),
@@ -202,7 +202,7 @@ def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
     Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
     must be called once the gallery is closed, also when it failed: it brings the hash cache
     along with the scenes that were moved."""
-    from kkafio.dialogs.manual_group import CharaItem, GalleryTab
+    from kkafio.dialogs.gallery import CharaItem, GalleryTab
 
     logger.info(TAG, "Manual: reading the scenes")
     # Always with subfolders: the gallery is the whole library, with each scene's author (its

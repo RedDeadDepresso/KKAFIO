@@ -6,7 +6,7 @@ Group Coordinates only run automatically / with the LLM), side by side in a sing
 the left of the search input (Scene, Character, Outfit) switch between the three galleries — each
 with its own sidebar, sorting, selection and series/author/character input — and a card is moved
 into its folder the moment you confirm it
-(see dialogs/manual_group.py). Every tab keeps its own search text, sort and scroll position.
+(see dialogs/gallery.py). Every tab keeps its own search text, sort and scroll position.
 
 The folders default to the game's (Studio scene folder, female + male chara folders, coordinate
 folder); the Scene folder is left out of the window when the game has no Studio and no folder was
@@ -110,7 +110,7 @@ class RunGallery(BaseTask):
                     tab.finish()
             return
 
-        from kkafio.dialogs.manual_group import gallery_dialog
+        from kkafio.dialogs.gallery import gallery_dialog
 
         # Opens on the first tab that has cards; gallery_dialog() runs every tab's finish() (cache
         # saving) when the window is gone, also if it failed.

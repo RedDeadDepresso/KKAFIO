@@ -18,7 +18,7 @@ except tk.TclError:
 
 from PIL import Image
 
-from kkafio.dialogs import manual_group as mgd
+from kkafio.dialogs import gallery as mgd
 from kkafio.dialogs.common import show_and_wait as real_show_and_wait
 
 
@@ -79,6 +79,12 @@ def first_unknown(cv):
 def click(cv, item_id):
     x1, y1, x2, y2 = cv.bbox(item_id)
     cv.event_generate("<Button-1>", x=int((x1 + x2) / 2 - cv.canvasx(0)), y=int((y1 + y2) / 2 - cv.canvasy(0)))
+
+
+def click_cover(cv, name_id):
+    """Click the cover of the tile whose file name is `name_id` (the name sits right under it)."""
+    x1, y1, x2, y2 = cv.bbox(name_id)
+    cv.event_generate("<Button-1>", x=int((x1 + x2) / 2 - cv.canvasx(0)), y=int(y1 - 40 - cv.canvasy(0)))
 
 
 def editor(cv):
@@ -354,7 +360,7 @@ def test_click_selects_and_keys_move_the_selection_and_enter_edits(tmp_path, mon
         show_all(root)
         assert _highlighted(cv) is None
         name_id = texts(cv, "Char 013")[0]                           # newest = first tile
-        click(cv, name_id)                                           # click the card, not its series
+        click_cover(cv, name_id)                                     # the cover selects the card, opens nothing
         pump(root, 0.2)
         assert _highlighted(cv) == "Char 013" and editor(cv) is None
 
@@ -815,3 +821,122 @@ def test_clicking_a_series_row_never_draws_an_empty_list_and_keeps_the_scroll_po
         assert len(box.curselection()) == 1
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+# ---------------------------------------------------------------------------
+# renaming a card's file by clicking its name
+# ---------------------------------------------------------------------------
+
+def test_clean_file_stem():
+    clean = mgd.clean_file_stem
+    assert clean("  Alice  ", ".png") == "Alice"
+    assert clean("Alice.png", ".png") == "Alice" and clean("Alice.PNG", ".png") == "Alice"
+    assert clean("a.b", ".png") == "a.b"
+    assert clean("Alice.", ".png") == "Alice"                        # Windows drops a trailing dot
+    assert clean("日本語 カード", ".png") == "日本語 カード"
+    for bad in ("", "   ", "...", ".png", "a/b", "a\\b", "a:b", "a*b", "a?b", 'a"b', "a<b", "a|b", "a\tb",
+                "CON", "nul.txt", "com1"):
+        assert clean(bad, ".png") == "", bad
+
+
+def test_rename_card_never_overwrites(tmp_path):
+    a, b = tmp_path / "a.png", tmp_path / "b.png"
+    a.write_bytes(b"A")
+    b.write_bytes(b"B")
+    new = mgd.rename_card(a, "alice")
+    assert new == tmp_path / "alice.png" and new.read_bytes() == b"A" and not a.exists()
+    assert mgd.rename_card(new, "alice") == new                      # same name: nothing to do
+    with pytest.raises(FileExistsError):
+        mgd.rename_card(new, "b")
+    assert b.read_bytes() == b"B" and new.read_bytes() == b"A"       # both untouched
+    assert mgd.rename_card(new, "Alice").name == "Alice.png"         # changing only the case is fine
+    with pytest.raises(OSError):
+        mgd.rename_card(tmp_path / "gone.png", "x")
+
+
+def test_model_renamed_follows_the_file(tmp_path):
+    item = mgd.CharaItem(tmp_path / "old.png", tmp_path, "old", None, 1, 0.0)
+    mgd.GalleryModel([item]).renamed(item, tmp_path / "new name.png")
+    assert item.path.name == "new name.png" and item.name == "new name"
+
+
+def test_clicking_the_file_name_renames_the_file(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 3)
+    calls = []
+
+    def script(root):
+        cv = gallery_canvas(root)
+        click(cv, texts(cv, "Char 002")[0])                          # the bold file name of the first tile
+        pump(root, 0.2)
+        entry = editor(cv)
+        assert entry is not None and entry.get() == "card_002"       # the stem, without ".png"
+        assert suggestions(cv) == []                                 # a file name has no suggestions
+        type_into(entry, "Renamed.png")                              # typing the extension is fine
+        entry.event_generate("<Return>")
+        pump(root, 0.4)
+        assert (tmp_path / "Renamed.png").exists() and not (tmp_path / "card_002.png").exists()
+        assert items[2].path.name == "Renamed.png" and items[2].name == "Renamed"
+        assert len(texts(cv, "Renamed")) == 1 and not texts(cv, "Char 002")
+        assert editor(cv) is None and _highlighted_or_none(cv, "Renamed")
+        assert label_text(root, "Renamed card_002.png")
+
+    run_dialog(monkeypatch, items, lambda t: [], mover(calls), script)
+    assert calls == []                                               # renaming is not a series assignment
+
+
+def _highlighted_or_none(cv, name):
+    """True if the tile showing `name` has the selection border."""
+    accents = {mgd._LIGHT["accent"], mgd._DARK["accent"]}
+    boxes = [cv.bbox(i) for i in cv.find_all()
+             if cv.type(i) == "polygon" and cv.itemcget(i, "outline") in accents and not cv.itemcget(i, "fill")]
+    x1, y1, x2, y2 = cv.bbox(texts(cv, name)[0])
+    return any(bx1 <= x1 <= bx2 and by1 <= y1 <= by2 for bx1, by1, bx2, by2 in boxes)
+
+
+def test_rename_refuses_taken_and_invalid_names_and_esc_cancels(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 3)
+
+    def script(root):
+        cv = gallery_canvas(root)
+
+        def rename_to(text, key="<Return>"):
+            click(cv, texts(cv, "Char 002")[0])
+            pump(root, 0.2)
+            entry = editor(cv)
+            assert entry is not None
+            type_into(entry, text)
+            entry.event_generate(key)
+            pump(root, 0.3)
+
+        rename_to("card_000")                                        # taken by another card
+        assert (tmp_path / "card_002.png").exists() and (tmp_path / "card_000.png").exists()
+        assert label_text(root, "card_000.png already exists")
+        assert editor(cv) is None
+
+        rename_to("a/b")                                             # not a file name
+        assert (tmp_path / "card_002.png").exists()
+        assert label_text(root, '"a/b" can')
+
+        rename_to("zzz", key="<Escape>")                             # cancelled
+        assert (tmp_path / "card_002.png").exists() and not (tmp_path / "zzz.png").exists()
+        assert editor(cv) is None
+
+        rename_to("card_002")                                        # unchanged: nothing happens
+        assert (tmp_path / "card_002.png").exists() and editor(cv) is None
+        assert items[2].path.name == "card_002.png"
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+
+
+def test_clicking_the_series_line_still_opens_the_series_input(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 2)
+
+    def script(root):
+        cv = gallery_canvas(root)
+        click(cv, first_unknown(cv))
+        pump(root, 0.2)
+        entry = editor(cv)
+        assert entry is not None and entry.get() == ""               # the series input, not the file name
+
+    run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
+

@@ -14,7 +14,7 @@ from kkafio.indices import agv
 from kkafio.indices.text import norm
 from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
-from kkafio.dialogs.manual_group import (
+from kkafio.dialogs.gallery import (
     SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
 from kkafio.tasks import group_chara
 
@@ -295,7 +295,7 @@ def test_gallery_tab_with_no_cards_is_empty(tmp_path):
 
 def test_round_corners_and_polygon_points():
     from PIL import Image
-    from kkafio.dialogs.manual_group import round_corners, rounded_rect_points
+    from kkafio.dialogs.gallery import round_corners, rounded_rect_points
     out = round_corners(Image.new("RGB", (60, 80), (200, 10, 10)), 12)
     assert out.mode == "RGBA" and out.size == (60, 80)
     assert out.getpixel((0, 0))[3] == 0 and out.getpixel((59, 79))[3] == 0     # corners cut away

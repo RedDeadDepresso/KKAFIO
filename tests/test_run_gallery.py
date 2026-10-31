@@ -10,7 +10,7 @@ import pytest
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 from kkafio.core.config import _build_task_config
 from kkafio.core.errors import InputError
-from kkafio.dialogs.manual_group import CharaItem, GalleryTab
+from kkafio.dialogs.gallery import CharaItem, GalleryTab
 from kkafio.tasks import run_gallery as rg
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,7 +79,7 @@ def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
          mock.patch.object(rg, "chara_gallery_tab", lambda f, h, c, label="": chara_error and (_ for _ in ()).throw(chara_error)
                            or _fake_tab(label, counts[1], log)), \
          mock.patch.object(rg, "coordinate_gallery_tab", lambda cd, d, c, label="": _fake_tab(label, counts[2], log)), \
-         mock.patch("kkafio.dialogs.manual_group.gallery_dialog", dialog or fake_dialog):
+         mock.patch("kkafio.dialogs.gallery.gallery_dialog", dialog or fake_dialog):
         task.run()
     return shown, log
 

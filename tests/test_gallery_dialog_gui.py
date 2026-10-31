@@ -11,7 +11,7 @@ except tk.TclError:
     pytest.skip("no display available for Tk", allow_module_level=True)
 
 import test_manual_group_dialog_gui as g
-from kkafio.dialogs import manual_group as mgd
+from kkafio.dialogs import gallery as mgd
 
 
 def _run(monkeypatch, tabs, script, initial=0):
