@@ -8,6 +8,7 @@ is AES-CTR decrypted while it streams to disk.
   https://mega.nz/file/<handle>#<key>                  one file
   https://mega.nz/folder/<handle>#<key>                a whole folder
   https://mega.nz/folder/<handle>#<key>/file/<node>    one file of a folder
+  https://mega.nz/folder/<handle>#<key>/folder/<node>  one subfolder of a folder (and what is in it)
   https://mega.nz/#!<handle>!<key>, #F!<handle>!<key>  legacy shapes
 
 Download links are minted per request (they are tied to one storage node),
@@ -101,7 +102,8 @@ def _new_mega_link(folder: bool, handle: str, key: str, node: str) -> dict:
 
 
 def _parse_mega_link(url: str) -> dict:
-    """{"folder", "handle", "key" (bytes), "node"} of a public mega link.
+    """{"folder", "handle", "key" (bytes), "node"} of a public mega link. "node" is the file or
+    subfolder of a folder link the link points at ("" for everything).
 
     Raises MegaError for a link that isn't a file/folder link or lacks its key.
     """
@@ -116,8 +118,8 @@ def _parse_mega_link(url: str) -> dict:
             key, _, rest = frag.partition("/")
             node = ""
             kind, _, handle = rest.partition("/")
-            if kind == "file":          # "/folder/<h>" would select a subtree: ignored
-                node = handle
+            if kind in ("file", "folder"):      # a file, or a subfolder (its whole subtree)
+                node = handle.strip("/")
             return _new_mega_link(True, segs[1], key, node)
 
     if frag:                            # #!<handle>!<key>  /  #F!<handle>!<key>[!<node>]
@@ -260,7 +262,11 @@ def _mega_decrypt_node(node: dict, share: bytes) -> tuple[bytes | None, str]:
 
 def _mega_list_folder(nodes: list[dict], share: bytes, only_node: str = "") -> tuple[str, list[dict]]:
     """(folder title, files) for a folder listing. Each file is
-    {"handle", "name", "dir" (tuple of folder names), "size", "key", "nonce"}."""
+    {"handle", "name", "dir" (tuple of folder names), "size", "key", "nonce"}.
+
+    `only_node` limits the result to one file, or to every file under one subfolder; the
+    subfolder's own name is then the first element of each file's "dir" (so it lands in a
+    folder of that name), and the folders above it are left out."""
     dec: dict[str, dict] = {}
     for n in nodes:
         if not isinstance(n, dict) or not n.get("h"):
@@ -287,19 +293,34 @@ def _mega_list_folder(nodes: list[dict], share: bytes, only_node: str = "") -> t
             handle = parent["node"].get("p")
         return tuple(parts)
 
+    def is_under(d: dict, ancestor: str) -> bool:
+        seen: set[str] = set()
+        handle = d["node"].get("p")
+        while handle and handle in dec and handle not in seen:
+            if handle == ancestor:
+                return True
+            seen.add(handle)
+            handle = dec[handle]["node"].get("p")
+        return False
+
+    selected = dec.get(only_node) if only_node else None
+    subtree = selected is not None and selected["node"].get("t") != MEGA_TYPE_FILE
+    # Folders above the selected subfolder (the share root is never part of a "dir").
+    strip = len(dir_of(selected)) if subtree else 0
+
     files = []
     for h, d in dec.items():
         n = d["node"]
         if n.get("t") != MEGA_TYPE_FILE or d["key"] is None:
             continue
-        if only_node and h != only_node:
+        if only_node and (not is_under(d, only_node) if subtree else h != only_node):
             continue
         try:
             key, nonce = _mega_file_key(d["key"])
         except MegaError:
             continue
         files.append({"handle": h, "name": safe_filename(d["name"] or h, h),
-                      "dir": dir_of(d), "size": int(n.get("s") or 0),
+                      "dir": dir_of(d)[strip:], "size": int(n.get("s") or 0),
                       "key": key, "nonce": nonce})
     return title, files
 
@@ -386,7 +407,8 @@ async def download_mega(
     client, url: str, directory: Path, history: dict, skip: bool,
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed). A folder link downloads every file,
-    nested folders into subfolders; a file link downloads that one file."""
+    nested folders into subfolders (one with a /file/ or /folder/ part: only that file or
+    subfolder); a file link downloads that one file."""
     try:
         link = _parse_mega_link(url)
     except MegaError as e:
@@ -401,7 +423,7 @@ async def download_mega(
             raise MegaError("Mega: folder is empty.")
         title, files = _mega_list_folder(nodes, link["key"], link["node"])
         if not files:
-            raise MegaError("Mega: the selected file is not in this folder."
+            raise MegaError("Mega: the selected file or folder is not in this link, or holds no readable files."
                             if link["node"] else "Mega: folder holds no readable files.")
         share = link["handle"]
     else:

@@ -770,7 +770,9 @@ def test_mega_url_and_link_parsing():
     assert (l["folder"], l["handle"], len(l["key"])) == (True, "FOL", 16)
     l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/file/NODE")
     assert l["node"] == "NODE"
-    l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/folder/SUB")   # subtree: whole share
+    l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/folder/SUB")   # a subfolder
+    assert (l["folder"], l["handle"], l["node"]) == (True, "FOL", "SUB")
+    l = mega._parse_mega_link(f"https://mega.nz/folder/FOL#{key16}/folder/")      # nothing named: whole share
     assert l["node"] == ""
     l = mega._parse_mega_link(f"https://mega.nz/#!abc!{key32}")
     assert (l["folder"], l["handle"]) == (False, "abc")
@@ -938,6 +940,83 @@ def test_mega_folder_download_keeps_structure(tmp_path, monkeypatch):
     assert asyncio.run(go()) == (2, 0, 0)
     assert (Path(tmp_path) / "a.png").read_bytes() == c1
     assert (Path(tmp_path) / "extras" / "a.png").read_bytes() == c2     # no overwrite, root omitted
+
+
+def _mega_nested_share(tmp_path, monkeypatch):
+    """A share  pack/{a.png, extras/{a.png, deep/{c.png}}, other/{d.png}}  and a runner for links to it."""
+    monkeypatch.setattr(history_store, "save_history", lambda h: None)
+    share = bytes(range(100, 116))
+
+    def wrap(raw_key, node_handle):
+        return f"{node_handle}:{_b64(_aes_ecb(share, raw_key))}"
+
+    def folder(h, parent, name, seed):
+        k = bytes([seed] * 16)
+        return {"h": h, "p": parent, "t": 1, "a": _enc_attrs(name, k), "k": wrap(k, h)}
+
+    contents, nodes, blobs = {}, [folder("ROOT", "", "pack", 7)], {}
+    nodes += [folder("SUB", "ROOT", "extras", 8), folder("DEEP", "SUB", "deep", 9),
+              folder("OTH", "ROOT", "other", 10)]
+    for i, (h, parent, name) in enumerate([("F1", "ROOT", "a.png"), ("F2", "SUB", "a.png"),
+                                          ("F3", "DEEP", "c.png"), ("F4", "OTH", "d.png")], start=2):
+        content = f"{h}".encode() * (50 + i)
+        rnd, _aes, _nonce, at, blob = _mega_file(name, content, i)
+        contents[h], blobs["/" + h] = content, blob
+        nodes.append({"h": h, "p": parent, "t": 0, "s": len(content), "a": at, "k": wrap(rnd, h)})
+
+    def api(cmd, folder_handle):
+        assert folder_handle == "SHARE"
+        if cmd["a"] == "f":
+            return [{"f": nodes}]
+        return [{"g": "https://storage.example/" + cmd["n"], "s": len(contents[cmd["n"]])}]
+
+    def run(selector: str):
+        async def go():
+            client = _mega_mock_client({"cmds": [], "blobs": blobs, "api": api})
+            try:
+                return await mega.download_mega(
+                    client, f"https://mega.nz/folder/SHARE#{_b64(share)}{selector}", Path(tmp_path), {}, True)
+            finally:
+                await client.aclose()
+        return asyncio.run(go())
+
+    def found():
+        return sorted((str(p.relative_to(tmp_path)).replace("\\", "/"), p.read_bytes())
+                      for p in Path(tmp_path).rglob("*") if p.is_file())
+
+    return run, found, contents
+
+
+def test_mega_folder_link_with_a_subfolder_downloads_only_that_subtree(tmp_path, monkeypatch):
+    run, found, c = _mega_nested_share(tmp_path, monkeypatch)
+    # Only what is under "extras" (itself included as a folder; the folders above it are dropped).
+    assert run("/folder/SUB") == (2, 0, 0)
+    assert found() == [("extras/a.png", c["F2"]), ("extras/deep/c.png", c["F3"])]
+
+
+def test_mega_folder_link_with_a_nested_subfolder_drops_the_folders_above_it(tmp_path, monkeypatch):
+    run, found, c = _mega_nested_share(tmp_path, monkeypatch)
+    assert run("/folder/DEEP") == (1, 0, 0)
+    assert found() == [("deep/c.png", c["F3"])]          # "extras" above it is left out
+
+
+def test_mega_folder_link_naming_the_share_root_downloads_everything(tmp_path, monkeypatch):
+    run, found, c = _mega_nested_share(tmp_path, monkeypatch)
+    assert run("/folder/ROOT") == (4, 0, 0)
+    assert [n for n, _ in found()] == ["a.png", "extras/a.png", "extras/deep/c.png", "other/d.png"]
+
+
+def test_mega_folder_link_with_a_file_still_downloads_that_file(tmp_path, monkeypatch):
+    run, found, c = _mega_nested_share(tmp_path, monkeypatch)
+    assert run("/file/F3") == (1, 0, 0)
+    assert found() == [("extras/deep/c.png", c["F3"])]
+
+
+def test_mega_folder_link_with_an_unknown_node_is_an_error(tmp_path, monkeypatch):
+    run, found, c = _mega_nested_share(tmp_path, monkeypatch)
+    with pytest.raises(mega.MegaError, match="selected file or folder"):
+        run("/folder/NOPE")
+    assert found() == []
 
 
 def test_mega_errors_become_clear_messages(tmp_path, monkeypatch):
