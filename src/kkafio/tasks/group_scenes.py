@@ -8,6 +8,9 @@ Contents does (and shares its PNG hash cache, so scenes already hashed there
 aren't hashed again); scenes found in the index are moved to
 <scene folder>/<author>/<year>/ (or <author>/Unsorted Years/ when the year is
 null), or just <scene folder>/<author>/ when "subgroup by year" is off.
+
+Grouping by hand (typing an author for each scene in a gallery dialog) is not part of this task;
+it lives in the Run Gallery task (see run_gallery.py and dialogs/manual_group.py).
 """
 
 import os
@@ -246,8 +249,6 @@ class GroupScenes(BaseTask):
         super().__init__(config, file_manager)
         cfg = self.config.group_scenes
         self.scene_dir_str      : str  = cfg.get("SceneDir", "")
-        self.use_automatic      : bool = cfg.get("UseAutomatic", True)
-        self.use_manual         : bool = cfg.get("UseManual", False)
         self.use_cache          : bool = cfg.get("UseCache", True)
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.subgroup_by_year   : bool = cfg.get("SubgroupByYear", True)
@@ -269,19 +270,12 @@ class GroupScenes(BaseTask):
         folder = self._scene_dir()
 
         self.log_start(TAG, str(folder))
-        if not (self.use_automatic or self.use_manual):
-            logger.warning(TAG, "Neither Automatic nor Manual is selected — nothing to do.")
-            return
-        logger.info(TAG, f"Mode              : {' + '.join(m for m, on in (('Automatic', self.use_automatic), ('Manual', self.use_manual)) if on)}")
         logger.info(TAG, f"Use cache         : {self.use_cache}")
         logger.info(TAG, f"Include subfolders: {self.include_subfolders}")
         logger.info(TAG, f"Subgroup by year  : {self.subgroup_by_year}")
         logger.line()
 
-        if self.use_automatic:
-            self._run_automatic(folder)
-        if self.use_manual:
-            self._run_manual(folder)
+        self._run_automatic(folder)
 
     def _scan(self, folder: Path, include_subfolders: bool):
         return scan_scenes(folder, include_subfolders, self.use_cache)
@@ -363,21 +357,3 @@ class GroupScenes(BaseTask):
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}, already in place/skipped: {skipped}, "
                             f"not in index: {unknown}")
-
-    def _run_manual(self, folder: Path) -> None:
-        """Open the gallery: the user names an author per scene and each card is moved at once."""
-        from kkafio.dialogs.manual_group import manual_dialog
-
-        logger.line()
-        tab = scene_gallery_tab(folder, self.use_cache)
-        try:
-            if not tab.items:
-                logger.warning(TAG, "No readable scenes found")
-                return
-            logger.info(TAG, "Opening the gallery")
-            moved = manual_dialog(t("dialog.manual_scene.title"), tab.items, tab.suggest, tab.assign, tab.text,
-                                  cover_ratio=tab.cover_ratio)
-        finally:
-            tab.finish()
-        logger.line()
-        logger.success(TAG, f"Done — moved: {moved}")

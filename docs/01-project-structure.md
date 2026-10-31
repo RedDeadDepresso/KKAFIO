@@ -97,7 +97,7 @@ KKAFIO-dev/
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
 │   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> path inside the modpack
-│   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for Group Scenes' Manual mode
+│   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for the Scene gallery (Run Gallery)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
@@ -119,7 +119,7 @@ KKAFIO-dev/
 │   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait · format_size
 │   │   ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
 │   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
-│   │   ├── manual_group.py          # Gallery dialog of the Manual modes (Group Characters / Coordinates / Scenes); gallery_dialog() hosts several as tabs (Run Gallery)
+│   │   ├── manual_group.py          # Gallery dialog for sorting by hand (characters / coordinates / scenes); gallery_dialog() hosts them as tabs (Run Gallery)
 │   │   └── similar_chara.py         # Review dialog (Review Similar Characters)
 │   │
 │   └── system/                      # OS-facing helpers (mostly Windows)

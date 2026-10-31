@@ -45,14 +45,8 @@ share hair with each other but with no folder move together into a new
 UNKNOWN_<n> folder. Hair that appears in several folders is ambiguous, so those
 coordinates stay where they are.
 
-Mode: Automatic (the matching described above, on by default) and/or Manual. Manual opens the
-gallery dialog of Group Characters (dialogs/manual_group.py) with the coordinate cards, where
-each coordinate gets a character by hand: the sidebar lists the coordinate folders (the characters'
-filenames) instead of series, and typing a name suggests the filenames, without ".png", of the
-characters in the chara folder(s). A confirmed coordinate is moved to <coordinate folder>/<name>/ at
-once (created if needed). With both modes on, Automatic runs first and the gallery then shows the
-coordinates it left directly in the coordinate folder as "no character" next to the grouped ones.
-The gallery always lists every coordinate, subfolders included.
+Grouping by hand (naming a character for each coordinate in a gallery dialog) is not part of
+this task; it lives in the Run Gallery task (see run_gallery.py and dialogs/manual_group.py).
 
 The chara folder(s) are always scanned recursively. With Include Subfolders off
 (the default) only coordinates directly inside the coordinate folder are
@@ -670,8 +664,6 @@ class GroupCoordinates(BaseTask):
         super().__init__(config, file_manager)
         cfg = self.config.group_coordinates
         self.use_cache      : bool = cfg.get("UseCache", True)
-        self.use_automatic  : bool = cfg.get("UseAutomatic", True)
-        self.use_manual     : bool = cfg.get("UseManual", False)
         self.chara_dir_str  : str  = cfg.get("CharaDir", "")
         self.coord_dir_str  : str  = cfg.get("CoordDir", "")
         self.include_subfolders: bool = cfg.get("IncludeSubfolders", False)
@@ -722,19 +714,12 @@ class GroupCoordinates(BaseTask):
         fuzzy = bool(self.ignore_accessories or clothes_tolerance)
 
         self.log_start(TAG, f"{coord_dir}  (characters: {', '.join(str(d) for d in chara_dirs)})")
-        if not (self.use_automatic or self.use_manual):
-            logger.warning(TAG, "Neither Automatic nor Manual is selected — nothing to do.")
-            return
-        logger.info(TAG, f"Mode: {' + '.join(m for m, on in (('Automatic', self.use_automatic), ('Manual', self.use_manual)) if on)}")
         logger.info(TAG, f"Use cache: {self.use_cache}")
         logger.info(TAG, f"Include coordinate subfolders: {self.include_subfolders}")
         logger.info(TAG, f"Ignore accessories: {self.ignore_accessories}, clothes tolerance: {clothes_tolerance}"
                          + ("" if fuzzy else " (exact copies only)"))
         logger.info(TAG, f"Group remaining coordinates by hair: {self.group_by_hair}")
-        if self.use_automatic:
-            self._run_automatic(chara_dirs, coord_dir, clothes_tolerance)
-        if self.use_manual:
-            self._run_manual(chara_dirs, coord_dir)
+        self._run_automatic(chara_dirs, coord_dir, clothes_tolerance)
 
     def _run_automatic(self, chara_dirs: list[Path], coord_dir: Path, clothes_tolerance: int) -> None:
         """The matching passes: hair, outfit, head mod and (optionally) the leftovers by hair."""
@@ -1007,20 +992,3 @@ class GroupCoordinates(BaseTask):
                             f"ambiguous hair: {len(plan['ambiguous'])}, hair matches nothing: {len(plan['lone'])}, "
                             f"no hair found: {len(plan['no_hair'])}"
                             + (f", failed: {failed}" if failed else ""))
-
-    def _run_manual(self, chara_dirs: list[Path], coord_dir: Path) -> None:
-        """Open the gallery: the user names a character per coordinate and each card is moved at once."""
-        from kkafio.dialogs.manual_group import manual_dialog
-
-        logger.line()
-        tab = coordinate_gallery_tab(chara_dirs, coord_dir, self.use_cache)
-        try:
-            if not tab.items:
-                logger.warning(TAG, "No readable coordinate cards found")
-                return
-            logger.info(TAG, "Opening the gallery")
-            moved = manual_dialog(t("dialog.manual_coord.title"), tab.items, tab.suggest, tab.assign, tab.text)
-        finally:
-            tab.finish()
-        logger.line()
-        logger.success(TAG, f"Done — moved: {moved}")

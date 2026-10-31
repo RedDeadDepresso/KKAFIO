@@ -498,9 +498,7 @@
       "include_subfolders": false,
       "scene_dir_str": "<ROOT>/work",
       "subgroup_by_year": true,
-      "use_automatic": true,
-      "use_cache": true,
-      "use_manual": false
+      "use_cache": true
      },
      "class": "GroupScenes",
      "enabled": true,
@@ -516,9 +514,7 @@
       "llm_website_url": "https://chat.deepseek.com/",
       "open_llm_website": true,
       "resolve_locally": false,
-      "use_cache": true,
-      "use_llm": true,
-      "use_manual": false
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -534,9 +530,7 @@
       "group_by_hair": true,
       "ignore_accessories": true,
       "include_subfolders": false,
-      "use_automatic": true,
-      "use_cache": true,
-      "use_manual": false
+      "use_cache": true
      },
      "class": "GroupCoordinates",
      "enabled": true,
@@ -863,9 +857,7 @@
       "group_by_hair": true,
       "ignore_accessories": true,
       "include_subfolders": false,
-      "use_automatic": true,
-      "use_cache": true,
-      "use_manual": false
+      "use_cache": true
      },
      "class": "GroupCoordinates",
      "enabled": true,
@@ -881,9 +873,7 @@
       "llm_website_url": "https://chat.deepseek.com/",
       "open_llm_website": true,
       "resolve_locally": false,
-      "use_cache": true,
-      "use_llm": true,
-      "use_manual": false
+      "use_cache": true
      },
      "class": "GroupChara",
      "enabled": true,
@@ -896,9 +886,7 @@
       "include_subfolders": false,
       "scene_dir_str": "<ROOT>/work",
       "subgroup_by_year": true,
-      "use_automatic": true,
-      "use_cache": true,
-      "use_manual": false
+      "use_cache": true
      },
      "class": "GroupScenes",
      "enabled": true,

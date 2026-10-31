@@ -1,6 +1,6 @@
-"""Group Coordinates, Manual mode: the gallery's data (scan, folder names, suggestions, moving), the
-Mode option (config + which workflows run) and the gallery opened with the coordinate wording. The
-gallery itself is shared with Group Characters (test_manual_group_dialog_gui.py)."""
+"""Group Coordinates' manual gallery (opened from Run Gallery): the gallery's data (scan, folder names,
+suggestions, moving) and the coordinate wording. Group Coordinates itself always groups automatically.
+The gallery itself is shared with Group Characters (test_manual_group_dialog_gui.py)."""
 
 import json
 from pathlib import Path
@@ -117,30 +117,22 @@ def test_assign_reports_a_failed_move(tmp_path):
         assert assign(item, "Rin") is None
 
 
-# --- the Mode option and the task ----------------------------------------------------------------------
+# --- the task: always automatic, no Mode option -------------------------------------------------------
 
-def _cfg(modes):
-    values = {} if modes is None else {"GroupCoordinatesMode": {"type": "checkbox", "caseNames": modes}}
-    return _build_task_config("GroupCoordinates", True, values)
-
-
-def test_mode_option_to_config():
-    pair = lambda c: (c["UseAutomatic"], c["UseManual"])           # noqa: E731
-    assert pair(_cfg(None)) == (True, False)                       # unchanged behaviour
-    assert pair(_cfg(["Automatic"])) == (True, False)
-    assert pair(_cfg(["Manual"])) == (False, True)
-    assert pair(_cfg(["Automatic", "Manual"])) == (True, True)
-    assert pair(_cfg([])) == (False, False)
+def test_there_is_no_mode_option_any_more():
+    cfg = _build_task_config("GroupCoordinates", True, {})
+    assert "UseAutomatic" not in cfg and "UseManual" not in cfg
+    # a stale Mode value from an old GUI config is ignored
+    cfg = _build_task_config("GroupCoordinates", True,
+                             {"GroupCoordinatesMode": {"type": "checkbox", "caseNames": ["Manual"]}})
+    assert "UseAutomatic" not in cfg and "UseManual" not in cfg
 
 
-def test_interface_json_declares_the_mode_option():
+def test_interface_json_has_no_mode_option():
     interface = json.loads((Path(__file__).resolve().parents[1] / "interface.json").read_text(encoding="utf-8"))
-    option = interface["option"]["GroupCoordinatesMode"]
-    assert option["type"] == "checkbox" and option["default_case"] == ["Automatic"]
-    assert {c["name"]: c["pipeline_override"] for c in option["cases"]} == {
-        "Automatic": {"UseAutomatic": True}, "Manual": {"UseManual": True}}
+    assert "GroupCoordinatesMode" not in interface["option"]
     task = next(t for t in interface["task"] if t["name"] == "GroupCoordinates")
-    assert "GroupCoordinatesMode" in task["option"]
+    assert "GroupCoordinatesMode" not in task["option"]
 
 
 def _task(tmp_path, **cfg):
@@ -149,57 +141,44 @@ def _task(tmp_path, **cfg):
     return gc.GroupCoordinates(config, None)
 
 
-def _dispatch(task, tmp_path):
+def test_run_always_groups_automatically(tmp_path):
     calls = []
-    with mock.patch.object(gc, "resolve_chara_dirs", return_value=[tmp_path]), \
-         mock.patch.object(gc.GroupCoordinates, "_run_automatic", lambda self, *a: calls.append("auto")), \
-         mock.patch.object(gc.GroupCoordinates, "_run_manual", lambda self, *a: calls.append("manual")):
-        task.run()
-    return calls
+    # old configs may still carry the removed keys: they change nothing
+    for cfg in ({}, {"UseAutomatic": False, "UseManual": True}):
+        with mock.patch.object(gc, "resolve_chara_dirs", return_value=[tmp_path]), \
+             mock.patch.object(gc.GroupCoordinates, "_run_automatic", lambda self, *a: calls.append("auto")):
+            _task(tmp_path, **cfg).run()
+    assert calls == ["auto", "auto"]
 
 
-def test_run_dispatches_on_the_modes(tmp_path):
-    assert _dispatch(_task(tmp_path), tmp_path) == ["auto"]                              # default: as before
-    assert _dispatch(_task(tmp_path, UseAutomatic=True, UseManual=False), tmp_path) == ["auto"]
-    assert _dispatch(_task(tmp_path, UseAutomatic=False, UseManual=True), tmp_path) == ["manual"]
-    assert _dispatch(_task(tmp_path, UseAutomatic=True, UseManual=True), tmp_path) == ["auto", "manual"]
-    assert _dispatch(_task(tmp_path, UseAutomatic=False, UseManual=False), tmp_path) == []
-
-
-def test_run_manual_opens_the_gallery_and_updates_the_caches(tmp_path):
+def test_gallery_tab_opens_with_the_cards_and_updates_the_caches(tmp_path):
     chara, coord = tmp_path / "chara", tmp_path / "coord"
     _png(chara / "Rin.png")
     _png(chara / "Fate" / "Saber.png")
     loose = _png(coord / "a.png")
     (coord / "Old Folder").mkdir()
-    shown = {}
 
-    def fake_dialog(title, items, suggest, assign, text=None):
-        shown.update(names=[i.name for i in items], suggested=suggest(""), text=text)
-        shown["moved"] = assign(items[0], "rin")
-        return 1
-
-    task = _task(tmp_path, UseAutomatic=False, UseManual=True, CoordDir=str(coord), CharaDir=str(chara))
-    with mock.patch.object(gc, "resolve_chara_dirs", return_value=[chara]), \
-         mock.patch.object(gc, "build_coord_cache", return_value={str(loose): "k"}), \
-         mock.patch.object(gc, "_update_coord_cache") as update, \
-         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
-        task.run()
-    assert shown["names"] == ["a"]
-    assert shown["suggested"] == ["Old Folder", "Rin", "Saber"]    # existing folders + chara filenames
-    assert shown["moved"] == (coord / "Rin" / "a.png", "Rin")
-    assert shown["text"].untagged == "No character"                # the coordinate wording, not the series one
+    with mock.patch.object(gc, "build_coord_cache", return_value={str(loose): "k"}), \
+         mock.patch.object(gc, "_update_coord_cache") as update:
+        tab = gc.coordinate_gallery_tab([chara], coord, True)
+        try:
+            names = [i.name for i in tab.items]
+            suggested = tab.suggest("")
+            moved = tab.assign(tab.items[0], "rin")
+        finally:
+            tab.finish()
+    assert names == ["a"]
+    assert suggested == ["Old Folder", "Rin", "Saber"]             # existing folders + chara filenames
+    assert moved == (coord / "Rin" / "a.png", "Rin")
+    assert tab.text.untagged == "No character"                     # the coordinate wording, not the series one
     update.assert_called_once_with(coord, {str(loose): str(coord / "Rin" / "a.png")})
 
 
-def test_run_manual_with_no_coordinates_does_not_open_the_gallery(tmp_path):
-    opened = []
-    task = _task(tmp_path, UseAutomatic=False, UseManual=True)
-    with mock.patch.object(gc, "resolve_chara_dirs", return_value=[tmp_path]), \
-         mock.patch.object(gc, "build_coord_cache", return_value={}), \
-         mock.patch("kkafio.dialogs.manual_group.manual_dialog", lambda *a: opened.append(a)):
-        task.run()
-    assert opened == []
+def test_gallery_tab_with_no_coordinates_is_empty(tmp_path):
+    with mock.patch.object(gc, "build_coord_cache", return_value={}):
+        tab = gc.coordinate_gallery_tab([tmp_path], tmp_path, True)
+        tab.finish()
+    assert tab.items == []
 
 
 def test_the_coordinate_wording_is_complete_and_formats():

@@ -1,10 +1,11 @@
 """
 run_gallery.py — One gallery window for the three kinds of card: scenes, characters, outfits.
 
-It is the Manual mode of Group Scenes, Group Characters and Group Coordinates side by side in a
-single dialog. Tabs on the left of the search input (Scene, Character, Outfit) switch between the
-three galleries; each is exactly the one of its Group task — the same sidebar, sorting, selection
-and series/author/character input — and moves a card into its folder the moment you confirm it
+It is where scenes, characters and outfits are sorted by hand (Group Scenes, Group Characters and
+Group Coordinates only run automatically / with the LLM), side by side in a single dialog. Tabs on
+the left of the search input (Scene, Character, Outfit) switch between the three galleries — each
+with its own sidebar, sorting, selection and series/author/character input — and a card is moved
+into its folder the moment you confirm it
 (see dialogs/manual_group.py). Every tab keeps its own search text, sort and scroll position.
 
 The folders default to the game's (Studio scene folder, female + male chara folders, coordinate

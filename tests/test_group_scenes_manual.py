@@ -1,5 +1,6 @@
-"""Group Scenes, Manual mode: the authors file, the gallery's data (folder names, suggestions, moving), the
-Mode option and the task. The gallery itself is shared with Group Characters."""
+"""Group Scenes' manual gallery (opened from Run Gallery): the authors file and the gallery's data (folder
+names, suggestions, moving). Group Scenes itself always groups automatically. The gallery itself is shared
+with Group Characters."""
 
 import json
 from pathlib import Path
@@ -101,28 +102,20 @@ def test_assign_collision_already_there_and_unusable(tmp_path):
         assert assign(_item(tmp_path, "e.png"), "Bob") is None
 
 
-# --- the Mode option and the task ----------------------------------------------------------------------
+# --- the task: always automatic, no Mode option -------------------------------------------------------
 
-def _cfg(modes):
-    values = {} if modes is None else {"GroupScenesMode": {"type": "checkbox", "caseNames": modes}}
-    return _build_task_config("GroupScenes", True, values)
-
-
-def test_mode_option_to_config():
-    pair = lambda c: (c["UseAutomatic"], c["UseManual"])           # noqa: E731
-    assert pair(_cfg(None)) == (True, False)
-    assert pair(_cfg(["Manual"])) == (False, True)
-    assert pair(_cfg(["Automatic", "Manual"])) == (True, True)
-    assert pair(_cfg([])) == (False, False)
+def test_there_is_no_mode_option_any_more():
+    cfg = _build_task_config("GroupScenes", True, {})
+    assert "UseAutomatic" not in cfg and "UseManual" not in cfg
+    # a stale Mode value from an old GUI config is ignored
+    cfg = _build_task_config("GroupScenes", True, {"GroupScenesMode": {"type": "checkbox", "caseNames": ["Manual"]}})
+    assert "UseAutomatic" not in cfg and "UseManual" not in cfg
 
 
-def test_interface_json_declares_the_mode_option():
+def test_interface_json_has_no_mode_option():
     interface = json.loads((Path(__file__).resolve().parents[1] / "interface.json").read_text(encoding="utf-8"))
-    option = interface["option"]["GroupScenesMode"]
-    assert option["type"] == "checkbox" and option["default_case"] == ["Automatic"]
-    assert {c["name"]: c["pipeline_override"] for c in option["cases"]} == {
-        "Automatic": {"UseAutomatic": True}, "Manual": {"UseManual": True}}
-    assert "GroupScenesMode" in next(t for t in interface["task"] if t["name"] == "GroupScenes")["option"]
+    assert "GroupScenesMode" not in interface["option"]
+    assert "GroupScenesMode" not in next(t for t in interface["task"] if t["name"] == "GroupScenes")["option"]
 
 
 def _task(folder: Path, **kw):
@@ -133,53 +126,45 @@ def _task(folder: Path, **kw):
     return gs.GroupScenes(cfg, None)
 
 
-def test_run_dispatches_on_the_modes(tmp_path):
-    def dispatch(**kw):
-        calls = []
-        with mock.patch.object(gs.GroupScenes, "_run_automatic", lambda self, f: calls.append("auto")), \
-             mock.patch.object(gs.GroupScenes, "_run_manual", lambda self, f: calls.append("manual")):
+def test_run_always_groups_automatically(tmp_path):
+    calls = []
+    # old configs may still carry the removed keys: they change nothing
+    for kw in ({}, {"UseAutomatic": False, "UseManual": True}):
+        with mock.patch.object(gs.GroupScenes, "_run_automatic", lambda self, f: calls.append("auto")):
             _task(tmp_path, **kw).run()
-        return calls
-    assert dispatch() == ["auto"]
-    assert dispatch(UseAutomatic=False, UseManual=True) == ["manual"]
-    assert dispatch(UseAutomatic=True, UseManual=True) == ["auto", "manual"]
-    assert dispatch(UseAutomatic=False, UseManual=False) == []
+    assert calls == ["auto", "auto"]
 
 
-def test_manual_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_path):
+def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_path):
     a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
     cf.write(tmp_path / "s1.png", a)
     cf.write(tmp_path / "Bob" / "s2.png", b)
     cf.write(tmp_path / "_skipped_" / "s3.png", cf.scene_card([["c"]]))
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))                    # not a scene
-    shown = {}
-
-    def fake_dialog(title, items, suggest, assign, text=None, cover_ratio=None):
-        shown.update(items=sorted((i.name, i.series) for i in items), ratio=cover_ratio, text=text,
-                     suggested=suggest("al"))
-        s1 = next(i for i in items if i.name == "s1")
-        shown["moved"] = assign(s1, "wonder")
-        return 1
 
     with mock.patch.object(gs, "load_authors", return_value=AUTHORS), \
-         mock.patch.object(gs, "load_scene_index", side_effect=AssertionError("Manual needs no index")), \
-         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
-        _task(tmp_path, UseAutomatic=False, UseManual=True).run()
+         mock.patch.object(gs, "load_scene_index", side_effect=AssertionError("Manual needs no index")):
+        tab = gs.scene_gallery_tab(tmp_path, True)
+        try:
+            items = sorted((i.name, i.series) for i in tab.items)
+            suggested = tab.suggest("al")
+            moved = tab.assign(next(i for i in tab.items if i.name == "s1"), "wonder")
+        finally:
+            tab.finish()
 
-    assert shown["items"] == [("s1", None), ("s2", "Bob")]
-    assert shown["ratio"] == gs.SCENE_COVER_RATIO and shown["text"].untagged == "No author"
-    assert shown["suggested"][:2] == ["Alice", "Alucid"]
-    assert shown["moved"] == (tmp_path / "Alice" / "s1.png", "Alice")
+    assert items == [("s1", None), ("s2", "Bob")]
+    assert tab.cover_ratio == gs.SCENE_COVER_RATIO and tab.text.untagged == "No author"
+    assert suggested[:2] == ["Alice", "Alucid"]
+    assert moved == (tmp_path / "Alice" / "s1.png", "Alice")
     cache = json.loads((tmp_path / PNG_CACHE_FILE).read_text())["files"]
     assert str(tmp_path / "Alice" / "s1.png") in cache and str(tmp_path / "s1.png") not in cache
 
 
-def test_manual_with_no_scenes_does_not_open_the_gallery(tmp_path):
-    opened = []
+def test_gallery_tab_with_no_scenes_is_empty(tmp_path):
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))
-    with mock.patch("kkafio.dialogs.manual_group.manual_dialog", lambda *a, **k: opened.append(a)):
-        _task(tmp_path, UseAutomatic=False, UseManual=True).run()
-    assert opened == []
+    tab = gs.scene_gallery_tab(tmp_path, True)
+    tab.finish()
+    assert tab.items == []
 
 
 def test_the_scene_wording_is_complete():

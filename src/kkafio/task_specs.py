@@ -480,20 +480,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
 
     TaskSpec(
         name="GroupCoordinates", command="group-coordinates",
-        help="Move coordinate cards into per-character subfolders named after the matching chara card "
-             "(automatically and/or by hand in a gallery dialog)",
+        help="Move coordinate cards into per-character subfolders named after the matching chara card",
         target="kkafio.tasks.group_coordinates:GroupCoordinates",
         options=(
-            Toggle("automatic", key="UseAutomatic",
-                   help="Group automatically by matching hair, outfits and head mods with the chara cards "
-                        "(default: on)",
-                   off_help="Don't group automatically"),
-            Toggle("manual", key="UseManual",
-                   help="Group by hand: opens a gallery of the coordinates where you type each one's "
-                        "character, with the chara filenames (without .png) as suggestions; a confirmed "
-                        "coordinate is moved into that character's folder at once. With --automatic too, "
-                        "the automatic grouping goes first (default: off)",
-                   off_help="Don't open the manual gallery"),
             Toggle("use-cache", key="UseCache",
                    help="Reuse cached chara/coordinate outfit digests for unchanged files (default: on)",
                    off_help="Disable cache and re-read every card"),
@@ -525,11 +514,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
 
     TaskSpec(
         name="RunGallery", command="run-gallery",
-        help="Open one gallery window with the Manual modes of Group Scenes, Group Characters and "
-             "Group Coordinates as tabs (Scene, Character, Outfit)",
+        help="Open one gallery window to sort scenes, characters and coordinates into folders by hand, "
+             "as tabs (Scene, Character, Outfit)",
         description=(
             "Opens a single gallery dialog with three tabs on the left of the search input: Scene, "
-            "Character and Outfit. Each tab is the manual gallery of the matching Group task — "
+            "Character and Outfit. Each tab is the by-hand counterpart of the matching Group task — "
             "scenes are sorted into author folders, characters into series folders and coordinates "
             "(outfits) into character folders — and a confirmed card is moved at once. The folders "
             "default to the game's (the Scene tab is left out when the game has no Studio and no "
@@ -606,19 +595,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
 
     TaskSpec(
         name="GroupScenes", command="group-scenes",
-        help="Move Studio scenes into per-author folders using the pepper-scene-index "
-             "(automatically and/or by hand in a gallery dialog)",
+        help="Move Studio scenes into per-author folders using the pepper-scene-index",
         target="kkafio.tasks.group_scenes:GroupScenes",
         options=(
-            Toggle("automatic", key="UseAutomatic",
-                   help="Group automatically using the pepper-scene-index (default: on)",
-                   off_help="Don't group automatically"),
-            Toggle("manual", key="UseManual",
-                   help="Group by hand: opens a gallery of the scenes where you type each one's author, "
-                        "with the authors of assets/data/author_index.json as suggestions; a confirmed scene is "
-                        "moved into that author's folder at once. With --automatic too, the automatic "
-                        "grouping goes first (default: off)",
-                   off_help="Don't open the manual gallery"),
             Value("--scene-dir", "--input", "-i", key="SceneDir", ignore_blank=True, metavar="DIR",
                   default=None,
                   help="Custom scene directory (default: the game's Studio scene folder; "
@@ -637,8 +616,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     TaskSpec(
         name="GroupChara", command="group-chara",
         help="Move character cards into series subfolders using an LLM "
-             "(shows a native Copy/Paste dialog when it runs) and/or by hand "
-             "(a gallery dialog where you type each character's series)",
+             "(shows a native Copy/Paste dialog when it runs)",
         target="kkafio.tasks.group_chara:GroupChara",
         options=(
             Value("--chara-dir", "--input", "-i", key="CharaDir", ignore_blank=True, metavar="DIR",
@@ -646,15 +624,6 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "pointing it at the game's chara folder also uses female/ and male/; "
                        "--input is an alias)"),
-            Toggle("llm", key="UseLlm",
-                   help="Group with an LLM: shows the Copy/Paste dialog (default: on)",
-                   off_help="Don't use an LLM"),
-            Toggle("manual", key="UseManual",
-                   help="Group by hand: opens a gallery where you type each character's series, with "
-                        "suggestions; a confirmed card is moved into that series folder at once. With "
-                        "--llm too, the LLM goes first and the gallery shows the cards it left "
-                        "(default: off)",
-                   off_help="Don't open the manual gallery"),
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Include character cards from subfolders when scanning (overrides config)"),
             Toggle("use-cache", key="UseCache",

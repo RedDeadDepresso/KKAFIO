@@ -1,6 +1,6 @@
-"""Group Characters, Manual mode: the gallery's data (scan, series folder names, suggestions, moving),
-the Mode option (config + which workflows run) and the gallery model. The window itself is in
-test_manual_group_dialog_gui.py."""
+"""Group Characters' manual gallery (opened from Run Gallery): the gallery's data (scan, series folder
+names, suggestions, moving) and the gallery model. Group Characters itself always runs the LLM
+workflow. The window itself is in test_manual_group_dialog_gui.py."""
 
 import json
 from contextlib import contextmanager
@@ -240,20 +240,15 @@ def test_scan_name_falls_back_to_nickname_then_filename(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# the Mode option
+# the task: always the LLM workflow, no Mode option
 # ---------------------------------------------------------------------------
 
-def _cfg(modes):
-    values = {} if modes is None else {"GroupCharaMode": {"type": "checkbox", "caseNames": modes}}
-    return _build_task_config("GroupChara", True, values)
-
-
-def test_mode_option_to_config():
-    assert (_cfg(None)["UseLlm"], _cfg(None)["UseManual"]) == (True, False)           # unchanged behaviour
-    assert (_cfg(["LLM"])["UseLlm"], _cfg(["LLM"])["UseManual"]) == (True, False)
-    assert (_cfg(["Manual"])["UseLlm"], _cfg(["Manual"])["UseManual"]) == (False, True)
-    assert (_cfg(["LLM", "Manual"])["UseLlm"], _cfg(["LLM", "Manual"])["UseManual"]) == (True, True)
-    assert (_cfg([])["UseLlm"], _cfg([])["UseManual"]) == (False, False)
+def test_there_is_no_mode_option_any_more():
+    cfg = _build_task_config("GroupChara", True, {})
+    assert "UseLlm" not in cfg and "UseManual" not in cfg
+    # a stale Mode value from an old GUI config is ignored
+    cfg = _build_task_config("GroupChara", True, {"GroupCharaMode": {"type": "checkbox", "caseNames": ["Manual"]}})
+    assert "UseLlm" not in cfg and "UseManual" not in cfg
 
 
 def _task(tmp_path, **cfg):
@@ -261,60 +256,38 @@ def _task(tmp_path, **cfg):
     return group_chara.GroupChara(config, None)
 
 
-def _run(task, tmp_path, llm_result=True):
+def test_run_always_runs_the_llm_workflow(tmp_path):
     calls = []
-    with mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
-         mock.patch.object(group_chara.hint_language, "resolve", return_value="en_us"), \
-         mock.patch.object(group_chara.GroupChara, "_run_llm",
-                           lambda self, f, h: calls.append("llm") or llm_result), \
-         mock.patch.object(group_chara.GroupChara, "_run_manual",
-                           lambda self, f, h: calls.append("manual")):
-        task.run()
-    return calls
+    # old configs may still carry the removed keys: they change nothing
+    for cfg in ({}, {"UseLlm": False, "UseManual": True}):
+        with mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
+             mock.patch.object(group_chara.hint_language, "resolve", return_value="en_us"), \
+             mock.patch.object(group_chara.GroupChara, "_run_llm",
+                               lambda self, f, h: calls.append("llm") or True):
+            _task(tmp_path, **cfg).run()
+    assert calls == ["llm", "llm"]
 
 
-def test_run_dispatches_on_the_modes(tmp_path):
-    assert _run(_task(tmp_path), tmp_path) == ["llm"]                                  # default: as before
-    assert _run(_task(tmp_path, UseLlm=True, UseManual=False), tmp_path) == ["llm"]
-    assert _run(_task(tmp_path, UseLlm=False, UseManual=True), tmp_path) == ["manual"]
-    assert _run(_task(tmp_path, UseLlm=True, UseManual=True), tmp_path) == ["llm", "manual"]
-    assert _run(_task(tmp_path, UseLlm=False, UseManual=False), tmp_path) == []        # nothing selected
-
-
-def test_with_both_modes_a_cancelled_llm_run_does_not_open_the_gallery(tmp_path):
-    assert _run(_task(tmp_path, UseLlm=True, UseManual=True), tmp_path, llm_result=False) == ["llm"]
-
-
-def test_run_manual_opens_the_gallery_and_saves_the_cache(tmp_path):
+def test_gallery_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
     _cards(tmp_path, a="Rin")
-    shown = {}
-
-    def fake_dialog(title, items, suggest, assign):
-        shown["names"] = [i.name for i in items]
-        shown["moved"] = assign(items[0], "Fate")
-        return 1
-
-    task = _task(tmp_path, UseLlm=False, UseManual=True)
-    with manual_fakes(), \
-         mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
-         mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
-         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
-        task.run()
-    assert shown["names"] == ["Rin"] and shown["moved"][1] == "Fate"
+    with manual_fakes(), mock.patch.object(group_chara.hint_language, "resolve", return_value=None):
+        tab = group_chara.chara_gallery_tab([tmp_path], None, True)
+        try:
+            names = [i.name for i in tab.items]
+            moved = tab.assign(tab.items[0], "Fate")
+        finally:
+            tab.finish()
+    assert names == ["Rin"] and moved[1] == "Fate"
     assert (tmp_path / "Fate" / "a.png").exists()
     files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
     assert str(tmp_path / "Fate" / "a.png") in files                                  # cache saved after the moves
 
 
-def test_run_manual_with_no_cards_does_not_open_the_gallery(tmp_path):
-    task = _task(tmp_path, UseLlm=False, UseManual=True)
-    opened = []
-    with manual_fakes(), \
-         mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
-         mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
-         mock.patch("kkafio.dialogs.manual_group.manual_dialog", lambda *a: opened.append(a)):
-        task.run()
-    assert opened == []
+def test_gallery_tab_with_no_cards_is_empty(tmp_path):
+    with manual_fakes():
+        tab = group_chara.chara_gallery_tab([tmp_path], None, True)
+        tab.finish()
+    assert tab.items == []
 
 
 def test_round_corners_and_polygon_points():
@@ -328,22 +301,13 @@ def test_round_corners_and_polygon_points():
     assert len(pts) == 24 and min(pts[0::2]) == 0 and max(pts[0::2]) == 10 and max(pts[1::2]) == 20
 
 
-def test_manual_mode_always_includes_subfolders(tmp_path):
+def test_gallery_always_includes_subfolders(tmp_path):
     _cards(tmp_path, top="Rin")
     _file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
-    seen = {}
-
-    def fake_dialog(title, items, suggest, assign):
-        seen["items"] = sorted((i.name, i.series) for i in items)
-        return 0
-
-    task = _task(tmp_path, UseLlm=False, UseManual=True, IncludeSubfolders=False)     # the option is off
-    with manual_fakes(), \
-         mock.patch.object(group_chara, "resolve_chara_dirs", return_value=[tmp_path]), \
-         mock.patch.object(group_chara.hint_language, "resolve", return_value=None), \
-         mock.patch("kkafio.dialogs.manual_group.manual_dialog", fake_dialog):
-        task.run()
-    assert seen["items"] == [("Rin", None), ("Saber", "Fate")]
+    with manual_fakes():
+        tab = group_chara.chara_gallery_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
+        tab.finish()
+    assert sorted((i.name, i.series) for i in tab.items) == [("Rin", None), ("Saber", "Fate")]
 
 
 def test_maximize_uses_zoomed_state_then_the_x11_attribute():

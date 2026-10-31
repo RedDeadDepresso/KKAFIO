@@ -630,28 +630,6 @@
         "Prompt": "{prompt}"
       }
     },
-    "GroupCharaMode": {
-      "type": "checkbox",
-      "label": "$option.GroupCharaMode.label",
-      "description": "$option.GroupCharaMode.description",
-      "default_case": ["LLM"],
-      "cases": [
-        {
-          "name": "LLM",
-          "label": "$option.GroupCharaMode.case.LLM.label",
-          "pipeline_override": {
-            "UseLlm": true
-          }
-        },
-        {
-          "name": "Manual",
-          "label": "$option.GroupCharaMode.case.Manual.label",
-          "pipeline_override": {
-            "UseManual": true
-          }
-        }
-      ]
-    },
     "GroupCharaIncludeSubfolders": {
       "type": "switch",
       "label": "$option.GroupCharaIncludeSubfolders.label",
@@ -696,28 +674,6 @@
         }
       ]
     },
-    "GroupScenesMode": {
-      "type": "checkbox",
-      "label": "$option.GroupScenesMode.label",
-      "description": "$option.GroupScenesMode.description",
-      "default_case": ["Automatic"],
-      "cases": [
-        {
-          "name": "Automatic",
-          "label": "$option.GroupScenesMode.case.Automatic.label",
-          "pipeline_override": {
-            "UseAutomatic": true
-          }
-        },
-        {
-          "name": "Manual",
-          "label": "$option.GroupScenesMode.case.Manual.label",
-          "pipeline_override": {
-            "UseManual": true
-          }
-        }
-      ]
-    },
     "GroupScenesIncludeSubfolders": {
       "type": "switch",
       "label": "$option.GroupScenesIncludeSubfolders.label",
@@ -758,28 +714,6 @@
           "label": "$option.GroupScenesSubgroupByYear.case.No.label",
           "pipeline_override": {
             "SubgroupByYear": false
-          }
-        }
-      ]
-    },
-    "GroupCoordinatesMode": {
-      "type": "checkbox",
-      "label": "$option.GroupCoordinatesMode.label",
-      "description": "$option.GroupCoordinatesMode.description",
-      "default_case": ["Automatic"],
-      "cases": [
-        {
-          "name": "Automatic",
-          "label": "$option.GroupCoordinatesMode.case.Automatic.label",
-          "pipeline_override": {
-            "UseAutomatic": true
-          }
-        },
-        {
-          "name": "Manual",
-          "label": "$option.GroupCoordinatesMode.case.Manual.label",
-          "pipeline_override": {
-            "UseManual": true
           }
         }
       ]
@@ -1556,7 +1490,6 @@
       "group": ["scene-management"],
       "option": [
         "SceneDir",
-        "GroupScenesMode",
         "GroupScenesIncludeSubfolders",
         "GroupScenesSubgroupByYear",
         "UseCache"
@@ -1571,7 +1504,6 @@
       "group": ["chara-management"],
       "option": [
         "CharaDir",
-        "GroupCharaMode",
         "GroupCharaIncludeSubfolders",
         "HintsLanguage",
         "GroupCharaResolveLocally",
@@ -1591,7 +1523,6 @@
       "option": [
         "CharaDir",
         "CoordDir",
-        "GroupCoordinatesMode",
         "GroupCoordinatesIncludeSubfolders",
         "GroupCoordinatesClothesTolerance",
         "GroupCoordinatesIgnoreAccessories",

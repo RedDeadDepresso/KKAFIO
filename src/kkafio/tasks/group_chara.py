@@ -1,11 +1,8 @@
 """
-group_chara.py — Group character cards into folders by series, with an LLM and/or by hand.
+group_chara.py — Group character cards into folders by series, with an LLM.
 
-Two modes (the "Mode" option; both can be on): LLM runs the workflow below; Manual opens a
-gallery dialog (src/kkafio/dialogs/manual_group.py) where the user types each character's
-series, with suggestions from the anime, games, vtubers index and the series folders that already
-exist; a confirmed card is moved into <chara_folder>/<series>/ at once. With both on, the LLM
-goes first and the gallery then opens for whatever it left without a series.
+Grouping by hand (typing each character's series in a gallery dialog) is not part of this task;
+it lives in the Run Gallery task (see run_gallery.py and dialogs/manual_group.py).
 
 With "Resolve Locally" on (and Hints Language not "no"), a card whose name matches exactly one
 character in the indexes, or one of several with the card's own birthMonth / birthDay, is
@@ -620,8 +617,6 @@ class GroupChara(BaseTask):
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache           : bool = cfg.get("UseCache", True)
-        self.use_llm             : bool = cfg.get("UseLlm", True)
-        self.use_manual          : bool = cfg.get("UseManual", False)
         self.hints_language      : str  = cfg.get("HintsLanguage", hint_language.DETECT)
         self.resolve_locally     : bool = cfg.get("ResolveLocally", False)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
@@ -631,18 +626,10 @@ class GroupChara(BaseTask):
         folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "GROUP")
 
         self.log_start("GROUP", ", ".join(str(f) for f in folders))
-        if not (self.use_llm or self.use_manual):
-            logger.warning("GROUP", "Neither LLM nor Manual is selected — nothing to do.")
-            return
         logger.info("GROUP", f"Use cache: {self.use_cache}")
-        logger.info("GROUP", f"Mode: {' + '.join(m for m, on in (('LLM', self.use_llm), ('Manual', self.use_manual)) if on)}")
 
         hint_lang = hint_language.resolve(self.hints_language, self.prompt, "GROUP")
-        # With both on, the LLM goes first; the gallery then shows what it left without a series.
-        if self.use_llm and not self._run_llm(folders, hint_lang):
-            return
-        if self.use_manual:
-            self._run_manual(folders, hint_lang)
+        self._run_llm(folders, hint_lang)
 
     def _run_llm(self, folders: list[Path], hint_lang: str | None) -> bool:
         """The LLM workflow. False if there was nothing to do or the dialog was cancelled."""
@@ -696,19 +683,3 @@ class GroupChara(BaseTask):
         process(folders, response, include_subfolders=self.include_subfolders,
                 use_cache=self.use_cache, hint_language=hint_lang, local=local)
         return True
-
-    def _run_manual(self, folders: list[Path], hint_lang: str | None) -> None:
-        """Open the gallery: the user types a series per character and each card is moved at once."""
-        from kkafio.dialogs.manual_group import manual_dialog
-
-        tab = chara_gallery_tab(folders, hint_lang, self.use_cache)
-        try:
-            if not tab.items:
-                logger.warning("GROUP", "No readable character cards found")
-                return
-            logger.info("GROUP", f"Opening the gallery with {len(tab.items)} character(s)")
-            moved = manual_dialog(t("dialog.manual.group_title"), tab.items, tab.suggest, tab.assign)
-        finally:
-            tab.finish()
-        logger.line()
-        logger.success("GROUP", f"Done — moved: {moved}")
