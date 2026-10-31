@@ -6,7 +6,8 @@ folders that exist) and a grid of character covers. Under every cover is the cha
 its series — "Unknown series" until it has one. Click that text to type a series (with
 suggestions); Enter confirms it and the card is moved straight into that series' folder, which is
 created if it doesn't exist yet. Nothing is moved until a series is confirmed, and the window can
-be closed at any time: every confirmed card has already been moved.
+be closed at any time: every confirmed card has already been moved. Click the file name (the bold
+text) instead to rename the file in place: Enter renames it, Esc cancels.
 
 The gallery can hold thousands of cards, and CustomTkinter widgets are heavy (each is its own
 canvas), so the grid is drawn on one plain Tk canvas and only the tiles in view exist: scrolling
@@ -29,6 +30,7 @@ sidebar, search text, sort, selection and scroll position. `manual_dialog()` is 
 from __future__ import annotations
 
 import io
+import os
 import queue
 import sys
 from collections import OrderedDict
@@ -142,6 +144,11 @@ class GalleryModel:
         item.path = Path(new_path)
         item.series = series
 
+    def renamed(self, item: CharaItem, new_path: Path) -> None:
+        """`item`'s file was renamed to `new_path` (same folder); its shown name follows."""
+        item.path = Path(new_path)
+        item.name = item.path.stem
+
 
 # ---------------------------------------------------------------------------
 # Small helpers (no GUI)
@@ -205,6 +212,37 @@ def ellipsize(measure: Callable[[str], int], text: str, max_px: int) -> str:
     while text and measure(text + "…") > max_px:
         text = text[:-1]
     return (text + "…") if text else "…"
+
+
+_INVALID_NAME_CHARS = frozenset('<>:"/\\|?*') | frozenset(chr(i) for i in range(32))
+_RESERVED_NAMES = frozenset({"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)),
+                             *(f"LPT{i}" for i in range(1, 10))})
+
+
+def clean_file_stem(text: str, suffix: str = "") -> str:
+    """The file name (without its extension) that `text` stands for, or "" if it can't be one.
+    Typing the extension too is fine (`suffix` is cut off once); characters no file system
+    accepts, Windows' reserved names and names of only dots/spaces are refused."""
+    stem = text.strip()
+    if suffix and stem.casefold().endswith(suffix.casefold()):
+        stem = stem[:-len(suffix)]
+    stem = stem.rstrip(". ").lstrip()               # Windows drops a trailing dot or space
+    if not stem or any(c in _INVALID_NAME_CHARS for c in stem) or stem.split(".")[0].upper() in _RESERVED_NAMES:
+        return ""
+    return stem
+
+
+def rename_card(path: Path, stem: str) -> Path:
+    """Rename `path` to `stem` + its extension, in the same folder; returns the new path.
+    Raises FileExistsError if another file already has that name (nothing is overwritten) and
+    OSError if the rename fails. Changing only the case of the name is allowed."""
+    dest = path.with_name(stem + path.suffix)
+    if dest == path:
+        return path
+    if dest.exists() and not os.path.samefile(dest, path):
+        raise FileExistsError(str(dest))
+    path.rename(dest)
+    return dest
 
 
 # (light, dark) palettes; the canvas and the plain Tk widgets take the one matching the theme,
@@ -655,7 +693,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     # card the arrow keys move from. Ctrl+arrows move the cursor without changing `picked`.
     sel: dict = {"item": None, "picked": {}}         # picked: id(card) -> card
     multi: dict = {"dlg": None}                      # the series dialog for several cards, while open
-    edit: dict = {"idx": None, "entry": None, "lb": None, "suggestions": [], "after": None}
+    edit: dict = {"idx": None, "entry": None, "lb": None, "suggestions": [], "after": None,
+                  "field": "series"}                 # field: "series" (move) or "name" (rename the file)
     timers: dict[str, str | None] = {"poll": None, "search": None, "layout": None,
                                      "sidebar": None, "draw": None}
 
@@ -1000,8 +1039,9 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         if items:
             apply_selection(sel["item"] or items[first_visible_index()], items)
 
-    def locate(ex: int, ey: int) -> tuple[int, bool] | None:
-        """(tile index, over its series line?) for a point in the canvas window, or None."""
+    def locate(ex: int, ey: int) -> tuple[int, bool, bool] | None:
+        """(tile index, over its series line?, over its file name?) for a point in the canvas
+        window, or None."""
         n = len(lay["items"])
         if not n:
             return None
@@ -1014,9 +1054,12 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         tx, ty = tile_xy(idx)
         if idx >= n or x > tx + tile_w or y > ty + tile_h:
             return None
+        in_text = tx + lay["pad"] <= x <= tx + tile_w - lay["pad"]
         sy = ty + lay["series_y"]
-        in_series = sy <= y <= sy + row_series and tx + lay["pad"] <= x <= tx + tile_w - lay["pad"]
-        return idx, in_series
+        ny = ty + lay["img_h"] + px(8)                 # the name line sits right above the series line
+        in_series = sy <= y <= sy + row_series and in_text
+        in_name = ny <= y < sy and in_text
+        return idx, in_series, in_name
 
     def ensure_visible(idx: int) -> None:
         _tx, ty = tile_xy(idx)
@@ -1092,6 +1135,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                     pass
         canvas.delete("editor")
         edit["idx"] = None
+        edit["field"] = "series"
         edit["suggestions"] = []
         return "break"
 
@@ -1109,7 +1153,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     def refresh_suggestions() -> None:
         entry, idx = edit["entry"], edit["idx"]
-        if entry is None or idx is None:
+        if entry is None or idx is None or edit["field"] != "series":     # a file name has no suggestions
             return
         try:
             names = list(suggest(entry.get()))[:_MAX_SUGGESTIONS]
@@ -1204,19 +1248,25 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         if edit["after"] is None:
             edit["after"] = root.after(120, check)
 
-    def start_edit(idx: int) -> None:
+    def start_edit(idx: int, field: str = "series") -> None:
+        """Open the in-place input on a card: its series (the default) or its file name."""
         cancel_edit()
         ensure_visible(idx)
         item = lay["items"][idx]
         tx, ty = tile_xy(idx)
-        entry = tk.Entry(canvas, font=f_small, bg=pal["input"], fg=pal["text"], insertbackground=pal["text"],
-                         relief="flat", highlightthickness=1, highlightbackground=pal["border"],
-                         highlightcolor=pal["accent"])
-        entry.insert(0, item.series or "")
+        renaming = field == "name"
+        entry = tk.Entry(canvas, font=f_name if renaming else f_small, bg=pal["input"], fg=pal["text"],
+                         insertbackground=pal["text"], relief="flat", highlightthickness=1,
+                         highlightbackground=pal["border"], highlightcolor=pal["accent"])
+        entry.insert(0, item.path.stem if renaming else (item.series or ""))     # the extension stays as it is
         entry.select_range(0, "end")
-        edit.update(idx=idx, entry=entry)
-        canvas.create_window(tx + lay["pad"], ty + lay["series_y"] - px(1), anchor="nw", window=entry,
-                             width=lay["tile_w"] - 2 * lay["pad"], height=row_series, tags="editor")
+        edit.update(idx=idx, entry=entry, field=field)
+        if renaming:                                # over the name line (a little taller than the text)
+            y, height = ty + lay["img_h"] + px(5), lh_name + px(5)
+        else:
+            y, height = ty + lay["series_y"] - px(1), row_series
+        canvas.create_window(tx + lay["pad"], y, anchor="nw", window=entry,
+                             width=lay["tile_w"] - 2 * lay["pad"], height=height, tags="editor")
         entry.bind("<Return>", lambda _e: (confirm(), "break")[1])
         entry.bind("<KP_Enter>", lambda _e: (confirm(), "break")[1])
         entry.bind("<Escape>", cancel_and_focus)
@@ -1226,11 +1276,15 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         entry.bind("<KeyRelease>", on_entry_key)
         entry.bind("<FocusOut>", on_entry_focus_out)
         entry.focus_set()
-        refresh_suggestions()
+        if not renaming:
+            refresh_suggestions()
 
     def confirm(text: str | None = None) -> None:
         idx, entry = edit["idx"], edit["entry"]
         if idx is None or entry is None:
+            return
+        if edit["field"] == "name":
+            confirm_rename(idx, entry.get())
             return
         if text is None:
             text = selected_suggestion() or entry.get()
@@ -1246,6 +1300,39 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             return
         finish_assignment(idx)
         status.configure(text=txt.moved.format(name=item.name, series=series))
+
+    def confirm_rename(idx: int, text: str) -> None:
+        """Rename the file of the card at `idx` to `text` (its extension is kept)."""
+        item = lay["items"][idx]
+        cancel_edit()
+        canvas.focus_set()
+        old_path = item.path
+        stem = clean_file_stem(text, old_path.suffix)
+        if not stem:
+            if text.strip():                                # typed something, but it can't be a file name
+                status.configure(text=t("dialog.manual.rename_invalid", new=text.strip()))
+            return
+        if stem == old_path.stem:
+            return                                          # unchanged
+        try:
+            new_path = rename_card(old_path, stem)
+        except FileExistsError:
+            status.configure(text=t("dialog.manual.rename_exists", new=stem + old_path.suffix))
+            return
+        except OSError as e:
+            logger.warning("GALLERY", f"Could not rename {old_path.name}: {e}")
+            status.configure(text=t("dialog.manual.rename_failed", name=old_path.name))
+            return
+        logger.success("GALLERY", f"Renamed {old_path.name} -> {new_path.name}")
+        if old_path in pil_cache:                           # the cover follows the file
+            pil_cache[new_path] = pil_cache.pop(old_path)
+        model.renamed(item, new_path)
+        relayout(keep_scroll=True)                          # the sort order may have changed
+        new_idx = index_of(item)
+        if new_idx is not None:                             # (a search may have filtered it out)
+            select_only(item)
+            ensure_visible(new_idx)
+        status.configure(text=t("dialog.manual.renamed", old=old_path.name, new=new_path.name))
 
     def assign_one(item, text: str) -> str | None:
         """Move `item` into the series `text` (via `assign`) and update the model; the series
@@ -1288,7 +1375,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         canvas.focus_set()
         if hit is None:
             return
-        idx, in_series = hit
+        idx, in_series, in_name = hit
         item = lay["items"][idx]
         if event.state & 0x4:                      # Ctrl+click adds / removes the card
             picked = dict(sel["picked"])
@@ -1301,6 +1388,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         select_only(item)
         if in_series:
             start_edit(idx)
+        elif in_name:
+            start_edit(idx, "name")
 
     def on_enter_key(_event=None) -> str:
         items = lay["items"]
@@ -1472,7 +1561,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     def on_motion(event) -> None:
         hit = locate(event.x, event.y)
-        canvas.configure(cursor="hand2" if hit is not None and hit[1] else "")
+        canvas.configure(cursor="hand2" if hit is not None and (hit[1] or hit[2]) else "")
 
     def on_wheel(event) -> None:
         try:
