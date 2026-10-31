@@ -281,6 +281,8 @@
   "task.GroupChara.description": "LLM을 사용하여 캐릭터 카드를 시리즈별 하위 폴더로 이동합니다(실행 시 복사/붙여넣기 대화 상자가 표시됩니다)",
   "task.GroupCoordinates.label": "🧥 코디 그룹화",
   "task.GroupCoordinates.description": "코디 카드를 캐릭터 카드에 저장된 의상과 비교하여 일치하는 캐릭터 카드의 파일명으로 된 하위 폴더로 이동합니다",
+  "task.RunGallery.label": "🖼️ 갤러리 실행",
+  "task.RunGallery.description": "씬, 캐릭터, 코디 세 개의 탭이 있는 갤러리 창 하나를 엽니다. 씬 그룹화, 캐릭터 그룹화, 코디 그룹화의 수동 모드를 한곳에 모은 것입니다. 카드에 제작자, 시리즈 또는 캐릭터를 입력하면 해당 폴더로 즉시 이동합니다. 폴더는 기본적으로 게임의 폴더가 사용되며, 그룹화 작업과 같은 캐시를 사용합니다.",
   "task.UngroupCards.label": "📂 카드 그룹 해제",
   "task.UngroupCards.description": "하위 폴더의 카드를 최상위 폴더로 다시 이동합니다",
   "task.RenameChara.label": "✏️ 캐릭터 이름 변경",

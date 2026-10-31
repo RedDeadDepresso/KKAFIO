@@ -142,6 +142,105 @@ def _move_unique(src: Path, dest_dir: Path) -> Path | None:
     return dest
 
 
+def scan_scenes(folder: Path, include_subfolders: bool, use_cache: bool):
+    """Hash the PNGs (reusing the shared cache) and pick out the scenes.
+    Returns (scenes [(path, digest)], cache as loaded, this scan's cache entries)."""
+    png_files = list(folder.rglob("*.png") if include_subfolders else folder.glob("*.png"))
+    logger.info(TAG, f"Scanning {len(png_files)} PNG file(s) in {folder}")
+
+    # Same cache file (and entry layout) as Filter Duplicate Contents, so
+    # hashes computed by either task are reused by the other.
+    cache = _load_duplic_cache(folder, PNG_CACHE_FILE) if use_cache else {}
+
+    def _hash(path: Path):
+        sp, fp = str(path), file_fp(path)
+        cached = cache.get(sp)
+        if cached and cached.get("fp") == fp and "xxh" in cached:
+            return path, cached["xxh"], cached.get("category"), fp, True
+        data = path.read_bytes()
+        payload = _get_png_payload(data)
+        return path, (_xxh(payload) if payload else _xxh(data)), _classify(data), fp, False
+
+    scenes: list[tuple[Path, str]] = []
+    new_entries: dict[str, dict] = {}
+    reused = 0
+    workers = min(32, (os.cpu_count() or 4) * 2)
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(_hash, p): p for p in png_files}
+        for future in as_completed(futures):
+            try:
+                path, digest, category, fp, was_cached = future.result()
+            except Exception as e:
+                logger.error(TAG, f"Could not read {futures[future].name}: {e}")
+                continue
+            new_entries[str(path)] = {"fp": fp, "xxh": digest, "category": category}
+            reused += was_cached
+            if category == "scene":
+                scenes.append((path, digest))
+    if reused:
+        logger.info(TAG, f"Hash cache: {reused} unchanged, {len(png_files) - reused} new/changed")
+    return scenes, cache, new_entries
+
+
+def save_hash_cache(folder: Path, cache: dict, new_entries: dict, moved_from: set[str]) -> None:
+    """Write a scan's entries to the cache file. It's merged into what's already
+    there, since the file also holds entries for files that scan didn't cover
+    (e.g. subfolders when they're excluded); the old path of a moved scene is dropped."""
+    merged = {k: v for k, v in cache.items()
+              if k not in new_entries and k not in moved_from}
+    merged.update(new_entries)
+    _save_duplic_cache(folder, PNG_CACHE_FILE, merged)
+
+
+def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
+    """The Manual gallery of the scenes under `folder` (subfolders included): the user names an
+    author per scene and each card is moved at once.
+
+    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
+    must be called once the gallery is closed, also when it failed: it brings the hash cache
+    along with the scenes that were moved."""
+    from kkafio.dialogs.manual_group import CharaItem, GalleryTab
+
+    logger.info(TAG, "Manual: reading the scenes")
+    # Always with subfolders: the gallery is the whole library, with each scene's author (its
+    # folder) shown; "Include subfolders" only decides what the automatic grouping looks at.
+    scenes, cache, new_entries = scan_scenes(folder, True, use_cache)
+    items = []
+    for path, _digest in sorted(scenes):
+        parts = path.relative_to(folder).parts
+        if not all(_is_author_dir(part) for part in parts[:-1]):
+            continue
+        try:
+            st = path.stat()
+        except OSError:
+            continue
+        items.append(CharaItem(path=path, root=folder, name=path.stem,
+                               series=parts[0] if len(parts) > 1 else None,
+                               size=st.st_size, mtime=st.st_mtime,
+                               ctime=getattr(st, "st_birthtime", st.st_ctime)))
+    if use_cache:
+        save_hash_cache(folder, cache, new_entries, set())     # hashing is the expensive part
+
+    authors = load_authors()
+    known = existing_author_folders(folder)
+    for item in items:
+        if item.series:
+            known.setdefault(item.series.casefold(), item.series)
+    moves: dict[str, str] = {}
+    suggest, assign = manual_callbacks(known, authors, moves)
+    logger.info(TAG, f"{len(items)} scene(s) and {len(authors)} known author(s) for the gallery")
+
+    def finish() -> None:
+        if use_cache and moves:
+            for old, new in moves.items():                      # a move keeps mtime/size: the hash stays valid
+                entry = new_entries.pop(old, None)
+                if entry is not None:
+                    new_entries[new] = entry
+            save_hash_cache(folder, cache, new_entries, set(moves))
+
+    return GalleryTab(label, items, suggest, assign, scene_dialog_text(), SCENE_COVER_RATIO, finish)
+
+
 class GroupScenes(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
@@ -185,52 +284,10 @@ class GroupScenes(BaseTask):
             self._run_manual(folder)
 
     def _scan(self, folder: Path, include_subfolders: bool):
-        """Hash the PNGs (reusing the shared cache) and pick out the scenes.
-        Returns (scenes [(path, digest)], cache as loaded, this scan's cache entries)."""
-        png_files = list(folder.rglob("*.png") if include_subfolders else folder.glob("*.png"))
-        logger.info(TAG, f"Scanning {len(png_files)} PNG file(s) in {folder}")
-
-        # Same cache file (and entry layout) as Filter Duplicate Contents, so
-        # hashes computed by either task are reused by the other.
-        cache = _load_duplic_cache(folder, PNG_CACHE_FILE) if self.use_cache else {}
-
-        def _hash(path: Path):
-            sp, fp = str(path), file_fp(path)
-            cached = cache.get(sp)
-            if cached and cached.get("fp") == fp and "xxh" in cached:
-                return path, cached["xxh"], cached.get("category"), fp, True
-            data = path.read_bytes()
-            payload = _get_png_payload(data)
-            return path, (_xxh(payload) if payload else _xxh(data)), _classify(data), fp, False
-
-        scenes: list[tuple[Path, str]] = []
-        new_entries: dict[str, dict] = {}
-        reused = 0
-        workers = min(32, (os.cpu_count() or 4) * 2)
-        with ThreadPoolExecutor(max_workers=workers) as ex:
-            futures = {ex.submit(_hash, p): p for p in png_files}
-            for future in as_completed(futures):
-                try:
-                    path, digest, category, fp, was_cached = future.result()
-                except Exception as e:
-                    logger.error(TAG, f"Could not read {futures[future].name}: {e}")
-                    continue
-                new_entries[str(path)] = {"fp": fp, "xxh": digest, "category": category}
-                reused += was_cached
-                if category == "scene":
-                    scenes.append((path, digest))
-        if reused:
-            logger.info(TAG, f"Hash cache: {reused} unchanged, {len(png_files) - reused} new/changed")
-        return scenes, cache, new_entries
+        return scan_scenes(folder, include_subfolders, self.use_cache)
 
     def _save_cache(self, folder: Path, cache: dict, new_entries: dict, moved_from: set[str]) -> None:
-        """Write a scan's entries to the cache file. It's merged into what's already
-        there, since the file also holds entries for files that scan didn't cover
-        (e.g. subfolders when they're excluded); the old path of a moved scene is dropped."""
-        merged = {k: v for k, v in cache.items()
-                  if k not in new_entries and k not in moved_from}
-        merged.update(new_entries)
-        _save_duplic_cache(folder, PNG_CACHE_FILE, merged)
+        save_hash_cache(folder, cache, new_entries, moved_from)
 
     def _run_automatic(self, folder: Path) -> None:
         """Group the scenes the scene index knows into their author folders."""
@@ -309,49 +366,18 @@ class GroupScenes(BaseTask):
 
     def _run_manual(self, folder: Path) -> None:
         """Open the gallery: the user names an author per scene and each card is moved at once."""
-        from kkafio.dialogs.manual_group import CharaItem, manual_dialog
+        from kkafio.dialogs.manual_group import manual_dialog
 
         logger.line()
-        logger.info(TAG, "Manual: reading the scenes")
-        # Always with subfolders: the gallery is the whole library, with each scene's author (its
-        # folder) shown; "Include subfolders" only decides what the automatic grouping looks at.
-        scenes, cache, new_entries = self._scan(folder, True)
-        items = []
-        for path, _digest in sorted(scenes):
-            parts = path.relative_to(folder).parts
-            if not all(_is_author_dir(part) for part in parts[:-1]):
-                continue
-            try:
-                st = path.stat()
-            except OSError:
-                continue
-            items.append(CharaItem(path=path, root=folder, name=path.stem,
-                                   series=parts[0] if len(parts) > 1 else None,
-                                   size=st.st_size, mtime=st.st_mtime,
-                                   ctime=getattr(st, "st_birthtime", st.st_ctime)))
-        if self.use_cache:
-            self._save_cache(folder, cache, new_entries, set())     # hashing is the expensive part
-        if not items:
-            logger.warning(TAG, "No readable scenes found")
-            return
-
-        authors = load_authors()
-        known = existing_author_folders(folder)
-        for item in items:
-            if item.series:
-                known.setdefault(item.series.casefold(), item.series)
-        moves: dict[str, str] = {}
-        suggest, assign = manual_callbacks(known, authors, moves)
-        logger.info(TAG, f"Opening the gallery with {len(items)} scene(s) and {len(authors)} known author(s)")
+        tab = scene_gallery_tab(folder, self.use_cache)
         try:
-            moved = manual_dialog(t("dialog.manual_scene.title"), items, suggest, assign, scene_dialog_text(),
-                                  cover_ratio=SCENE_COVER_RATIO)
+            if not tab.items:
+                logger.warning(TAG, "No readable scenes found")
+                return
+            logger.info(TAG, "Opening the gallery")
+            moved = manual_dialog(t("dialog.manual_scene.title"), tab.items, tab.suggest, tab.assign, tab.text,
+                                  cover_ratio=tab.cover_ratio)
         finally:
-            if self.use_cache and moves:
-                for old, new in moves.items():                      # a move keeps mtime/size: the hash stays valid
-                    entry = new_entries.pop(old, None)
-                    if entry is not None:
-                        new_entries[new] = entry
-                self._save_cache(folder, cache, new_entries, set(moves))
+            tab.finish()
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}")

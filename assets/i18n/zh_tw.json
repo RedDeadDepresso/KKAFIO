@@ -281,6 +281,8 @@
   "task.GroupChara.description": "使用 LLM 將角色卡移至系列子資料夾（執行時會顯示複製／貼上對話框）",
   "task.GroupCoordinates.label": "🧥 分組服裝",
   "task.GroupCoordinates.description": "透過比較服裝卡與角色卡中儲存的服裝，將服裝卡移至以對應角色卡檔名命名的子資料夾中",
+  "task.RunGallery.label": "🖼️ 執行圖庫",
+  "task.RunGallery.description": "開啟一個帶有場景、角色、服裝三個分頁的圖庫視窗，彙整了分組場景、分組角色與分組服裝的手動模式。為卡片輸入作者、系列或角色後，卡片會立即移動到對應資料夾。資料夾預設使用遊戲內建的資料夾，並使用與分組任務相同的快取。",
   "task.UngroupCards.label": "📂 取消分組卡片",
   "task.UngroupCards.description": "將卡片從子資料夾移回頂層資料夾",
   "task.RenameChara.label": "✏️ 重新命名角色",

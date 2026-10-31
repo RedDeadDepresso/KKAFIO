@@ -1600,6 +1600,20 @@
       ]
     },
     {
+      "name": "RunGallery",
+      "label": "$task.RunGallery.label",
+      "entry": "RunGallery",
+      "default_check": false,
+      "description": "$task.RunGallery.description",
+      "group": ["card-management"],
+      "option": [
+        "CharaDir",
+        "SceneDir",
+        "CoordDir",
+        "UseCache"
+      ]
+    },
+    {
       "name": "UngroupCards",
       "label": "$task.UngroupCards.label",
       "entry": "UngroupCards",
@@ -1875,6 +1889,10 @@
         },
         {
           "name": "GroupCoordinates",
+          "enabled": false
+        },
+        {
+          "name": "RunGallery",
           "enabled": false
         },
         {

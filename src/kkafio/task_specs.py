@@ -524,6 +524,34 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
+        name="RunGallery", command="run-gallery",
+        help="Open one gallery window with the Manual modes of Group Scenes, Group Characters and "
+             "Group Coordinates as tabs (Scene, Character, Outfit)",
+        description=(
+            "Opens a single gallery dialog with three tabs on the left of the search input: Scene, "
+            "Character and Outfit. Each tab is the manual gallery of the matching Group task — "
+            "scenes are sorted into author folders, characters into series folders and coordinates "
+            "(outfits) into character folders — and a confirmed card is moved at once. The folders "
+            "default to the game's (the Scene tab is left out when the game has no Studio and no "
+            "--scene-dir is given). The same caches as the Group tasks are used and kept up to date."
+        ),
+        target="kkafio.tasks.run_gallery:RunGallery",
+        options=(
+            Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
+                  help="Custom chara directory (default: the game's female and male chara folders; "
+                       "pointing it at the game's chara folder also uses female/ and male/)"),
+            Value("--scene-dir", key="SceneDir", ignore_blank=True, metavar="DIR", default=None,
+                  help="Custom scene directory (default: the game's Studio scene folder)"),
+            Value("--coord-dir", key="CoordDir", ignore_blank=True, metavar="DIR", default=None,
+                  help="Custom coordinate directory (default: the game's coordinate folder)"),
+            Toggle("use-cache", key="UseCache",
+                   help="Reuse the cached scene hashes, character keys and coordinate digests for "
+                        "unchanged cards (default: on)",
+                   off_help="Disable cache and read every card"),
+        ),
+    ),
+
+    TaskSpec(
         name="UngroupCards", command="ungroup-cards",
         help="Move cards (chara, scenes, coordinates) from subfolders back to the top-level folder",
         target="kkafio.tasks.ungroup_cards:UngroupCards",

@@ -281,6 +281,8 @@
   "task.GroupChara.description": "Move character cards into series subfolders using an LLM (shows a Copy/Paste dialog when run)",
   "task.GroupCoordinates.label": "🧥 Group Coordinates",
   "task.GroupCoordinates.description": "Move coordinate cards into per-character subfolders (named after the matching chara card's filename) by comparing their outfits with the outfits saved in each character card",
+  "task.RunGallery.label": "🖼️ Run Gallery",
+  "task.RunGallery.description": "Open one gallery window with three tabs — Scene, Character and Outfit — that holds the manual modes of Group Scenes, Group Characters and Group Coordinates. Type an author, series or character for a card and it is moved into that folder at once. The folders default to the game's, and the same caches as the Group tasks are used.",
   "task.UngroupCards.label": "📂 Ungroup Cards",
   "task.UngroupCards.description": "Move cards (chara, scenes, coordinates) from subfolders back to the top-level folder",
   "task.RenameChara.label": "✏️ Rename Characters",

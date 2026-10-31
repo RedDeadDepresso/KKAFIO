@@ -20,6 +20,10 @@ The dialog doesn't know what a "series" is: a card's `series` is just the folder
 hint ...) comes from a `DialogText`. Group Characters uses the defaults (series folders of
 characters); Group Coordinates passes its own `DialogText` (character folders of coordinates).
 Moving and suggesting are callbacks, so a task only has to supply `items`, `suggest` and `assign`.
+
+`gallery_dialog()` puts several of these galleries in one window (Run Gallery: scenes, characters,
+outfits): a tab bar on the left of the search input switches between them, each tab keeping its own
+sidebar, search text, sort, selection and scroll position. `manual_dialog()` is the one-gallery case.
 """
 
 from __future__ import annotations
@@ -36,6 +40,7 @@ from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
+from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
 
@@ -454,6 +459,30 @@ def chara_dialog_text() -> DialogText:
 AssignFn = Callable[[CharaItem, str], "tuple[Path, str] | None"]
 
 
+@dataclass
+class GalleryTab:
+    """One gallery of a `gallery_dialog()`.
+
+    label        the tab's text
+    items        the cards it shows
+    suggest      text typed so far -> series names to offer (best first)
+    assign       (item, text typed) -> (new path, series folder) after moving the card there, or
+                 None if it couldn't be done. The dialog only shows; this does the moving.
+    text         the sentences of this gallery (default: Group Characters')
+    cover_ratio  cover height / width (default: a character card's portrait; scenes are landscape)
+    finish       called once when the window is gone, also if it failed: whatever the task has to
+                 tidy up after the moves (it saves its caches here). Optional.
+    """
+
+    label: str
+    items: Sequence[CharaItem]
+    suggest: Callable[[str], list[str]]
+    assign: AssignFn
+    text: DialogText | None = None
+    cover_ratio: float = COVER_RATIO
+    finish: Callable[[], None] | None = None
+
+
 def manual_dialog(title: str, items: Sequence[CharaItem],
                   suggest: Callable[[str], list[str]], assign: AssignFn,
                   text: DialogText | None = None, cover_ratio: float = COVER_RATIO) -> int:
@@ -465,27 +494,133 @@ def manual_dialog(title: str, items: Sequence[CharaItem],
     text      the dialog's sentences (default: Group Characters')
     cover_ratio  cover height / width (default: a character card's portrait; scenes are landscape)
     """
+    tab = GalleryTab("", items, suggest, assign, text, cover_ratio)
+    return gallery_dialog(title, [tab])[0]
+
+
+def gallery_dialog(title: str, tabs: Sequence[GalleryTab], initial: int = 0) -> list[int]:
+    """Show one window holding a gallery per tab; returns, per tab, how many cards were moved
+    before it was closed. With a single tab there is no tab bar (that is `manual_dialog`)."""
+    if not tabs:
+        raise ValueError("gallery_dialog needs at least one tab")
     try:
-        return _ctk_dialog(title, items, suggest, assign, text if text is not None else chara_dialog_text(), cover_ratio)
+        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1))
     except ImportError as e:                       # tkinter / customtkinter missing
         raise TaskFailedError(f"The character gallery needs tkinter and customtkinter: {e}") from e
+    finally:
+        for tab in tabs:                           # one tab failing to tidy up must not stop the others
+            if tab.finish is not None:
+                try:
+                    tab.finish()
+                except Exception as e:
+                    logger.warning("GALLERY", f"Could not finish the '{tab.label}' tab: {e}")
 
 
-def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: float) -> int:
+class _Gallery:
+    """What `_build_gallery` hands back to the window that hosts it."""
+
+    def __init__(self):
+        self.frame = None                          # the gallery's widgets (a CTkFrame)
+        self.canvas = None                         # the tile canvas (takes the keyboard focus)
+        self.moved_count = lambda: 0               # cards moved so far
+        self.search_text = lambda: ""              # the search text this gallery is showing
+        self.on_search_key = lambda: None          # the shared search input changed
+        self.on_show = lambda: None                # its tab was opened
+        self.on_hide = lambda: None                # its tab was closed
+        self.dispose = lambda: None                # the window closes: stop timers and workers
+        self.close_popups = lambda: None           # the window closes: drop dialogs it opened
+
+
+def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
     import tkinter as tk
-    from tkinter import font as tkfont
     import customtkinter as ctk
-    from PIL import Image, ImageOps, ImageTk
-
-    model = GalleryModel(items)
-
-    model.set_view(VIEW_UNTAGGED)      # opens on the cards that still need a folder
-    moved = {"count": 0}
 
     root = new_window(title, topmost=False)       # sorting a library takes a while
     root.minsize(820, 520)
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(1, weight=1)
+
+    dark = ctk.get_appearance_mode() == "Dark"
+    pal = _DARK if dark else _LIGHT
+
+    # search bar, with the tabs on its left
+    top = ctk.CTkFrame(root, fg_color="transparent")
+    top.grid(row=0, column=0, padx=12, pady=(12, 8), sticky="ew")
+    top.grid_columnconfigure(1, weight=1)
+    first_text = tabs[initial].text if tabs[initial].text is not None else chara_dialog_text()
+    search_entry = ctk.CTkEntry(top, placeholder_text=first_text.search_placeholder, height=34)
+    search_entry.grid(row=0, column=1, sticky="ew")
+
+    stack = ctk.CTkFrame(root, fg_color="transparent")          # the galleries sit on top of each other
+    stack.grid(row=1, column=0, sticky="nsew")
+    stack.grid_columnconfigure(0, weight=1)
+    stack.grid_rowconfigure(0, weight=1)
+
+    def on_close(_event=None) -> None:
+        for g in galleries:
+            g.close_popups()
+        root.quit()
+
+    galleries: list[_Gallery] = []
+    texts = [tab.text if tab.text is not None else chara_dialog_text() for tab in tabs]
+    for i, tab in enumerate(tabs):
+        galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial)))
+    current = {"index": initial}
+
+    def show_tab(index: int) -> None:
+        old = galleries[current["index"]]
+        old.on_hide()
+        old.frame.grid_remove()
+        current["index"] = index
+        g = galleries[index]
+        g.frame.grid(row=0, column=0, sticky="nsew")
+        search_entry.configure(placeholder_text=texts[index].search_placeholder)
+        search_entry.delete(0, "end")
+        search_text = g.search_text()
+        if search_text:
+            search_entry.insert(0, search_text)
+        g.on_show()
+        g.canvas.focus_set()
+
+    if len(tabs) > 1:
+        labels = [tab.label for tab in tabs]
+        tab_bar = ctk.CTkSegmentedButton(top, values=labels, height=34,
+                                         command=lambda value: show_tab(labels.index(value)))
+        tab_bar.set(labels[initial])
+        tab_bar.grid(row=0, column=0, padx=(0, 10))
+
+    galleries[initial].frame.grid(row=0, column=0, sticky="nsew")
+    search_entry.bind("<KeyRelease>", lambda _e: galleries[current["index"]].on_search_key())
+    root.bind("<Escape>", on_close)
+    root.protocol("WM_DELETE_WINDOW", on_close)
+
+    try:
+        show_and_wait(root, galleries[initial].canvas, on_shown=lambda: maximize(root))      # always full screen
+    finally:
+        for g in galleries:
+            g.dispose()
+    return [g.moved_count() for g in galleries]
+
+
+def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool) -> _Gallery:
+    """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
+    gridded. `search_entry` is the window's shared search input, which only the open tab listens to."""
+    import tkinter as tk
+    from tkinter import font as tkfont
+    import customtkinter as ctk
+    from PIL import Image, ImageOps, ImageTk
+
+    items, suggest, assign, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
+    handle = _Gallery()
+    model = GalleryModel(items)
+
+    model.set_view(VIEW_UNTAGGED)      # opens on the cards that still need a folder
+    moved = {"count": 0}
+
+    host = ctk.CTkFrame(parent, fg_color="transparent")
+    handle.frame = host
+    host.grid_columnconfigure(0, weight=1)
+    host.grid_rowconfigure(0, weight=1)
 
     dark = ctk.get_appearance_mode() == "Dark"
     pal = _DARK if dark else _LIGHT
@@ -589,15 +724,9 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
                     pass
 
     # ---- widgets -------------------------------------------------------------
-    # search bar
-    top = ctk.CTkFrame(root, fg_color="transparent")
-    top.grid(row=0, column=0, padx=12, pady=(12, 8), sticky="ew")
-    top.grid_columnconfigure(0, weight=1)
-    search_entry = ctk.CTkEntry(top, placeholder_text=txt.search_placeholder, height=34)
-    search_entry.grid(row=0, column=0, sticky="ew")
-
-    body = ctk.CTkFrame(root, fg_color="transparent")
-    body.grid(row=1, column=0, padx=12, pady=0, sticky="nsew")
+    # (the search input belongs to the window: it is the `search_entry` passed in)
+    body = ctk.CTkFrame(host, fg_color="transparent")
+    body.grid(row=0, column=0, padx=12, pady=0, sticky="nsew")
     body.grid_columnconfigure(1, weight=1)
     body.grid_rowconfigure(0, weight=1)
 
@@ -668,15 +797,15 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
     scroll_sb = ctk.CTkScrollbar(main, command=canvas.yview)
     scroll_sb.grid(row=1, column=1, sticky="ns", padx=(4, 0))
 
-    hint = ctk.CTkLabel(root, text=txt.hint, anchor="w", justify="left", wraplength=1000,
+    hint = ctk.CTkLabel(host, text=txt.hint, anchor="w", justify="left", wraplength=1000,
                         text_color=pair("muted"), font=ctk.CTkFont(size=11))
-    hint.grid(row=2, column=0, padx=14, pady=(8, 0), sticky="ew")
-    foot = ctk.CTkFrame(root, fg_color="transparent")
-    foot.grid(row=3, column=0, padx=12, pady=10, sticky="ew")
+    hint.grid(row=1, column=0, padx=14, pady=(8, 0), sticky="ew")
+    foot = ctk.CTkFrame(host, fg_color="transparent")
+    foot.grid(row=2, column=0, padx=12, pady=10, sticky="ew")
     foot.grid_columnconfigure(0, weight=1)
     status = ctk.CTkLabel(foot, text="", anchor="w")
     status.grid(row=0, column=0, sticky="ew")
-    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=lambda: on_close()).grid(row=0, column=1)
+    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=1)
 
     # -----------------------------------------------------------------------
     # layout + drawing
@@ -1409,14 +1538,37 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
         hint.configure(wraplength=max(300, int(root.winfo_width() / scale) - 40))      # the hint follows the width
         schedule_layout(80, keep_scroll=True)
 
-    def on_close(_event=None) -> None:
+    def close_popups() -> None:
         if multi["dlg"] is not None:
             try:
                 multi["dlg"].destroy()
             except tk.TclError:
                 pass
             multi["dlg"] = None
-        root.quit()
+
+    def dispose() -> None:
+        for name, after_id in timers.items():
+            if after_id is not None:
+                try:
+                    root.after_cancel(after_id)
+                except tk.TclError:
+                    pass
+        if edit["after"] is not None:
+            try:
+                root.after_cancel(edit["after"])
+            except tk.TclError:
+                pass
+        executor.shutdown(wait=False, cancel_futures=True)
+
+    def on_show() -> None:
+        schedule_layout(0, keep_scroll=True)       # the window may have been resized while it was hidden
+
+    def on_hide() -> None:
+        cancel_edit()
+        if timers["search"] is not None:           # typed just before switching tabs: it belongs to this tab
+            root.after_cancel(timers["search"])
+            timers["search"] = None
+            model.search = search_entry.get()
 
     canvas.configure(yscrollcommand=on_yscroll)
     canvas.bind("<Button-1>", on_click)
@@ -1437,32 +1589,22 @@ def _ctk_dialog(title, items, suggest, assign, txt: DialogText, cover_ratio: flo
     canvas.bind("<KP_Enter>", on_enter_key)
     canvas.bind("<Home>", scroll_key(home=0.0))
     canvas.bind("<End>", scroll_key(home=1.0))
-    root.bind("<MouseWheel>", on_wheel)
-    root.bind("<Button-4>", on_wheel)
-    root.bind("<Button-5>", on_wheel)
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        root.bind(seq, on_wheel, add="+")          # every tab listens; only the one under the pointer acts
     series_box.bind("<<ListboxSelect>>", on_series_pick)
-    search_entry.bind("<KeyRelease>", on_search_key)
     series_filter_entry.bind("<KeyRelease>", on_series_filter_key)
-    root.bind("<Escape>", on_close)
-    root.protocol("WM_DELETE_WINDOW", on_close)
 
     refresh_sidebar()
     timers["poll"] = root.after(50, poll_covers)
-    schedule_layout(0, keep_scroll=False)
+    if active:
+        schedule_layout(0, keep_scroll=False)      # a tab that isn't open lays out when it is first shown
 
-    try:
-        show_and_wait(root, canvas, on_shown=lambda: maximize(root))      # always full screen
-    finally:
-        for name, after_id in timers.items():
-            if after_id is not None:
-                try:
-                    root.after_cancel(after_id)
-                except tk.TclError:
-                    pass
-        if edit["after"] is not None:
-            try:
-                root.after_cancel(edit["after"])
-            except tk.TclError:
-                pass
-        executor.shutdown(wait=False, cancel_futures=True)
-    return moved["count"]
+    handle.canvas = canvas
+    handle.search_text = lambda: model.search
+    handle.on_search_key = on_search_key
+    handle.on_show = on_show
+    handle.on_hide = on_hide
+    handle.close_popups = close_popups
+    handle.dispose = dispose
+    handle.moved_count = lambda: moved["count"]
+    return handle

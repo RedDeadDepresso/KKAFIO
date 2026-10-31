@@ -281,6 +281,8 @@
   "task.GroupChara.description": "LLMを使用してキャラカードをシリーズごとのサブフォルダに移動する（実行時にコピー／貼り付けダイアログが表示されます）",
   "task.GroupCoordinates.label": "🧥 コーディネートをグループ化",
   "task.GroupCoordinates.description": "コーディネートカードをキャラカードに保存された衣装と照合し、一致したキャラカードのファイル名のサブフォルダに移動する",
+  "task.RunGallery.label": "🖼️ ギャラリーを開く",
+  "task.RunGallery.description": "シーン・キャラクター・コーディネートの3つのタブを持つ1つのギャラリーウィンドウを開きます。シーンをグループ化・キャラをグループ化・コーディネートをグループ化の手動モードをまとめたものです。カードに作者・シリーズ・キャラクターを入力すると、そのフォルダにすぐ移動されます。フォルダはゲームの既定のものが使われ、グループ化タスクと同じキャッシュを使用します。",
   "task.UngroupCards.label": "📂 カードのグループ化を解除",
   "task.UngroupCards.description": "サブフォルダ内のカードを最上位フォルダに戻す",
   "task.RenameChara.label": "✏️ キャラをリネーム",

@@ -145,6 +145,7 @@ _TASK_KEY = {
     "GroupScenes": "GroupScenes",
     "GroupChara": "GroupChara",
     "GroupCoordinates": "GroupCoordinates",
+    "RunGallery": "RunGallery",
     "UngroupCards": "UngroupCards",
     "RenameChara": "RenameChara",
     "ArchiveCards": "ArchiveCards",
@@ -166,6 +167,7 @@ _TASK_DEFAULTS = {
     "GroupScenes": {"Enable": False, "SceneDir": "", "UseAutomatic": True, "UseManual": False, "IncludeSubfolders": False, "SubgroupByYear": True, "UseCache": True},
     "GroupChara": {"Enable": False, "CharaDir": "", "UseLlm": True, "UseManual": False, "IncludeSubfolders": False, "HintsLanguage": "detect", "ResolveLocally": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from.\n\nA value is either an empty string \"\" or an object {\"series\": \"\", \"hints\": [...]}. \"hints\" lists up to 5 candidate characters from a character database, written \"Last, First (Series)\", most popular first. They are only name matches and can be wrong: use the one that fits the personality and hair colour, and ignore the list if none does.\n\nRules:\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Some characters may be VTubers (virtual YouTubers). Use \"VTubers\" as the series for them.\n- If you use a hint whose series is not in English, translate it into English.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you do not recognise a character and can search the web, look it up online first.\n- If you are still not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY a JSON object that maps every key to the series name as a plain string (do not repeat \"hints\") — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True},
     "GroupCoordinates": {"Enable": False, "CharaDir": "", "CoordDir": "", "UseAutomatic": True, "UseManual": False, "IncludeSubfolders": False, "ClothesTolerance": 1, "IgnoreAccessories": True, "GroupByHair": True, "UseCache": True},
+    "RunGallery": {"Enable": False, "CharaDir": "", "SceneDir": "", "CoordDir": "", "UseCache": True},
     "UngroupCards": {"Enable": False, "InputPath": "", "Chara": True, "Scenes": True, "Coords": True, "DeleteEmptyFolders": True},
     "RenameChara": {"Enable": False, "CharaDir": "", "SkipAlreadyRenamed": True, "UpdateMetadata": False, "RenameFiles": True, "HintsLanguage": "detect", "ResolveLocally": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://chat.deepseek.com/", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's English name.\n\nRules:\n- Use the name the character is commonly known by, not a literal reading of the card.\n- If you do not recognise the character or are not confident, search the web for\n  it if you can. If you still do not know, fall back to your best transliteration\n  of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the\n  name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- An entry may have a \"hints\" list: up to 5 candidate characters from a character\n  database, written \"Last, First (Series)\", most popular first. They are only name\n  matches and can be wrong: use the one that fits the personality and hair colour (take\n  its name from it), and ignore the list if none does. Do not repeat \"hints\" in\n  your answer.\n- Some characters may be VTubers (virtual YouTubers); their hints are written with the series\n  \"VTubers\". Use the name from the hint.\n- If you use a hint whose name is not in English, translate it into English.\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n", "UseCache": True},
     "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "ModsDir": "", "CoordDir": ""},
@@ -308,6 +310,12 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("ClothesTolerance", "GroupCoordinatesClothesTolerance", int)
         _set("IgnoreAccessories", "GroupCoordinatesIgnoreAccessories")
         _set("GroupByHair", "GroupCoordinatesGroupByHair")
+        _set("UseCache", "UseCache")
+
+    elif task_name == "RunGallery":
+        _set("CharaDir", "CharaDir")
+        _set("SceneDir", "SceneDir")
+        _set("CoordDir", "CoordDir")
         _set("UseCache", "UseCache")
 
     elif task_name == "UngroupCards":
@@ -632,6 +640,7 @@ class Config:
         self.group_scenes              = self.config_data["GroupScenes"]
         self.group_chara               = self.config_data["GroupChara"]
         self.group_coordinates         = self.config_data["GroupCoordinates"]
+        self.run_gallery               = self.config_data["RunGallery"]
         self.ungroup_cards             = self.config_data["UngroupCards"]
         self.rename_chara              = self.config_data["RenameChara"]
         self.archive_cards             = self.config_data["ArchiveCards"]

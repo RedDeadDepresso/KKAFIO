@@ -568,6 +568,46 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
     return suggest, assign
 
 
+def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache: bool, label: str = ""):
+    """The Manual gallery of the character cards under `folders`: the user types a series per
+    character and each card is moved at once.
+
+    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
+    must be called once the gallery is closed, also when it failed: it saves the key cache.
+    `hint_lang` is the language of the character index's series titles (None: no index, only the
+    existing series folders are suggested)."""
+    from kkafio.dialogs.manual_group import COVER_RATIO, GalleryTab, chara_dialog_text
+
+    if hint_lang:
+        from kkafio.indices import agv
+        agv.refresh("GROUP")
+        if not agv.available():
+            logger.info("GROUP", "No anime, games, vtubers index — only existing series folders are suggested.")
+    else:
+        logger.info("GROUP", "Hints Language is 'no' — only existing series folders are suggested.")
+
+    key_cache = CharaKeyCache(folders, use_cache, "GROUP")
+
+    def finish() -> None:
+        if use_cache:
+            logger.info("GROUP", f"Key cache: {key_cache.summary()}")
+            key_cache.save()
+
+    try:
+        # Always with subfolders: the gallery is the whole library, with each card's series
+        # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
+        items = scan_manual_items(folders, True, key_cache)
+        known = existing_series(folders)
+        for item in items:
+            if item.series:
+                known.setdefault(item.series.casefold(), item.series)
+        suggest, assign = manual_callbacks(known, key_cache, hint_lang)
+    except BaseException:
+        finish()
+        raise
+    return GalleryTab(label, items, suggest, assign, chara_dialog_text(), COVER_RATIO, finish)
+
+
 # ---------------------------------------------------------------------------
 # Task class
 # ---------------------------------------------------------------------------
@@ -660,32 +700,15 @@ class GroupChara(BaseTask):
     def _run_manual(self, folders: list[Path], hint_lang: str | None) -> None:
         """Open the gallery: the user types a series per character and each card is moved at once."""
         from kkafio.dialogs.manual_group import manual_dialog
-        if hint_lang:
-            from kkafio.indices import agv
-            agv.refresh("GROUP")
-            if not agv.available():
-                logger.info("GROUP", "No anime, games, vtubers index — only existing series folders are suggested.")
-        else:
-            logger.info("GROUP", "Hints Language is 'no' — only existing series folders are suggested.")
 
-        key_cache = CharaKeyCache(folders, self.use_cache, "GROUP")
+        tab = chara_gallery_tab(folders, hint_lang, self.use_cache)
         try:
-            # Always with subfolders: the gallery is the whole library, with each card's series
-            # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
-            items = scan_manual_items(folders, True, key_cache)
-            if not items:
+            if not tab.items:
                 logger.warning("GROUP", "No readable character cards found")
                 return
-            known = existing_series(folders)
-            for item in items:
-                if item.series:
-                    known.setdefault(item.series.casefold(), item.series)
-            suggest, assign = manual_callbacks(known, key_cache, hint_lang)
-            logger.info("GROUP", f"Opening the gallery with {len(items)} character(s)")
-            moved = manual_dialog(t("dialog.manual.group_title"), items, suggest, assign)
+            logger.info("GROUP", f"Opening the gallery with {len(tab.items)} character(s)")
+            moved = manual_dialog(t("dialog.manual.group_title"), tab.items, tab.suggest, tab.assign)
         finally:
-            if self.use_cache:
-                logger.info("GROUP", f"Key cache: {key_cache.summary()}")
-                key_cache.save()
+            tab.finish()
         logger.line()
         logger.success("GROUP", f"Done — moved: {moved}")

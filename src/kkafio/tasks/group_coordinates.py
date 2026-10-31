@@ -636,6 +636,35 @@ def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestio
     return suggest, assign
 
 
+def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: bool, label: str = ""):
+    """The Manual gallery of the coordinate cards under `coord_dir`: the user names a character per
+    coordinate and each card is moved at once; the character filenames under `chara_dirs` (without
+    .png) are the suggestions.
+
+    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
+    must be called once the gallery is closed, also when it failed: it brings the coordinate
+    caches along with the cards that were moved."""
+    from kkafio.dialogs.manual_group import COVER_RATIO, GalleryTab
+
+    logger.info(TAG, "Manual: reading the coordinate cards")
+    items = scan_manual_items(coord_dir, use_cache)
+    known = existing_group_folders(coord_dir)
+    for item in items:
+        if item.series:
+            known.setdefault(item.series.casefold(), item.series)
+    for key, name in chara_folder_names(chara_dirs).items():
+        known.setdefault(key, name)
+    moves: dict[str, str] = {}
+    suggest, assign = manual_callbacks(known, moves)
+    logger.info(TAG, f"{len(items)} coordinate(s) and {len(known)} suggested name(s) for the gallery")
+
+    def finish() -> None:
+        if use_cache and moves:
+            _update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
+
+    return GalleryTab(label, items, suggest, assign, coordinate_dialog_text(), COVER_RATIO, finish)
+
+
 class GroupCoordinates(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
@@ -984,24 +1013,14 @@ class GroupCoordinates(BaseTask):
         from kkafio.dialogs.manual_group import manual_dialog
 
         logger.line()
-        logger.info(TAG, "Manual: reading the coordinate cards")
-        items = scan_manual_items(coord_dir, self.use_cache)
-        if not items:
-            logger.warning(TAG, "No readable coordinate cards found")
-            return
-        known = existing_group_folders(coord_dir)
-        for item in items:
-            if item.series:
-                known.setdefault(item.series.casefold(), item.series)
-        for key, name in chara_folder_names(chara_dirs).items():
-            known.setdefault(key, name)
-        moves: dict[str, str] = {}
-        suggest, assign = manual_callbacks(known, moves)
-        logger.info(TAG, f"Opening the gallery with {len(items)} coordinate(s) and {len(known)} suggested name(s)")
+        tab = coordinate_gallery_tab(chara_dirs, coord_dir, self.use_cache)
         try:
-            moved = manual_dialog(t("dialog.manual_coord.title"), items, suggest, assign, coordinate_dialog_text())
+            if not tab.items:
+                logger.warning(TAG, "No readable coordinate cards found")
+                return
+            logger.info(TAG, "Opening the gallery")
+            moved = manual_dialog(t("dialog.manual_coord.title"), tab.items, tab.suggest, tab.assign, tab.text)
         finally:
-            if self.use_cache and moves:
-                _update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
+            tab.finish()
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}")

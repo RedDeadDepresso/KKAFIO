@@ -281,6 +281,8 @@
   "task.GroupChara.description": "使用 LLM 将角色卡移动到系列子文件夹中（运行时会显示复制/粘贴对话框）",
   "task.GroupCoordinates.label": "🧥 分组服装",
   "task.GroupCoordinates.description": "通过比较服装卡与角色卡中保存的服装，将服装卡移动到以对应角色卡文件名命名的子文件夹中",
+  "task.RunGallery.label": "🖼️ 运行图库",
+  "task.RunGallery.description": "打开一个带有场景、角色、服装三个标签页的图库窗口，汇集了分组场景、分组角色和分组服装的手动模式。为卡片输入作者、系列或角色后，卡片会立即移动到对应文件夹。文件夹默认使用游戏自带的文件夹，并使用与分组任务相同的缓存。",
   "task.UngroupCards.label": "📂 取消分组卡片",
   "task.UngroupCards.description": "将卡片从子文件夹移回顶层文件夹",
   "task.RenameChara.label": "✏️ 重命名角色",

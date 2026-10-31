@@ -5103,6 +5103,188 @@
   },
   "world": "configured"
  },
+ "configured: run-gallery": {
+  "argv": [
+   "run-gallery"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: run-gallery --chara-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: run-gallery --coord-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: run-gallery --scene-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: run-gallery [all-first]": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: run-gallery [all-last]": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": false
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
  "configured: ungroup-cards": {
   "argv": [
    "ungroup-cards"
@@ -16845,6 +17027,331 @@
      "kind": "task",
      "run_kwargs": {},
      "task": "ReviewSimilarChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery": {
+  "argv": [
+   "run-gallery"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --chara-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --chara-dir=S_chara_dir": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   "S_chara_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --coord-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --coord-dir=S_coord_dir": {
+  "argv": [
+   "run-gallery",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "S_coord_dir",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --no-use-cache": {
+  "argv": [
+   "run-gallery",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": false
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --scene-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --scene-dir=S_scene_dir": {
+  "argv": [
+   "run-gallery",
+   "--scene-dir",
+   "S_scene_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --use-cache": {
+  "argv": [
+   "run-gallery",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery [all-first]": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery [all-last]": {
+  "argv": [
+   "run-gallery",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "S_chara_dir",
+      "coord_dir_str": "S_coord_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": false
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
     }
    ],
    "outcome": {

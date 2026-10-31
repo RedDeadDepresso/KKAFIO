@@ -4,6 +4,10 @@ All notable changes to KKAFIO are documented in this file.
 
 ## [2.1.0]
 
+### Added
+
+- **Run Gallery** — a new task that opens one gallery window with the Manual modes of Group Scenes, Group Characters and Group Coordinates as tabs (Scene, Character, Outfit) on the left of the search input. Each tab keeps its own search, sort and selection, and a confirmed card is moved at once. **Chara / Scene / Coordinate Directory** default to the game's folders (the Scene tab is left out when there is no Studio), and **Use Cache** shares the Group tasks' caches.
+
 ### Changed
 
 - **Sessions** — all login sessions now live in `%APPDATA%/KKAFIO/sessions/`, named after the service: `koikatsucards.json` (was `config/kkd_session.json`), `pixiv.json`, `pawchive.json`, `gofile.json` (was `gofile_state.json` in the config folder). Telegram has its own folder, `sessions/telegram/`, holding `telegram.json` and `kkafio.session` (was `config/telegram.json` and `config/tg_session/`). **Breaking:** the old files are not read or migrated; sign in again once and delete the old files.

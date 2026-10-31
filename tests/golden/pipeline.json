@@ -546,6 +546,19 @@
     },
     {
      "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    },
+    {
+     "attrs": {
       "delete_empty": true,
       "do_chara": true,
       "do_coords": true,
@@ -828,6 +841,19 @@
       }
      },
      "task": "UngroupCards"
+    },
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
     },
     {
      "attrs": {
