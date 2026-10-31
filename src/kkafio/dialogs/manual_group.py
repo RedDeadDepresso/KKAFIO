@@ -72,6 +72,7 @@ class CharaItem:
     size: int                  # bytes
     mtime: float               # updated
     ctime: float = 0.0         # created (0: unknown)
+    alias: str = ""            # extra text the search also looks at (e.g. the character's own name)
 
 
 class GalleryModel:
@@ -100,7 +101,7 @@ class GalleryModel:
                 continue
             if self.mode == VIEW_SERIES and (item.series or "").casefold() != want:
                 continue
-            if needle and needle not in f"{item.name}\n{item.path.name}\n{item.series or ''}".casefold():
+            if needle and needle not in f"{item.name}\n{item.alias}\n{item.path.name}\n{item.series or ''}".casefold():
                 continue
             out.append(item)
         keys = {SORT_CREATED: lambda i: i.ctime or i.mtime,

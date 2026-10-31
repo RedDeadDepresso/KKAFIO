@@ -160,14 +160,14 @@ def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
         items = group_chara.scan_manual_items([tmp_path], False, cache)
         known = group_chara.existing_series([tmp_path])
         _suggest, assign = group_chara.manual_callbacks(known, cache, None)
-        rin = next(i for i in items if i.name == "Rin")
+        rin = next(i for i in items if i.alias == "Rin")
 
         new_path, folder = assign(rin, "Fate")
         assert (new_path, folder) == (tmp_path / "Fate" / "a.png", "Fate")
         assert new_path.exists() and not cards["a"].exists()
         assert known == {"fate": "Fate"}                                  # a later "fate" reuses it
 
-        saber = next(i for i in items if i.name == "Saber")
+        saber = next(i for i in items if i.alias == "Saber")
         assert assign(saber, "FATE")[0] == tmp_path / "Fate" / "b.png"
 
         cache.save()
@@ -182,7 +182,7 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
     with manual_fakes():
         cache = CharaKeyCache([tmp_path], True, "GROUP")
         items = group_chara.scan_manual_items([tmp_path], True, cache)
-        rin = next(i for i in items if i.name == "Rin")
+        rin = next(i for i in items if i.alias == "Rin")
         assert rin.series is None
         _s, assign = group_chara.manual_callbacks(group_chara.existing_series([tmp_path]), cache, None)
 
@@ -220,23 +220,26 @@ def test_scan_series_from_folders_and_skipped_ones(tmp_path):
     with manual_fakes():
         cache = CharaKeyCache([tmp_path], False)
         top_only = group_chara.scan_manual_items([tmp_path], False, cache)
-        assert [(i.name, i.series) for i in top_only] == [("Rin", None)]
+        assert [(i.name, i.series) for i in top_only] == [("top", None)]      # the file name is the label
 
         everything = group_chara.scan_manual_items([tmp_path], True, cache)
         assert sorted((i.name, i.series) for i in everything) == [
-            ("Archer", "Fate"), ("Rin", None), ("Saber", "Fate")]         # _duplicates_, dot folders, non-cards out
+            ("top", None), ("x", "Fate"), ("y", "Fate")]                  # _duplicates_, dot folders, non-cards out
+        assert sorted(i.alias for i in everything) == ["Archer", "Rin", "Saber"]
         assert all(i.root == tmp_path and i.size > 0 and i.mtime > 0 for i in everything)
     assert group_chara.existing_series([tmp_path]) == {"fate": "Fate"}
 
 
-def test_scan_name_falls_back_to_nickname_then_filename(tmp_path):
+def test_scan_shows_the_filename_and_keeps_the_character_name_searchable(tmp_path):
     _file(tmp_path / "a.png", b"CHARA|x")
     with mock.patch.object(group_chara, "get_card_type", lambda raw: "KK"), \
          mock.patch.object(group_chara, "KoikatuCharaData", mock.MagicMock()), \
          mock.patch.object(group_chara, "make_key", side_effect=[" |  | Nick | calm | black hair"]), \
          mock.patch.object(group_chara, "CHARA_CARD_TYPES", ("KK",)):
         (item,) = group_chara.scan_manual_items([tmp_path], False, CharaKeyCache([], False))
-    assert item.name == "Nick"
+    assert item.name == "a" and item.alias == "Nick"
+    m = GalleryModel([item]); m.search = "nick"
+    assert [i.name for i in m.visible()] == ["a"]                       # found by the character's name
 
 
 # ---------------------------------------------------------------------------
@@ -277,7 +280,7 @@ def test_gallery_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
             moved = tab.assign(tab.items[0], "Fate")
         finally:
             tab.finish()
-    assert names == ["Rin"] and moved[1] == "Fate"
+    assert names == ["a"] and moved[1] == "Fate"
     assert (tmp_path / "Fate" / "a.png").exists()
     files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
     assert str(tmp_path / "Fate" / "a.png") in files                                  # cache saved after the moves
@@ -307,7 +310,7 @@ def test_gallery_always_includes_subfolders(tmp_path):
     with manual_fakes():
         tab = group_chara.chara_gallery_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
         tab.finish()
-    assert sorted((i.name, i.series) for i in tab.items) == [("Rin", None), ("Saber", "Fate")]
+    assert sorted((i.name, i.series) for i in tab.items) == [("top", None), ("x", "Fate")]
 
 
 def test_maximize_uses_zoomed_state_then_the_x11_attribute():

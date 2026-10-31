@@ -501,7 +501,8 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
             last, first, nick = split_key(key)
             parts = png.relative_to(root_of[png]).parts
             items.append(CharaItem(path=png, root=root_of[png],
-                                   name=f"{last} {first}".strip() or nick or png.stem,
+                                   name=png.stem,                  # the file name is shown under the cover
+                                   alias=f"{last} {first}".strip() or nick,    # the character's name stays searchable
                                    series=parts[0] if len(parts) > 1 else None,
                                    size=st.st_size, mtime=st.st_mtime,
                                    ctime=getattr(st, "st_birthtime", st.st_ctime)))    # created: Windows / macOS
