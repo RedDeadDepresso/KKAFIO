@@ -17,10 +17,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from kkafio.core.session_store import SessionStore
-from kkafio.dialogs.gallery.model import SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED
+from kkafio.dialogs.gallery.model import MODS_ALL, MODS_COMPLETE, MODS_MISSING, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED
 
 TAG = "GALLERY"
 FILE_NAME = "gallery-view.json"
+_MODS_FILTERS = frozenset({MODS_ALL, MODS_COMPLETE, MODS_MISSING})
 _SORT_KEYS = frozenset({SORT_CREATED, SORT_UPDATED, SORT_NAME, SORT_FILENAME, SORT_SIZE})
 
 
@@ -31,6 +32,7 @@ class TabView:
     sort: str = SORT_UPDATED
     descending: bool = True
     size: float | None = None
+    mods: str = MODS_ALL                    # the mods filter (all cards / all mods installed / missing mods)
 
 
 class GalleryViewState:
@@ -53,7 +55,7 @@ class GalleryViewState:
     def view(self, key: str) -> TabView:
         """The remembered view of the tab `key` (a copy; the defaults for a tab never seen)."""
         v = self.tabs.get(key)
-        return TabView(v.sort, v.descending, v.size) if v else TabView()
+        return TabView(v.sort, v.descending, v.size, v.mods) if v else TabView()
 
     def initial_index(self, keys: Sequence[str], fallback: int, usable: Sequence[bool]) -> int:
         """The tab to open on: the one that was open last if it is still there and has cards
@@ -88,14 +90,17 @@ class GalleryViewState:
             if not isinstance(raw, dict):
                 continue
             sort, descending, size = raw.get("sort"), raw.get("descending"), raw.get("size")
+            mods = raw.get("mods")
             self.tabs[str(key)] = TabView(
                 sort if sort in _SORT_KEYS else SORT_UPDATED,
                 descending if isinstance(descending, bool) else True,
-                float(size) if isinstance(size, (int, float)) and not isinstance(size, bool) and size > 0 else None)
+                float(size) if isinstance(size, (int, float)) and not isinstance(size, bool) and size > 0 else None,
+                mods if mods in _MODS_FILTERS else MODS_ALL)
 
     def save(self) -> bool:
         if self.store is None:
             return True
         return self.store.save({
             "version": 1, "last_tab": self.last_tab, "mods_open": self.mods_open,
-            "tabs": {k: {"sort": v.sort, "descending": v.descending, "size": v.size} for k, v in self.tabs.items()}})
+            "tabs": {k: {"sort": v.sort, "descending": v.descending, "size": v.size, "mods": v.mods}
+                      for k, v in self.tabs.items()}})

@@ -108,6 +108,18 @@ def test_the_sidebar_state_is_remembered(tmp_path):
     assert GalleryViewState(SessionStore(path, "T")).mods_open is True      # junk: the default
 
 
+def test_the_mods_filter_is_remembered_per_tab(tmp_path):
+    from kkafio.dialogs.gallery.viewstate import TabView
+    path = tmp_path / "v.json"
+    s = GalleryViewState(SessionStore(path, "T"))
+    assert s.view("chara").mods == "all"
+    s.remember("chara", {"chara": TabView(mods="missing"), "scene": TabView(mods="complete")})
+    again = GalleryViewState(SessionStore(path, "T"))
+    assert (again.view("chara").mods, again.view("scene").mods, again.view("outfit").mods) == ("missing", "complete", "all")
+    path.write_text('{"tabs": {"chara": {"mods": "bogus"}}}', encoding="utf-8")
+    assert GalleryViewState(SessionStore(path, "T")).view("chara").mods == "all"
+
+
 # ---------------------------------------------------------------------------
 # the sidebar in the window (needs a display)
 # ---------------------------------------------------------------------------
@@ -126,7 +138,7 @@ from kkafio.dialogs.gallery import mods_sidebar as ms               # noqa: E402
 from kkafio.dialogs.gallery import window as mgd                    # noqa: E402
 
 
-def _run(monkeypatch, tabs, mods, script):
+def _run(monkeypatch, tabs, mods, script, state=None):
     errors, holder = [], {}
     real_init = ms.ModsSidebar.__init__
 
@@ -147,7 +159,7 @@ def _run(monkeypatch, tabs, mods, script):
 
     monkeypatch.setattr(ms.ModsSidebar, "__init__", init)
     monkeypatch.setattr(mgd, "show_and_wait", fake_show)
-    monkeypatch.setattr(mgd.GalleryViewState, "from_user_config", classmethod(lambda cls: cls()))   # nothing saved
+    monkeypatch.setattr(mgd.GalleryViewState, "from_user_config", classmethod(lambda cls: state or cls()))   # nothing saved
     mgd.gallery_dialog("test", tabs, 0, mods)
     if errors:
         raise errors[0]
@@ -293,3 +305,28 @@ def test_there_is_no_mods_filter_without_a_mods_folder(tmp_path, monkeypatch):
                     and "Missing mods" in w.cget("values")]
 
     _run(monkeypatch, [tab], CardMods(ModsLookup(None)), script)
+
+
+def test_the_mods_filter_is_restored_and_saved(tmp_path, monkeypatch):
+    from kkafio.dialogs.gallery.viewstate import TabView
+    zipmod(tmp_path / "mods" / "a.zipmod", "com.have")
+    mods = CardMods(ModsLookup(tmp_path / "mods", use_cache=False))
+    tab = _tab(tmp_path, [["com.have"], ["com.gone"]])
+    state = GalleryViewState()
+    state.tabs["chara"] = TabView(mods="missing")
+    saved = {}
+    monkeypatch.setattr(GalleryViewState, "remember", lambda self, last, views, mods_open=None:
+                        saved.update(views) or True)
+
+    def script(root, sb):
+        cv = g.gallery_canvas(root)
+        g.show_all(root)
+        g.pump(root, 1.0)
+        menu = _menu(root, "Missing mods")
+        assert menu.get() == "Missing mods"                         # opened with the saved filter, already applied
+        assert sorted(cv.itemcget(i, "text") for i in cv.find_all()
+                      if cv.type(i) == "text" and cv.itemcget(i, "text").startswith("Char ")) == ["Char 001"]
+        menu.set("All cards"); menu.cget("command")("All cards")
+
+    _run(monkeypatch, [tab], mods, script, state)
+    assert saved["chara"].mods == "all"

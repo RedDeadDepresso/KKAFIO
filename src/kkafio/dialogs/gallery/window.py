@@ -698,7 +698,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     sort_menu.set(next((label for label, key in sort_labels.items() if key == view.sort), t("dialog.manual.sort_updated")))
     order_btn.configure(text=t("dialog.manual.descending") if view.descending else t("dialog.manual.ascending"))
     size_slider.set(min(max(view.size, SIZE_MIN), SIZE_MAX) if view.size else SIZE_DEFAULT)
-    now = TabView(view.sort, view.descending, view.size)
+    now = TabView(view.sort, view.descending, view.size, view.mods)
 
     # the mods filter: which cards have all their mods / miss some (only with a known mods folder)
     mods_labels = {t("dialog.gallery.mods_filter_all"): MODS_ALL,
@@ -709,7 +709,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         ctk.CTkLabel(bar, text=t("dialog.gallery.mods_filter_label"), text_color=pair("muted")).grid(
             row=0, column=6, padx=(16, 8))
         mods_menu = ctk.CTkOptionMenu(bar, values=list(mods_labels), width=190, command=lambda _v: on_mods_filter())
-        mods_menu.set(t("dialog.gallery.mods_filter_all"))
+        model.mods_filter = view.mods                      # the filter the tab was left with
+        mods_menu.set(next(label for label, key in mods_labels.items() if key == model.mods_filter))
         mods_menu.grid(row=0, column=7)
     else:
         mods_menu = None
@@ -1026,6 +1027,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     def on_mods_filter() -> None:
         model.mods_filter = mods_labels.get(mods_menu.get(), MODS_ALL)
+        now.mods = model.mods_filter
         if model.mods_filter != MODS_ALL:
             start_scan()
         relayout(keep_scroll=False)
@@ -1711,6 +1713,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     series_filter_entry.bind("<KeyRelease>", on_series_filter_key)
 
     refresh_sidebar()
+    if model.mods_filter != MODS_ALL:
+        start_scan()                               # a restored filter needs the cards checked
     timers["poll"] = root.after(50, poll_covers)
     if active:
         schedule_layout(0, keep_scroll=False)      # a tab that isn't open lays out when it is first shown
@@ -1724,6 +1728,6 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     handle.close_popups = close_popups
     handle.dispose = dispose
     handle.moved_count = lambda: moved["count"]
-    handle.view = lambda: TabView(now.sort, now.descending, now.size)
+    handle.view = lambda: TabView(now.sort, now.descending, now.size, now.mods)
     handle.trashed_items = lambda: [i for i in model.items if i.trashed]
     return handle
