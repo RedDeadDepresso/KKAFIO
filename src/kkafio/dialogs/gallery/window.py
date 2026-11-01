@@ -511,7 +511,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     handle = _Gallery()
     model = GalleryModel(items)
 
-    model.set_view(VIEW_UNTAGGED)      # opens on the cards that still need a folder
+    model.set_view(VIEW_ALL)           # always opens on the "All" entry of the sidebar
     moved = {"count": 0}
 
     host = ctk.CTkFrame(parent, fg_color="transparent")

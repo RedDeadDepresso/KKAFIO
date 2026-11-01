@@ -168,7 +168,7 @@ def test_gallery_tab_opens_with_the_cards_and_updates_the_caches(tmp_path):
     assert names == ["a"]
     assert suggested == ["Old Folder", "Rin", "Saber"]             # existing folders + chara filenames
     assert moved == (coord / "Rin" / "a.png", "Rin")
-    assert tab.text.untagged == "No character"                     # the coordinate wording, not the series one
+    assert tab.text.untagged == "Not in a folder"                     # the coordinate wording, not the series one
     update.assert_called_once_with(coord, {str(loose): str(coord / "Rin" / "a.png")})
 
 

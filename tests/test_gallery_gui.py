@@ -72,8 +72,8 @@ def texts(cv, text):
 
 
 def first_unknown(cv):
-    """The "Unknown series" text of the top-left tile (item order on the canvas isn't tile order)."""
-    return min(texts(cv, "Unknown series"), key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0]))
+    """The "Not in a folder" text of the top-left tile (item order on the canvas isn't tile order)."""
+    return min(texts(cv, "Not in a folder"), key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0]))
 
 
 def click(cv, item_id):
@@ -115,7 +115,7 @@ def button(root, start):
 
 
 def show_all(root, label="All"):
-    """The gallery opens on the untagged cards; switch to the "All" tab."""
+    """The gallery opens on the "All" entry; click it anyway (a no-op there, and it waits for the redraw)."""
     button(root, label).invoke()
     pump(root, 0.4)
 
@@ -155,11 +155,11 @@ def test_tiles_show_name_unknown_series_and_covers_even_when_they_load_late(tmp_
         cv = gallery_canvas(root)
         show_all(root)
         pump(root, 1.5)
-        assert len(texts(cv, "Unknown series")) == 11 and texts(cv, "Fate")
+        assert len(texts(cv, "Not in a folder")) == 11 and texts(cv, "Fate")
         assert texts(cv, "Char 011")                                  # newest first by default
         images = [i for i in cv.find_all() if cv.type(i) == "image"]
         assert len(images) == 12 and all(cv.itemcget(i, "image") for i in images)    # every cover arrived
-        assert label_text(root, "12 characters") == ["12 characters · 11 unknown series"]
+        assert label_text(root, "12 characters") == ["12 characters · 11 not in a folder"]
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
 
@@ -186,7 +186,7 @@ def test_click_type_pick_a_suggestion_and_enter_moves_the_card(tmp_path, monkeyp
         assert editor(cv) is None
         assert texts(cv, "Fate Grand Order")                           # the tile now shows its series
         assert label_text(root, "Moved") == ["Moved Char 003 → Fate Grand Order"]
-        assert button(root, "Unknown series").cget("text").endswith("3")
+        assert button(root, "Not in a folder").cget("text").endswith("3")
 
     moved = run_dialog(monkeypatch, items, lambda t: ["Fate", "Fate Grand Order"] if t else [], mover(calls), script)
     assert moved == 1
@@ -246,7 +246,7 @@ def test_escape_blank_text_and_failed_moves_change_nothing(tmp_path, monkeypatch
         editor(cv).event_generate("<Return>")
         pump(root, 0.3)
         assert calls == [("Char 002", "..")]
-        assert len(texts(cv, "Unknown series")) == 3                   # still untagged
+        assert len(texts(cv, "Not in a folder")) == 3                   # still untagged
         assert label_text(root, "Could not move") == ["Could not move Char 002"]
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover(calls), script) == 0
@@ -259,18 +259,18 @@ def test_sidebar_views_search_and_sort(tmp_path, monkeypatch):
     def script(root):
         cv = gallery_canvas(root)
         assert button(root, "All characters").cget("text").endswith("6")
-        assert button(root, "Unknown series").cget("text").endswith("3")
+        assert button(root, "Not in a folder").cget("text").endswith("3")
         series_box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
         assert list(series_box.get(0, "end")) == ["Fate   (2)", "SAO   (1)"]
 
-        button(root, "Unknown series").invoke()
+        button(root, "Not in a folder").invoke()
         pump(root, 0.3)
-        assert len(texts(cv, "Unknown series")) == 3 and not texts(cv, "Fate")
+        assert len(texts(cv, "Not in a folder")) == 3 and not texts(cv, "Fate")
 
         series_box.selection_set(0)
         series_box.event_generate("<<ListboxSelect>>")
         pump(root, 0.3)
-        assert texts(cv, "Fate") and not texts(cv, "Unknown series") and not texts(cv, "SAO")
+        assert texts(cv, "Fate") and not texts(cv, "Not in a folder") and not texts(cv, "SAO")
 
         button(root, "All characters").invoke()
         search = next(w for w in walk(root) if w.__class__.__name__ == "CTkEntry")
@@ -280,7 +280,7 @@ def test_sidebar_views_search_and_sort(tmp_path, monkeypatch):
         search._entry.event_generate("<KeyRelease>", keysym="4")
         pump(root, 0.6)
         assert texts(cv, "Char 004") and not texts(cv, "Char 003")
-        assert label_text(root, "showing") == ["showing 1 of 6 characters · 3 unknown series"]
+        assert label_text(root, "showing") == ["showing 1 of 6 characters · 3 not in a folder"]
 
         search._entry.focus_force()
         search.delete(0, "end")
@@ -304,10 +304,10 @@ def test_a_big_library_only_draws_what_is_in_view_and_loads_covers_on_scroll(tmp
     def script(root):
         cv = gallery_canvas(root)
         pump(root, 1.0)
-        assert 0 < len(texts(cv, "Unknown series")) < 40               # not 300 tiles' worth of items
+        assert 0 < len(texts(cv, "Not in a folder")) < 40               # not 300 tiles' worth of items
         cv.yview_moveto(0.6)
         pump(root, 1.5)
-        shown = texts(cv, "Unknown series")
+        shown = texts(cv, "Not in a folder")
         assert 0 < len(shown) < 40
         names = {cv.itemcget(i, "text") for i in cv.find_all() if cv.type(i) == "text"
                  and cv.itemcget(i, "text").startswith("Char ")}
@@ -417,7 +417,7 @@ def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_v
         assert name is not None                                      # still visible: the view followed it
         assert cv.canvasy(0) > 0
 
-        button(root, "Unknown series").invoke()
+        button(root, "Not in a folder").invoke()
         pump(root, 0.3)
         _press(cv, "Return")
         pump(root, 0.2)
@@ -426,7 +426,7 @@ def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_v
         editor(cv).event_generate("<Return>")
         pump(root, 0.5)
         after = _highlighted(cv)
-        assert after is not None and after != before                 # the assigned card left Unknown series; next selected
+        assert after is not None and after != before                 # the assigned card left Not in a folder; next selected
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
 
@@ -656,7 +656,7 @@ def test_the_series_rows_are_as_big_and_as_far_apart_as_the_sidebar_buttons(tmp_
     def script(root):
         box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
         pump(root, 0.3)
-        all_btn, untagged_btn = button(root, "All"), button(root, "Unknown")
+        all_btn, untagged_btn = button(root, "All"), button(root, "Not in a folder")
         btn_h = all_btn.winfo_height()
         btn_gap = untagged_btn.winfo_y() - (all_btn.winfo_y() + btn_h)
         (_, y0, w0, h0), (_, y1, _w, h1) = box.row_box(0), box.row_box(1)
@@ -701,7 +701,7 @@ def test_the_gallery_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch)
         show_all(root, text.all)
         pump(root, 0.8)
         assert len(texts(cv, text.unknown_series)) == 5 and texts(cv, "Rin")
-        assert not texts(cv, "Unknown series")
+        assert not texts(cv, "Not in a folder")
         assert button(root, text.all).cget("text") == f"{text.all}   6"
         assert button(root, text.untagged).cget("text") == f"{text.untagged}   5"
         assert label_text(root, text.series_header) == [text.series_header]
@@ -772,16 +772,16 @@ def run_dialog_ratio(monkeypatch, items, script, ratio):
     return moved
 
 
-def test_the_gallery_always_opens_on_the_untagged_tab(tmp_path, monkeypatch):
+def test_the_gallery_always_opens_on_the_all_entry(tmp_path, monkeypatch):
     items = make_items(tmp_path, 6, tagged={0: "Rin", 1: "Rin"})
 
     def script(root):
         cv = gallery_canvas(root)
         pump(root, 0.8)
-        assert len(texts(cv, "Unknown series")) == 4 and not texts(cv, "Rin")
-        button(root, "All").invoke()                                 # the other tab is one click away
+        assert len(texts(cv, "Not in a folder")) == 4 and texts(cv, "Rin")     # every card is shown
+        button(root, "Not in a folder").invoke()                    # the other entry is one click away
         pump(root, 0.4)
-        assert len(texts(cv, "Unknown series")) == 4 and texts(cv, "Rin")
+        assert len(texts(cv, "Not in a folder")) == 4 and not texts(cv, "Rin")
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
 

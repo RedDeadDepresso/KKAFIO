@@ -155,7 +155,7 @@ def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
             tab.finish()
 
     assert items == [("s1", None), ("s2", "Bob")]
-    assert tab.cover_ratio == gal.SCENE_COVER_RATIO and tab.text.untagged == "No author"
+    assert tab.cover_ratio == gal.SCENE_COVER_RATIO and tab.text.untagged == "Not in a folder"
     assert suggested[:2] == ["Alice", "Alucid"]
     assert moved == (tmp_path / "Alice" / "s1.png", "Alice")
     cache = json.loads((tmp_path / PNG_CACHE_FILE).read_text())["files"]
