@@ -56,6 +56,8 @@ class ModsSidebar:
 
         self._path: Path | None = None
         self._parse: Callable[[Path], Sequence[str]] | None = None
+        self._load_index: Callable | None = None       # the tab's GalleryTab.guid_index
+        self._index_asked: set = set()                 # the readers already started
         self._rows: list[ModRow] = []
         self._message = t("dialog.gallery.mods_select")
         self._top = 0                                      # pixels scrolled
@@ -65,6 +67,7 @@ class ModsSidebar:
         self._poll: str | None = None
         self._results: queue.Queue = queue.Queue()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="kkafio-mods")
+        self._index_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="kkafio-modsindex")
 
         px = self._px
         family = tkfont.nametofont("TkDefaultFont").actual("family")
@@ -113,9 +116,12 @@ class ModsSidebar:
     # What the window calls
     # ------------------------------------------------------------------
 
-    def show(self, path: Path | None, parse: Callable[[Path], Sequence[str]] | None) -> None:
-        """Show the mods of the card `path` (None: no card), parsed with `parse`."""
-        self._path, self._parse = path, parse
+    def show(self, path: Path | None, parse: Callable[[Path], Sequence[str]] | None,
+             load_index: Callable | None = None) -> None:
+        """Show the mods of the card `path` (None: no card), parsed with `parse`. `load_index` is
+        the tab's GUID index reader: once the sidebar is open it is read in the background (once)
+        so cards it lists are looked up instead of parsed; until then a card is parsed as usual."""
+        self._path, self._parse, self._load_index = path, parse, load_index
         self._token += 1
         self._cancel_timer()
         if path is None or parse is None:
@@ -124,6 +130,7 @@ class ModsSidebar:
         if not self._open:
             return                                         # read when it is expanded
         self._set_message(t("dialog.gallery.mods_reading"))
+        self._start_index_read()
         token = self._token
         self._timer = self._root.after(_READ_DELAY_MS, lambda: self._submit(token, path, parse))
 
@@ -133,7 +140,7 @@ class ModsSidebar:
             self._open = open_
             self._apply_open()
             if open_:
-                self.show(self._path, self._parse)
+                self.show(self._path, self._parse, self._load_index)
 
     @property
     def is_open(self) -> bool:
@@ -148,6 +155,7 @@ class ModsSidebar:
                 pass
             self._poll = None
         self._executor.shutdown(wait=False, cancel_futures=True)
+        self._index_executor.shutdown(wait=False, cancel_futures=True)
 
     # ------------------------------------------------------------------
     # Reading a card (worker thread -> queue -> Tk thread)
@@ -163,6 +171,19 @@ class ModsSidebar:
             except self._tk.TclError:
                 pass
             self._timer = None
+
+    def _start_index_read(self) -> None:
+        """Read the tab's GUID index on its own thread (CardMods reads it once, so this is a no-op
+        when the filter scan or an earlier call already has); the card the cursor is on doesn't
+        wait for it."""
+        load = self._load_index
+        if load is None or load in self._index_asked:
+            return
+        self._index_asked.add(load)
+        try:
+            self._index_executor.submit(self._cards.index_for, load)
+        except RuntimeError:                               # the window is closing
+            pass
 
     def _submit(self, token: int, path: Path, parse) -> None:
         self._timer = None

@@ -430,7 +430,7 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
     def on_cursor(index: int, item) -> None:
         """The keyboard cursor of tab `index` moved: the sidebar follows the open tab's."""
         if sidebar is not None and index == current["index"]:
-            sidebar.show(item.path if item is not None else None, tabs[index].guids)
+            sidebar.show(item.path if item is not None else None, tabs[index].guids, tabs[index].guid_index)
 
     for i, tab in enumerate(tabs):
         galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
@@ -458,7 +458,8 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
         g.frame.grid(row=0, column=0, sticky="nsew")
         search_entry.configure(placeholder_text=texts[index].search_placeholder)
         if sidebar is not None:
-            sidebar.show(g.cursor().path if g.cursor() is not None else None, tabs[index].guids)
+            sidebar.show(g.cursor().path if g.cursor() is not None else None, tabs[index].guids,
+                         tabs[index].guid_index)
         search_entry.delete(0, "end")
         search_text = g.search_text()
         if search_text:
@@ -705,8 +706,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     mods_labels = {t("dialog.gallery.mods_filter_all"): MODS_ALL,
                    t("dialog.gallery.mods_filter_complete"): MODS_COMPLETE,
                    t("dialog.gallery.mods_filter_missing"): MODS_MISSING}
-    scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0,
-                  "index": None}                       # index: the tab's per-file GUIDs, once read
+    scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0}
     if mods is not None and tab.guids is not None and mods.lookup.available:
         ctk.CTkLabel(bar, text=t("dialog.gallery.mods_filter_label"), text_color=pair("muted")).grid(
             row=0, column=6, padx=(16, 8))
@@ -997,19 +997,10 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
         def work() -> None:
             # The GUIDs of all the tab's cards come from the incremental on-disk per-file cache
-            # (unchanged cards aren't read again, new ones are parsed in parallel). Read once per
-            # window — this runs on the single scan worker, so no lock is needed. A card missing
-            # from it is read on its own, as before.
-            if scan["index"] is None:
-                scan["index"] = {}
-                if tab.guid_index is not None:
-                    read_at = time.time_ns()
-                    try:
-                        scan["index"] = tab.guid_index()
-                        mods.set_index(scan["index"], read_at)    # the sidebar uses it too
-                    except Exception as e:
-                        logger.warning("GALLERY", f"Could not read the GUID cache, reading the cards one by one: {e}")
-            index = scan["index"]
+            # (unchanged cards aren't read again, new ones are parsed in parallel). It is read once
+            # per window, shared with the sidebar (which may already have asked for it). A card
+            # missing from it is read on its own, as before.
+            index = mods.index_for(tab.guid_index) if tab.guid_index is not None else {}
             for item in todo:
                 if scan["stop"]:
                     return

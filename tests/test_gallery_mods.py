@@ -403,3 +403,34 @@ def test_the_sidebar_parses_a_card_changed_after_the_index_was_read(tmp_path):
     cards = CardMods(ModsLookup(None))
     cards.set_index({str(card): ["com.old"]}, read_at_ns=0)                  # the file is newer than the index
     assert [r.guid for r in cards.rows(card, lambda _p: ["com.new"])] == ["com.new"]
+
+
+def test_the_guid_index_is_read_once_and_shared(tmp_path):
+    import threading
+    card = tmp_path / "card.png"
+    card.write_bytes(b"1")
+    reads = []
+
+    def load():
+        reads.append(1)
+        return {str(card): ["com.a"]}
+
+    cards = CardMods(ModsLookup(None))
+    threads = [threading.Thread(target=cards.index_for, args=(load,)) for _ in range(4)]
+    [th.start() for th in threads]
+    [th.join() for th in threads]
+    assert len(reads) == 1
+    assert [r.guid for r in cards.rows(card, lambda _p: ["com.parsed"])] == ["com.a"]
+
+
+def test_an_unreadable_guid_index_is_empty_and_not_retried(tmp_path):
+    reads = []
+
+    def load():
+        reads.append(1)
+        raise OSError("locked")
+
+    cards = CardMods(ModsLookup(None))
+    assert cards.index_for(load) == {}
+    assert cards.index_for(load) == {}
+    assert len(reads) == 1

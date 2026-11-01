@@ -142,6 +142,27 @@ class CardMods:
         # (time_ns the index was read from disk, {str(path): GUIDs}), one per tab that has read it
         self._indexes: list[tuple[int, Mapping[str, Sequence[str]]]] = []
         self._lock = threading.Lock()
+        self._loaded: dict[Callable, Mapping[str, Sequence[str]]] = {}    # loader -> what it returned
+        self._load_lock = threading.Lock()              # one index read at a time, each only once
+
+    def index_for(self, load: Callable[[], Mapping[str, Sequence[str]]]) -> Mapping[str, Sequence[str]]:
+        """The index `load()` returns (the tab's `GalleryTab.guid_index`), read once however many
+        callers ask — the filter scan and the sidebar share it. A caller that arrives while it is
+        being read waits for that read rather than starting another. An index that can't be read
+        is empty, and not tried again; the cards are then read one by one."""
+        with self._load_lock:
+            if load in self._loaded:
+                return self._loaded[load]
+            read_at = time.time_ns()
+            try:
+                index = load()
+            except Exception as e:
+                logger.warning(TAG, f"Could not read the GUID cache, reading the cards one by one: {e}")
+                index = {}
+            self._loaded[load] = index
+        if index:
+            self.set_index(index, read_at)
+        return index
 
     def set_index(self, index: Mapping[str, Sequence[str]], read_at_ns: int | None = None) -> None:
         """Use `index` ({str(path): GUIDs}, the on-disk per-file GUID cache) so a card it lists
