@@ -680,7 +680,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     bar = ctk.CTkFrame(main, fg_color="transparent")
     bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
-    bar.grid_columnconfigure(3, weight=1)
+    bar.grid_columnconfigure(3, weight=1)       # two equal gaps keep the mods filter centred between
+    bar.grid_columnconfigure(6, weight=1)       # the sort order button and the size slider
     ctk.CTkLabel(bar, text=t("dialog.manual.sort_by"), text_color=pair("muted")).grid(row=0, column=0, padx=(0, 8))
     sort_labels = {t("dialog.manual.sort_created"): SORT_CREATED, t("dialog.manual.sort_updated"): SORT_UPDATED,
                    t("dialog.manual.sort_name"): SORT_NAME, t("dialog.manual.sort_filename"): SORT_FILENAME,
@@ -691,10 +692,10 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     order_btn = ctk.CTkButton(bar, text=t("dialog.manual.descending"), width=120, fg_color=pair("sel"),
                               text_color=pair("text"), hover_color=pair("border"), command=lambda: on_order())
     order_btn.grid(row=0, column=2)
-    ctk.CTkLabel(bar, text=t("dialog.manual.size"), text_color=pair("muted")).grid(row=0, column=4, padx=(0, 8))
+    ctk.CTkLabel(bar, text=t("dialog.manual.size"), text_color=pair("muted")).grid(row=0, column=7, padx=(0, 8))
     size_slider = ctk.CTkSlider(bar, from_=SIZE_MIN, to=SIZE_MAX, width=160, command=lambda _v: on_size())
     size_slider.set(SIZE_DEFAULT)
-    size_slider.grid(row=0, column=5)
+    size_slider.grid(row=0, column=8)
     # the sort and size it was left with (kept in `now` too: the widgets are gone when the window is)
     model.sort_key, model.descending = view.sort, view.descending
     sort_menu.set(next((label for label, key in sort_labels.items() if key == view.sort), t("dialog.manual.sort_updated")))
@@ -709,11 +710,11 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0}
     if mods is not None and tab.guids is not None and mods.lookup.available:
         ctk.CTkLabel(bar, text=t("dialog.gallery.mods_filter_label"), text_color=pair("muted")).grid(
-            row=0, column=6, padx=(16, 8))
+            row=0, column=4, padx=(0, 8))
         mods_menu = ctk.CTkOptionMenu(bar, values=list(mods_labels), width=190, command=lambda _v: on_mods_filter())
         model.mods_filter = view.mods                      # the filter the tab was left with
         mods_menu.set(next(label for label, key in mods_labels.items() if key == model.mods_filter))
-        mods_menu.grid(row=0, column=7)
+        mods_menu.grid(row=0, column=5)
     else:
         mods_menu = None
 
