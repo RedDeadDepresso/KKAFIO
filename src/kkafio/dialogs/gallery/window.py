@@ -59,6 +59,7 @@ from kkafio.dialogs.gallery.shortcuts import (
 )
 from kkafio.dialogs.gallery.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
+    MODS_ALL, MODS_COMPLETE, MODS_MISSING,
     VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, GalleryModel, GalleryTab,
     chara_dialog_text, clean_file_stem, rename_card,
 )
@@ -432,7 +433,7 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
 
     for i, tab in enumerate(tabs):
         galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
-                                    shortcuts=shortcuts, view=view_state.view(keys[i]),
+                                    shortcuts=shortcuts, view=view_state.view(keys[i]), mods=mods,
                                     on_cursor=lambda item, i=i: on_cursor(i, item)))
 
     if mods is not None:
@@ -491,10 +492,11 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
 
 def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool,
                    shortcuts: ShortcutSettings | None = None, view: TabView | None = None,
-                   on_cursor: Callable[[CharaItem | None], None] | None = None) -> _Gallery:
+                   on_cursor: Callable[[CharaItem | None], None] | None = None, mods=None) -> _Gallery:
     """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
     gridded. `search_entry` is the window's shared search input, which only the open tab listens to.
-    `on_cursor(item)` is called whenever the keyboard cursor moves to another card."""
+    `on_cursor(item)` is called whenever the keyboard cursor moves to another card. `mods` (a
+    mods_panel.CardMods) adds the toolbar's mods filter (all cards / all mods installed / missing mods)."""
     import tkinter as tk
     from tkinter import font as tkfont
     import customtkinter as ctk
@@ -558,6 +560,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     requested: set[Path] = set()
     cover_queue: queue.Queue = queue.Queue()
     executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="kkafio-cover")
+    scan_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="kkafio-modscan")
 
     def request_cover(path: Path) -> None:
         if path in requested or path in pil_cache:
@@ -601,6 +604,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             while len(pil_cache) > _PIL_CACHE_MAX:
                 pil_cache.popitem(last=False)
             apply_cover(path)
+        drain_scan()
         timers["poll"] = root.after(50, poll_covers)
 
     def apply_cover(path: Path) -> None:
@@ -695,6 +699,20 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     order_btn.configure(text=t("dialog.manual.descending") if view.descending else t("dialog.manual.ascending"))
     size_slider.set(min(max(view.size, SIZE_MIN), SIZE_MAX) if view.size else SIZE_DEFAULT)
     now = TabView(view.sort, view.descending, view.size)
+
+    # the mods filter: which cards have all their mods / miss some (only with a known mods folder)
+    mods_labels = {t("dialog.gallery.mods_filter_all"): MODS_ALL,
+                   t("dialog.gallery.mods_filter_complete"): MODS_COMPLETE,
+                   t("dialog.gallery.mods_filter_missing"): MODS_MISSING}
+    scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0}
+    if mods is not None and tab.guids is not None and mods.lookup.available:
+        ctk.CTkLabel(bar, text=t("dialog.gallery.mods_filter_label"), text_color=pair("muted")).grid(
+            row=0, column=6, padx=(16, 8))
+        mods_menu = ctk.CTkOptionMenu(bar, values=list(mods_labels), width=190, command=lambda _v: on_mods_filter())
+        mods_menu.set(t("dialog.gallery.mods_filter_all"))
+        mods_menu.grid(row=0, column=7)
+    else:
+        mods_menu = None
 
     canvas = tk.Canvas(main, bg=pal["bg"], highlightthickness=0, borderwidth=0,
                        width=px(900), height=px(540), yscrollincrement=px(40), takefocus=1)
@@ -965,6 +983,53 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                     series_box.selection_set(i)
                     series_box.see(i)
 
+    def start_scan() -> None:
+        """Check the mods of every card not checked yet, on a worker thread (the filter needs them all)."""
+        todo = [i for i in model.items if i.mods_missing is None and id(i) not in scan["started"]]
+        if not todo:
+            return
+        scan["started"].update(id(i) for i in todo)
+        scan["total"] += len(todo)
+        parse = tab.guids
+
+        def work() -> None:
+            for item in todo:
+                if scan["stop"]:
+                    return
+                try:
+                    missing = any(r.path is None for r in mods.rows(item.path, parse))
+                except Exception:                      # unreadable: in neither group
+                    missing = None
+                scan["queue"].put((item, missing))
+
+        try:
+            scan_executor.submit(work)
+        except RuntimeError:                           # the window is closing
+            pass
+
+    def drain_scan() -> None:
+        changed = False
+        for _ in range(400):
+            try:
+                item, missing = scan["queue"].get_nowait()
+            except queue.Empty:
+                break
+            scan["done"] += 1
+            if missing is not None:
+                item.mods_missing = missing
+            changed = True
+        if changed:
+            if model.mods_filter != MODS_ALL and timers["layout"] is None:
+                schedule_layout(300, keep_scroll=True)          # cards join the filtered view as they are checked
+            else:
+                update_status()
+
+    def on_mods_filter() -> None:
+        model.mods_filter = mods_labels.get(mods_menu.get(), MODS_ALL)
+        if model.mods_filter != MODS_ALL:
+            start_scan()
+        relayout(keep_scroll=False)
+
     def update_status() -> None:
         total, untagged = model.counts()
         shown = len(lay["items"])
@@ -972,6 +1037,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                 else txt.status_filtered.format(shown=shown, total=total, untagged=untagged))
         if len(sel["picked"]) > 1:
             text += " · " + t("dialog.manual.selected", count=len(sel["picked"]))
+        if model.mods_filter != MODS_ALL and scan["done"] < scan["total"]:
+            text += " · " + t("dialog.gallery.mods_checking", done=scan["done"], total=scan["total"])
         status.configure(text=text)
 
     def choose_view(mode: str, series: str = "") -> None:
@@ -1603,6 +1670,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                 root.after_cancel(edit["after"])
             except tk.TclError:
                 pass
+        scan["stop"] = True
+        scan_executor.shutdown(wait=False, cancel_futures=True)
         executor.shutdown(wait=False, cancel_futures=True)
 
     def on_show() -> None:

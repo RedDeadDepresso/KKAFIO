@@ -29,6 +29,9 @@ SORT_SIZE = "size"
 VIEW_ALL = "all"
 VIEW_UNTAGGED = "untagged"
 VIEW_SERIES = "series"
+MODS_ALL = "all"              # the mods filter: every card
+MODS_COMPLETE = "complete"    # ... only cards whose mods are all installed
+MODS_MISSING = "missing"      # ... only cards with at least one mod missing
 VIEW_TRASH = "trash"          # the cards marked for the Recycle Bin (sent there when the window closes)
 
 
@@ -44,6 +47,7 @@ class CharaItem:
     mtime: float               # updated
     ctime: float = 0.0         # created (0: unknown)
     alias: str = ""            # extra text the search also looks at (e.g. the character's own name)
+    mods_missing: bool | None = None   # some mod it uses isn't installed (None: not checked yet / unreadable)
     trashed: bool = False      # in the gallery's trash: hidden everywhere else, the file is only
                                # sent to the Recycle Bin when the window closes
 
@@ -56,6 +60,7 @@ class GalleryModel:
         self.mode = VIEW_ALL
         self.series_filter = ""            # the series shown when mode == VIEW_SERIES
         self.search = ""
+        self.mods_filter = MODS_ALL
         self.sort_key = SORT_UPDATED
         self.descending = True
 
@@ -76,6 +81,8 @@ class GalleryModel:
                 continue
             if self.mode == VIEW_SERIES and (item.series or "").casefold() != want:
                 continue
+            if self.mods_filter != MODS_ALL and item.mods_missing != (self.mods_filter == MODS_MISSING):
+                continue                       # (an unchecked card is in neither group)
             if needle and needle not in f"{item.name}\n{item.alias}\n{item.path.name}\n{item.series or ''}".casefold():
                 continue
             out.append(item)

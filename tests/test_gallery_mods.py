@@ -252,3 +252,44 @@ def test_an_unreadable_card_says_so(tmp_path, monkeypatch):
         assert _shown(sb) == ["Could not read this card"]
 
     _run(monkeypatch, [tab], mods, script)
+
+
+def _menu(root, label):
+    return next(w for w in g.walk(root) if w.__class__.__name__ == "CTkOptionMenu" and label in w.cget("values"))
+
+
+def test_the_mods_filter_shows_cards_with_all_mods_or_with_missing_ones(tmp_path, monkeypatch):
+    zipmod(tmp_path / "mods" / "a.zipmod", "com.have")
+    mods = CardMods(ModsLookup(tmp_path / "mods", use_cache=False))
+    tab = _tab(tmp_path, [["com.have"], ["com.have", "com.gone"], []])       # Char 000, 001, 002
+
+    def names(root):
+        cv = g.gallery_canvas(root)
+        return sorted(cv.itemcget(i, "text") for i in cv.find_all()
+                      if cv.type(i) == "text" and cv.itemcget(i, "text").startswith("Char "))
+
+    def script(root, sb):
+        g.show_all(root)
+        menu = _menu(root, "Missing mods")
+        assert len(names(root)) == 3
+        menu.set("Missing mods"); menu.cget("command")("Missing mods")
+        g.pump(root, 1.2)
+        assert names(root) == ["Char 001"]
+        menu.set("All mods installed"); menu.cget("command")("All mods installed")
+        g.pump(root, 0.8)
+        assert names(root) == ["Char 000", "Char 002"]            # a card without mods is complete
+        menu.set("All cards"); menu.cget("command")("All cards")
+        g.pump(root, 0.8)
+        assert len(names(root)) == 3
+
+    _run(monkeypatch, [tab], mods, script)
+
+
+def test_there_is_no_mods_filter_without_a_mods_folder(tmp_path, monkeypatch):
+    tab = _tab(tmp_path, [["com.a"]])
+
+    def script(root, sb):
+        assert not [w for w in g.walk(root) if w.__class__.__name__ == "CTkOptionMenu"
+                    and "Missing mods" in w.cget("values")]
+
+    _run(monkeypatch, [tab], CardMods(ModsLookup(None)), script)
