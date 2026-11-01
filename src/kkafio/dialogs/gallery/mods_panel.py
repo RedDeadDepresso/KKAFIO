@@ -22,7 +22,8 @@ from __future__ import annotations
 import subprocess
 import sys
 import threading
-from collections.abc import Callable, Sequence
+import time
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -125,17 +126,40 @@ class ModsLookup:
 
 
 class CardMods:
-    """The mods of cards: parses a card's GUIDs (once per unchanged file) and resolves them.
+    """The mods of cards: finds a card's GUIDs (once per unchanged file) and resolves them.
 
-    `parse` is the tab's `GalleryTab.guids`. The result is sorted with `sort_rows`; a card that
-    can't be read raises whatever `parse` raises, so the window can say so.
+    A card's GUIDs come, in order, from the in-memory cache (keyed by path, mtime and size), from
+    the tab's on-disk GUID index when the window has handed one over with `set_index`, and
+    finally from `parse` (the tab's `GalleryTab.guids`) reading the card file. The result is
+    sorted with `sort_rows`; a card that can't be read raises whatever `parse` raises, so the
+    window can say so.
     """
 
     def __init__(self, lookup: ModsLookup, max_cached: int = 400):
         self.lookup = lookup
         self._max = max_cached
         self._guids: dict[tuple[Path, int, int], tuple[str, ...]] = {}
+        # (time_ns the index was read from disk, {str(path): GUIDs}), one per tab that has read it
+        self._indexes: list[tuple[int, Mapping[str, Sequence[str]]]] = []
         self._lock = threading.Lock()
+
+    def set_index(self, index: Mapping[str, Sequence[str]], read_at_ns: int | None = None) -> None:
+        """Use `index` ({str(path): GUIDs}, the on-disk per-file GUID cache) so a card it lists
+        isn't parsed again. `read_at_ns` is the time.time_ns() taken *before* the index was read:
+        a card file modified after that is not trusted to the index and is parsed instead."""
+        stamp = time.time_ns() if read_at_ns is None else read_at_ns
+        with self._lock:
+            self._indexes.append((stamp, index))
+
+    def _from_index(self, path: Path, mtime_ns: int) -> tuple[str, ...] | None:
+        key = str(path)
+        with self._lock:
+            indexes = list(self._indexes)
+        for read_at, index in indexes:
+            known = index.get(key)
+            if known is not None and mtime_ns <= read_at:
+                return tuple(dict.fromkeys(known))
+        return None
 
     def rows(self, path: Path, parse: Callable[[Path], Sequence[str]]) -> list[ModRow]:
         st = path.stat()
@@ -143,7 +167,9 @@ class CardMods:
         with self._lock:
             cached = self._guids.get(key)
         if cached is None:
-            cached = tuple(dict.fromkeys(parse(path)))     # unique, in the card's order
+            cached = self._from_index(path, st.st_mtime_ns)
+            if cached is None:
+                cached = tuple(dict.fromkeys(parse(path)))     # unique, in the card's order
             with self._lock:
                 if len(self._guids) >= self._max:
                     self._guids.pop(next(iter(self._guids)))

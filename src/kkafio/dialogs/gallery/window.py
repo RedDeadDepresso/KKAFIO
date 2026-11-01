@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import io
 import queue
+import time
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -1002,8 +1003,10 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             if scan["index"] is None:
                 scan["index"] = {}
                 if tab.guid_index is not None:
+                    read_at = time.time_ns()
                     try:
                         scan["index"] = tab.guid_index()
+                        mods.set_index(scan["index"], read_at)    # the sidebar uses it too
                     except Exception as e:
                         logger.warning("GALLERY", f"Could not read the GUID cache, reading the cards one by one: {e}")
             index = scan["index"]

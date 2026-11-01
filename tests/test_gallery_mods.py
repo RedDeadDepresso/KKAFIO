@@ -374,3 +374,32 @@ def test_the_mods_filter_is_restored_and_saved(tmp_path, monkeypatch):
 
     _run(monkeypatch, [tab], mods, script, state)
     assert saved["chara"].mods == "all"
+
+
+def test_the_sidebar_uses_the_guid_index_before_parsing(tmp_path):
+    import time
+    card = tmp_path / "card.png"
+    card.write_bytes(b"1")
+    other = tmp_path / "other.png"
+    other.write_bytes(b"1")
+    calls = []
+
+    def parse(path):
+        calls.append(path)
+        return ["com.parsed"]
+
+    cards = CardMods(ModsLookup(None))
+    assert [r.guid for r in cards.rows(other, parse)] == ["com.parsed"]      # no index yet: parsed
+    cards.set_index({str(card): ["com.b", "com.a", "com.b"]}, time.time_ns())
+    assert [r.guid for r in cards.rows(card, parse)] == ["com.a", "com.b"]   # from the index
+    assert calls == [other]
+    assert [r.guid for r in cards.rows(tmp_path / "other.png", parse)] == ["com.parsed"]
+    assert calls == [other]                                                  # memory cache still works
+
+
+def test_the_sidebar_parses_a_card_changed_after_the_index_was_read(tmp_path):
+    card = tmp_path / "card.png"
+    card.write_bytes(b"1")
+    cards = CardMods(ModsLookup(None))
+    cards.set_index({str(card): ["com.old"]}, read_at_ns=0)                  # the file is newer than the index
+    assert [r.guid for r in cards.rows(card, lambda _p: ["com.new"])] == ["com.new"]
