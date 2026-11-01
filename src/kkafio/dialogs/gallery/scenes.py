@@ -17,6 +17,7 @@ from kkafio.dialogs.gallery.common import dialog_text, existing_folders, is_plai
 from kkafio.indices.author import canonical_name, load_authors, suggest_authors
 from kkafio.tasks.group_scenes import TAG, save_hash_cache, scan_scenes
 from kkafio.cards.mods.parsing import parse_scene_guids
+from kkafio.cards.mods.png_guids import collect_scene_guids_by_file
 
 SCENE_COVER_RATIO = 180 / 320       # a scene card's picture is landscape (320x180)
 
@@ -108,4 +109,5 @@ def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
                     new_entries[new] = entry
             save_hash_cache(folder, cache, new_entries, set(moves))
 
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish, "scene", parse_scene_guids)
+    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish, "scene", parse_scene_guids,
+                      lambda: collect_scene_guids_by_file([folder], use_cache))

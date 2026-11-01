@@ -15,6 +15,7 @@ from kkafio.dialogs.gallery.model import COVER_RATIO, GalleryTab
 from kkafio.dialogs.gallery.common import dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
 from kkafio.tasks.group_coordinates import TAG, move_unique, sorted_charas, update_coord_cache
 from kkafio.cards.mods.parsing import parse_coord_guids
+from kkafio.cards.mods.png_guids import collect_coord_guids_by_file
 
 
 def chara_folder_names(chara_dirs: list[Path]) -> dict[str, str]:
@@ -95,4 +96,5 @@ def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
         if use_cache and moves:
             update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
 
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish, "outfit", parse_coord_guids)
+    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish, "outfit", parse_coord_guids,
+                      lambda: collect_coord_guids_by_file([coord_dir], use_cache))

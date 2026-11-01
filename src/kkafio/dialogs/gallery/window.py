@@ -704,7 +704,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     mods_labels = {t("dialog.gallery.mods_filter_all"): MODS_ALL,
                    t("dialog.gallery.mods_filter_complete"): MODS_COMPLETE,
                    t("dialog.gallery.mods_filter_missing"): MODS_MISSING}
-    scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0}
+    scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0,
+                  "index": None}                       # index: the tab's per-file GUIDs, once read
     if mods is not None and tab.guids is not None and mods.lookup.available:
         ctk.CTkLabel(bar, text=t("dialog.gallery.mods_filter_label"), text_color=pair("muted")).grid(
             row=0, column=6, padx=(16, 8))
@@ -994,11 +995,25 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         parse = tab.guids
 
         def work() -> None:
+            # The GUIDs of all the tab's cards come from the incremental on-disk per-file cache
+            # (unchanged cards aren't read again, new ones are parsed in parallel). Read once per
+            # window — this runs on the single scan worker, so no lock is needed. A card missing
+            # from it is read on its own, as before.
+            if scan["index"] is None:
+                scan["index"] = {}
+                if tab.guid_index is not None:
+                    try:
+                        scan["index"] = tab.guid_index()
+                    except Exception as e:
+                        logger.warning("GALLERY", f"Could not read the GUID cache, reading the cards one by one: {e}")
+            index = scan["index"]
             for item in todo:
                 if scan["stop"]:
                     return
                 try:
-                    missing = any(r.path is None for r in mods.rows(item.path, parse))
+                    known = index.get(str(item.path))
+                    rows = mods.rows_for(known) if known is not None else mods.rows(item.path, parse)
+                    missing = any(r.path is None for r in rows)
                 except Exception:                      # unreadable: in neither group
                     missing = None
                 scan["queue"].put((item, missing))

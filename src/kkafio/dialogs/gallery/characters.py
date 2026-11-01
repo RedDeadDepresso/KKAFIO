@@ -18,6 +18,7 @@ from kkafio.dialogs.gallery.common import (
 )
 from kkafio.tasks.group_chara import move_card, read_card
 from kkafio.cards.mods.parsing import parse_chara_guids
+from kkafio.cards.mods.png_guids import collect_chara_guids_by_file
 
 
 def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
@@ -139,4 +140,5 @@ def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
     except BaseException:
         finish()
         raise
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual"), COVER_RATIO, finish, "chara", parse_chara_guids)
+    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual"), COVER_RATIO, finish, "chara", parse_chara_guids,
+                      lambda: collect_chara_guids_by_file(list(folders), use_cache))

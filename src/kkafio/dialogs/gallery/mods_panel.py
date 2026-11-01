@@ -150,6 +150,11 @@ class CardMods:
                 self._guids[key] = cached
         return sort_rows(self.lookup.resolve(cached))
 
+    def rows_for(self, guids: Sequence[str]) -> list[ModRow]:
+        """The rows of a card whose GUIDs are already known (e.g. from the on-disk per-file GUID
+        cache), so the card file isn't read again."""
+        return sort_rows(self.lookup.resolve(tuple(dict.fromkeys(guids))))
+
 
 def mods_dir_for(configured: str, default: Path | str | None) -> Path | None:
     """The mods folder to look in: the one that was configured, else the game's (None when there

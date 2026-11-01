@@ -13,7 +13,7 @@ The dialog doesn't know what a "series" is: a card's `series` is just the folder
 from __future__ import annotations
 
 import os
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -252,6 +252,9 @@ class GalleryTab:
                  "outfit"): stable, unlike the translated label
     guids        card file -> the GUIDs of the mods it uses (what the mod dependencies sidebar
                  lists); None: the tab has no such sidebar content
+    guid_index   the GUIDs of every card of the tab at once ({str(path): GUIDs}), read through the
+                 incremental on-disk per-file GUID cache (what the mods filter needs for all
+                 cards); None: the filter falls back to `guids`, one card at a time
     """
 
     label: str
@@ -263,3 +266,4 @@ class GalleryTab:
     finish: Callable[[], None] | None = None
     key: str = ""
     guids: Callable[[Path], Sequence[str]] | None = None
+    guid_index: Callable[[], Mapping[str, Sequence[str]]] | None = None

@@ -56,6 +56,14 @@ def test_a_modpack_mod_installed_outside_its_indexed_path_is_still_found(tmp_pat
         assert lookup.find("com.pack") == tmp_path.resolve() / "Elsewhere" / "x.zipmod"
 
 
+def test_rows_for_resolves_known_guids_without_a_card_file(tmp_path):
+    zipmod(tmp_path / "a.zipmod", "com.have")
+    cards = CardMods(ModsLookup(tmp_path, use_cache=False))
+    rows = cards.rows_for(["com.have", "com.gone", "com.have"])          # duplicates collapse
+    assert [(r.guid, r.path is not None) for r in rows] == [("com.gone", False), ("com.have", True)]
+    assert cards.rows_for([]) == []
+
+
 def test_a_modpack_mod_is_checked_through_the_index_not_by_scanning(tmp_path):
     pack = zipmod(tmp_path / "Sideloader Modpack" / "x.zipmod", "com.pack")
     with mock.patch.object(mp, "load_modpack_index",
@@ -301,6 +309,34 @@ def test_the_mods_filter_shows_cards_with_all_mods_or_with_missing_ones(tmp_path
         menu.set("All cards"); menu.cget("command")("All cards")
         g.pump(root, 0.8)
         assert len(names(root)) == 3
+
+    _run(monkeypatch, [tab], mods, script)
+
+
+def test_the_mods_filter_reads_the_guid_index_and_only_parses_cards_missing_from_it(tmp_path, monkeypatch):
+    zipmod(tmp_path / "mods" / "a.zipmod", "com.have")
+    mods = CardMods(ModsLookup(tmp_path / "mods", use_cache=False))
+    items = g.make_items(tmp_path / "cards", 3)                          # Char 000, 001, 002
+    index = {str(items[0].path): ["com.have"], str(items[1].path): ["com.have", "com.gone"]}
+    parsed = []
+
+    def parse(path):                                                     # only the card the index lacks
+        parsed.append(path)
+        return ["com.gone"]
+
+    tab = mgd.GalleryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara",
+                         parse, lambda: index)
+
+    def script(root, sb):
+        g.show_all(root)
+        menu = _menu(root, "Missing mods")
+        menu.set("Missing mods"); menu.cget("command")("Missing mods")
+        g.pump(root, 1.2)
+        cv = g.gallery_canvas(root)
+        shown = sorted(cv.itemcget(i, "text") for i in cv.find_all()
+                       if cv.type(i) == "text" and cv.itemcget(i, "text").startswith("Char "))
+        assert shown == ["Char 001", "Char 002"]
+        assert parsed == [items[2].path]
 
     _run(monkeypatch, [tab], mods, script)
 
