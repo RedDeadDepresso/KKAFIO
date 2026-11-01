@@ -241,6 +241,8 @@ class GalleryTab:
     cover_ratio  cover height / width (default: a character card's portrait; scenes are landscape)
     finish       called once when the window is gone, also if it failed: whatever the task has to
                  tidy up after the moves (it saves its caches here). Optional.
+    key          what the window remembers the tab's sort and size under ("scene", "chara",
+                 "outfit"): stable, unlike the translated label
     """
 
     label: str
@@ -250,3 +252,4 @@ class GalleryTab:
     text: DialogText | None = None
     cover_ratio: float = COVER_RATIO
     finish: Callable[[], None] | None = None
+    key: str = ""

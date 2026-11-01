@@ -107,4 +107,4 @@ def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
                     new_entries[new] = entry
             save_hash_cache(folder, cache, new_entries, set(moves))
 
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish)
+    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish, "scene")

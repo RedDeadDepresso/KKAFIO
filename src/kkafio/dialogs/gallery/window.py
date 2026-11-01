@@ -53,6 +53,7 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
+from kkafio.dialogs.gallery.viewstate import GalleryViewState, TabView
 from kkafio.dialogs.gallery.shortcuts import (
     ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
 )
@@ -373,6 +374,7 @@ class _Gallery:
         self.frame = None                          # the gallery's widgets (a CTkFrame)
         self.canvas = None                         # the tile canvas (takes the keyboard focus)
         self.moved_count = lambda: 0               # cards moved so far
+        self.view = lambda: TabView()              # its sort and cover size now (for the next run)
         self.trashed_items = lambda: []            # the cards in its trash (for the bin when the window closes)
         self.search_text = lambda: ""              # the search text this gallery is showing
         self.on_search_key = lambda: None          # the shared search input changed
@@ -389,6 +391,11 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
     root.minsize(820, 520)
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(1, weight=1)
+
+    shortcuts = ShortcutSettings.from_user_config()     # one for the whole window: every tab shares it
+    view_state = GalleryViewState.from_user_config()    # the last tab and each tab's sort / size
+    keys = [tab.key or f"tab{i}" for i, tab in enumerate(tabs)]
+    initial = view_state.initial_index(keys, initial, [bool(tab.items) for tab in tabs])   # the tab left open last
 
     # search bar, with the tabs on its left
     top = ctk.CTkFrame(root, fg_color="transparent")
@@ -408,12 +415,11 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
             g.close_popups()
         root.quit()
 
-    shortcuts = ShortcutSettings.from_user_config()     # one for the whole window: every tab shares it
     galleries: list[_Gallery] = []
     texts = [tab.text if tab.text is not None else chara_dialog_text() for tab in tabs]
     for i, tab in enumerate(tabs):
         galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
-                                    shortcuts=shortcuts))
+                                    shortcuts=shortcuts, view=view_state.view(keys[i])))
     current = {"index": initial}
 
     def show_tab(index: int) -> None:
@@ -448,12 +454,13 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
     finally:
         for g in galleries:
             g.dispose()
+        view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, galleries)})
     _send_to_bin([item for g in galleries for item in g.trashed_items()])      # only a window that closed normally
     return [g.moved_count() for g in galleries]
 
 
 def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool,
-                   shortcuts: ShortcutSettings | None = None) -> _Gallery:
+                   shortcuts: ShortcutSettings | None = None, view: TabView | None = None) -> _Gallery:
     """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
     gridded. `search_entry` is the window's shared search input, which only the open tab listens to."""
     import tkinter as tk
@@ -464,6 +471,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     items, suggest, assign, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
     if shortcuts is None:
         shortcuts = ShortcutSettings()                  # the defaults, nothing saved
+    view = view or TabView()                            # how the tab was left last time
     handle = _Gallery()
     model = GalleryModel(items)
 
@@ -649,6 +657,12 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     size_slider = ctk.CTkSlider(bar, from_=SIZE_MIN, to=SIZE_MAX, width=160, command=lambda _v: on_size())
     size_slider.set(SIZE_DEFAULT)
     size_slider.grid(row=0, column=5)
+    # the sort and size it was left with (kept in `now` too: the widgets are gone when the window is)
+    model.sort_key, model.descending = view.sort, view.descending
+    sort_menu.set(next((label for label, key in sort_labels.items() if key == view.sort), t("dialog.manual.sort_updated")))
+    order_btn.configure(text=t("dialog.manual.descending") if view.descending else t("dialog.manual.ascending"))
+    size_slider.set(min(max(view.size, SIZE_MIN), SIZE_MAX) if view.size else SIZE_DEFAULT)
+    now = TabView(view.sort, view.descending, view.size)
 
     canvas = tk.Canvas(main, bg=pal["bg"], highlightthickness=0, borderwidth=0,
                        width=px(900), height=px(540), yscrollincrement=px(40), takefocus=1)
@@ -1503,14 +1517,17 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     def on_sort() -> None:
         model.sort_key = sort_labels.get(sort_menu.get(), SORT_UPDATED)
+        now.sort = model.sort_key
         relayout(keep_scroll=False)
 
     def on_order() -> None:
         model.descending = not model.descending
+        now.descending = model.descending
         order_btn.configure(text=t("dialog.manual.descending") if model.descending else t("dialog.manual.ascending"))
         relayout(keep_scroll=False)
 
     def on_size() -> None:
+        now.size = float(size_slider.get())
         schedule_layout(60, keep_scroll=True)
 
     def on_search_key(_event=None) -> None:
@@ -1603,5 +1620,6 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     handle.close_popups = close_popups
     handle.dispose = dispose
     handle.moved_count = lambda: moved["count"]
+    handle.view = lambda: TabView(now.sort, now.descending, now.size)
     handle.trashed_items = lambda: [i for i in model.items if i.trashed]
     return handle

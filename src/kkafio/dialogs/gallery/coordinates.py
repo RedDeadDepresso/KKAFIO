@@ -94,4 +94,4 @@ def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
         if use_cache and moves:
             update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
 
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish)
+    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish, "outfit")

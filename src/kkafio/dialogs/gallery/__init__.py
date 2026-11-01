@@ -11,6 +11,7 @@ gallery — The Run Gallery window and what each of its tabs does.
     common.py       what the three tabs share
     shortcuts.py    the keyboard shortcuts (rename, change folder, delete) and their config file
     shortcuts_dialog.py  the window that sets them (Shortcuts button)
+    viewstate.py    the last open tab and each tab's sort and cover size, kept between runs
 
 Imports run one way: tasks/run_gallery.py -> the tabs -> model.py, and the tabs -> tasks/group_*.
 window.py only imports model.py; the Group tasks never import this package. The names below are
