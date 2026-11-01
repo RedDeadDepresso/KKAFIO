@@ -334,13 +334,17 @@ def manual_dialog(title: str, items: Sequence[CharaItem],
     return gallery_dialog(title, [tab])[0]
 
 
-def gallery_dialog(title: str, tabs: Sequence[GalleryTab], initial: int = 0) -> list[int]:
+def gallery_dialog(title: str, tabs: Sequence[GalleryTab], initial: int = 0,
+                   mods=None) -> list[int]:
     """Show one window holding a gallery per tab; returns, per tab, how many cards were moved
-    before it was closed. With a single tab there is no tab bar (that is `manual_dialog`)."""
+    before it was closed. With a single tab there is no tab bar (that is `manual_dialog`).
+
+    `mods` (a mods_panel.CardMods) adds the collapsible mod dependencies sidebar on the right,
+    listing the mods of the card under the cursor; None leaves it out."""
     if not tabs:
         raise ValueError("gallery_dialog needs at least one tab")
     try:
-        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1))
+        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1), mods)
     except ImportError as e:                       # tkinter / customtkinter missing
         raise TaskFailedError(f"The character gallery needs tkinter and customtkinter: {e}") from e
     finally:
@@ -382,9 +386,10 @@ class _Gallery:
         self.on_hide = lambda: None                # its tab was closed
         self.dispose = lambda: None                # the window closes: stop timers and workers
         self.close_popups = lambda: None           # the window closes: drop dialogs it opened
+        self.cursor = lambda: None                 # the card under the keyboard cursor (None: no card)
 
 
-def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
+def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> list[int]:
     import customtkinter as ctk
 
     root = new_window(title, topmost=False)       # sorting a library takes a while
@@ -417,10 +422,30 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
 
     galleries: list[_Gallery] = []
     texts = [tab.text if tab.text is not None else chara_dialog_text() for tab in tabs]
+    current = {"index": initial}
+    sidebar = None                                              # the mod dependencies sidebar, if asked for
+
+    def on_cursor(index: int, item) -> None:
+        """The keyboard cursor of tab `index` moved: the sidebar follows the open tab's."""
+        if sidebar is not None and index == current["index"]:
+            sidebar.show(item.path if item is not None else None, tabs[index].guids)
+
     for i, tab in enumerate(tabs):
         galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
-                                    shortcuts=shortcuts, view=view_state.view(keys[i])))
-    current = {"index": initial}
+                                    shortcuts=shortcuts, view=view_state.view(keys[i]),
+                                    on_cursor=lambda item, i=i: on_cursor(i, item)))
+
+    if mods is not None:
+        from kkafio.dialogs.gallery.mods_sidebar import ModsSidebar      # (it imports this module)
+        import customtkinter as _ctk
+        _dark = _ctk.get_appearance_mode() == "Dark"
+        try:
+            _scale = float(root._get_window_scaling())
+        except Exception:
+            _scale = 1.0
+        sidebar = ModsSidebar(root, root, mods, _DARK if _dark else _LIGHT, lambda k: (_LIGHT[k], _DARK[k]),
+                              _scale, open_=view_state.mods_open)
+        sidebar.frame.grid(row=1, column=1, sticky="ns", padx=(0, 12), pady=(0, 10))
 
     def show_tab(index: int) -> None:
         old = galleries[current["index"]]
@@ -430,6 +455,8 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
         g = galleries[index]
         g.frame.grid(row=0, column=0, sticky="nsew")
         search_entry.configure(placeholder_text=texts[index].search_placeholder)
+        if sidebar is not None:
+            sidebar.show(g.cursor().path if g.cursor() is not None else None, tabs[index].guids)
         search_entry.delete(0, "end")
         search_text = g.search_text()
         if search_text:
@@ -454,15 +481,20 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
     finally:
         for g in galleries:
             g.dispose()
-        view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, galleries)})
+        if sidebar is not None:
+            sidebar.dispose()
+        view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, galleries)},
+                            mods_open=sidebar.is_open if sidebar is not None else None)
     _send_to_bin([item for g in galleries for item in g.trashed_items()])      # only a window that closed normally
     return [g.moved_count() for g in galleries]
 
 
 def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool,
-                   shortcuts: ShortcutSettings | None = None, view: TabView | None = None) -> _Gallery:
+                   shortcuts: ShortcutSettings | None = None, view: TabView | None = None,
+                   on_cursor: Callable[[CharaItem | None], None] | None = None) -> _Gallery:
     """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
-    gridded. `search_entry` is the window's shared search input, which only the open tab listens to."""
+    gridded. `search_entry` is the window's shared search input, which only the open tab listens to.
+    `on_cursor(item)` is called whenever the keyboard cursor moves to another card."""
     import tkinter as tk
     from tkinter import font as tkfont
     import customtkinter as ctk
@@ -819,6 +851,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         old_picked, old_cursor = sel["picked"], sel["item"]
         sel["item"] = cursor
         sel["picked"] = {id(i): i for i in picked}
+        if on_cursor is not None and cursor is not old_cursor:
+            on_cursor(cursor)
         changed = set(old_picked.keys() ^ sel["picked"].keys())
         changed |= {id(c) for c in (old_cursor, cursor) if c is not None}
         for idx in list(drawn):
@@ -1613,6 +1647,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         schedule_layout(0, keep_scroll=False)      # a tab that isn't open lays out when it is first shown
 
     handle.canvas = canvas
+    handle.cursor = lambda: sel["item"]
     handle.search_text = lambda: model.search
     handle.on_search_key = on_search_key
     handle.on_show = on_show

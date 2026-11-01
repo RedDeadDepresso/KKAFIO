@@ -7,6 +7,7 @@ All notable changes to KKAFIO are documented in this file.
 ### Added
 
 - **Run Gallery** — a new task that opens one gallery window for sorting scenes, characters and coordinates into folders by hand, as tabs (Scene, Character, Outfit) on the left of the search input. Each tab keeps its own search, sort and selection, and a confirmed card is moved at once. **Chara / Scene / Coordinate Directory** default to the game's folders (the Scene tab is left out when there is no Studio), and **Use Cache** shares the Group tasks' caches.
+- **Run Gallery** — a collapsible **Mod dependencies** sidebar on the right of the gallery window lists the mods (GUIDs) used by the card under the cursor, for scenes, characters and outfits alike. Missing mods come first with a red cross and a search icon that looks the GUID up on Google in the browser; installed ones get a green check and an icon that shows the zipmod in the file manager. The header counts installed and missing mods. The new **Custom Mods Directory** option (CLI: `--mods-dir`) overrides the game's mods folder it checks against; Sideloader Modpack mods are resolved through the bundled index. The sidebar's open/closed state is remembered between runs, and a collapsed sidebar reads no cards.
 
 ### Changed
 

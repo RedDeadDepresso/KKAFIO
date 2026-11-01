@@ -40,6 +40,7 @@ class GalleryViewState:
     def __init__(self, store: SessionStore | None = None):
         self.store = store
         self.last_tab = ""
+        self.mods_open = True                       # the mod dependencies sidebar, expanded or not
         self.tabs: dict[str, TabView] = {}
         if store is not None:
             self._load()
@@ -63,9 +64,12 @@ class GalleryViewState:
                 return i
         return fallback
 
-    def remember(self, last_tab: str, views: dict[str, TabView]) -> bool:
-        """Keep `last_tab` and the views (a tab that isn't in `views` keeps what it had) and save."""
+    def remember(self, last_tab: str, views: dict[str, TabView], mods_open: bool | None = None) -> bool:
+        """Keep `last_tab` and the views (a tab that isn't in `views` keeps what it had) and save.
+        `mods_open` is whether the mod dependencies sidebar was expanded (None: leave as it was)."""
         self.last_tab = last_tab
+        if mods_open is not None:
+            self.mods_open = mods_open
         self.tabs.update(views)
         return self.save()
 
@@ -75,6 +79,8 @@ class GalleryViewState:
         data = self.store.load()
         last = data.get("last_tab")
         self.last_tab = last if isinstance(last, str) else ""
+        mods_open = data.get("mods_open")
+        self.mods_open = mods_open if isinstance(mods_open, bool) else True
         tabs = data.get("tabs")
         if not isinstance(tabs, dict):
             return
@@ -91,5 +97,5 @@ class GalleryViewState:
         if self.store is None:
             return True
         return self.store.save({
-            "version": 1, "last_tab": self.last_tab,
+            "version": 1, "last_tab": self.last_tab, "mods_open": self.mods_open,
             "tabs": {k: {"sort": v.sort, "descending": v.descending, "size": v.size} for k, v in self.tabs.items()}})

@@ -12,6 +12,10 @@ The folders default to the game's (Studio scene folder, female + male chara fold
 folder); the Scene folder is left out of the window when the game has no Studio and no folder was
 given. The caches the Group tasks use are used here too (the PNG hash cache for scenes, the
 character key cache, the coordinate caches) and brought along with every card that is moved.
+
+A collapsible sidebar on the right of the window lists the mods (GUIDs) the card under the cursor
+uses, marking each installed or missing in the mods folder (the game's, or Custom Mods Directory):
+a missing one has a search icon that looks its GUID up on Google (see dialogs/gallery/mods_panel.py).
 """
 
 from __future__ import annotations
@@ -19,11 +23,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from kkafio.cards.chara import hint_language
+from kkafio.core.config import GameType
 from kkafio.core.errors import InputError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.gallery.characters import chara_gallery_tab
 from kkafio.dialogs.gallery.coordinates import coordinate_gallery_tab
+from kkafio.dialogs.gallery.mods_panel import CardMods, ModsLookup, mods_dir_for
 from kkafio.dialogs.gallery.scenes import scene_gallery_tab
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 
@@ -37,6 +43,7 @@ class RunGallery(BaseTask):
         self.chara_dir_str : str  = cfg.get("CharaDir", "")
         self.scene_dir_str : str  = cfg.get("SceneDir", "")
         self.coord_dir_str : str  = cfg.get("CoordDir", "")
+        self.mods_dir_str  : str  = cfg.get("ModsDir", "")
         self.use_cache     : bool = cfg.get("UseCache", True)
 
     # ------------------------------------------------------------------
@@ -70,6 +77,26 @@ class RunGallery(BaseTask):
             raise InputError(f"Coordinate directory does not exist: {folder}", tag=TAG)
         return folder
 
+    def _mods_dir(self) -> Path | None:
+        """The mods folder the sidebar checks mods against: the one given, else the game's. A
+        given folder that doesn't exist is an error; with none at all the sidebar still lists a
+        card's mods, it just can't say which are installed."""
+        folder = mods_dir_for(self.mods_dir_str, self.config.game_path.get("mods"))
+        if folder is None:
+            logger.warning(TAG, "No mods folder: no Mods Directory is set and none could be resolved from "
+                                "the game path — the mod dependencies sidebar can't tell which mods are installed.")
+        elif not folder.exists():
+            if self.mods_dir_str.strip():
+                raise InputError(f"Mods directory does not exist: {folder}", tag=TAG)
+            logger.warning(TAG, f"Mods folder not found: {folder} — the mod dependencies sidebar can't tell "
+                                "which mods are installed.")
+            return None
+        return folder
+
+    def _card_mods(self) -> CardMods:
+        game_type = getattr(self.config, "config_data", {}).get("Core", {}).get("GameType", GameType.KOIKATSU.value)
+        return CardMods(ModsLookup(self._mods_dir(), game_type, self.use_cache))
+
     # ------------------------------------------------------------------
     # Run
     # ------------------------------------------------------------------
@@ -78,10 +105,12 @@ class RunGallery(BaseTask):
         chara_dirs = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, TAG)
         scene_dir = self._scene_dir()
         coord_dir = self._coord_dir()
+        card_mods = self._card_mods()
 
         self.log_start(TAG, f"characters: {', '.join(str(d) for d in chara_dirs)}")
         logger.info(TAG, f"Scenes     : {scene_dir if scene_dir else '(none)'}")
         logger.info(TAG, f"Coordinates: {coord_dir}")
+        logger.info(TAG, f"Mods       : {card_mods.lookup.mods_dir if card_mods.lookup.available else '(none)'}")
         logger.info(TAG, f"Use cache  : {self.use_cache}")
         logger.line()
 
@@ -116,6 +145,6 @@ class RunGallery(BaseTask):
         # saving) when the window is gone, also if it failed.
         initial = next(i for i, tab in enumerate(tabs) if tab.items)
         logger.info(TAG, "Opening the gallery: " + ", ".join(f"{tab.label} {len(tab.items)}" for tab in tabs))
-        moved = gallery_dialog(t("dialog.gallery.title"), tabs, initial)
+        moved = gallery_dialog(t("dialog.gallery.title"), tabs, initial, card_mods)
         logger.line()
         logger.success(TAG, "Done — moved: " + ", ".join(f"{tab.label} {n}" for tab, n in zip(tabs, moved)))

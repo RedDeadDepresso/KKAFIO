@@ -533,6 +533,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom scene directory (default: the game's Studio scene folder)"),
             Value("--coord-dir", key="CoordDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom coordinate directory (default: the game's coordinate folder)"),
+            Value("--mods-dir", key="ModsDir", ignore_blank=True, metavar="DIR", default=None,
+                  help="Custom mods directory, used by the mod dependencies sidebar to tell which of a "
+                       "card's mods are installed (default: the game's mods folder)"),
             Toggle("use-cache", key="UseCache",
                    help="Reuse the cached scene hashes, character keys and coordinate digests for "
                         "unchanged cards (default: on)",

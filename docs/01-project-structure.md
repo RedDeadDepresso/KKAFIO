@@ -127,6 +127,8 @@ KKAFIO-dev/
 │   │   │   ├── __init__.py          # Re-exports the public names (gallery_dialog, GalleryTab, CharaItem, ...)
 │   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, GalleryModel, DialogText, GalleryTab, file-rename helpers
 │   │   │   ├── window.py            # The window: draws the tabs, knows nothing about characters / coordinates / scenes; gallery_dialog() hosts them
+│   │   │   ├── mods_panel.py        # The mod dependencies sidebar's data, no GUI: which mods a card uses (cached per file) and which are installed (ModsLookup, CardMods)
+│   │   │   ├── mods_sidebar.py      # The collapsible mod dependencies sidebar itself (one canvas, card read on a worker thread)
 │   │   │   ├── common.py            # What the three tabs share: folder checks, building items, ranking suggestions, the wording
 │   │   │   ├── characters.py        # Character tab: scan, suggest, move into series folders
 │   │   │   ├── coordinates.py       # Outfit tab: scan, suggest, move into character folders

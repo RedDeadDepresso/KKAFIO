@@ -243,6 +243,8 @@ class GalleryTab:
                  tidy up after the moves (it saves its caches here). Optional.
     key          what the window remembers the tab's sort and size under ("scene", "chara",
                  "outfit"): stable, unlike the translated label
+    guids        card file -> the GUIDs of the mods it uses (what the mod dependencies sidebar
+                 lists); None: the tab has no such sidebar content
     """
 
     label: str
@@ -253,3 +255,4 @@ class GalleryTab:
     cover_ratio: float = COVER_RATIO
     finish: Callable[[], None] | None = None
     key: str = ""
+    guids: Callable[[Path], Sequence[str]] | None = None

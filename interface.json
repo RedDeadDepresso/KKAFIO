@@ -1541,6 +1541,7 @@
         "CharaDir",
         "SceneDir",
         "CoordDir",
+        "ModsDir",
         "UseCache"
       ]
     },

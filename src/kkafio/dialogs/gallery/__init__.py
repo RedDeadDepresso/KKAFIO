@@ -12,6 +12,8 @@ gallery — The Run Gallery window and what each of its tabs does.
     shortcuts.py    the keyboard shortcuts (rename, change folder, delete) and their config file
     shortcuts_dialog.py  the window that sets them (Shortcuts button)
     viewstate.py    the last open tab and each tab's sort and cover size, kept between runs
+    mods_panel.py   the mod dependencies sidebar's data: a card's mods and which are installed
+    mods_sidebar.py the collapsible sidebar on the right that lists them (imported by window.py on use)
 
 Imports run one way: tasks/run_gallery.py -> the tabs -> model.py, and the tabs -> tasks/group_*.
 window.py only imports model.py; the Group tasks never import this package. The names below are

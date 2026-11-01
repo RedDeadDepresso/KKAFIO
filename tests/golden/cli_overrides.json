@@ -5077,6 +5077,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -5106,6 +5107,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -5135,6 +5137,37 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: run-gallery --mods-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -5164,6 +5197,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -5190,6 +5224,8 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
    "--use-cache"
   ],
   "result": {
@@ -5198,6 +5234,7 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "coord_dir_str": "S_coord_dir",
+      "mods_dir_str": "S_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
@@ -5224,6 +5261,8 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
    "--no-use-cache"
   ],
   "result": {
@@ -5232,6 +5271,7 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "coord_dir_str": "S_coord_dir",
+      "mods_dir_str": "S_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
@@ -16514,6 +16554,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16543,6 +16584,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16572,6 +16614,7 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16601,6 +16644,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16630,6 +16674,67 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "S_coord_dir",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --mods-dir=<blank>": {
+  "argv": [
+   "run-gallery",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --mods-dir=S_mods_dir": {
+  "argv": [
+   "run-gallery",
+   "--mods-dir",
+   "S_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "mods_dir_str": "S_mods_dir",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16658,6 +16763,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": false
      },
@@ -16687,6 +16793,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16716,6 +16823,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
@@ -16744,6 +16852,7 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
+      "mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16770,6 +16879,8 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
    "--use-cache"
   ],
   "result": {
@@ -16778,6 +16889,7 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "coord_dir_str": "S_coord_dir",
+      "mods_dir_str": "S_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
@@ -16804,6 +16916,8 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--mods-dir",
+   "S_mods_dir",
    "--no-use-cache"
   ],
   "result": {
@@ -16812,6 +16926,7 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "coord_dir_str": "S_coord_dir",
+      "mods_dir_str": "S_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },

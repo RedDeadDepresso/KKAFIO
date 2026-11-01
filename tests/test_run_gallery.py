@@ -28,15 +28,16 @@ def test_options_to_config():
         "CharaDir": {"type": "folder", "path": "X"},
         "SceneDir": {"type": "folder", "path": "Y"},
         "CoordDir": {"type": "folder", "path": "Z"},
+        "ModsDir": {"type": "folder", "path": "M"},
         "UseCache": {"type": "switch", "caseName": "No", "value": False}})
-    assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"]) == ("X", "Y", "Z")
+    assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["ModsDir"]) == ("X", "Y", "Z", "M")
     assert _build_task_config("RunGallery", True, {})["UseCache"] is True
 
 
 def test_interface_json_declares_the_task():
     interface = json.loads((ROOT / "interface.json").read_text(encoding="utf-8"))
     task = next(t for t in interface["task"] if t["name"] == "RunGallery")
-    assert task["option"] == ["CharaDir", "SceneDir", "CoordDir", "UseCache"]
+    assert task["option"] == ["CharaDir", "SceneDir", "CoordDir", "ModsDir", "UseCache"]
 
 
 def test_scene_dir_custom_default_and_missing(tmp_path):
@@ -56,6 +57,27 @@ def test_coord_dir_must_exist(tmp_path):
         _task(tmp_path, CoordDir=str(tmp_path / "nope"))._coord_dir()
 
 
+def test_mods_dir_custom_default_and_missing(tmp_path):
+    mods = tmp_path / "mods"
+    mods.mkdir()
+    assert _task(tmp_path, ModsDir=str(mods))._mods_dir() == mods
+    assert _task(tmp_path, game={"mods": mods})._mods_dir() == mods
+    assert _task(tmp_path, game={"mods": mods}, ModsDir=str(tmp_path))._mods_dir() == tmp_path    # custom wins
+    assert _task(tmp_path)._mods_dir() is None                       # nothing known: the sidebar still opens
+    assert _task(tmp_path, game={"mods": tmp_path / "gone"})._mods_dir() is None
+    with pytest.raises(InputError):
+        _task(tmp_path, ModsDir=str(tmp_path / "nope"))._mods_dir()
+
+
+def test_the_dialog_gets_the_mods_lookup(tmp_path):
+    mods = tmp_path / "mods"
+    mods.mkdir()
+    shown, _ = _run(_task(tmp_path, game={"scene": tmp_path}, ModsDir=str(mods), UseCache=False), tmp_path)
+    assert shown["mods"].lookup.mods_dir == mods.resolve() and shown["mods"].lookup.use_cache is False
+    shown, _ = _run(_task(tmp_path), tmp_path)
+    assert not shown["mods"].lookup.available
+
+
 def _fake_tab(label, n, log):
     items = [CharaItem(Path(f"/x/{label}{i}.png"), Path("/x"), f"{label}{i}", None, 1, 0.0) for i in range(n)]
     return GalleryTab(label, items, lambda t: [], lambda i, t: None, None, 1.0, lambda: log.append(f"finish {label}"))
@@ -66,8 +88,8 @@ def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
     log = []
     shown = {}
 
-    def fake_dialog(title, tabs, initial=0):
-        shown.update(title=title, labels=[t.label for t in tabs], initial=initial)
+    def fake_dialog(title, tabs, initial=0, mods=None):
+        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods)
         return [0] * len(tabs)
 
     def chara(*a, **k):
