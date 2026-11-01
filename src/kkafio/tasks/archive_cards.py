@@ -158,11 +158,16 @@ class ArchiveCards(BaseTask):
             guid_map: dict[str, Path] = {}
             for guid in all_guids:
                 if guid in modpack_index:
-                    if self.include_modpack:
-                        p = mods_dir / modpack_index[guid]
-                        if p.exists():
-                            guid_map[guid] = p
-                    continue  # resolved via index either way — never fall through to local scan
+                    if not self.include_modpack:
+                        continue  # covered by the Sideloader Modpack, deliberately not bundled
+                    p = mods_dir / modpack_index[guid]
+                    if p.exists():
+                        guid_map[guid] = p
+                        continue
+                    # The index says where the modpack copy *should* be, but it isn't
+                    # there (renamed/moved modpack folder, or the user has the mod
+                    # elsewhere under mods/). Fall through to the local scan, which was
+                    # built with include_modpack=True and so covers the whole folder.
                 p = local_map.get(guid)
                 if p is not None and p.exists():
                     guid_map[guid] = p

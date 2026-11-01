@@ -117,7 +117,10 @@ class ModsLookup:
         rel = (self._modpack or {}).get(guid)
         if rel is not None:                                # a Sideloader Modpack mod: check the one file
             p = self.mods_dir / rel
-            return p if p.exists() else None
+            if p.exists():
+                return p
+            # Not where the index says it is — it may still be installed elsewhere in the
+            # mods folder (outside the modpack folders), which the local scan covers.
         p = (self._local or {}).get(guid)
         return p if p is not None and p.exists() else None
 
