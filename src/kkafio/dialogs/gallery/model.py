@@ -29,6 +29,7 @@ SORT_SIZE = "size"
 VIEW_ALL = "all"
 VIEW_UNTAGGED = "untagged"
 VIEW_SERIES = "series"
+VIEW_TRASH = "trash"          # the cards marked for the Recycle Bin (sent there when the window closes)
 
 
 @dataclass
@@ -43,6 +44,8 @@ class CharaItem:
     mtime: float               # updated
     ctime: float = 0.0         # created (0: unknown)
     alias: str = ""            # extra text the search also looks at (e.g. the character's own name)
+    trashed: bool = False      # in the gallery's trash: hidden everywhere else, the file is only
+                               # sent to the Recycle Bin when the window closes
 
 
 class GalleryModel:
@@ -67,6 +70,8 @@ class GalleryModel:
         want = self.series_filter.casefold()
         out = []
         for item in self.items:
+            if item.trashed != (self.mode == VIEW_TRASH):      # the trash only shows in its own view
+                continue
             if self.mode == VIEW_UNTAGGED and item.series is not None:
                 continue
             if self.mode == VIEW_SERIES and (item.series or "").casefold() != want:
@@ -85,8 +90,12 @@ class GalleryModel:
     # -- the sidebar --------------------------------------------------------
 
     def counts(self) -> tuple[int, int]:
-        """(all cards, untagged cards)."""
-        return len(self.items), sum(1 for i in self.items if i.series is None)
+        """(all cards, untagged cards); the cards in the trash are in neither."""
+        live = [i for i in self.items if not i.trashed]
+        return len(live), sum(1 for i in live if i.series is None)
+
+    def trash_count(self) -> int:
+        return sum(1 for i in self.items if i.trashed)
 
     def series_list(self, text: str = "") -> list[tuple[str, int]]:
         """(series, number of cards) for every series that has a card, by name; `text` filters
@@ -94,7 +103,7 @@ class GalleryModel:
         names: dict[str, str] = {}
         counts: dict[str, int] = {}
         for item in self.items:
-            if item.series:
+            if item.series and not item.trashed:
                 k = item.series.casefold()
                 names.setdefault(k, item.series)
                 counts[k] = counts.get(k, 0) + 1
@@ -103,7 +112,7 @@ class GalleryModel:
 
     def series_count(self, series: str) -> int:
         k = series.casefold()
-        return sum(1 for i in self.items if (i.series or "").casefold() == k)
+        return sum(1 for i in self.items if not i.trashed and (i.series or "").casefold() == k)
 
     # -- changes ------------------------------------------------------------
 
@@ -111,6 +120,16 @@ class GalleryModel:
         """`item` was moved to `new_path`, into the folder `series`."""
         item.path = Path(new_path)
         item.series = series
+
+    def trash(self, items: Iterable[CharaItem]) -> None:
+        """Move the cards into the trash. Nothing happens to the files here."""
+        for item in items:
+            item.trashed = True
+
+    def restore(self, items: Iterable[CharaItem]) -> None:
+        """Take the cards out of the trash; each goes back to the folder it is still in."""
+        for item in items:
+            item.trashed = False
 
     def renamed(self, item: CharaItem, new_path: Path) -> None:
         """`item`'s file was renamed to `new_path` (same folder); its shown name follows."""

@@ -20,6 +20,10 @@ The gallery can hold thousands of cards, and CustomTkinter widgets are heavy (ea
 canvas), so the grid is drawn on one plain Tk canvas and only the tiles in view exist: scrolling
 just draws the tiles that come into view, and covers are decoded on worker threads.
 
+Right-clicking a card offers "Move to trash" (the selected cards go along). Trashed cards leave every
+other view and wait in a Trash entry of the sidebar, under the unknown-series one — every tab has its
+own; right-click there to restore. The files are only sent to the Recycle Bin when the window closes.
+
 `GalleryModel` (what is shown: view, search, sort) has no GUI dependency; the window is built in
 `_ctk_dialog()` (see common.py for the shared window behaviour).
 
@@ -51,7 +55,7 @@ from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
 from kkafio.dialogs.gallery.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
-    VIEW_ALL, VIEW_SERIES, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, GalleryModel, GalleryTab,
+    VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, GalleryModel, GalleryTab,
     chara_dialog_text, clean_file_stem, rename_card,
 )
 
@@ -344,6 +348,21 @@ def gallery_dialog(title: str, tabs: Sequence[GalleryTab], initial: int = 0) -> 
                     logger.warning("GALLERY", f"Could not finish the '{tab.label}' tab: {e}")
 
 
+def _send_to_bin(items: Sequence[CharaItem]) -> None:
+    """Send the files of the cards that were left in the galleries' trash to the Recycle Bin."""
+    if not items:
+        return
+    from send2trash import send2trash
+    done = 0
+    for item in items:
+        try:
+            send2trash(str(item.path))
+            done += 1
+        except Exception as e:                     # one failing must not keep the others in the library
+            logger.warning("GALLERY", f"Could not send {item.path.name} to the bin: {e}")
+    logger.info("GALLERY", f"Sent {done} of {len(items)} trashed card(s) to the bin")
+
+
 class _Gallery:
     """What `_build_gallery` hands back to the window that hosts it."""
 
@@ -351,6 +370,7 @@ class _Gallery:
         self.frame = None                          # the gallery's widgets (a CTkFrame)
         self.canvas = None                         # the tile canvas (takes the keyboard focus)
         self.moved_count = lambda: 0               # cards moved so far
+        self.trashed_items = lambda: []            # the cards in its trash (for the bin when the window closes)
         self.search_text = lambda: ""              # the search text this gallery is showing
         self.on_search_key = lambda: None          # the shared search input changed
         self.on_show = lambda: None                # its tab was opened
@@ -423,6 +443,7 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
     finally:
         for g in galleries:
             g.dispose()
+    _send_to_bin([item for g in galleries for item in g.trashed_items()])      # only a window that closed normally
     return [g.moved_count() for g in galleries]
 
 
@@ -559,7 +580,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     side = ctk.CTkFrame(body, fg_color=pair("side"), corner_radius=8, width=230)
     side.grid(row=0, column=0, sticky="ns", padx=(0, 10))
     side.grid_propagate(False)
-    side.grid_rowconfigure(4, weight=1)
+    side.grid_rowconfigure(5, weight=1)
     side.grid_columnconfigure(0, weight=1)
 
     def side_button(row: int, command) -> ctk.CTkButton:
@@ -570,12 +591,13 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     all_btn = side_button(0, lambda: choose_view(VIEW_ALL))
     untagged_btn = side_button(1, lambda: choose_view(VIEW_UNTAGGED))
+    trash_btn = side_button(2, lambda: choose_view(VIEW_TRASH))       # under the unknown-series entry
     ctk.CTkLabel(side, text=txt.series_header, anchor="w", text_color=pair("muted"),
-                 font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=0, padx=14, pady=(14, 2), sticky="ew")
+                 font=ctk.CTkFont(size=11, weight="bold")).grid(row=3, column=0, padx=14, pady=(14, 2), sticky="ew")
     series_filter_entry = ctk.CTkEntry(side, placeholder_text=txt.filter_series, height=30)
-    series_filter_entry.grid(row=3, column=0, padx=8, pady=(0, 6), sticky="ew")
+    series_filter_entry.grid(row=4, column=0, padx=8, pady=(0, 6), sticky="ew")
     list_frame = tk.Frame(side, bg=pal["side"])
-    list_frame.grid(row=4, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
+    list_frame.grid(row=5, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
     list_frame.grid_columnconfigure(0, weight=1)
     list_frame.grid_rowconfigure(0, weight=1)
     # the list looks like the buttons above it: their font, height, corner radius and gap
@@ -868,6 +890,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         untagged_btn.configure(text=f"{txt.untagged}   {untagged:,}")
         all_btn.configure(fg_color=pair("sel") if model.mode == VIEW_ALL else "transparent")
         untagged_btn.configure(fg_color=pair("sel") if model.mode == VIEW_UNTAGGED else "transparent")
+        trash_btn.configure(text=f"{t('dialog.gallery.trash')}   {model.trash_count():,}",
+                            fg_color=pair("sel") if model.mode == VIEW_TRASH else "transparent")
         entries = model.series_list(series_filter_entry.get())
         series_names[:] = [name for name, _n in entries]
         series_box.delete(0, "end")
@@ -1138,7 +1162,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         """Refresh sidebar and grid after cards were moved. A card that left this view (e.g.
         Unknown series) takes the selection with it, so the next card (at `first_idx`) is selected."""
         refresh_sidebar()
-        if model.mode == VIEW_SERIES and model.series_count(model.series_filter) == 0:
+        if ((model.mode == VIEW_SERIES and model.series_count(model.series_filter) == 0)
+                or (model.mode == VIEW_TRASH and model.trash_count() == 0)):
             model.set_view(VIEW_ALL)
             refresh_sidebar()
         relayout(keep_scroll=True)
@@ -1171,14 +1196,52 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             apply_selection(item, picked.values())
             return
         select_only(item)
+        if model.mode == VIEW_TRASH:
+            return
         if in_series:
             start_edit(idx)
         elif in_name:
             start_edit(idx, "name")
 
+    def trash_cards(targets: list) -> None:
+        first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
+        model.trash(targets)
+        finish_assignment(first_idx)
+        status.configure(text=t("dialog.gallery.trashed", count=len(targets)))
+
+    def restore_cards(targets: list) -> None:
+        first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
+        model.restore(targets)
+        finish_assignment(first_idx)
+        status.configure(text=t("dialog.gallery.restored", count=len(targets)))
+
+    def on_context_menu(event) -> None:
+        """Right click on a card: Move to trash (Restore in the trash view), for the selected cards
+        when the card is one of them, else for that card alone."""
+        hit = locate(event.x, event.y)
+        if edit["idx"] is not None:
+            cancel_edit()
+        canvas.focus_set()
+        if hit is None:
+            return
+        item = lay["items"][hit[0]]
+        if id(item) not in sel["picked"]:
+            select_only(item)
+        targets = picked_in_order() or [item]
+        in_trash = model.mode == VIEW_TRASH
+        label = t("dialog.gallery.menu_restore") if in_trash else t("dialog.gallery.menu_trash")
+        if len(targets) > 1:
+            label += f" ({len(targets)})"
+        menu = tk.Menu(canvas, tearoff=0)
+        menu.add_command(label=label, command=lambda: (restore_cards if in_trash else trash_cards)(targets))
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
     def on_enter_key(_event=None) -> str:
         items = lay["items"]
-        if not items:
+        if not items or model.mode == VIEW_TRASH:           # a trashed card isn't sorted or renamed
             return "break"
         targets = picked_in_order()
         if len(targets) > 1:
@@ -1346,7 +1409,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     def on_motion(event) -> None:
         hit = locate(event.x, event.y)
-        canvas.configure(cursor="hand2" if hit is not None and (hit[1] or hit[2]) else "")
+        canvas.configure(cursor="hand2" if hit is not None and (hit[1] or hit[2]) and model.mode != VIEW_TRASH else "")
 
     def on_wheel(event) -> None:
         try:
@@ -1447,6 +1510,9 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
     canvas.configure(yscrollcommand=on_yscroll)
     canvas.bind("<Button-1>", on_click)
+    canvas.bind("<Button-3>", on_context_menu)                   # right click
+    if root.tk.call("tk", "windowingsystem") == "aqua":
+        canvas.bind("<Button-2>", on_context_menu)               # macOS: the right button is Button-2
     canvas.bind("<Motion>", on_motion)
     canvas.bind("<Configure>", on_canvas_configure)
     canvas.bind("<Prior>", scroll_key(pages=-1))
@@ -1482,4 +1548,5 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     handle.close_popups = close_popups
     handle.dispose = dispose
     handle.moved_count = lambda: moved["count"]
+    handle.trashed_items = lambda: [i for i in model.items if i.trashed]
     return handle
