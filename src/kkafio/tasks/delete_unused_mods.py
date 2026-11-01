@@ -15,7 +15,8 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.tasks.base_task import BaseTask
-from kkafio.cards.mods.zipmods import build_mods_cache, in_modpack_folder
+from kkafio.cards.mods.shared_mods import game_card_dirs
+from kkafio.cards.mods.zipmods import is_modpack_protected, local_mods_map
 from kkafio.cards.mods.png_guids import (
     collect_chara_guids, collect_coord_guids, collect_scene_guids,
 )
@@ -87,22 +88,12 @@ class DeleteUnusedMods(BaseTask):
         self.coord_dir_str     : str  = cfg.get("CoordDir", "")
 
     def _card_dirs(self) -> tuple[list[Path], list[Path], list[Path]]:
-        game_path = self.config.game_path
-
-        if self.chara_dir_str:
-            chara_dirs = [Path(self.chara_dir_str)]
-        else:
-            chara_dirs = [d for d in (game_path.get("charaFemale"), game_path.get("charaMale")) if d]
-        if self.scene_dir_str:
-            scene_dirs = [Path(self.scene_dir_str)]
-        else:
-            scene_dirs = [game_path["scene"]] if "scene" in game_path else []
-        if self.coord_dir_str:
-            coord_dirs = [Path(self.coord_dir_str)]
-        else:
-            coord_dirs = [game_path["coordinate"]] if "coordinate" in game_path else []
-
-        return chara_dirs, scene_dirs, coord_dirs
+        return game_card_dirs(
+            self.config.game_path,
+            [self.chara_dir_str] if self.chara_dir_str else None,
+            self.scene_dir_str or None,
+            self.coord_dir_str or None,
+        )
 
     def run(self) -> None:
         game_path = self.config.game_path
@@ -135,8 +126,7 @@ class DeleteUnusedMods(BaseTask):
         logger.line()
 
         # Sideloader Modpack folders are excluded from the map entirely.
-        guid_str_map = build_mods_cache(mods_dir, include_modpack=False, use_cache=self.use_cache)
-        guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
+        guid_map = local_mods_map(mods_dir, include_modpack=False, use_cache=self.use_cache)
         logger.info(TAG, f"Mods found (excluding Sideloader Modpack): {len(guid_map)}")
 
         all_guids: set[str] = set()
@@ -159,7 +149,7 @@ class DeleteUnusedMods(BaseTask):
         for guid in sorted(unused):
             path = guid_map[guid]
 
-            if guid in modpack_index or in_modpack_folder(path, mods_dir):
+            if is_modpack_protected(guid, path, mods_dir, modpack_index):
                 skipped += 1
                 logger.skipped(TAG, f"{path.name} — Sideloader Modpack")
                 continue

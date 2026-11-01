@@ -29,6 +29,7 @@ from urllib.parse import quote_plus
 
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
+from kkafio.cards.mods.zipmods import local_mods_map, resolve_guid
 from kkafio.indices.modpack import load_modpack_index
 
 TAG = "GALLERY"
@@ -99,14 +100,13 @@ class ModsLookup:
         with self._lock:
             if self._local is not None:
                 return
-            from kkafio.cards.mods.zipmods import build_mods_cache
             self._modpack = load_modpack_index(game_type=self.game_type) or {}
             try:
-                found = build_mods_cache(self.mods_dir, include_modpack=False, use_cache=self.use_cache)
+                self._local = local_mods_map(self.mods_dir, include_modpack=False,
+                                             use_cache=self.use_cache)
             except OSError as e:
                 logger.warning(TAG, f"Could not scan the mods folder {self.mods_dir}: {e}")
-                found = {}
-            self._local = {guid: Path(p) for guid, p in found.items()}
+                self._local = {}
             logger.info(TAG, f"Mods folder: {len(self._local)} mod(s) found in {self.mods_dir}")
 
     def find(self, guid: str) -> Path | None:
@@ -114,15 +114,11 @@ class ModsLookup:
         if not self.available:
             return None
         self._load()
-        rel = (self._modpack or {}).get(guid)
-        if rel is not None:                                # a Sideloader Modpack mod: check the one file
-            p = self.mods_dir / rel
-            if p.exists():
-                return p
-            # Not where the index says it is — it may still be installed elsewhere in the
-            # mods folder (outside the modpack folders), which the local scan covers.
-        p = (self._local or {}).get(guid)
-        return p if p is not None and p.exists() else None
+        # A Sideloader Modpack mod is checked at its indexed path (the modpack folders are never
+        # opened); if it isn't there it may still be installed elsewhere in the mods folder,
+        # which the local scan covers.
+        return resolve_guid(guid, self._local or {}, self._modpack or {}, self.mods_dir,
+                            include_modpack=True)
 
     def resolve(self, guids: Sequence[str]) -> list[ModRow]:
         return [ModRow(g, self.find(g)) for g in guids]

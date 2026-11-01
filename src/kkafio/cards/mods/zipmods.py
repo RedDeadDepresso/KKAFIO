@@ -7,7 +7,9 @@ import json as _json
 import xml.etree.ElementTree as ET
 import zipfile
 from concurrent.futures import as_completed, ThreadPoolExecutor
+from collections.abc import Iterable
 from pathlib import Path
+from typing import NamedTuple
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import is_mod_archive
@@ -190,74 +192,89 @@ def in_modpack_folder(zp: Path, mods_dir: Path) -> bool:
     return len(rel.parts) >= 2 and _SIDELOADER_MODPACK in rel.parts[0]
 
 
+def local_mods_map(mods_dir: Path, include_modpack: bool = False,
+                   use_cache: bool = True) -> dict[str, Path]:
+    """{guid: Path} of the zipmods found by scanning mods_dir (see build_mods_cache).
+
+    The one place the string paths of the cache turn into Paths — tasks that resolve many
+    cards against the same folder build this once and reuse it."""
+    return {guid: Path(p) for guid, p in
+            build_mods_cache(mods_dir, include_modpack=include_modpack, use_cache=use_cache).items()}
+
+
+def is_modpack_protected(guid: str, path: Path | None, mods_dir: Path | None,
+                         modpack_index: dict[str, str]) -> bool:
+    """True if a mod belongs to the Sideloader Modpack and deletion tasks must leave it alone:
+    its GUID is in the modpack index, or its file lives in a Sideloader Modpack folder."""
+    if guid in modpack_index:
+        return True
+    return path is not None and mods_dir is not None and in_modpack_folder(path, mods_dir)
+
+
+def resolve_guid(guid: str, local_map: dict[str, Path], modpack_index: dict[str, str],
+                 mods_dir: Path, include_modpack: bool) -> Path | None:
+    """The zipmod providing `guid`, or None.
+
+    A GUID in the Sideloader Modpack index is looked up at its indexed path first, which needs
+    no zipmod to be opened. With include_modpack off such a GUID is deliberately not resolved
+    (None). If the indexed file isn't on disk (moved or renamed modpack folder, or the mod is
+    installed elsewhere under mods_dir), it falls through to `local_map` like any other GUID.
+    """
+    if guid in modpack_index:
+        if not include_modpack:
+            return None
+        p = mods_dir / modpack_index[guid]
+        if p.exists():
+            return p
+    p = local_map.get(guid)
+    return p if p is not None and p.exists() else None
+
+
+class ModResolution(NamedTuple):
+    found: dict[str, Path]     # guid -> zipmod to use
+    excluded: set[str]         # modpack GUIDs left out on purpose (include_modpack is off)
+    missing: set[str]          # GUIDs that couldn't be found anywhere
+
+
+def resolve_guids(required: Iterable[str], local_map: dict[str, Path],
+                  modpack_index: dict[str, str], mods_dir: Path,
+                  include_modpack: bool) -> ModResolution:
+    """resolve_guid() for many GUIDs, also telling the modpack GUIDs that were excluded on
+    purpose (so they can be reported apart from the ones that are really missing)."""
+    found: dict[str, Path] = {}
+    excluded: set[str] = set()
+    missing: set[str] = set()
+    for guid in required:
+        if not include_modpack and guid in modpack_index:
+            excluded.add(guid)
+            continue
+        p = resolve_guid(guid, local_map, modpack_index, mods_dir, include_modpack)
+        if p is not None:
+            found[guid] = p
+        else:
+            missing.add(guid)
+    return ModResolution(found, excluded, missing)
+
+
 def scan_mods(mods_dir: Path, required: set[str],
               include_modpack: bool = False,
               use_cache: bool = False,
               game_type: str = GameType.KOIKATSU.value) -> dict[str, Path]:
     """Scan mods_dir for zipmods providing the required GUIDs.
 
-    Fast path: if the bundled modpack index exists, GUIDs found there are
-    resolved instantly (no file I/O per zipmod). GUIDs not in the index are
-    resolved by scanning local non-modpack folders.
-
-    When use_cache=True, also loads/builds a mods cache for the local scan.
+    GUIDs the bundled modpack index can answer are resolved without any file I/O; the folder
+    is only scanned (through the mods cache when use_cache is on) if something is left over.
     """
-    found: dict[str, Path] = {}
     if not mods_dir.exists():
-        return found
+        return {}
 
-    remaining = set(required)
-
-    # ── Step 1: check modpack index ────────────────────────────────────────
-    modpack_index = load_modpack_index(game_type=game_type)
-
-    if modpack_index is not None:
-        for guid in list(remaining):
-            if guid not in modpack_index:
-                continue
-            if include_modpack:
-                rel = modpack_index[guid]
-                abs_path = mods_dir / rel
-                if abs_path.exists():
-                    found[guid] = abs_path
-            # Whether included or skipped, this GUID is resolved via index
-            remaining.discard(guid)
-    # If no index, fall through to full local scan (original behaviour)
-
-    if not remaining:
-        return found
-
-    # ── Step 2: local scan for GUIDs not found in the index ───────────────
-    if use_cache:
-        guid_str_map = build_mods_cache(mods_dir, include_modpack=include_modpack, use_cache=True)
-        for guid in remaining:
-            if guid in guid_str_map:
-                p = Path(guid_str_map[guid])
-                if p.exists():
-                    # Ensure we don't accidentally return a modpack path
-                    # for a GUID that wasn't in the index (shouldn't happen
-                    # if cache was built with same include_modpack, but guard
-                    # against stale caches)
-                    if not include_modpack and in_modpack_folder(p, mods_dir):
-                        continue
-                    found[guid] = p
-        return found
-
-    # No cache — scan local folders only (skip modpack folders when index
-    # is present since those GUIDs were already handled above)
-    skip_modpack = modpack_index is not None and not include_modpack
-    for zp in iter_mod_files(mods_dir):
-        if not remaining:
-            break
-        if in_modpack_folder(zp, mods_dir):
-            if skip_modpack:
-                continue
-            if not include_modpack:
-                continue
-        guid = guid_from_zipmod(zp)
-        if guid and guid in remaining:
-            found[guid] = zp
-            remaining.discard(guid)
+    modpack_index = load_modpack_index(game_type=game_type) or {}
+    res = resolve_guids(required, {}, modpack_index, mods_dir, include_modpack)
+    found = dict(res.found)
+    if res.missing:
+        local_map = local_mods_map(mods_dir, include_modpack, use_cache)
+        found.update(resolve_guids(res.missing, local_map, modpack_index, mods_dir,
+                                   include_modpack).found)
     return found
 
 

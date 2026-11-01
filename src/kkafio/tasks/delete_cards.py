@@ -10,7 +10,7 @@ from pathlib import Path
 from send2trash import send2trash
 
 from kkafio.tasks.base_task import BaseTask
-from kkafio.cards.mods.zipmods import build_mods_cache, resolve_paths
+from kkafio.cards.mods.zipmods import is_modpack_protected, local_mods_map, resolve_paths
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.cards.mods.shared_mods import find_guids_in_use, keep_unshared, path_key
@@ -56,9 +56,7 @@ class DeleteCards(BaseTask):
         if cached is not None:
             return cached
 
-        guid_str_map = build_mods_cache(mods_dir, include_modpack=False, use_cache=self.use_cache)
-
-        guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
+        guid_map = local_mods_map(mods_dir, include_modpack=False, use_cache=self.use_cache)
         self._local_mods_maps[mods_dir] = guid_map
         return guid_map
 
@@ -164,9 +162,9 @@ class DeleteCards(BaseTask):
 
         guid_map: dict[str, Path] = {}
         for guid in all_guids:
-            if guid in modpack_index:
-                continue  # modpack-provided — never touched by DeleteCards
             p = local_map.get(guid)
+            if is_modpack_protected(guid, p, mods_dir, modpack_index):
+                continue  # modpack-provided — never touched by DeleteCards
             if p is not None and p.exists():
                 guid_map[guid] = p
 

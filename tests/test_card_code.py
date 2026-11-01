@@ -283,6 +283,41 @@ def test_scan_mods_local_fallback(tmp_path, use_cache):
     assert zipmods.scan_mods(tmp_path / "missing", {"x"}) == {}
 
 
+def _resolution_setup(tmp_path):
+    root = _mods_tree(tmp_path / "mods")
+    cf.zipmod(root / "Elsewhere" / "d.zipmod", "pack.d")        # in the index, but not at its indexed path
+    index = {"pack.c": "Sideloader Modpack - X/c.zipmod",
+             "pack.d": "Sideloader Modpack - X/d.zipmod",
+             "pack.gone": "Sideloader Modpack - X/gone.zipmod"}
+    return root, index
+
+
+def test_resolve_guids_falls_back_to_local_scan_when_indexed_path_is_missing(tmp_path):
+    root, index = _resolution_setup(tmp_path)
+    local = zipmods.local_mods_map(root, include_modpack=True, use_cache=False)
+    res = zipmods.resolve_guids({"local.a", "pack.c", "pack.d", "pack.gone", "absent"}, local, index, root, True)
+    assert set(res.found) == {"local.a", "pack.c", "pack.d"}
+    assert res.found["pack.d"] == root / "Elsewhere" / "d.zipmod"
+    assert res.excluded == set() and res.missing == {"pack.gone", "absent"}
+
+
+def test_resolve_guids_reports_modpack_guids_as_excluded_when_modpack_is_off(tmp_path):
+    root, index = _resolution_setup(tmp_path)
+    local = zipmods.local_mods_map(root, include_modpack=False, use_cache=False)
+    res = zipmods.resolve_guids({"local.a", "pack.c", "pack.d", "pack.gone", "absent"}, local, index, root, False)
+    assert set(res.found) == {"local.a"}
+    assert res.excluded == {"pack.c", "pack.d", "pack.gone"} and res.missing == {"absent"}
+
+
+def test_is_modpack_protected(tmp_path):
+    md = tmp_path / "mods"
+    index = {"pack.c": "Sideloader Modpack/c.zipmod"}
+    assert zipmods.is_modpack_protected("pack.c", None, md, index)                                    # by GUID
+    assert zipmods.is_modpack_protected("x", md / "Sideloader Modpack" / "x.zipmod", md, index)       # by folder
+    assert not zipmods.is_modpack_protected("x", md / "own" / "x.zipmod", md, index)
+    assert not zipmods.is_modpack_protected("x", None, None, index)
+
+
 def test_load_modpack_index_reads_bundled_index():
     index = load_modpack_index("Koikatsu")
     assert isinstance(index, dict) and len(index) > 1000

@@ -12,7 +12,7 @@ from typing import Literal
 
 from kkafio.tasks.base_task import BaseTask
 from kkafio.cards.mods.zipmods import (
-    build_mods_cache, in_modpack_folder, iter_mod_files, resolve_paths,
+    in_modpack_folder, iter_mod_files, local_mods_map, resolve_guids, resolve_paths,
 )
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
@@ -55,9 +55,8 @@ class ArchiveCards(BaseTask):
         cached = self._local_mods_maps.get(mods_dir)
         if cached is not None:
             return cached
-        guid_str_map = build_mods_cache(mods_dir, include_modpack=self.include_modpack,
-                                        use_cache=self.use_cache)
-        guid_map = {guid: Path(p) for guid, p in guid_str_map.items()}
+        guid_map = local_mods_map(mods_dir, include_modpack=self.include_modpack,
+                                  use_cache=self.use_cache)
         self._local_mods_maps[mods_dir] = guid_map
         return guid_map
 
@@ -155,22 +154,9 @@ class ArchiveCards(BaseTask):
             modpack_index = load_modpack_index(game_type=game_type) or {}
             local_map = self._get_local_mods_map(mods_dir)
 
-            guid_map: dict[str, Path] = {}
-            for guid in all_guids:
-                if guid in modpack_index:
-                    if not self.include_modpack:
-                        continue  # covered by the Sideloader Modpack, deliberately not bundled
-                    p = mods_dir / modpack_index[guid]
-                    if p.exists():
-                        guid_map[guid] = p
-                        continue
-                    # The index says where the modpack copy *should* be, but it isn't
-                    # there (renamed/moved modpack folder, or the user has the mod
-                    # elsewhere under mods/). Fall through to the local scan, which was
-                    # built with include_modpack=True and so covers the whole folder.
-                p = local_map.get(guid)
-                if p is not None and p.exists():
-                    guid_map[guid] = p
+            resolution = resolve_guids(all_guids, local_map, modpack_index, mods_dir,
+                                       self.include_modpack)
+            guid_map = resolution.found
 
             if not self.include_modpack:
                 skipped = self._get_modpack_skip_count(mods_dir)
@@ -178,14 +164,13 @@ class ArchiveCards(BaseTask):
                     logger.info("ARCHV",
                         f"  Skipped {skipped} zipmod(s) in Sideloader Modpack folder(s)")
             zipmod_paths = list(guid_map.values())
-            all_missing = all_guids - set(guid_map.keys())
 
-            # When include_modpack is off, some "missing" GUIDs aren't
-            # actually unavailable — they're just excluded because they're
-            # covered by the Sideloader Modpack. Report those separately so
-            # it's clear they're not a real problem.
-            modpack_missing = all_missing & set(modpack_index.keys()) if not self.include_modpack else set()
-            missing = all_missing - modpack_missing
+            # When include_modpack is off, some GUIDs aren't actually
+            # unavailable — they're just excluded because they're covered by
+            # the Sideloader Modpack. Reported separately so it's clear
+            # they're not a real problem.
+            modpack_missing = resolution.excluded
+            missing = resolution.missing
 
             logger.info("ARCHV",
                 f"  Zipmods found: {len(zipmod_paths)}  missing: {len(missing)}"

@@ -37,6 +37,7 @@ import sys
 
 import kkafio.services.mod_sources.telegram.config as tg_cfg
 
+from kkafio.cards.mods.shared_mods import game_card_dirs
 from kkafio.cards.mods.zipmods import build_mods_cache
 from kkafio.cards.mods.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
 from kkafio.core.config import GameType
@@ -244,38 +245,27 @@ class DownloadMissingMods(BaseTask):
         scan_scene = "Scene" in self.content_types
         scan_coord = "Coord" in self.content_types
 
+        # A folder the user configured is taken as-is; the game's own folders only count
+        # if they exist.
+        def _usable(dirs: list[Path], configured: str) -> list[Path]:
+            return dirs if configured else [d for d in dirs if d.exists()]
+
+        game_chara, game_scene, game_coord = game_card_dirs(
+            game_path,
+            [self.chara_dir_str] if self.chara_dir_str else None,
+            self.scene_dir_str or None,
+            self.coord_dir_str or None,
+        )
+
         chara_dirs: list[Path] = []
         if scan_chara:
-            if self.chara_dir_str:
-                chara_dirs = [Path(self.chara_dir_str)]
-            else:
-                chara_dirs = [
-                    d for d in [game_path.get("charaFemale"), game_path.get("charaMale")]
-                    if d is not None and d.exists()
-                ]
+            chara_dirs = _usable(game_chara, self.chara_dir_str)
             if not chara_dirs:
                 logger.error("DLMOD", "Chara directory not set and not resolvable from game path.")
                 return
 
-        scene_dirs: list[Path] = []
-        if scan_scene:
-            if self.scene_dir_str:
-                scene_dirs = [Path(self.scene_dir_str)]
-            else:
-                scene_dirs = [
-                    d for d in [game_path.get("scene")]
-                    if d is not None and d.exists()
-                ]
-
-        coord_dirs: list[Path] = []
-        if scan_coord:
-            if self.coord_dir_str:
-                coord_dirs = [Path(self.coord_dir_str)]
-            else:
-                coord_dirs = [
-                    d for d in [game_path.get("coordinate")]
-                    if d is not None and d.exists()
-                ]
+        scene_dirs: list[Path] = _usable(game_scene, self.scene_dir_str) if scan_scene else []
+        coord_dirs: list[Path] = _usable(game_coord, self.coord_dir_str) if scan_coord else []
 
         self.log_start("DLMOD")
         if same_mods_dir:

@@ -48,6 +48,14 @@ def test_lookup_finds_installed_mods_and_reports_the_rest(tmp_path):
     assert rows["com.zip"] is not None and rows["com.gone"] is None
 
 
+def test_a_modpack_mod_installed_outside_its_indexed_path_is_still_found(tmp_path):
+    zipmod(tmp_path / "Elsewhere" / "x.zipmod", "com.pack")
+    with mock.patch.object(mp, "load_modpack_index",
+                           return_value={"com.pack": "Sideloader Modpack/x.zipmod"}):
+        lookup = ModsLookup(tmp_path, use_cache=False)
+        assert lookup.find("com.pack") == tmp_path.resolve() / "Elsewhere" / "x.zipmod"
+
+
 def test_a_modpack_mod_is_checked_through_the_index_not_by_scanning(tmp_path):
     pack = zipmod(tmp_path / "Sideloader Modpack" / "x.zipmod", "com.pack")
     with mock.patch.object(mp, "load_modpack_index",
