@@ -54,6 +54,7 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
+from kkafio.dialogs.gallery.popup_menu import open_popup_menu
 from kkafio.dialogs.gallery.viewstate import GalleryViewState, TabView
 from kkafio.dialogs.gallery.shortcuts import (
     ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
@@ -1356,6 +1357,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         finish_assignment(first_idx)
         status.configure(text=t("dialog.gallery.restored", count=len(targets)))
 
+    context_menu: dict = {"close": None}                    # closes the right-click menu that is open
+
     def on_context_menu(event) -> None:
         """Right click on a card: Move to trash (Restore in the trash view), for the selected cards
         when the card is one of them, else for that card alone."""
@@ -1373,13 +1376,14 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         label = t("dialog.gallery.menu_restore") if in_trash else t("dialog.gallery.menu_trash")
         if len(targets) > 1:
             label += f" ({len(targets)})"
-        menu = tk.Menu(canvas, tearoff=0)
-        menu.add_command(label=label, accelerator=shortcuts.combo(ACTION_RESTORE if in_trash else ACTION_DELETE),
-                         command=lambda: (restore_cards if in_trash else trash_cards)(targets))
-        try:
-            menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            menu.grab_release()
+        if context_menu["close"] is not None:
+            context_menu["close"]()                             # one menu at a time
+        entry = (label, shortcuts.combo(ACTION_RESTORE if in_trash else ACTION_DELETE),
+                 lambda: (restore_cards if in_trash else trash_cards)(targets))
+        context_menu["close"] = open_popup_menu(
+            canvas, event.x_root, event.y_root, [entry],
+            {key: pair(name) for key, name in (("bg", "tile"), ("border", "border"), ("hover", "sel"),
+                                               ("text", "text"), ("muted", "muted"))})
 
     def change_folder() -> None:
         """The "change folder" shortcut: the folder input of the selected card (one dialog for

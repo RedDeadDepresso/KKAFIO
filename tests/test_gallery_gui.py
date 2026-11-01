@@ -940,3 +940,23 @@ def test_clicking_the_series_line_still_opens_the_series_input(tmp_path, monkeyp
 
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
 
+
+
+def test_the_right_click_menu_is_a_customtkinter_menu_that_runs_and_closes(tmp_path, monkeypatch):
+    import tkinter as tk
+    items = make_items(tmp_path, 3)
+
+    def script(root):
+        cv = gallery_canvas(root)
+        show_all(root)
+        x1, y1, x2, y2 = cv.bbox(first_unknown(cv))
+        cv.event_generate("<Button-3>", x=(x1 + x2) // 2, y=y1 - 10)
+        pump(root, 0.3)
+        menus = [w for w in root.winfo_children() if isinstance(w, tk.Toplevel)]
+        assert len(menus) == 1 and any(w.__class__.__name__ == "CTkLabel" for w in walk(menus[0]))
+        assert not any(isinstance(w, tk.Menu) for w in walk(root))        # not a native menu
+        cv.event_generate("<Button-1>", x=5, y=5)                         # a click elsewhere closes it
+        pump(root, 0.3)
+        assert not [w for w in root.winfo_children() if isinstance(w, tk.Toplevel)]
+
+    assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
