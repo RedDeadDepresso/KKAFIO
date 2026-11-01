@@ -53,6 +53,9 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
+from kkafio.dialogs.gallery.shortcuts import (
+    ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
+)
 from kkafio.dialogs.gallery.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
     VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, GalleryModel, GalleryTab,
@@ -405,10 +408,12 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
             g.close_popups()
         root.quit()
 
+    shortcuts = ShortcutSettings.from_user_config()     # one for the whole window: every tab shares it
     galleries: list[_Gallery] = []
     texts = [tab.text if tab.text is not None else chara_dialog_text() for tab in tabs]
     for i, tab in enumerate(tabs):
-        galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial)))
+        galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
+                                    shortcuts=shortcuts))
     current = {"index": initial}
 
     def show_tab(index: int) -> None:
@@ -447,7 +452,8 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int) -> list[int]:
     return [g.moved_count() for g in galleries]
 
 
-def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool) -> _Gallery:
+def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool,
+                   shortcuts: ShortcutSettings | None = None) -> _Gallery:
     """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
     gridded. `search_entry` is the window's shared search input, which only the open tab listens to."""
     import tkinter as tk
@@ -456,6 +462,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     from PIL import Image, ImageOps, ImageTk
 
     items, suggest, assign, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
+    if shortcuts is None:
+        shortcuts = ShortcutSettings()                  # the defaults, nothing saved
     handle = _Gallery()
     model = GalleryModel(items)
 
@@ -569,6 +577,10 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                 except tk.TclError:
                     pass
 
+    def open_shortcuts() -> None:
+        from kkafio.dialogs.gallery.shortcuts_dialog import open_shortcuts_dialog
+        open_shortcuts_dialog(root, shortcuts)
+
     # ---- widgets -------------------------------------------------------------
     # (the search input belongs to the window: it is the `search_entry` passed in)
     body = ctk.CTkFrame(host, fg_color="transparent")
@@ -652,7 +664,9 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     foot.grid_columnconfigure(0, weight=1)
     status = ctk.CTkLabel(foot, text="", anchor="w")
     status.grid(row=0, column=0, sticky="ew")
-    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=1)
+    ctk.CTkButton(foot, text=t("dialog.shortcuts.button"), width=110, command=open_shortcuts).grid(
+        row=0, column=1, padx=(0, 8))
+    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=2)
 
     # -----------------------------------------------------------------------
     # layout + drawing
@@ -1233,26 +1247,68 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         if len(targets) > 1:
             label += f" ({len(targets)})"
         menu = tk.Menu(canvas, tearoff=0)
-        menu.add_command(label=label, command=lambda: (restore_cards if in_trash else trash_cards)(targets))
+        menu.add_command(label=label, accelerator=shortcuts.combo(ACTION_RESTORE if in_trash else ACTION_DELETE),
+                         command=lambda: (restore_cards if in_trash else trash_cards)(targets))
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
 
-    def on_enter_key(_event=None) -> str:
+    def change_folder() -> None:
+        """The "change folder" shortcut: the folder input of the selected card (one dialog for
+        several)."""
         items = lay["items"]
         if not items or model.mode == VIEW_TRASH:           # a trashed card isn't sorted or renamed
-            return "break"
+            return
         targets = picked_in_order()
         if len(targets) > 1:
             open_multi_dialog(targets)
-            return "break"
+            return
         if targets:
             idx = index_of(targets[0])
         else:
             idx = index_of(sel["item"]) if sel["item"] is not None else first_visible_index()
             select_only(items[idx])
         start_edit(idx)
+
+    def rename_card_shortcut() -> None:
+        """The "rename" shortcut: the file name input of the cursor card (or the first selected)."""
+        items = lay["items"]
+        if not items or model.mode == VIEW_TRASH:
+            return
+        item = sel["item"] if sel["item"] is not None else (
+            picked_in_order()[0] if sel["picked"] else items[first_visible_index()])
+        select_only(item)
+        idx = index_of(item)
+        if idx is not None:
+            start_edit(idx, "name")
+
+    def delete_shortcut() -> None:
+        """The "delete" shortcut: the selected cards go to the trash (nothing in the trash view)."""
+        if model.mode == VIEW_TRASH:
+            return
+        targets = picked_in_order() or ([sel["item"]] if sel["item"] is not None else [])
+        if targets:
+            trash_cards(targets)
+
+    def restore_shortcut() -> None:
+        """The "restore" shortcut: the selected cards leave the trash (only in the Trash view)."""
+        if model.mode != VIEW_TRASH:
+            return
+        targets = picked_in_order() or ([sel["item"]] if sel["item"] is not None else [])
+        if targets:
+            restore_cards(targets)
+
+    shortcut_actions = {ACTION_RENAME: rename_card_shortcut, ACTION_FOLDER: change_folder,
+                        ACTION_DELETE: delete_shortcut, ACTION_RESTORE: restore_shortcut}
+
+    def on_key(event) -> str | None:
+        """Any key the gallery has no binding of its own for: the user's shortcuts (the settings
+        are read on every press, so a change in the Shortcuts dialog applies at once)."""
+        action = shortcuts.action_for(combo_from_event(event.keysym, event.state) or "")
+        if action is None:
+            return None
+        shortcut_actions[action]()
         return "break"
 
     def nav(dx: int, dy: int):
@@ -1526,8 +1582,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     canvas.bind("<Control-a>", on_select_all)
     canvas.bind("<Control-A>", on_select_all)
     canvas.bind("<Escape>", on_escape)
-    canvas.bind("<Return>", on_enter_key)
-    canvas.bind("<KP_Enter>", on_enter_key)
+    canvas.bind("<KeyPress>", on_key)                # the shortcuts of the Shortcuts dialog (Enter, F2, Delete ...)
     canvas.bind("<Home>", scroll_key(home=0.0))
     canvas.bind("<End>", scroll_key(home=1.0))
     for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
