@@ -18,7 +18,7 @@ except tk.TclError:
 
 from PIL import Image
 
-from kkafio.dialogs import gallery as mgd
+from kkafio.dialogs.gallery import window as mgd
 from kkafio.dialogs.common import show_and_wait as real_show_and_wait
 
 
@@ -38,7 +38,7 @@ def make_items(folder: Path, count: int, tagged: dict[int, str] | None = None) -
 
 
 def mover(calls: list):
-    """assign(): records the call and really moves the card, like group_chara.manual_callbacks."""
+    """assign(): records the call and really moves the card, like gallery.characters.manual_callbacks."""
     def assign(item, text):
         calls.append((item.name, text))
         if not text.strip("."):
@@ -691,9 +691,9 @@ def test_a_long_series_list_scrolls_with_wheel_and_scrollbar_and_picks_by_click(
 
 def test_the_gallery_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch):
     """Group Coordinates reuses the gallery with its own sentences: nothing says "series" or "characters"."""
-    from kkafio.tasks import group_coordinates as gc
+    from kkafio.dialogs.gallery.common import dialog_text
     items = make_items(tmp_path, 6, tagged={0: "Rin"})
-    text = gc.coordinate_dialog_text()
+    text = dialog_text("dialog.manual_coord")
     calls = []
 
     def script(root):

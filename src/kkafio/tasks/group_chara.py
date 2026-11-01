@@ -2,7 +2,7 @@
 group_chara.py — Group character cards into folders by series, with an LLM.
 
 Grouping by hand (typing each character's series in a gallery dialog) is not part of this task;
-it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery.py).
+it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery/).
 
 With "Resolve Locally" on (and Hints Language not "no"), a card whose name matches exactly one
 character in the indexes, or one of several with the card's own birthMonth / birthDay, is
@@ -36,6 +36,7 @@ from kkafio.cards.chara.chara_key_cache import CharaKeyCache
 from kkafio.indices.agv import Candidate
 from kkafio.cards.chara import hint_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
+from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 
@@ -164,7 +165,7 @@ def _list_pngs(folders: Sequence[Path], include_subfolders: bool) -> list[Path]:
     return pngs
 
 
-def _read_card(png: Path, key_cache: CharaKeyCache) -> tuple[Path, str | None, Birth | None]:
+def read_card(png: Path, key_cache: CharaKeyCache) -> tuple[Path, str | None, Birth | None]:
     """Read, classify and build the key and birthday for one PNG, or take them from the
     cache. Returns (png, key, birthday): key None = not a chara card, "__error__<why>" = it
     couldn't be read. Runs in a thread pool worker."""
@@ -222,7 +223,7 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
     workers = min(32, (os.cpu_count() or 4) * 2)
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = {ex.submit(_read_card, png, key_cache): png for png in png_files}
+        futures = {ex.submit(read_card, png, key_cache): png for png in png_files}
         for future in as_completed(futures):
             png, result, birth = future.result()
             if result is None:
@@ -253,56 +254,8 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
 # Process — read the LLM JSON response and move files
 # ---------------------------------------------------------------------------
 
-# Windows reserved device names — illegal as a folder name with or without
-# an extension (CON, CON.txt, com3, etc. all fail to create on Windows).
-_RESERVED_NAMES = {
-    "CON", "PRN", "AUX", "NUL",
-    *(f"COM{d}" for d in "123456789"),
-    *(f"LPT{d}" for d in "123456789"),
-}
-_MAX_FOLDER_NAME_LEN = 100  # generous but keeps well under Windows' 260-char path limit
 
-
-def _safe_folder_name(name: str) -> str:
-    """Turn an LLM-supplied series name into a folder name that is safe to
-    join onto an existing path with a plain `/`.
-
-    The series name comes from an LLM response, which is essentially
-    untrusted input: it could echo something like ".." or a reserved
-    device name, whether by accident (a garbled reply) or a maliciously
-    crafted one (e.g. via a prompt-injected card / cache file). Handles:
-      - path separators and other Windows-illegal characters
-      - "." / ".." and any name that is only dots/spaces (path traversal —
-        `Path(x) / ".."` would otherwise move files OUT of the input folder)
-      - trailing dots/spaces (silently stripped by Windows, so left in place
-        they'd make two different-looking names collide on disk)
-      - reserved device names (CON, COM1, ...), with or without a suffix
-      - an empty result after cleanup, and overly long names
-    Returns "" if nothing safe survives — the caller treats that as "no
-    assignment for this card" instead of moving it into folder_path itself
-    or its parent.
-    """
-    for ch in r'\/:*?"<>|':
-        name = name.replace(ch, "")
-    # Strip ASCII control characters too (illegal on Windows, invisible/
-    # confusing elsewhere).
-    name = "".join(ch for ch in name if ord(ch) >= 0x20)
-    name = name.strip()
-    # Windows trims trailing dots and spaces off folder names, so do it here
-    # rather than let two names that only differ in that regard collide.
-    name = name.rstrip(". ")
-
-    if not name or set(name) <= {"."}:
-        return ""  # "", ".", "..", "...", etc.
-
-    stem = name.split(".", 1)[0].upper()
-    if stem in _RESERVED_NAMES:
-        return ""
-
-    return name[:_MAX_FOLDER_NAME_LEN]
-
-
-def _move_card(png: Path, dest_dir: Path, series_folder: str, key_cache: CharaKeyCache) -> Path | None:
+def move_card(png: Path, dest_dir: Path, series_folder: str, key_cache: CharaKeyCache) -> Path | None:
     """Move `png` into the existing folder `dest_dir` (a file name already taken there gets
     _1, _2, ... added), keeping the key cache in step. Returns where it went, or None (after
     a warning) if it couldn't be moved."""
@@ -370,12 +323,12 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
 
     # Build reverse map: key -> destination folder name (skip empty values)
     dest_map = {
-        key: _safe_folder_name(series)
+        key: safe_folder_name(series)
         for key, series in mapping.items()
         if series and series.strip()
     }
 
-    local_dest = {kb: _safe_folder_name(series) for kb, series in (local or {}).items()}
+    local_dest = {kb: safe_folder_name(series) for kb, series in (local or {}).items()}
     local_dest = {kb: folder for kb, folder in local_dest.items() if folder}
 
     if not dest_map and not local_dest:
@@ -432,7 +385,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                 skipped += 1          # already in the right series folder
                 continue
             dest_dir.mkdir(parents=True, exist_ok=True)
-            if _move_card(png, dest_dir, series_folder, key_cache) is not None:
+            if move_card(png, dest_dir, series_folder, key_cache) is not None:
                 moved += 1
             else:
                 skipped += 1
@@ -444,166 +397,6 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
 
     logger.line()
     logger.success("GROUP", f"Done — moved: {moved}, skipped/unassigned: {skipped}")
-
-
-# ---------------------------------------------------------------------------
-# Manual mode — the gallery dialog's data and callbacks
-# ---------------------------------------------------------------------------
-
-def _is_series_dir(name: str) -> bool:
-    """Folders starting with "_" or "." (e.g. _duplicates_) are not series."""
-    return not name.startswith(("_", "."))
-
-
-def existing_series(folders: Sequence[Path]) -> dict[str, str]:
-    """{casefolded name: name} of the series folders that exist directly inside the chara folders."""
-    known: dict[str, str] = {}
-    for root in folders:
-        try:
-            for entry in sorted(root.iterdir(), key=lambda e: e.name.casefold()):
-                if entry.is_dir() and _is_series_dir(entry.name):
-                    known.setdefault(entry.name.casefold(), entry.name)
-        except OSError:
-            pass
-    return known
-
-
-def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
-                      key_cache: CharaKeyCache) -> list:
-    """The character cards for the gallery dialog, as CharaItems. A card directly in a chara
-    folder has no series; one inside a folder has that (first) folder as its series."""
-    import os
-    from concurrent.futures import ThreadPoolExecutor
-    from kkafio.indices.agv import split_key
-    from kkafio.dialogs.gallery import CharaItem
-
-    found: list[tuple[Path, Path]] = []
-    for root in folders:
-        for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png")):
-            if all(_is_series_dir(part) for part in png.relative_to(root).parts[:-1]):
-                found.append((root, png))
-    logger.info("GROUP", f"Scanning {len(found)} PNG file(s) for the gallery")
-
-    unique = dict.fromkeys(png for _root, png in found)
-    root_of = {png: root for root, png in found}
-    items: list[CharaItem] = []
-    with ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 4) * 2)) as ex:
-        for png, key, _birth in ex.map(lambda p: _read_card(p, key_cache), unique):
-            if key is None:
-                continue                                  # not a chara card
-            if key.startswith("__error__"):
-                logger.warning("GROUP", f"Could not process {png.name}: {key[9:]}")
-                continue
-            try:
-                st = png.stat()
-            except OSError:
-                continue
-            last, first, nick = split_key(key)
-            parts = png.relative_to(root_of[png]).parts
-            items.append(CharaItem(path=png, root=root_of[png],
-                                   name=png.stem,                  # the file name is shown under the cover
-                                   alias=f"{last} {first}".strip() or nick,    # the character's name stays searchable
-                                   series=parts[0] if len(parts) > 1 else None,
-                                   size=st.st_size, mtime=st.st_mtime,
-                                   ctime=getattr(st, "st_birthtime", st.st_ctime)))    # created: Windows / macOS
-    return items
-
-
-def resolve_series_folder(text: str, known: dict[str, str], lang: str | None) -> str:
-    """The folder name for a series the user typed: snapped to the index's title for it (when
-    `lang` is set), made safe to use as a folder name, and spelled like the existing folder
-    when one with the same name (in any case) exists. "" if nothing usable is left."""
-    name = text.strip()
-    if lang and name:
-        from kkafio.indices import agv
-        name = agv.canonical_series(name, lang)
-    name = _safe_folder_name(name)
-    return known.get(name.casefold(), name) if name else ""
-
-
-def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str | None,
-                     max_suggestions: int = 8):
-    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the series
-    folders that exist and grows as new ones are created; `lang` is the language of the index's
-    series titles (None: no index, only the existing folders are suggested)."""
-
-    def suggest(text: str) -> list[str]:
-        q = text.strip().casefold()
-        local = sorted(known.values(), key=str.casefold)
-        if q:
-            local = sorted((n for n in local if q in n.casefold()),
-                           key=lambda n: (not n.casefold().startswith(q), n.casefold()))
-        out = list(local)
-        if lang and q:
-            from kkafio.indices import agv
-            seen = {n.casefold() for n in out}
-            for title in agv.suggest_series(text, lang, limit=max_suggestions):
-                folder = _safe_folder_name(title)          # shown as the folder it would become
-                if folder and folder.casefold() not in seen:
-                    seen.add(folder.casefold())
-                    out.append(folder)
-        return out[:max_suggestions]
-
-    def assign(item, text: str):
-        folder = resolve_series_folder(text, known, lang)
-        if not folder:
-            logger.warning("GROUP", f"'{text}' can't be used as a series folder name")
-            return None
-        dest_dir = item.root / folder
-        if item.path.parent == dest_dir:
-            return item.path, folder                      # already there
-        try:
-            dest_dir.mkdir(parents=True, exist_ok=True)
-        except OSError as e:
-            logger.warning("GROUP", f"Could not create {dest_dir}: {e}")
-            return None
-        dest = _move_card(item.path, dest_dir, folder, key_cache)
-        if dest is None:
-            return None
-        known.setdefault(folder.casefold(), folder)
-        return dest, folder
-
-    return suggest, assign
-
-
-def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache: bool, label: str = ""):
-    """The Manual gallery of the character cards under `folders`: the user types a series per
-    character and each card is moved at once.
-
-    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
-    must be called once the gallery is closed, also when it failed: it saves the key cache.
-    `hint_lang` is the language of the character index's series titles (None: no index, only the
-    existing series folders are suggested)."""
-    from kkafio.dialogs.gallery import COVER_RATIO, GalleryTab, chara_dialog_text
-
-    if hint_lang:
-        from kkafio.indices import agv
-        agv.refresh("GROUP")
-        if not agv.available():
-            logger.info("GROUP", "No anime, games, vtubers index — only existing series folders are suggested.")
-    else:
-        logger.info("GROUP", "Hints Language is 'no' — only existing series folders are suggested.")
-
-    key_cache = CharaKeyCache(folders, use_cache, "GROUP")
-
-    def finish() -> None:
-        if use_cache:
-            logger.info("GROUP", f"Key cache: {key_cache.summary()}")
-            key_cache.save()
-
-    try:
-        # Always with subfolders: the gallery is the whole library, with each card's series
-        # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
-        items = scan_manual_items(folders, True, key_cache)
-        known = existing_series(folders)
-        for item in items:
-            if item.series:
-                known.setdefault(item.series.casefold(), item.series)
-        suggest, assign = manual_callbacks(known, key_cache, hint_lang)
-    except BaseException:
-        finish()
-        raise
-    return GalleryTab(label, items, suggest, assign, chara_dialog_text(), COVER_RATIO, finish)
 
 
 # ---------------------------------------------------------------------------

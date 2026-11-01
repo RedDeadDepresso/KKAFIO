@@ -14,6 +14,8 @@ from kkafio.indices import agv
 from kkafio.indices.text import norm
 from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
+from kkafio.dialogs.gallery import characters as gal
+from kkafio.dialogs.gallery.common import existing_folders
 from kkafio.dialogs.gallery import (
     SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_SERIES, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
 from kkafio.tasks import group_chara
@@ -109,22 +111,22 @@ def test_ellipsize():
 
 def test_resolve_series_folder_is_safe_and_reuses_existing_spelling():
     known = {"fate": "Fate", "genshin impact": "Genshin Impact"}
-    assert group_chara.resolve_series_folder("  fate ", known, None) == "Fate"
-    assert group_chara.resolve_series_folder("New Series", known, None) == "New Series"
-    assert group_chara.resolve_series_folder("a/b:c", known, None) == "abc"
+    assert gal.resolve_series_folder("  fate ", known, None) == "Fate"
+    assert gal.resolve_series_folder("New Series", known, None) == "New Series"
+    assert gal.resolve_series_folder("a/b:c", known, None) == "abc"
     for bad in ("", "   ", "..", ".", "CON", "nul.txt", "???"):
-        assert group_chara.resolve_series_folder(bad, known, None) == "", bad
+        assert gal.resolve_series_folder(bad, known, None) == "", bad
 
 
 def test_resolve_series_folder_snaps_to_the_index_title(agv_file):
     known = {}
-    assert group_chara.resolve_series_folder("sword art online", known, "en_us") == "Sword Art Online"
-    assert group_chara.resolve_series_folder("SWORD-ART ONLINE", known, "en_us") == "Sword Art Online"
-    assert group_chara.resolve_series_folder("My Own Series", known, "en_us") == "My Own Series"
+    assert gal.resolve_series_folder("sword art online", known, "en_us") == "Sword Art Online"
+    assert gal.resolve_series_folder("SWORD-ART ONLINE", known, "en_us") == "Sword Art Online"
+    assert gal.resolve_series_folder("My Own Series", known, "en_us") == "My Own Series"
     # no language = the user chose not to use the indexes: the text is kept
-    assert group_chara.resolve_series_folder("sword art online", known, None) == "sword art online"
+    assert gal.resolve_series_folder("sword art online", known, None) == "sword art online"
     # "/" is not allowed in a folder name, exactly as for the LLM's answers
-    assert group_chara.resolve_series_folder("fate stay night", known, "en_us") == "Fatestay night"
+    assert gal.resolve_series_folder("fate stay night", known, "en_us") == "Fatestay night"
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +135,7 @@ def test_resolve_series_folder_snaps_to_the_index_title(agv_file):
 
 def test_suggest_existing_folders_first_then_the_index(agv_file):
     known = {"fate grand order": "Fate Grand Order", "sao": "SAO"}
-    suggest, _assign = group_chara.manual_callbacks(known, CharaKeyCache([], False), "en_us")
+    suggest, _assign = gal.manual_callbacks(known, CharaKeyCache([], False), "en_us")
     assert suggest("") == ["Fate Grand Order", "SAO"]                   # nothing typed: the existing folders
     assert suggest("fate") == ["Fate Grand Order", "Fatestay night"]    # folder, then the index (as a folder name)
     assert suggest("sword") == ["Sword Art Online"]
@@ -143,13 +145,13 @@ def test_suggest_existing_folders_first_then_the_index(agv_file):
 
 
 def test_suggest_without_a_language_only_lists_folders(agv_file):
-    suggest, _ = group_chara.manual_callbacks({"fate": "Fate"}, CharaKeyCache([], False), None)
+    suggest, _ = gal.manual_callbacks({"fate": "Fate"}, CharaKeyCache([], False), None)
     assert suggest("sword") == [] and suggest("fa") == ["Fate"]
 
 
 def test_suggest_is_capped():
     known = {f"s{i:02}": f"S{i:02}" for i in range(30)}
-    suggest, _ = group_chara.manual_callbacks(known, CharaKeyCache([], False), None, max_suggestions=5)
+    suggest, _ = gal.manual_callbacks(known, CharaKeyCache([], False), None, max_suggestions=5)
     assert len(suggest("")) == 5
 
 
@@ -157,9 +159,9 @@ def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
     cards = _cards(tmp_path, a="Rin", b="Saber")
     with manual_fakes():
         cache = CharaKeyCache([tmp_path], True, "GROUP")
-        items = group_chara.scan_manual_items([tmp_path], False, cache)
-        known = group_chara.existing_series([tmp_path])
-        _suggest, assign = group_chara.manual_callbacks(known, cache, None)
+        items = gal.scan_manual_items([tmp_path], False, cache)
+        known = existing_folders(tmp_path)
+        _suggest, assign = gal.manual_callbacks(known, cache, None)
         rin = next(i for i in items if i.alias == "Rin")
 
         new_path, folder = assign(rin, "Fate")
@@ -181,10 +183,10 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
     _file(tmp_path / "Fate" / "a.png", b"CHARA|Someone")                  # name already taken there
     with manual_fakes():
         cache = CharaKeyCache([tmp_path], True, "GROUP")
-        items = group_chara.scan_manual_items([tmp_path], True, cache)
+        items = gal.scan_manual_items([tmp_path], True, cache)
         rin = next(i for i in items if i.alias == "Rin")
         assert rin.series is None
-        _s, assign = group_chara.manual_callbacks(group_chara.existing_series([tmp_path]), cache, None)
+        _s, assign = gal.manual_callbacks(existing_folders(tmp_path), cache, None)
 
         assert assign(rin, "..") is None and assign(rin, "   ") is None
         assert rin.path.exists()                                          # nothing moved
@@ -199,8 +201,8 @@ def test_assign_reports_a_failed_move(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes():
         cache = CharaKeyCache([tmp_path], False)
-        rin = group_chara.scan_manual_items([tmp_path], False, cache)[0]
-        _s, assign = group_chara.manual_callbacks({}, cache, None)
+        rin = gal.scan_manual_items([tmp_path], False, cache)[0]
+        _s, assign = gal.manual_callbacks({}, cache, None)
         with mock.patch.object(group_chara.shutil, "move", side_effect=OSError("locked")):
             assert assign(rin, "Fate") is None
         assert rin.path.exists()
@@ -219,15 +221,15 @@ def test_scan_series_from_folders_and_skipped_ones(tmp_path):
     _file(tmp_path / "pic.png", b"just a picture")
     with manual_fakes():
         cache = CharaKeyCache([tmp_path], False)
-        top_only = group_chara.scan_manual_items([tmp_path], False, cache)
+        top_only = gal.scan_manual_items([tmp_path], False, cache)
         assert [(i.name, i.series) for i in top_only] == [("top", None)]      # the file name is the label
 
-        everything = group_chara.scan_manual_items([tmp_path], True, cache)
+        everything = gal.scan_manual_items([tmp_path], True, cache)
         assert sorted((i.name, i.series) for i in everything) == [
             ("top", None), ("x", "Fate"), ("y", "Fate")]                  # _duplicates_, dot folders, non-cards out
         assert sorted(i.alias for i in everything) == ["Archer", "Rin", "Saber"]
         assert all(i.root == tmp_path and i.size > 0 and i.mtime > 0 for i in everything)
-    assert group_chara.existing_series([tmp_path]) == {"fate": "Fate"}
+    assert existing_folders(tmp_path) == {"fate": "Fate"}
 
 
 def test_scan_shows_the_filename_and_keeps_the_character_name_searchable(tmp_path):
@@ -236,7 +238,7 @@ def test_scan_shows_the_filename_and_keeps_the_character_name_searchable(tmp_pat
          mock.patch.object(group_chara, "KoikatuCharaData", mock.MagicMock()), \
          mock.patch.object(group_chara, "make_key", side_effect=[" |  | Nick | calm | black hair"]), \
          mock.patch.object(group_chara, "CHARA_CARD_TYPES", ("KK",)):
-        (item,) = group_chara.scan_manual_items([tmp_path], False, CharaKeyCache([], False))
+        (item,) = gal.scan_manual_items([tmp_path], False, CharaKeyCache([], False))
     assert item.name == "a" and item.alias == "Nick"
     m = GalleryModel([item]); m.search = "nick"
     assert [i.name for i in m.visible()] == ["a"]                       # found by the character's name
@@ -274,7 +276,7 @@ def test_run_always_runs_the_llm_workflow(tmp_path):
 def test_gallery_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes(), mock.patch.object(group_chara.hint_language, "resolve", return_value=None):
-        tab = group_chara.chara_gallery_tab([tmp_path], None, True)
+        tab = gal.chara_gallery_tab([tmp_path], None, True)
         try:
             names = [i.name for i in tab.items]
             moved = tab.assign(tab.items[0], "Fate")
@@ -288,7 +290,7 @@ def test_gallery_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
 
 def test_gallery_tab_with_no_cards_is_empty(tmp_path):
     with manual_fakes():
-        tab = group_chara.chara_gallery_tab([tmp_path], None, True)
+        tab = gal.chara_gallery_tab([tmp_path], None, True)
         tab.finish()
     assert tab.items == []
 
@@ -308,7 +310,7 @@ def test_gallery_always_includes_subfolders(tmp_path):
     _cards(tmp_path, top="Rin")
     _file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
     with manual_fakes():
-        tab = group_chara.chara_gallery_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
+        tab = gal.chara_gallery_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
         tab.finish()
     assert sorted((i.name, i.series) for i in tab.items) == [("top", None), ("x", "Fate")]
 

@@ -39,9 +39,45 @@ def _dialog_keys_in_source() -> set[str]:
     return keys
 
 
+def _dialog_text_prefixes_in_source() -> set[str]:
+    """The literal prefixes of the dialog_text("...") calls (see gallery/common.py); a prefix that
+    isn't a literal can't be checked, so it is refused."""
+    prefixes: set[str] = set()
+    for path in SRC.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "dialog_text" and node.args):
+                arg = node.args[0]
+                if not (isinstance(arg, ast.Constant) and isinstance(arg.value, str)):
+                    raise AssertionError(f"dialog_text() called with a prefix this test can't resolve: {ast.unparse(node)}")
+                prefixes.add(arg.value)
+    return prefixes
+
+
+def _dialog_text_fields() -> set[str]:
+    """The field names of DialogText (dialogs/gallery/model.py): dialog_text() reads one key per field."""
+    tree = ast.parse((SRC / "dialogs" / "gallery" / "model.py").read_text(encoding="utf-8"))
+    (cls,) = [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == "DialogText"]
+    return {n.target.id for n in cls.body if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name)}
+
+
+def _is_dialog_text_key(node: ast.JoinedStr) -> bool:
+    """Whether the f-string is exactly f"{prefix}.{name}", the shape of dialog_text()'s keys."""
+    parts = node.values
+    return (len(parts) == 3
+            and isinstance(parts[0], ast.FormattedValue) and isinstance(parts[0].value, ast.Name)
+            and parts[0].value.id == "prefix"
+            and isinstance(parts[1], ast.Constant) and parts[1].value == "."
+            and isinstance(parts[2], ast.FormattedValue) and isinstance(parts[2].value, ast.Name)
+            and parts[2].value.id == "name")
+
+
 def _expand_fstring(node: ast.JoinedStr, dialog_keys: set[str]) -> set[str]:
-    """Every key a t(f"...{x.dialog_key}...") call can name. Any other interpolation is refused,
-    so a new dynamic key has to be taught here instead of silently hiding orphans."""
+    """Every key a t(f"...{x.dialog_key}...") call can name, or dialog_text()'s t(f"{prefix}.{name}").
+    Any other interpolation is refused, so a new dynamic key has to be taught here instead of
+    silently hiding orphans."""
+    if _is_dialog_text_key(node):
+        return {f"{prefix}.{name}" for prefix in _dialog_text_prefixes_in_source() for name in _dialog_text_fields()}
     out = {""}
     for part in node.values:
         if isinstance(part, ast.Constant):

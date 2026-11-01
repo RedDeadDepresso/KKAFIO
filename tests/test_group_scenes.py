@@ -69,13 +69,6 @@ def test_normalize_index_tolerates_odd_values():
     }
 
 
-def test_author_folder_name():
-    assert gs.author_folder_name('A/B:C?') == "A_B_C_"
-    assert gs.author_folder_name("name. ") == "name"
-    assert gs.author_folder_name("CON") == "_CON"
-    assert gs.author_folder_name("...") == ""
-
-
 def _task(folder: Path, **kw):
     cfg = mock.Mock()
     cfg.game_path = {}
@@ -97,7 +90,7 @@ def test_scenes_in_index_move_to_author_folder(tmp_path):
         _task(tmp_path).run()
 
     assert (tmp_path / "Alice" / "s1.png").exists()
-    assert (tmp_path / "Bob_The_Builder" / "s2.png").exists()
+    assert (tmp_path / "BobTheBuilder" / "s2.png").exists()
     assert (tmp_path / "unknown.png").exists() and (tmp_path / "chara.png").exists()
     assert (tmp_path / "deep" / "s3.png").exists()
 

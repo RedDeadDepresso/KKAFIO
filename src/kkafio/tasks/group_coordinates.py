@@ -46,7 +46,7 @@ UNKNOWN_<n> folder. Hair that appears in several folders is ambiguous, so those
 coordinates stay where they are.
 
 Grouping by hand (naming a character for each coordinate in a gallery dialog) is not part of
-this task; it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery.py).
+this task; it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery/).
 
 The chara folder(s) are always scanned recursively. With Include Subfolders off
 (the default) only coordinates directly inside the coordinate folder are
@@ -72,7 +72,7 @@ from kkafio.cards.chara.outfits import (
     chara_outfit_signatures, clothes_difference,
 )
 from kkafio.core.errors import InputError
-from kkafio.core.i18n import t
+from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 
@@ -81,24 +81,10 @@ TAG = "GRPCOORD"
 CHARA_OUTFIT_CACHE_FILE = "kkafio_chara_outfit_cache.json"
 CHARA_OUTFIT_CACHE_VERSION = 8
 
-_INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-_RESERVED = {"CON", "PRN", "AUX", "NUL",
-             *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
-
 
 def folder_name_for(chara_path: Path) -> str:
     """A safe single-folder name from a chara card's filename ('' if nothing usable is left)."""
     return safe_folder_name(chara_path.stem)
-
-
-def safe_folder_name(text: str) -> str:
-    """`text` made usable as a single folder name ('' if nothing usable is left)."""
-    name = _INVALID_CHARS.sub("_", text).strip().rstrip(". ")
-    if not name or set(name) <= {"."}:
-        return ""
-    if name.upper().split(".")[0] in _RESERVED:
-        name = f"_{name}"
-    return name[:100].rstrip(". ")
 
 
 def _load_outfit_cache(coord_dir: Path) -> dict[str, dict]:
@@ -207,7 +193,7 @@ def collect_chara_mods(chara_dirs: list[Path], coord_dir: Path,
     return {png: dict(e.get("mods", {})) for png, e in scanned.items()}
 
 
-def _sorted_charas(charas) -> list[tuple[Path, str]]:
+def sorted_charas(charas) -> list[tuple[Path, str]]:
     """[(chara PNG, folder name)] in a stable order (by filename); unusable names are skipped."""
     out = []
     for chara in sorted(charas, key=lambda p: (p.name.casefold(), str(p))):
@@ -223,7 +209,7 @@ def exact_matcher(chara_digests: dict[Path, set[str]]):
     """matches(digest) -> [(folder name, 0, 0)] for coordinates that are an exact copy of an outfit."""
     # digest -> chara folder names that own it (sorted by chara filename for a stable pick)
     owners: dict[str, list[str]] = {}
-    for chara, name in _sorted_charas(chara_digests):
+    for chara, name in sorted_charas(chara_digests):
         for digest in chara_digests[chara]:
             lst = owners.setdefault(digest, [])
             if name not in lst:
@@ -241,7 +227,7 @@ def fuzzy_matcher(chara_sigs: dict[Path, list[OutfitSignature]], ignore_accessor
     character that sorts first by filename."""
     outfits: list[tuple[str, tuple[str, ...], tuple[str, ...]]] = []      # (folder name, clothes, accessories)
     rank: dict[str, int] = {}
-    for chara, name in _sorted_charas(chara_sigs):
+    for chara, name in sorted_charas(chara_sigs):
         rank.setdefault(name, len(rank))
         for clothes, accessories in chara_sigs[chara]:
             outfits.append((name, clothes, accessories))
@@ -312,7 +298,7 @@ def hair_matcher(chara_hairs: dict[Path, list[tuple[str, ...]]]):
     same_hair) in one of their outfits, in filename order. Empty for a coordinate without hair."""
     by_item: dict[str, list[tuple[str, tuple[str, ...]]]] = defaultdict(list)
     rank: dict[str, int] = {}
-    for chara, name in _sorted_charas(chara_hairs):
+    for chara, name in sorted_charas(chara_hairs):
         rank.setdefault(name, len(rank))
         for hair in chara_hairs[chara]:
             if hair:
@@ -347,14 +333,14 @@ def mod_matcher(chara_mods: dict[Path, dict[str, float]]):
     returned alone if her score is at least MOD_DOMINANCE times every other's (her own head mod
     worn in most outfits beats another character's one-off costume-pack item); otherwise all
     of them are returned, in filename order, and the caller leaves the coordinate alone."""
-    sorted_charas = _sorted_charas(chara_mods)
+    ordered = sorted_charas(chara_mods)
     wearers: dict[str, list[str]] = defaultdict(list)
-    for chara, name in sorted_charas:
+    for chara, name in ordered:
         for mod in chara_mods[chara]:
             if name not in wearers[mod]:
                 wearers[mod].append(name)
-    share = {(name, mod): value for chara, name in sorted_charas for mod, value in chara_mods[chara].items()}
-    order = [name for _, name in sorted_charas]
+    share = {(name, mod): value for chara, name in ordered for mod, value in chara_mods[chara].items()}
+    order = [name for _, name in ordered]
 
     def matches(mods) -> list[str]:
         score: dict[str, float] = {}
@@ -469,7 +455,7 @@ def plan_hair_groups(coord_hair: dict[Path, tuple[str, ...] | None], coord_dir: 
     return {"moves": moves, "ambiguous": ambiguous, "no_hair": no_hair, "lone": lone, "grouped": grouped}
 
 
-def _move_unique(src: Path, dest_dir: Path) -> Path:
+def move_unique(src: Path, dest_dir: Path) -> Path:
     """Move `src` into `dest_dir` (created if needed), numbering the name if taken; returns the new path."""
     dest = dest_dir / src.name
     counter = 1
@@ -493,7 +479,7 @@ def _difference_note(clothes_diff: int, accessory_diff: int) -> str:
     return f" ({', '.join(parts)} differ{'s' if len(parts) == 1 and (clothes_diff or accessory_diff) == 1 else ''})"
 
 
-def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
+def update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
     """Make the coordinate caches follow moved files (a move keeps mtime and size),
     so the next run doesn't re-parse them."""
     for file_name, version, sections in (
@@ -516,147 +502,6 @@ def _update_coord_cache(coord_dir: Path, moves: dict[str, str]) -> None:
             continue
         except Exception as e:
             logger.debug("CACHE", f"Could not update {cache_path}: {e}")
-
-
-# ---------------------------------------------------------------------------
-# Manual mode — the gallery dialog's data and callbacks
-# ---------------------------------------------------------------------------
-
-def coordinate_dialog_text():
-    """The words of the gallery when it is sorting coordinates into character folders."""
-    from kkafio.dialogs.gallery import DialogText
-    return DialogText(
-        search_placeholder=t("dialog.manual_coord.search_placeholder"),
-        all=t("dialog.manual_coord.all"),
-        untagged=t("dialog.manual_coord.untagged"),
-        series_header=t("dialog.manual_coord.series_header"),
-        filter_series=t("dialog.manual_coord.filter_series"),
-        unknown_series=t("dialog.manual_coord.unknown_series"),
-        no_cards=t("dialog.manual_coord.no_cards"),
-        hint=t("dialog.manual_coord.hint"),
-        status=t("dialog.manual_coord.status"),
-        status_filtered=t("dialog.manual_coord.status_filtered"),
-        moved=t("dialog.manual_coord.moved"),
-        move_failed=t("dialog.manual_coord.move_failed"),
-        multi_title=t("dialog.manual_coord.multi_title"),
-        multi_prompt=t("dialog.manual_coord.multi_prompt"),
-        multi_moved=t("dialog.manual_coord.multi_moved"),
-        multi_moved_partial=t("dialog.manual_coord.multi_moved_partial"),
-    )
-
-
-def _is_group_dir(name: str) -> bool:
-    """Folders starting with "_" or "." (e.g. _duplicates_) are not character folders."""
-    return not name.startswith(("_", "."))
-
-
-def chara_folder_names(chara_dirs: list[Path]) -> dict[str, str]:
-    """{casefolded folder name: folder name} for every chara card under chara_dirs, from its
-    filename without ".png" — what a character's coordinates are grouped under."""
-    known: dict[str, str] = {}
-    for chara, name in _sorted_charas({png for folder in chara_dirs for png in folder.rglob("*.png")}):
-        known.setdefault(name.casefold(), name)
-    return known
-
-
-def existing_group_folders(coord_dir: Path) -> dict[str, str]:
-    """{casefolded name: name} of the folders directly inside the coordinate folder."""
-    known: dict[str, str] = {}
-    try:
-        for entry in sorted(coord_dir.iterdir(), key=lambda e: e.name.casefold()):
-            if entry.is_dir() and _is_group_dir(entry.name):
-                known.setdefault(entry.name.casefold(), entry.name)
-    except OSError:
-        pass
-    return known
-
-
-def scan_manual_items(coord_dir: Path, use_cache: bool) -> list:
-    """The coordinate cards under coord_dir (subfolders included) for the gallery, as CharaItems:
-    named after the file, in the folder directly under coord_dir that holds it (None: directly
-    in coord_dir)."""
-    from kkafio.dialogs.gallery import CharaItem
-
-    items = []
-    for sp, key in sorted(build_coord_cache(coord_dir, use_cache=use_cache).items()):
-        png = Path(sp)
-        parts = png.relative_to(coord_dir).parts
-        if not key or not all(_is_group_dir(part) for part in parts[:-1]):
-            continue                                      # not a coordinate card / in a _skipped_ folder
-        try:
-            st = png.stat()
-        except OSError:
-            continue
-        items.append(CharaItem(path=png, root=coord_dir, name=png.stem,
-                               series=parts[0] if len(parts) > 1 else None,
-                               size=st.st_size, mtime=st.st_mtime,
-                               ctime=getattr(st, "st_birthtime", st.st_ctime)))    # created: Windows / macOS
-    return items
-
-
-def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestions: int = 8):
-    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the folder names
-    to suggest — the characters' filenames and the folders that exist — and grows as folders are
-    created; every move `assign` makes is recorded in `moves` ({old path: new path}) so the caller
-    can bring the caches along."""
-
-    def suggest(text: str) -> list[str]:
-        q = text.strip().casefold()
-        names = sorted(known.values(), key=str.casefold)
-        if q:
-            names = sorted((n for n in names if q in n.casefold()),
-                           key=lambda n: (not n.casefold().startswith(q), n.casefold()))
-        return names[:max_suggestions]
-
-    def assign(item, text: str):
-        name = safe_folder_name(text.strip())
-        if not name:
-            logger.warning(TAG, f"'{text}' can't be used as a folder name")
-            return None
-        name = known.get(name.casefold(), name)           # spelled like the character / existing folder
-        dest_dir = item.root / name
-        if item.path.parent == dest_dir:
-            return item.path, name                        # already there
-        try:
-            dest = _move_unique(item.path, dest_dir)
-        except Exception as e:
-            logger.warning(TAG, f"Could not move {item.path.name}: {e}")
-            return None
-        logger.success(TAG, f"Moved {item.path.name} -> {name}/")
-        moves[str(item.path)] = str(dest)
-        known.setdefault(name.casefold(), name)
-        return dest, name
-
-    return suggest, assign
-
-
-def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: bool, label: str = ""):
-    """The Manual gallery of the coordinate cards under `coord_dir`: the user names a character per
-    coordinate and each card is moved at once; the character filenames under `chara_dirs` (without
-    .png) are the suggestions.
-
-    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
-    must be called once the gallery is closed, also when it failed: it brings the coordinate
-    caches along with the cards that were moved."""
-    from kkafio.dialogs.gallery import COVER_RATIO, GalleryTab
-
-    logger.info(TAG, "Manual: reading the coordinate cards")
-    items = scan_manual_items(coord_dir, use_cache)
-    known = existing_group_folders(coord_dir)
-    for item in items:
-        if item.series:
-            known.setdefault(item.series.casefold(), item.series)
-    for key, name in chara_folder_names(chara_dirs).items():
-        known.setdefault(key, name)
-    moves: dict[str, str] = {}
-    suggest, assign = manual_callbacks(known, moves)
-    logger.info(TAG, f"{len(items)} coordinate(s) and {len(known)} suggested name(s) for the gallery")
-
-    def finish() -> None:
-        if use_cache and moves:
-            _update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
-
-    return GalleryTab(label, items, suggest, assign, coordinate_dialog_text(), COVER_RATIO, finish)
 
 
 class GroupCoordinates(BaseTask):
@@ -784,7 +629,7 @@ class GroupCoordinates(BaseTask):
                     handled.add(str(coord))
                     continue
                 try:
-                    dest = _move_unique(coord, coord_dir / names[0])
+                    dest = move_unique(coord, coord_dir / names[0])
                 except Exception as e:
                     logger.error(TAG, f"Could not move {coord.name}: {e}")
                     failed += 1
@@ -795,7 +640,7 @@ class GroupCoordinates(BaseTask):
                 moved += 1
         finally:
             if self.use_cache and moves:
-                _update_coord_cache(coord_dir, moves)
+                update_coord_cache(coord_dir, moves)
 
         logger.line()
         logger.success(TAG, f"Hair matching done — moved: {moved}, already in place: {in_place}, "
@@ -856,7 +701,7 @@ class GroupCoordinates(BaseTask):
                     logger.info(TAG, f"{coord.name} matches {len(names)} characters "
                                      f"({', '.join(names)}) — using {names[0]}")
                 try:
-                    dest = _move_unique(coord, coord_dir / names[0])
+                    dest = move_unique(coord, coord_dir / names[0])
                 except Exception as e:
                     logger.error(TAG, f"Could not move {coord.name}: {e}")
                     failed += 1
@@ -868,7 +713,7 @@ class GroupCoordinates(BaseTask):
                 moved += 1
         finally:
             if self.use_cache and moves:
-                _update_coord_cache(coord_dir, moves)
+                update_coord_cache(coord_dir, moves)
 
         logger.line()
         logger.success(TAG, f"Done — moved: {moved}, already in place: {in_place}, "
@@ -911,7 +756,7 @@ class GroupCoordinates(BaseTask):
                         in_place += 1
                         continue
                     try:
-                        dest = _move_unique(coord, coord_dir / folder)
+                        dest = move_unique(coord, coord_dir / folder)
                     except Exception as e:
                         logger.error(TAG, f"Could not move {coord.name}: {e}")
                         failed += 1
@@ -930,7 +775,7 @@ class GroupCoordinates(BaseTask):
                     in_place += 1
                     continue
                 try:
-                    dest = _move_unique(coord, coord_dir / names[0])
+                    dest = move_unique(coord, coord_dir / names[0])
                 except Exception as e:
                     logger.error(TAG, f"Could not move {coord.name}: {e}")
                     failed += 1
@@ -940,7 +785,7 @@ class GroupCoordinates(BaseTask):
                 moved += 1
         finally:
             if self.use_cache and moves:
-                _update_coord_cache(coord_dir, moves)
+                update_coord_cache(coord_dir, moves)
 
         logger.line()
         logger.success(TAG, f"Head mod matching done — moved: {moved}, already in place: {in_place}, "
@@ -971,7 +816,7 @@ class GroupCoordinates(BaseTask):
         try:
             for coord, folder in sorted(plan["moves"].items()):
                 try:
-                    dest = _move_unique(coord, coord_dir / folder)
+                    dest = move_unique(coord, coord_dir / folder)
                 except Exception as e:
                     logger.error(TAG, f"Could not move {coord.name}: {e}")
                     failed += 1
@@ -984,7 +829,7 @@ class GroupCoordinates(BaseTask):
                     moved_known += 1
         finally:
             if self.use_cache and moves:
-                _update_coord_cache(coord_dir, moves)
+                update_coord_cache(coord_dir, moves)
 
         logger.line()
         logger.success(TAG, f"Hair grouping done — added to existing folders: {moved_known}, "

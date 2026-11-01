@@ -10,6 +10,8 @@ from unittest import mock
 import card_factory as cf
 from kkafio.core.config import _build_task_config
 from kkafio.core.paths import ASSETS_DATA_DIR
+from kkafio.dialogs.gallery import scenes as gal
+from kkafio.dialogs.gallery.common import dialog_text
 from kkafio.indices import author as sa
 from kkafio.indices.author import Author
 from kkafio.tasks import group_scenes as gs
@@ -69,7 +71,7 @@ def _item(folder: Path, rel: str):
 
 def test_suggest_authors_first_then_matching_folders_and_empty_text_lists_folders():
     known = {"alicia": "Alicia", "zed": "Zed"}
-    suggest, _ = gs.manual_callbacks(known, AUTHORS, {})
+    suggest, _ = gal.manual_callbacks(known, AUTHORS, {})
     assert suggest("wonder") == ["Alice"]
     assert suggest("ali") == ["Alice", "Alicia"]                              # the folder follows the known authors
     assert suggest("") == ["Alicia", "Zed"]                                   # nothing typed: the existing folders
@@ -78,18 +80,18 @@ def test_suggest_authors_first_then_matching_folders_and_empty_text_lists_folder
 
 def test_assign_resolves_aliases_spelling_and_records_moves(tmp_path):
     known, moves = {"bob": "bob"}, {}
-    _s, assign = gs.manual_callbacks(known, AUTHORS, moves)
+    _s, assign = gal.manual_callbacks(known, AUTHORS, moves)
     a = _item(tmp_path, "a.png")
     assert assign(a, " wonder ") == (tmp_path / "Alice" / "a.png", "Alice")  # alias -> the author's name
     assert moves == {str(tmp_path / "a.png"): str(tmp_path / "Alice" / "a.png")}
     assert known["alice"] == "Alice"
     assert assign(_item(tmp_path, "b.png"), "BOB")[1] == "bob"               # an existing folder's spelling wins
-    assert assign(_item(tmp_path, "c.png"), "Some/One?")[1] == "Some_One_"    # unknown authors are allowed, made safe
+    assert assign(_item(tmp_path, "c.png"), "Some/One?")[1] == "SomeOne"      # unknown authors are allowed, made safe
 
 
 def test_assign_collision_already_there_and_unusable(tmp_path):
     moves = {}
-    _s, assign = gs.manual_callbacks({}, AUTHORS, moves)
+    _s, assign = gal.manual_callbacks({}, AUTHORS, moves)
     (tmp_path / "Alice").mkdir()
     (tmp_path / "Alice" / "a.png").write_bytes(b"old")
     dest, _ = assign(_item(tmp_path, "a.png"), "Alice")
@@ -98,7 +100,7 @@ def test_assign_collision_already_there_and_unusable(tmp_path):
     before = dict(moves)
     assert assign(inside, "al") == (inside.path, "Alice") and moves == before    # "al" is an alias of Alice: already there
     assert assign(_item(tmp_path, "d.png"), "...") is None
-    with mock.patch.object(gs.shutil, "move", side_effect=OSError("locked")):
+    with mock.patch.object(gal.shutil, "move", side_effect=OSError("locked")):
         assert assign(_item(tmp_path, "e.png"), "Bob") is None
 
 
@@ -142,9 +144,9 @@ def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
     cf.write(tmp_path / "_skipped_" / "s3.png", cf.scene_card([["c"]]))
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))                    # not a scene
 
-    with mock.patch.object(gs, "load_authors", return_value=AUTHORS), \
+    with mock.patch.object(gal, "load_authors", return_value=AUTHORS), \
          mock.patch.object(gs, "load_scene_index", side_effect=AssertionError("Manual needs no index")):
-        tab = gs.scene_gallery_tab(tmp_path, True)
+        tab = gal.scene_gallery_tab(tmp_path, True)
         try:
             items = sorted((i.name, i.series) for i in tab.items)
             suggested = tab.suggest("al")
@@ -153,7 +155,7 @@ def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
             tab.finish()
 
     assert items == [("s1", None), ("s2", "Bob")]
-    assert tab.cover_ratio == gs.SCENE_COVER_RATIO and tab.text.untagged == "No author"
+    assert tab.cover_ratio == gal.SCENE_COVER_RATIO and tab.text.untagged == "No author"
     assert suggested[:2] == ["Alice", "Alucid"]
     assert moved == (tmp_path / "Alice" / "s1.png", "Alice")
     cache = json.loads((tmp_path / PNG_CACHE_FILE).read_text())["files"]
@@ -162,12 +164,12 @@ def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
 
 def test_gallery_tab_with_no_scenes_is_empty(tmp_path):
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))
-    tab = gs.scene_gallery_tab(tmp_path, True)
+    tab = gal.scene_gallery_tab(tmp_path, True)
     tab.finish()
     assert tab.items == []
 
 
 def test_the_scene_wording_is_complete():
-    text = gs.scene_dialog_text()
+    text = dialog_text("dialog.manual_scene")
     assert text.status.format(total=3, untagged=1) == "3 scenes · 1 without an author"
     assert all(getattr(text, f) for f in text.__dataclass_fields__)

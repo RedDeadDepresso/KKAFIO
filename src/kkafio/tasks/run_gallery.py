@@ -6,7 +6,7 @@ Group Coordinates only run automatically / with the LLM), side by side in a sing
 the left of the search input (Scene, Character, Outfit) switch between the three galleries — each
 with its own sidebar, sorting, selection and series/author/character input — and a card is moved
 into its folder the moment you confirm it
-(see dialogs/gallery.py). Every tab keeps its own search text, sort and scroll position.
+(see dialogs/gallery/: the window, and what each tab scans, suggests and moves). Every tab keeps its own search text, sort and scroll position.
 
 The folders default to the game's (Studio scene folder, female + male chara folders, coordinate
 folder); the Scene folder is left out of the window when the game has no Studio and no folder was
@@ -22,10 +22,10 @@ from kkafio.cards.chara import hint_language
 from kkafio.core.errors import InputError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
+from kkafio.dialogs.gallery.characters import chara_gallery_tab
+from kkafio.dialogs.gallery.coordinates import coordinate_gallery_tab
+from kkafio.dialogs.gallery.scenes import scene_gallery_tab
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
-from kkafio.tasks.group_chara import chara_gallery_tab
-from kkafio.tasks.group_coordinates import coordinate_gallery_tab
-from kkafio.tasks.group_scenes import scene_gallery_tab
 
 TAG = "GALLERY"
 

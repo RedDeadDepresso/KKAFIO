@@ -78,10 +78,9 @@ def test_coord_cache_follows_moves(tmp_path):
 
 
 def test_folder_name_sanitised():
-    assert gc.folder_name_for(Path("a:b?.png")) == "a_b_"
-    assert gc.folder_name_for(Path("CON.png")) == "_CON"
+    assert gc.folder_name_for(Path("a:b?.png")) == "ab"
+    assert gc.folder_name_for(Path("CON.png")) == ""     # reserved device name: no folder
     assert gc.folder_name_for(Path("...")) == ""       # nothing usable left
-    assert gc.safe_folder_name(" . . ") == ""
 
 
 def test_subfolders_ignored_unless_enabled(tmp_path):

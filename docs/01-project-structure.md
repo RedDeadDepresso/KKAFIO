@@ -56,9 +56,12 @@ KKAFIO-dev/
 │   │   ├── filter_convert_kks.py
 │   │   ├── filter_duplicate_contents.py
 │   │   ├── group_chara.py
+│   │   ├── group_coordinates.py
+│   │   ├── group_scenes.py
 │   │   ├── install_contents.py
 │   │   ├── rename_chara.py
 │   │   ├── review_similar_chara.py
+│   │   ├── run_gallery.py
 │   │   ├── ungroup_cards.py
 │   │   └── uninstall_contents.py
 │   │
@@ -66,6 +69,7 @@ KKAFIO-dev/
 │   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
 │   │   ├── errors.py                # KKAFIOError / UserError / ConfigError / InputError / ToolNotFoundError / TaskFailedError
 │   │   ├── paths.py                 # Shipped-file paths (APP_DIR / ASSETS_DIR, frozen vs. source) and the per-user config dir (CONFIG_DIR)
+│   │   ├── folder_names.py          # safe_folder_name(): a series / character / author name made safe to create as a folder (Group Characters, Coordinates, Scenes)
 │   │   ├── logger.py                # Structured logger; the GUI parses its stdout format live
 │   │   └── file_manager.py          # Copy/move/delete/archive/extract file operations, 7-Zip wrapper
 │   │
@@ -119,7 +123,14 @@ KKAFIO-dev/
 │   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait · format_size
 │   │   ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
 │   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
-│   │   ├── gallery.py               # Gallery dialog for sorting by hand (characters / coordinates / scenes); gallery_dialog() hosts them as tabs (Run Gallery)
+│   │   ├── gallery/                 # The Run Gallery window and its tabs; imports run one way: run_gallery -> dialogs/gallery/<tab> -> model.py, and <tab> -> tasks/group_*
+│   │   │   ├── __init__.py          # Re-exports the public names (gallery_dialog, GalleryTab, CharaItem, ...)
+│   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, GalleryModel, DialogText, GalleryTab, file-rename helpers
+│   │   │   ├── window.py            # The window: draws the tabs, knows nothing about characters / coordinates / scenes; gallery_dialog() hosts them
+│   │   │   ├── common.py            # What the three tabs share: folder checks, building items, ranking suggestions, the wording
+│   │   │   ├── characters.py        # Character tab: scan, suggest, move into series folders
+│   │   │   ├── coordinates.py       # Outfit tab: scan, suggest, move into character folders
+│   │   │   └── scenes.py            # Scene tab: scan, suggest, move into author folders
 │   │   └── similar_chara.py         # Review dialog (Review Similar Characters)
 │   │
 │   └── system/                      # OS-facing helpers (mostly Windows)
