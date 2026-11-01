@@ -3,12 +3,13 @@ settings_dialog.py — The gallery window's Settings dialog (the Settings button
 
 Two tabs: Shortcuts (shortcuts_dialog.py) and Folder suggestions, where each kind of card has a
 drop-down: No / Existing folders / Existing folders + Series (characters), Characters
-(coordinates) or Authors (scenes). The tabs open the same dialog and change the same settings
+(coordinates) or Authors (scenes); and a drop-down for the language of the series suggestions. The tabs open the same dialog and change the same settings
 objects, so a change applies to all of them; every change is saved at once.
 """
 
 from __future__ import annotations
 
+from kkafio.cards.chara.hint_language import available_languages
 from kkafio.core.i18n import t
 from kkafio.dialogs.gallery.shortcuts import ShortcutSettings
 from kkafio.dialogs.gallery.shortcuts_dialog import build_shortcuts_panel
@@ -34,6 +35,16 @@ def mode_labels(category: str) -> dict[str, str]:
             SUGGEST_ALL: everything}
 
 
+# Each language in its own writing, so it can be found whatever the interface language is.
+LANGUAGE_NAMES = {"en_us": "English", "ja_jp": "日本語", "ko_kr": "한국어", "ru_ru": "Русский",
+                  "zh_cn": "简体中文", "zh_tw": "繁體中文"}
+
+
+def language_labels() -> dict[str, str]:
+    """{language code: name} of the languages the series titles can be shown in."""
+    return {code: LANGUAGE_NAMES.get(code, code) for code in available_languages()}
+
+
 def build_suggestions_panel(panel, settings: SuggestionSettings) -> None:
     """Fill `panel` with one drop-down per kind of card."""
     import customtkinter as ctk
@@ -51,6 +62,16 @@ def build_suggestions_panel(panel, settings: SuggestionSettings) -> None:
             command=lambda text, c=category, by_text=by_text: settings.set(c, by_text[text]))
         menu.set(modes[settings.mode(category)])
         menu.grid(row=row, column=1, padx=(0, 8), pady=6, sticky="e")
+
+    languages = language_labels()
+    by_name = {name: code for code, name in languages.items()}
+    row = len(CATEGORIES) + 1
+    ctk.CTkLabel(panel, text=t("dialog.settings.series_language"), anchor="w").grid(
+        row=row, column=0, padx=(8, 10), pady=(18, 6), sticky="w")
+    menu = ctk.CTkOptionMenu(panel, values=list(languages.values()), width=250,
+                             command=lambda name: settings.set_language(by_name[name]))
+    menu.set(languages.get(settings.language, settings.language))
+    menu.grid(row=row, column=1, padx=(0, 8), pady=(18, 6), sticky="e")
 
 
 def open_settings_dialog(root, shortcuts: ShortcutSettings, suggestions: SuggestionSettings) -> None:

@@ -44,6 +44,7 @@
   "dialog.settings.mode_all_chara": "기존 폴더 + 작품",
   "dialog.settings.mode_all_outfit": "기존 폴더 + 캐릭터",
   "dialog.settings.mode_all_scene": "기존 폴더 + 작가",
+  "dialog.settings.series_language": "작품 추천 언어",
   "dialog.password.prompt": "비밀번호:",
   "dialog.llm.intro": "프롬프트가 클립보드에 복사되었습니다(다시 복사하려면 복사를 클릭하세요). LLM에 붙여넣은 다음 응답을 복사하고 붙여넣기를 클릭하세요.",
   "dialog.llm.copy": "복사",

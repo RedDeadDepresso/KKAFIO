@@ -44,6 +44,7 @@
   "dialog.settings.mode_all_chara": "Existing folders + Series",
   "dialog.settings.mode_all_outfit": "Existing folders + Characters",
   "dialog.settings.mode_all_scene": "Existing folders + Authors",
+  "dialog.settings.series_language": "Series suggestions language",
   "dialog.password.prompt": "Password:",
   "dialog.llm.intro": "The prompt is on your clipboard (click Copy to copy it again). Paste it into your LLM, then copy its reply and click Paste.",
   "dialog.llm.copy": "Copy",

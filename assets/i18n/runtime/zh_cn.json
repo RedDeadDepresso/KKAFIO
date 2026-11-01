@@ -44,6 +44,7 @@
   "dialog.settings.mode_all_chara": "现有文件夹 + 作品",
   "dialog.settings.mode_all_outfit": "现有文件夹 + 角色",
   "dialog.settings.mode_all_scene": "现有文件夹 + 作者",
+  "dialog.settings.series_language": "作品建议语言",
   "dialog.password.prompt": "密码：",
   "dialog.llm.intro": "提示词已在剪贴板中（点击“复制”可再次复制）。请将其粘贴到你的 LLM，然后复制它的回复并点击“粘贴”。",
   "dialog.llm.copy": "复制",

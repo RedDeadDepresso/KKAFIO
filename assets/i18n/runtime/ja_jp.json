@@ -44,6 +44,7 @@
   "dialog.settings.mode_all_chara": "既存のフォルダ + 作品",
   "dialog.settings.mode_all_outfit": "既存のフォルダ + キャラクター",
   "dialog.settings.mode_all_scene": "既存のフォルダ + 作者",
+  "dialog.settings.series_language": "作品候補の言語",
   "dialog.password.prompt": "パスワード:",
   "dialog.llm.intro": "プロンプトはクリップボードにコピーされています（もう一度コピーするには「コピー」をクリック）。LLMに貼り付け、返信をコピーしてから「貼り付け」をクリックしてください。",
   "dialog.llm.copy": "コピー",

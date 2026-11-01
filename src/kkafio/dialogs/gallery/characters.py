@@ -71,17 +71,23 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
                      max_suggestions: int = 8):
     """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the series
     folders that exist and grows as new ones are created; `lang` is the language of the index's
-    series titles (None: no index, only the existing folders are suggested)."""
+    series titles (None: no index, only the existing folders are suggested); `suggest.set_language`
+    changes it later (not for a tab that has no index)."""
+    state = {"lang": lang}
+
+    def set_language(language: str) -> None:
+        if state["lang"]:
+            state["lang"] = language
 
     def existing(text: str) -> list[str]:
         return rank_suggestions(known.values(), text, max_suggestions)
 
     def suggest(text: str) -> list[str]:
         out = existing(text)
-        if lang and text.strip():
+        if state["lang"] and text.strip():
             from kkafio.indices import agv
             seen = {n.casefold() for n in out}
-            for title in agv.suggest_series(text, lang, limit=max_suggestions):
+            for title in agv.suggest_series(text, state["lang"], limit=max_suggestions):
                 folder = safe_folder_name(title)          # shown as the folder it would become
                 if folder and folder.casefold() not in seen:
                     seen.add(folder.casefold())
@@ -89,7 +95,7 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
         return out[:max_suggestions]
 
     def assign(item, text: str):
-        folder = resolve_series_folder(text, known, lang)
+        folder = resolve_series_folder(text, known, state["lang"])
         if not folder:
             logger.warning("GROUP", f"'{text}' can't be used as a series folder name")
             return None
@@ -107,7 +113,7 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
         known.setdefault(folder.casefold(), folder)
         return dest, folder
 
-    return Suggester(suggest, existing), assign
+    return Suggester(suggest, existing, set_language), assign
 
 
 def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache: bool, label: str = ""):

@@ -977,9 +977,12 @@ def test_the_settings_dialog_has_both_tabs_and_saves_the_folder_suggestions(tmp_
         tabview = next(w for w in walk(dialogs[0]) if w.__class__.__name__ == "CTkTabview")
         assert list(tabview._name_list) == ["Shortcuts", "Folder suggestions"]
         menus = [w for w in walk(dialogs[0]) if w.__class__.__name__ == "CTkOptionMenu"]
-        assert len(menus) == 3 and menus[2].get() == "Existing folders + Authors"      # one per kind of card
+        assert len(menus) == 4 and menus[2].get() == "Existing folders + Authors"      # one per kind of card
+        assert menus[3].get() == "English"                                          # and the series language
+        menus[3]._dropdown_callback("日本語")
         menus[0]._dropdown_callback("No")                                         # the Character tab
         saved = json.loads((CONFIG_DIR / "config" / "gallery-suggestions.json").read_text("utf-8"))
         assert saved["suggestions"] == {"chara": "none", "outfit": "all", "scene": "all"}
+        assert saved["series_language"] == "ja_jp"
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0

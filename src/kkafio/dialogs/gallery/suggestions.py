@@ -12,10 +12,14 @@ One `SuggestionSettings` is shared by every tab of the window, so a change appli
 saved in ``<CONFIG_DIR>/config/gallery-suggestions.json`` (on Windows: %APPDATA%/KKAFIO/config), a
 file of its own next to gallery-shortcuts.json: each setting is written the moment the user changes
 it, and neither file has to know about the other's content. No GUI in here (see settings_dialog.py).
+
+Besides, the language the series suggestions of the Character tab are written in (the character
+index holds every series title per language): any language of assets/i18n/, English by default.
 """
 
 from __future__ import annotations
 
+from kkafio.cards.chara.hint_language import DEFAULT_LANGUAGE, available_languages
 from kkafio.core.logger import logger
 from kkafio.core.session_store import SessionStore
 
@@ -38,12 +42,13 @@ DEFAULT_MODE = SUGGEST_ALL
 
 class SuggestionSettings:
     """{category: mode} for the gallery window; a category it doesn't know (a tab without a key)
-    gets every suggestion. `store` is where it is kept (None: nothing is read or written, e.g. in
-    tests)."""
+    gets every suggestion; `language` is the language of the series suggestions. `store` is where
+    it is kept (None: nothing is read or written, e.g. in tests)."""
 
     def __init__(self, store: SessionStore | None = None):
         self.store = store
         self.modes: dict[str, str] = {c: DEFAULT_MODE for c in CATEGORIES}
+        self.language: str = DEFAULT_LANGUAGE
         if store is not None:
             self._load()
 
@@ -64,8 +69,24 @@ class SuggestionSettings:
         self.save()
         return True
 
+    def set_language(self, language: str) -> bool:
+        """Write the series suggestions in `language` and save. False (nothing changed) for a
+        language that isn't one of assets/i18n/."""
+        if language not in available_languages():
+            return False
+        self.language = language
+        self.save()
+        return True
+
     def _load(self) -> None:
-        data = self.store.load().get("suggestions")
+        saved = self.store.load()
+        language = saved.get("series_language")
+        if language is not None:
+            if language in available_languages():
+                self.language = language
+            else:
+                logger.warning(TAG, f"Ignoring the saved series suggestion language '{language}'")
+        data = saved.get("suggestions")
         if not isinstance(data, dict):
             return
         for category in CATEGORIES:
@@ -78,4 +99,4 @@ class SuggestionSettings:
     def save(self) -> bool:
         if self.store is None:
             return True
-        return self.store.save({"version": 1, "suggestions": dict(self.modes)})
+        return self.store.save({"version": 1, "suggestions": dict(self.modes), "series_language": self.language})

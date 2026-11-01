@@ -114,8 +114,9 @@ class RunGallery(BaseTask):
         logger.info(TAG, f"Use cache  : {self.use_cache}")
         logger.line()
 
-        # The series suggestions of the Character tab come from the character index's English
-        # titles (Group Characters reads the language from the prompt, which this task has none of).
+        # The Character tab suggests series from the character index. The language of the titles is
+        # the gallery's Settings (English until the user picks another); this only turns the index on
+        # (Group Characters reads the language from the prompt, which this task has none of).
         hint_lang = hint_language.DEFAULT_LANGUAGE
 
         tabs = []

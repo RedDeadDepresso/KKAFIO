@@ -45,3 +45,14 @@ def test_a_broken_file_or_value_falls_back_to_the_default(tmp_path):
 def test_the_suggester_is_a_plain_callback_with_an_existing_only_variant():
     suggest = Suggester(lambda text: ["Index", "Folder"], lambda text: ["Folder"])
     assert suggest("x") == ["Index", "Folder"] and suggest.existing("x") == ["Folder"]
+
+
+def test_the_series_language_is_english_by_default_saved_and_checked(tmp_path):
+    path = tmp_path / "config" / "s.json"
+    s = SuggestionSettings(SessionStore(path, "T"))
+    assert s.language == "en_us"
+    assert s.set_language("ja_jp") and not s.set_language("xx_xx")
+    assert json.loads(path.read_text("utf-8"))["series_language"] == "ja_jp"
+    assert SuggestionSettings(SessionStore(path, "T")).language == "ja_jp"
+    path.write_text(json.dumps({"series_language": "klingon"}), encoding="utf-8")
+    assert SuggestionSettings(SessionStore(path, "T")).language == "en_us"

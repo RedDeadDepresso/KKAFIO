@@ -508,14 +508,25 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     import customtkinter as ctk
     from PIL import Image, ImageOps, ImageTk
 
-    items, suggest_source, assign, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
+    items, suggest_source, assign_source, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
     if shortcuts is None:
         shortcuts = ShortcutSettings()                  # the defaults, nothing saved
     if suggestions is None:
         suggestions = SuggestionSettings()              # every suggestion, nothing saved
 
+    def apply_language() -> None:
+        """The language of the series titles, as the Settings have it (only the Character tab has any)."""
+        set_language = getattr(suggest_source, "set_language", None)
+        if set_language is not None:
+            set_language(suggestions.language)
+
+    def assign(item, text: str):
+        apply_language()                                # a typed series is matched in that language too
+        return assign_source(item, text)
+
     def suggest(text: str) -> list[str]:
         """The names to offer for `text`, as far as the Settings allow for this kind of card."""
+        apply_language()
         mode = suggestions.mode(tab.key)
         if mode == SUGGEST_NONE:
             return []

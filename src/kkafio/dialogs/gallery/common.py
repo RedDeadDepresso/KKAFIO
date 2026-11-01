@@ -74,14 +74,21 @@ def rank_suggestions(names: Iterable[str], text: str, limit: int) -> list[str]:
 class Suggester:
     """A tab's `suggest` callback. Calling it gives every suggestion (the existing folders and the
     tab's index); `.existing(text)` gives only the folders that exist — what the window uses when
-    the user turns the index suggestions off (suggestions.py)."""
+    the user turns the index suggestions off (suggestions.py). `.set_language(code)` changes the
+    language of the index's titles where the tab has one (a no-op elsewhere)."""
 
-    def __init__(self, everything: Callable[[str], list[str]], existing: Callable[[str], list[str]]):
+    def __init__(self, everything: Callable[[str], list[str]], existing: Callable[[str], list[str]],
+                 set_language: Callable[[str], None] | None = None):
         self._everything = everything
         self.existing = existing
+        self._set_language = set_language
 
     def __call__(self, text: str) -> list[str]:
         return self._everything(text)
+
+    def set_language(self, language: str) -> None:
+        if self._set_language is not None:
+            self._set_language(language)
 
 
 def dialog_text(prefix: str) -> DialogText:

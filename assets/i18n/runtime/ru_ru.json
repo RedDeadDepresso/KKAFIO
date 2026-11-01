@@ -44,6 +44,7 @@
   "dialog.settings.mode_all_chara": "Существующие папки + Серии",
   "dialog.settings.mode_all_outfit": "Существующие папки + Персонажи",
   "dialog.settings.mode_all_scene": "Существующие папки + Авторы",
+  "dialog.settings.series_language": "Язык подсказок серий",
   "dialog.password.prompt": "Пароль:",
   "dialog.llm.intro": "Промпт уже в буфере обмена (нажмите «Копировать», чтобы скопировать его снова). Вставьте его в LLM, затем скопируйте ответ и нажмите «Вставить».",
   "dialog.llm.copy": "Копировать",

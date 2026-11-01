@@ -366,3 +366,13 @@ def test_suggest_existing_leaves_out_the_index(agv_file):
     suggest, _assign = gal.manual_callbacks(known, CharaKeyCache([], False), "en_us")
     assert suggest.existing("fate") == ["Fate Grand Order"]        # no "Fatestay night" from the index
     assert suggest.existing("sword") == []
+
+
+def test_the_series_language_can_be_changed_after_the_callbacks_are_made(agv_file):
+    suggest, assign = gal.manual_callbacks({}, CharaKeyCache([], False), "en_us")
+    assert suggest("fate") == ["Fatestay night"]
+    suggest.set_language("ja_jp")
+    assert suggest("fate") == [gal.safe_folder_name("フェイト/ステイナイト")]       # the same series, in Japanese
+    no_index, _ = gal.manual_callbacks({}, CharaKeyCache([], False), None)
+    no_index.set_language("ja_jp")                                              # a tab without an index stays without
+    assert no_index("fate") == []
