@@ -181,7 +181,16 @@ def test_gallery_tab_with_no_coordinates_is_empty(tmp_path):
 
 def test_the_coordinate_wording_is_complete_and_formats():
     text = dialog_text("dialog.manual_coord")
-    assert text.status.format(total=3, untagged=1) == "3 coordinates · 1 without a character"
+    assert text.status.format(total=3, untagged=1) == "3 coordinates · 1 not in a folder"
     assert text.moved.format(name="a", series="Rin") == "Moved a → Rin"
     assert "{count}" in text.multi_prompt and "{failed}" in text.multi_moved_partial
     assert all(getattr(text, f) for f in text.__dataclass_fields__)
+
+
+def test_suggest_existing_leaves_out_the_character_names():
+    known = {"rin": "Rin"}
+    extra = {"saber": "Saber", "rin": "RIN"}
+    suggest, assign = gal.manual_callbacks(known, {}, extra=extra)
+    assert suggest("") == ["Rin", "Saber"]                         # a folder's spelling wins over the character's
+    assert suggest.existing("") == ["Rin"]
+    assert suggest.existing("sab") == []

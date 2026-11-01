@@ -960,3 +960,26 @@ def test_the_right_click_menu_is_a_customtkinter_menu_that_runs_and_closes(tmp_p
         assert not [w for w in root.winfo_children() if isinstance(w, tk.Toplevel)]
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
+
+
+def test_the_settings_dialog_has_both_tabs_and_saves_the_folder_suggestions(tmp_path, monkeypatch):
+    import json
+    from kkafio.core.paths import CONFIG_DIR
+    items = make_items(tmp_path, 3)
+
+    def script(root):
+        gallery_canvas(root)
+        pump(root, 0.3)
+        button(root, "Settings").invoke()
+        pump(root, 0.5)
+        dialogs = [w for w in walk(root) if w.__class__.__name__ == "CTkToplevel"]
+        assert len(dialogs) == 1
+        tabview = next(w for w in walk(dialogs[0]) if w.__class__.__name__ == "CTkTabview")
+        assert list(tabview._name_list) == ["Shortcuts", "Folder suggestions"]
+        menus = [w for w in walk(dialogs[0]) if w.__class__.__name__ == "CTkOptionMenu"]
+        assert len(menus) == 3 and menus[2].get() == "Existing folders + Authors"      # one per kind of card
+        menus[0]._dropdown_callback("No")                                         # the Character tab
+        saved = json.loads((CONFIG_DIR / "config" / "gallery-suggestions.json").read_text("utf-8"))
+        assert saved["suggestions"] == {"chara": "none", "outfit": "all", "scene": "all"}
+
+    assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0

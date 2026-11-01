@@ -12,7 +12,7 @@ from kkafio.cards.chara.outfits import build_coord_cache
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.gallery.model import COVER_RATIO, GalleryTab
-from kkafio.dialogs.gallery.common import dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
+from kkafio.dialogs.gallery.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
 from kkafio.tasks.group_coordinates import TAG, move_unique, sorted_charas, update_coord_cache
 from kkafio.cards.mods.parsing import parse_coord_guids
 from kkafio.cards.mods.png_guids import collect_coord_guids_by_file
@@ -43,21 +43,27 @@ def scan_manual_items(coord_dir: Path, use_cache: bool) -> list:
     return items
 
 
-def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestions: int = 8):
-    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the folder names
-    to suggest — the characters' filenames and the folders that exist — and grows as folders are
-    created; every move `assign` makes is recorded in `moves` ({old path: new path}) so the caller
-    can bring the caches along."""
+def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestions: int = 8,
+                     extra: dict[str, str] | None = None):
+    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the folders that
+    exist and grows as folders are created; `extra` ({casefolded: name}) the other names to
+    suggest — the characters' filenames — which `suggest.existing` leaves out. Every move `assign`
+    makes is recorded in `moves` ({old path: new path}) so the caller can bring the caches along."""
+    extra = {} if extra is None else extra
+
+    def existing(text: str) -> list[str]:
+        return rank_suggestions(known.values(), text, max_suggestions)
 
     def suggest(text: str) -> list[str]:
-        return rank_suggestions(known.values(), text, max_suggestions)
+        return rank_suggestions({**extra, **known}.values(), text, max_suggestions)
 
     def assign(item, text: str):
         name = safe_folder_name(text.strip())
         if not name:
             logger.warning(TAG, f"'{text}' can't be used as a folder name")
             return None
-        name = known.get(name.casefold(), name)           # spelled like the character / existing folder
+        key = name.casefold()
+        name = known.get(key) or extra.get(key) or name   # spelled like the existing folder / character
         dest_dir = item.root / name
         if item.path.parent == dest_dir:
             return item.path, name                        # already there
@@ -71,7 +77,7 @@ def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestio
         known.setdefault(name.casefold(), name)
         return dest, name
 
-    return suggest, assign
+    return Suggester(suggest, existing), assign
 
 
 def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: bool, label: str = ""):
@@ -86,11 +92,10 @@ def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
     items = scan_manual_items(coord_dir, use_cache)
     known = existing_folders(coord_dir)
     seed_known(known, items)
-    for key, name in chara_folder_names(chara_dirs).items():
-        known.setdefault(key, name)
+    extra = chara_folder_names(chara_dirs)
     moves: dict[str, str] = {}
-    suggest, assign = manual_callbacks(known, moves)
-    logger.info(TAG, f"{len(items)} coordinate(s) and {len(known)} suggested name(s) for the gallery")
+    suggest, assign = manual_callbacks(known, moves, extra=extra)
+    logger.info(TAG, f"{len(items)} coordinate(s) and {len({**extra, **known})} suggested name(s) for the gallery")
 
     def finish() -> None:
         if use_cache and moves:

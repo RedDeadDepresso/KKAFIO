@@ -14,7 +14,7 @@ from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.gallery.model import COVER_RATIO, GalleryTab
 from kkafio.dialogs.gallery.common import (
-    dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known,
+    Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known,
 )
 from kkafio.tasks.group_chara import move_card, read_card
 from kkafio.cards.mods.parsing import parse_chara_guids
@@ -73,8 +73,11 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
     folders that exist and grows as new ones are created; `lang` is the language of the index's
     series titles (None: no index, only the existing folders are suggested)."""
 
+    def existing(text: str) -> list[str]:
+        return rank_suggestions(known.values(), text, max_suggestions)
+
     def suggest(text: str) -> list[str]:
-        out = rank_suggestions(known.values(), text, max_suggestions)
+        out = existing(text)
         if lang and text.strip():
             from kkafio.indices import agv
             seen = {n.casefold() for n in out}
@@ -104,7 +107,7 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
         known.setdefault(folder.casefold(), folder)
         return dest, folder
 
-    return suggest, assign
+    return Suggester(suggest, existing), assign
 
 
 def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache: bool, label: str = ""):

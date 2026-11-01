@@ -171,5 +171,12 @@ def test_gallery_tab_with_no_scenes_is_empty(tmp_path):
 
 def test_the_scene_wording_is_complete():
     text = dialog_text("dialog.manual_scene")
-    assert text.status.format(total=3, untagged=1) == "3 scenes · 1 without an author"
+    assert text.status.format(total=3, untagged=1) == "3 scenes · 1 not in a folder"
     assert all(getattr(text, f) for f in text.__dataclass_fields__)
+
+
+def test_suggest_existing_leaves_out_the_known_authors():
+    known = {"alicia": "Alicia", "zed": "Zed"}
+    suggest, _ = gal.manual_callbacks(known, AUTHORS, {})
+    assert suggest.existing("ali") == ["Alicia"]                   # no "Alice" from the authors
+    assert suggest.existing("") == ["Alicia", "Zed"]

@@ -10,7 +10,9 @@ gallery — The Run Gallery window and what each of its tabs does.
     scenes.py       the Scene tab: scan, suggest, move into author folders
     common.py       what the three tabs share
     shortcuts.py    the keyboard shortcuts (rename, change folder, delete) and their config file
-    shortcuts_dialog.py  the window that sets them (Shortcuts button)
+    suggestions.py  what the folder box offers per kind of card (none / existing / all), and its config file
+    settings_dialog.py  the Settings window (Settings button): the Shortcuts and Folder suggestions tabs
+    shortcuts_dialog.py  the Shortcuts tab of it
     viewstate.py    the last open tab and each tab's sort and cover size, kept between runs
     mods_panel.py   the mod dependencies sidebar's data: a card's mods and which are installed
     mods_sidebar.py the collapsible sidebar on the right that lists them (imported by window.py on use)

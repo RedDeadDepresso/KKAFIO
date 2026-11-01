@@ -13,7 +13,7 @@ from pathlib import Path
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.gallery.model import GalleryTab
-from kkafio.dialogs.gallery.common import dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
+from kkafio.dialogs.gallery.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
 from kkafio.indices.author import canonical_name, load_authors, suggest_authors
 from kkafio.tasks.group_scenes import TAG, save_hash_cache, scan_scenes
 from kkafio.cards.mods.parsing import parse_scene_guids
@@ -28,6 +28,9 @@ def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str]
     folders that exist and grows as folders are created; `authors` are the known authors (see
     indices/author). Every move `assign` makes is recorded in `moves` ({old path: new path}) so the
     caller can bring the hash cache along."""
+
+    def existing(text: str) -> list[str]:
+        return rank_suggestions(known.values(), text, max_suggestions)
 
     def suggest(text: str) -> list[str]:
         out = suggest_authors(text, authors, max_suggestions)        # none when nothing is typed
@@ -52,7 +55,7 @@ def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str]
         known.setdefault(name.casefold(), name)
         return dest, name
 
-    return suggest, assign
+    return Suggester(suggest, existing), assign
 
 
 def _move_unique(src: Path, dest_dir: Path) -> Path | None:

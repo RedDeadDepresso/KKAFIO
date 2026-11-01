@@ -55,6 +55,7 @@ from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
 from kkafio.dialogs.gallery.popup_menu import open_popup_menu
+from kkafio.dialogs.gallery.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
 from kkafio.dialogs.gallery.viewstate import GalleryViewState, TabView
 from kkafio.dialogs.gallery.shortcuts import (
     ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
@@ -401,6 +402,7 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
     root.grid_rowconfigure(1, weight=1)
 
     shortcuts = ShortcutSettings.from_user_config()     # one for the whole window: every tab shares it
+    suggestions = SuggestionSettings.from_user_config()  # (and what the folder box offers, per kind of card)
     view_state = GalleryViewState.from_user_config()    # the last tab and each tab's sort / size
     keys = [tab.key or f"tab{i}" for i, tab in enumerate(tabs)]
     initial = view_state.initial_index(keys, initial, [bool(tab.items) for tab in tabs])   # the tab left open last
@@ -435,7 +437,7 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
 
     for i, tab in enumerate(tabs):
         galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
-                                    shortcuts=shortcuts, view=view_state.view(keys[i]), mods=mods,
+                                    shortcuts=shortcuts, suggestions=suggestions, view=view_state.view(keys[i]), mods=mods,
                                     on_cursor=lambda item, i=i: on_cursor(i, item)))
 
     if mods is not None:
@@ -494,7 +496,8 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
 
 
 def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool,
-                   shortcuts: ShortcutSettings | None = None, view: TabView | None = None,
+                   shortcuts: ShortcutSettings | None = None, suggestions: SuggestionSettings | None = None,
+                   view: TabView | None = None,
                    on_cursor: Callable[[CharaItem | None], None] | None = None, mods=None) -> _Gallery:
     """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
     gridded. `search_entry` is the window's shared search input, which only the open tab listens to.
@@ -505,9 +508,20 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     import customtkinter as ctk
     from PIL import Image, ImageOps, ImageTk
 
-    items, suggest, assign, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
+    items, suggest_source, assign, cover_ratio = tab.items, tab.suggest, tab.assign, tab.cover_ratio
     if shortcuts is None:
         shortcuts = ShortcutSettings()                  # the defaults, nothing saved
+    if suggestions is None:
+        suggestions = SuggestionSettings()              # every suggestion, nothing saved
+
+    def suggest(text: str) -> list[str]:
+        """The names to offer for `text`, as far as the Settings allow for this kind of card."""
+        mode = suggestions.mode(tab.key)
+        if mode == SUGGEST_NONE:
+            return []
+        if mode == SUGGEST_EXISTING:
+            return list(getattr(suggest_source, "existing", suggest_source)(text))
+        return list(suggest_source(text))
     view = view or TabView()                            # how the tab was left last time
     handle = _Gallery()
     model = GalleryModel(items)
@@ -624,9 +638,9 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                 except tk.TclError:
                     pass
 
-    def open_shortcuts() -> None:
-        from kkafio.dialogs.gallery.shortcuts_dialog import open_shortcuts_dialog
-        open_shortcuts_dialog(root, shortcuts)
+    def open_settings() -> None:
+        from kkafio.dialogs.gallery.settings_dialog import open_settings_dialog
+        open_settings_dialog(root, shortcuts, suggestions)
 
     # ---- widgets -------------------------------------------------------------
     # (the search input belongs to the window: it is the `search_entry` passed in)
@@ -733,7 +747,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     foot.grid_columnconfigure(0, weight=1)
     status = ctk.CTkLabel(foot, text="", anchor="w")
     status.grid(row=0, column=0, sticky="ew")
-    ctk.CTkButton(foot, text=t("dialog.shortcuts.button"), width=110, command=open_shortcuts).grid(
+    ctk.CTkButton(foot, text=t("dialog.settings.button"), width=110, command=open_settings).grid(
         row=0, column=1, padx=(0, 8))
     ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=2)
 

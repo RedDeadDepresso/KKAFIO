@@ -22,9 +22,9 @@ os.environ["COLUMNS"] = "100"  # argparse wraps --help output to the terminal wi
 
 @pytest.fixture(autouse=True)
 def _fresh_gallery_config():
-    """The gallery remembers its shortcuts and view between runs (files in the config dir): every
+    """The gallery remembers its shortcuts, suggestion settings and view between runs (files in the config dir): every
     test starts from none, so what one test leaves behind can't change another."""
     from kkafio.core.paths import CONFIG_DIR
-    for name in ("gallery-shortcuts.json", "gallery-view.json"):
+    for name in ("gallery-shortcuts.json", "gallery-suggestions.json", "gallery-view.json"):
         (CONFIG_DIR / "config" / name).unlink(missing_ok=True)
     yield

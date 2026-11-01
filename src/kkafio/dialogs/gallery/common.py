@@ -7,7 +7,7 @@ in all three lives here: which folders count, listing the folders that exist, bu
 `CharaItem`, ranking the suggestions, and the window's wording.
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import fields
 from pathlib import Path
 
@@ -69,6 +69,19 @@ def rank_suggestions(names: Iterable[str], text: str, limit: int) -> list[str]:
         ranked = sorted((n for n in names if q in n.casefold()),
                         key=lambda n: (not n.casefold().startswith(q), n.casefold()))
     return ranked[:limit]
+
+
+class Suggester:
+    """A tab's `suggest` callback. Calling it gives every suggestion (the existing folders and the
+    tab's index); `.existing(text)` gives only the folders that exist — what the window uses when
+    the user turns the index suggestions off (suggestions.py)."""
+
+    def __init__(self, everything: Callable[[str], list[str]], existing: Callable[[str], list[str]]):
+        self._everything = everything
+        self.existing = existing
+
+    def __call__(self, text: str) -> list[str]:
+        return self._everything(text)
 
 
 def dialog_text(prefix: str) -> DialogText:

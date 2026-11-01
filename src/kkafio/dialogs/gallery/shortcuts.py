@@ -1,7 +1,7 @@
 """
 shortcuts.py — The keyboard shortcuts of the gallery window, and where they are saved.
 
-Four actions can be given a key by the user (Shortcuts button of the window): rename the card,
+Four actions can be given a key by the user (Shortcuts tab of the window's Settings): rename the card,
 change its folder, delete it (move it to the trash) and restore it (out of the trash). One `ShortcutSettings` is shared by every
 tab of the window, so a change applies to all of them at once. It is saved in
 ``<CONFIG_DIR>/config/gallery-shortcuts.json`` (on Windows: %APPDATA%/KKAFIO/config), next to the
@@ -9,7 +9,7 @@ GUI's own config, and read again the next time the gallery opens.
 
 A shortcut is written as text — "F12", "Delete", "Enter", "Ctrl+R", "Ctrl+Shift+F5" — made of the
 modifiers Ctrl, Alt, Shift (in that order) and one key. No GUI in here (see shortcuts_dialog.py for
-the window that edits them); `combo_from_event()` turns the parts of a Tk key event into that text.
+the tab that edits them); `combo_from_event()` turns the parts of a Tk key event into that text.
 """
 
 from __future__ import annotations

@@ -359,3 +359,10 @@ def test_maximize_uses_zoomed_state_then_the_x11_attribute():
         def wm_attributes(self, *a):
             raise tk.TclError("nope")
     maximize(Neither(False))                                                           # no error
+
+
+def test_suggest_existing_leaves_out_the_index(agv_file):
+    known = {"fate grand order": "Fate Grand Order", "sao": "SAO"}
+    suggest, _assign = gal.manual_callbacks(known, CharaKeyCache([], False), "en_us")
+    assert suggest.existing("fate") == ["Fate Grand Order"]        # no "Fatestay night" from the index
+    assert suggest.existing("sword") == []
