@@ -1268,8 +1268,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         item = lay["items"][idx]
         cancel_edit()
         canvas.focus_set()
-        if not text:
-            return
+        if not text and item.series is None:
+            return                                          # blank and not in a folder: nothing to do
         series = assign_one(item, text)
         if series is None:
             status.configure(text=txt.move_failed.format(name=item.name))
@@ -1322,7 +1322,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             if old_path in pil_cache:                      # the cover follows the card
                 pil_cache[new_path] = pil_cache.pop(old_path)
             moved["count"] += 1
-        model.assigned(item, new_path, series)
+        # blank text = moved up out of its folder: the card is untagged again
+        model.assigned(item, new_path, series if text.strip() else None)
         return series
 
     def finish_assignment(first_idx: int) -> None:
@@ -1558,9 +1559,12 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
         def confirm_multi(text: str | None = None) -> str:
             text = (text if text is not None else (chosen() or entry.get())).strip()
-            if not text:
-                return "break"
             close()
+            if not text:                                    # blank: move the ones in a folder up
+                targets_in_folder = [i for i in targets if i.series is not None]
+                if targets_in_folder:
+                    apply_many(targets_in_folder, text)
+                return "break"
             apply_many(targets, text)
             return "break"
 

@@ -40,6 +40,14 @@ def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str]
         return out[:max_suggestions]
 
     def assign(item, text: str):
+        if not text.strip():                               # blank: up out of the author folder
+            if item.path.parent == item.root:
+                return item.path, item.root.name           # already at the top
+            dest = _move_unique(item.path, item.root)
+            if dest is None:
+                return None
+            moves[str(item.path)] = str(dest)
+            return dest, item.root.name
         name = safe_folder_name(canonical_name(text, authors))
         if not name:
             logger.warning(TAG, f"'{text}' can't be used as a folder name")

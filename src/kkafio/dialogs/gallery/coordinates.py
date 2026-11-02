@@ -58,6 +58,17 @@ def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestio
         return rank_suggestions({**extra, **known}.values(), text, max_suggestions)
 
     def assign(item, text: str):
+        if not text.strip():                              # blank: up out of the character folder
+            if item.path.parent == item.root:
+                return item.path, item.root.name          # already at the top
+            try:
+                dest = move_unique(item.path, item.root)
+            except Exception as e:
+                logger.warning(TAG, f"Could not move {item.path.name}: {e}")
+                return None
+            logger.success(TAG, f"Moved {item.path.name} -> {item.root.name}/")
+            moves[str(item.path)] = str(dest)
+            return dest, item.root.name
         name = safe_folder_name(text.strip())
         if not name:
             logger.warning(TAG, f"'{text}' can't be used as a folder name")

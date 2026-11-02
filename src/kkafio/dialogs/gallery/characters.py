@@ -95,6 +95,11 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
         return out[:max_suggestions]
 
     def assign(item, text: str):
+        if not text.strip():                              # blank: up out of the series folder
+            if item.path.parent == item.root:
+                return item.path, item.root.name          # already at the top
+            dest = move_card(item.path, item.root, item.root.name, key_cache)
+            return None if dest is None else (dest, item.root.name)
         folder = resolve_series_folder(text, known, state["lang"])
         if not folder:
             logger.warning("GROUP", f"'{text}' can't be used as a series folder name")
