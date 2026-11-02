@@ -1326,6 +1326,71 @@
         }
       ]
     },
+    "ManageLibraryArchiveOutputPath": {
+      "type": "folder",
+      "name": "library_archive_output_path",
+      "label": "$option.ManageLibraryArchiveOutputPath.label",
+      "description": "$option.ManageLibraryArchiveOutputPath.description",
+      "default": "C:/KKAFIO/Archived Cards",
+      "pipeline_override": {
+        "ArchiveOutputPath": "{library_archive_output_path}"
+      }
+    },
+    "ManageLibraryArchiveFormat": {
+      "type": "select",
+      "label": "$option.ManageLibraryArchiveFormat.label",
+      "description": "$option.ManageLibraryArchiveFormat.description",
+      "default_case": "7z",
+      "cases": [
+        {
+          "name": "7z",
+          "label": "$option.ArchiveFormat.case.7z.label"
+        },
+        {
+          "name": "zip",
+          "label": "$option.ArchiveFormat.case.zip.label"
+        },
+        {
+          "name": "copy",
+          "label": "$option.ArchiveFormat.case.copy.label"
+        }
+      ],
+      "pipeline_override": {
+        "ArchiveFormat": "{case.name}"
+      }
+    },
+    "ManageLibraryArchiveOptions": {
+      "type": "checkbox",
+      "label": "$option.ManageLibraryArchiveOptions.label",
+      "description": "$option.ManageLibraryArchiveOptions.description",
+      "default_case": ["ArchiveCombined", "ArchiveIncludeCoordinates"],
+      "cases": [
+        {
+          "name": "ArchiveCombined",
+          "label": "$option.CombinedArchive.label",
+          "description": "$option.CombinedArchive.description",
+          "pipeline_override": {
+            "ArchiveCombined": true
+          }
+        },
+        {
+          "name": "ArchiveIncludeModpack",
+          "label": "$option.IncludeModpack.label",
+          "description": "$option.IncludeModpack.description",
+          "pipeline_override": {
+            "ArchiveIncludeModpack": true
+          }
+        },
+        {
+          "name": "ArchiveIncludeCoordinates",
+          "label": "$option.IncludeCoordinates.label",
+          "description": "$option.IncludeCoordinates.description",
+          "pipeline_override": {
+            "ArchiveIncludeCoordinates": true
+          }
+        }
+      ]
+    },
     "BackupFolders": {
       "type": "checkbox",
       "label": "$option.BackupFolders.label",
@@ -1563,6 +1628,9 @@
       "group": ["card-management"],
       "option": [
         "ManageLibraryDeleteOptions",
+        "ManageLibraryArchiveOutputPath",
+        "ManageLibraryArchiveFormat",
+        "ManageLibraryArchiveOptions",
         "CharaDir",
         "SceneDir",
         "CoordDir",

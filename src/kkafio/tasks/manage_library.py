@@ -18,6 +18,12 @@ uses, marking each installed or missing in the input and output mods folders (th
 Input / Output Mods Directory — a mod in either counts as installed):
 a missing one has a search icon that looks its GUID up on Google (see dialogs/library/mods_panel.py).
 
+Cards sent to a library's Archive queue (right-click > Archive, F11) are left alone until the
+window closes; then they are handed to Archive Cards, which bundles them with their zipmods (and,
+for characters, their matching coordinates) into the Archive Output Directory, in the Archive
+Format and with the Archive Options (combined archive, Sideloader Modpack, coordinates). The
+originals stay where they are; Restore in the queue takes a card out of it again.
+
 Cards sent to a library's trash are not sent to the Recycle Bin directly: when the window closes
 they are handed to Delete Cards, which also deletes the character's matching coordinates (Include
 Coordinates) and the mods nothing else uses (Check Shared Mods), looking for mods in the output
@@ -55,6 +61,12 @@ class ManageLibrary(BaseTask):
         self.use_cache     : bool = cfg.get("UseCache", True)
         self.check_shared_mods  : bool = cfg.get("CheckSharedMods", True)
         self.include_coordinates: bool = cfg.get("IncludeCoordinates", True)
+        self.archive_output_dir_str : str  = cfg.get("ArchiveOutputPath", "")
+        self.archive_format         : str  = cfg.get("ArchiveFormat", "7z")
+        self.archive_combined       : bool = cfg.get("ArchiveCombined", True)
+        self.archive_include_modpack: bool = cfg.get("ArchiveIncludeModpack", False)
+        self.archive_include_coords : bool = cfg.get("ArchiveIncludeCoordinates", True)
+        self._input_mods_dir   : Path | None = None     # set by _card_mods(): where Archive Cards looks for mods
         self._output_mods_dir  : Path | None = None     # set by _card_mods(): where Delete Cards looks for mods
 
     # ------------------------------------------------------------------
@@ -118,6 +130,7 @@ class ManageLibrary(BaseTask):
     def _card_mods(self) -> CardMods:
         game_type = getattr(self.config, "config_data", {}).get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         input_dir, output_dir = self._mods_dirs()
+        self._input_mods_dir = input_dir
         self._output_mods_dir = output_dir
         return CardMods(ModsLookup(input_dir, game_type, self.use_cache, extra_dirs=(output_dir,)))
 
@@ -159,6 +172,53 @@ class ManageLibrary(BaseTask):
         DeleteCards(self.config, self.file_manager,
                     settings=self._delete_cards_settings(paths, chara_dirs, scene_dir, coord_dir,
                                                          output_mods_dir)).run()
+
+    # ------------------------------------------------------------------
+    # Archiving the queued cards
+    # ------------------------------------------------------------------
+
+    def _archive_output_dir(self) -> Path | None:
+        """The Archive Output Directory, or None when none is set (Archive Cards then puts each
+        archive next to its card). The shipped Windows default is rooted under the home folder on
+        other platforms, like the other tasks' default folders; the folder is created by Archive
+        Cards when something is archived."""
+        text = self.archive_output_dir_str.strip()
+        if not text:
+            return None
+        if text == "C:/KKAFIO/Archived Cards":
+            from kkafio.core.config import Config
+            return Config._platform_default(text)
+        return Path(text)
+
+    def _archive_cards_settings(self, paths: list[Path], coord_dir: Path,
+                                input_mods_dir: Path | None, output_mods_dir: Path | None) -> dict:
+        """The Archive Cards options for the cards left in the library's archive queue. Mods and
+        coordinates come from the folders the library shows (explicit, so AutoResolve is off): the
+        input mods folder, else the output one."""
+        mods_dir = input_mods_dir or output_mods_dir
+        output_dir = self._archive_output_dir()
+        return {
+            "Enable": True,
+            "ContentPaths": [str(p) for p in paths],
+            "OutputPath": str(output_dir) if output_dir is not None else "",
+            "Format": self.archive_format,
+            "CombinedArchive": self.archive_combined,
+            "IncludeModpack": self.archive_include_modpack,
+            "IncludeCoordinates": self.archive_include_coords,
+            "UseCache": self.use_cache,
+            "AutoResolve": False,
+            "ModsDir": str(mods_dir) if mods_dir is not None else "",
+            "CoordDir": str(coord_dir),
+        }
+
+    def _archive_queued(self, paths: list[Path], coord_dir: Path, input_mods_dir: Path | None,
+                        output_mods_dir: Path | None) -> None:
+        from kkafio.tasks.archive_cards import ArchiveCards
+        logger.line()
+        logger.info(TAG, f"{len(paths)} queued card(s) - handing them to Archive Cards")
+        ArchiveCards(self.config, self.file_manager,
+                     settings=self._archive_cards_settings(paths, coord_dir, input_mods_dir,
+                                                           output_mods_dir)).run()
 
     # ------------------------------------------------------------------
     # Run
@@ -213,8 +273,10 @@ class ManageLibrary(BaseTask):
         # The sidebar's lookup keeps the output folder only when it exists; that is the one whose
         # mods Delete Cards may delete.
         output_mods_dir = self._output_mods_dir
+        input_mods_dir = self._input_mods_dir
         moved = library_dialog(
             t("dialog.library.title"), tabs, initial, card_mods,
-            on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, output_mods_dir))
+            on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, output_mods_dir),
+            on_archive=lambda paths: self._archive_queued(paths, coord_dir, input_mods_dir, output_mods_dir))
         logger.line()
         logger.success(TAG, "Done — moved: " + ", ".join(f"{tab.label} {n}" for tab, n in zip(tabs, moved)))

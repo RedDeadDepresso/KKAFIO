@@ -533,7 +533,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             "scenes are sorted into author folders, characters into series folders and coordinates "
             "(outfits) into character folders — and a confirmed card is moved at once. The folders "
             "default to the game's (the Scene tab is left out when the game has no Studio and no "
-            "--scene-dir is given). The same caches as the Group tasks are used and kept up to date."
+            "--scene-dir is given). The same caches as the Group tasks are used and kept up to date. "
+            "Right-click a card (or press F11) to move it to the Archive queue, above the Trash in the "
+            "sidebar; when the window closes the queued cards are archived with Archive Cards "
+            "(--archive-* options)."
         ),
         target="kkafio.tasks.manage_library:ManageLibrary",
         # InputModsDir / OutputModsDir are combined from several flags in the hook.
@@ -548,6 +551,24 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="When deleting a trashed character card, also delete its matching coordinate "
                         "cards and their mods (default: on)",
                    off_help="Only delete the character card itself, leave its coordinates alone"),
+            Value("--archive-output-dir", key="ArchiveOutputPath", ignore_blank=True, metavar="DIR",
+                  default=None,
+                  help="Where cards moved to the Archive queue are archived when the library closes "
+                       "(default: ManageLibrary.ArchiveOutputPath from config)"),
+            Value("--archive-format", key="ArchiveFormat", choices=["7z", "zip", "copy"], default=None,
+                  help="Archive format for the Archive queue, or 'copy' to copy the files flat into the "
+                       "output directory instead of archiving them (default: ManageLibrary.ArchiveFormat "
+                       "from config)"),
+            Toggle("archive-combined", key="ArchiveCombined",
+                   help="Put all queued cards in one archive (default: on)",
+                   off_help="One archive per queued card"),
+            Toggle("archive-include-modpack", key="ArchiveIncludeModpack",
+                   help="Include zipmods from Sideloader Modpack folders in the archives",
+                   off_help="Exclude Sideloader Modpack zipmods from the archives (default)"),
+            Toggle("archive-include-coordinates", key="ArchiveIncludeCoordinates",
+                   help="When archiving a character card, also bundle its matching coordinate cards "
+                        "and their mods (default: on)",
+                   off_help="Only archive the character card itself, leave its coordinates out"),
             Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "pointing it at the game's chara folder also uses female/ and male/)"),

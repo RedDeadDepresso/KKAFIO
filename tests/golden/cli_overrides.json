@@ -4570,6 +4570,444 @@
   },
   "world": "configured"
  },
+ "configured: manage-library": {
+  "argv": [
+   "manage-library"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --archive-output-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--archive-output-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --chara-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --coord-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --input-mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--input-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --output-mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--output-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --scene-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library [all-first]": {
+  "argv": [
+   "manage-library",
+   "--check-shared-mods",
+   "--include-coordinates",
+   "--archive-output-dir",
+   "S_archive_output_dir",
+   "--archive-format",
+   "7z",
+   "--archive-combined",
+   "--archive-include-modpack",
+   "--archive-include-coordinates",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--input-mods-dir",
+   "S_input_mods_dir",
+   "--output-mods-dir",
+   "S_output_mods_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": true,
+      "archive_output_dir_str": "S_archive_output_dir",
+      "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": true,
+      "coord_dir_str": "S_coord_dir",
+      "include_coordinates": true,
+      "input_mods_dir_str": "S_input_mods_dir",
+      "output_mods_dir_str": "S_output_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library [all-last]": {
+  "argv": [
+   "manage-library",
+   "--no-check-shared-mods",
+   "--no-include-coordinates",
+   "--archive-output-dir",
+   "S_archive_output_dir",
+   "--archive-format",
+   "copy",
+   "--no-archive-combined",
+   "--no-archive-include-modpack",
+   "--no-archive-include-coordinates",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--input-mods-dir",
+   "S_input_mods_dir",
+   "--output-mods-dir",
+   "S_output_mods_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": false,
+      "archive_format": "copy",
+      "archive_include_coords": false,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "S_archive_output_dir",
+      "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": false,
+      "coord_dir_str": "S_coord_dir",
+      "include_coordinates": false,
+      "input_mods_dir_str": "S_input_mods_dir",
+      "output_mods_dir_str": "S_output_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": false
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
  "configured: rename-chara": {
   "argv": [
    "rename-chara"
@@ -5058,336 +5496,6 @@
      "kind": "task",
      "run_kwargs": {},
      "task": "ReviewSimilarChara"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library": {
-  "argv": [
-   "manage-library"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --chara-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--chara-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --coord-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--coord-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --input-mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--input-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --output-mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--output-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --scene-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--scene-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library [all-first]": {
-  "argv": [
-   "manage-library",
-   "--check-shared-mods",
-   "--include-coordinates",
-   "--chara-dir",
-   "S_chara_dir",
-   "--scene-dir",
-   "S_scene_dir",
-   "--coord-dir",
-   "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
-   "--mods-dir",
-   "S_mods_dir",
-   "--use-cache"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "S_chara_dir",
-      "check_shared_mods": true,
-      "coord_dir_str": "S_coord_dir",
-      "include_coordinates": true,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
-      "scene_dir_str": "S_scene_dir",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library [all-last]": {
-  "argv": [
-   "manage-library",
-   "--no-check-shared-mods",
-   "--no-include-coordinates",
-   "--chara-dir",
-   "S_chara_dir",
-   "--scene-dir",
-   "S_scene_dir",
-   "--coord-dir",
-   "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
-   "--mods-dir",
-   "S_mods_dir",
-   "--no-use-cache"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "S_chara_dir",
-      "check_shared_mods": false,
-      "coord_dir_str": "S_coord_dir",
-      "include_coordinates": false,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
-      "scene_dir_str": "S_scene_dir",
-      "use_cache": false
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -14744,6 +14852,1312 @@
   },
   "world": "default"
  },
+ "manage-library": {
+  "argv": [
+   "manage-library"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-combined": {
+  "argv": [
+   "manage-library",
+   "--archive-combined"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-format=7z": {
+  "argv": [
+   "manage-library",
+   "--archive-format",
+   "7z"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-format=copy": {
+  "argv": [
+   "manage-library",
+   "--archive-format",
+   "copy"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "copy",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-format=zip": {
+  "argv": [
+   "manage-library",
+   "--archive-format",
+   "zip"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "zip",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-include-coordinates": {
+  "argv": [
+   "manage-library",
+   "--archive-include-coordinates"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-include-modpack": {
+  "argv": [
+   "manage-library",
+   "--archive-include-modpack"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": true,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-output-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--archive-output-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --archive-output-dir=S_archive_output_dir": {
+  "argv": [
+   "manage-library",
+   "--archive-output-dir",
+   "S_archive_output_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "S_archive_output_dir",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --chara-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--chara-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --chara-dir=S_chara_dir": {
+  "argv": [
+   "manage-library",
+   "--chara-dir",
+   "S_chara_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --check-shared-mods": {
+  "argv": [
+   "manage-library",
+   "--check-shared-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --coord-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--coord-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --coord-dir=S_coord_dir": {
+  "argv": [
+   "manage-library",
+   "--coord-dir",
+   "S_coord_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "S_coord_dir",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --include-coordinates": {
+  "argv": [
+   "manage-library",
+   "--include-coordinates"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --input-mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--input-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --input-mods-dir=S_input_mods_dir": {
+  "argv": [
+   "manage-library",
+   "--input-mods-dir",
+   "S_input_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "S_input_mods_dir",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --mods-dir=S_mods_dir": {
+  "argv": [
+   "manage-library",
+   "--mods-dir",
+   "S_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "S_mods_dir",
+      "output_mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --no-archive-combined": {
+  "argv": [
+   "manage-library",
+   "--no-archive-combined"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": false,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --no-archive-include-coordinates": {
+  "argv": [
+   "manage-library",
+   "--no-archive-include-coordinates"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": false,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --no-archive-include-modpack": {
+  "argv": [
+   "manage-library",
+   "--no-archive-include-modpack"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --no-check-shared-mods": {
+  "argv": [
+   "manage-library",
+   "--no-check-shared-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": false,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --no-include-coordinates": {
+  "argv": [
+   "manage-library",
+   "--no-include-coordinates"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": false,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --no-use-cache": {
+  "argv": [
+   "manage-library",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": false
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --output-mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--output-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --output-mods-dir=S_output_mods_dir": {
+  "argv": [
+   "manage-library",
+   "--output-mods-dir",
+   "S_output_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "S_output_mods_dir",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --scene-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--scene-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --scene-dir=S_scene_dir": {
+  "argv": [
+   "manage-library",
+   "--scene-dir",
+   "S_scene_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --use-cache": {
+  "argv": [
+   "manage-library",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library [all-first]": {
+  "argv": [
+   "manage-library",
+   "--check-shared-mods",
+   "--include-coordinates",
+   "--archive-output-dir",
+   "S_archive_output_dir",
+   "--archive-format",
+   "7z",
+   "--archive-combined",
+   "--archive-include-modpack",
+   "--archive-include-coordinates",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--input-mods-dir",
+   "S_input_mods_dir",
+   "--output-mods-dir",
+   "S_output_mods_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": true,
+      "archive_output_dir_str": "S_archive_output_dir",
+      "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": true,
+      "coord_dir_str": "S_coord_dir",
+      "include_coordinates": true,
+      "input_mods_dir_str": "S_input_mods_dir",
+      "output_mods_dir_str": "S_output_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library [all-last]": {
+  "argv": [
+   "manage-library",
+   "--no-check-shared-mods",
+   "--no-include-coordinates",
+   "--archive-output-dir",
+   "S_archive_output_dir",
+   "--archive-format",
+   "copy",
+   "--no-archive-combined",
+   "--no-archive-include-modpack",
+   "--no-archive-include-coordinates",
+   "--chara-dir",
+   "S_chara_dir",
+   "--scene-dir",
+   "S_scene_dir",
+   "--coord-dir",
+   "S_coord_dir",
+   "--input-mods-dir",
+   "S_input_mods_dir",
+   "--output-mods-dir",
+   "S_output_mods_dir",
+   "--mods-dir",
+   "S_mods_dir",
+   "--no-use-cache"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_input_mods_dir": null,
+      "_output_mods_dir": null,
+      "archive_combined": false,
+      "archive_format": "copy",
+      "archive_include_coords": false,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "S_archive_output_dir",
+      "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": false,
+      "coord_dir_str": "S_coord_dir",
+      "include_coordinates": false,
+      "input_mods_dir_str": "S_input_mods_dir",
+      "output_mods_dir_str": "S_output_mods_dir",
+      "scene_dir_str": "S_scene_dir",
+      "use_cache": false
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
  "rename-chara": {
   "argv": [
    "rename-chara"
@@ -16643,738 +18057,6 @@
      "kind": "task",
      "run_kwargs": {},
      "task": "ReviewSimilarChara"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library": {
-  "argv": [
-   "manage-library"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --chara-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--chara-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --chara-dir=S_chara_dir": {
-  "argv": [
-   "manage-library",
-   "--chara-dir",
-   "S_chara_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "S_chara_dir",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --check-shared-mods": {
-  "argv": [
-   "manage-library",
-   "--check-shared-mods"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --coord-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--coord-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --coord-dir=S_coord_dir": {
-  "argv": [
-   "manage-library",
-   "--coord-dir",
-   "S_coord_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "S_coord_dir",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --include-coordinates": {
-  "argv": [
-   "manage-library",
-   "--include-coordinates"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --input-mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--input-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --input-mods-dir=S_input_mods_dir": {
-  "argv": [
-   "manage-library",
-   "--input-mods-dir",
-   "S_input_mods_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --mods-dir=S_mods_dir": {
-  "argv": [
-   "manage-library",
-   "--mods-dir",
-   "S_mods_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "S_mods_dir",
-      "output_mods_dir_str": "S_mods_dir",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --no-check-shared-mods": {
-  "argv": [
-   "manage-library",
-   "--no-check-shared-mods"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": false,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --no-include-coordinates": {
-  "argv": [
-   "manage-library",
-   "--no-include-coordinates"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": false,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --no-use-cache": {
-  "argv": [
-   "manage-library",
-   "--no-use-cache"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": false
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --output-mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--output-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --output-mods-dir=S_output_mods_dir": {
-  "argv": [
-   "manage-library",
-   "--output-mods-dir",
-   "S_output_mods_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "S_output_mods_dir",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --scene-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--scene-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --scene-dir=S_scene_dir": {
-  "argv": [
-   "manage-library",
-   "--scene-dir",
-   "S_scene_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "S_scene_dir",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --use-cache": {
-  "argv": [
-   "manage-library",
-   "--use-cache"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library [all-first]": {
-  "argv": [
-   "manage-library",
-   "--check-shared-mods",
-   "--include-coordinates",
-   "--chara-dir",
-   "S_chara_dir",
-   "--scene-dir",
-   "S_scene_dir",
-   "--coord-dir",
-   "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
-   "--mods-dir",
-   "S_mods_dir",
-   "--use-cache"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "S_chara_dir",
-      "check_shared_mods": true,
-      "coord_dir_str": "S_coord_dir",
-      "include_coordinates": true,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
-      "scene_dir_str": "S_scene_dir",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library [all-last]": {
-  "argv": [
-   "manage-library",
-   "--no-check-shared-mods",
-   "--no-include-coordinates",
-   "--chara-dir",
-   "S_chara_dir",
-   "--scene-dir",
-   "S_scene_dir",
-   "--coord-dir",
-   "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
-   "--mods-dir",
-   "S_mods_dir",
-   "--no-use-cache"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_output_mods_dir": null,
-      "chara_dir_str": "S_chara_dir",
-      "check_shared_mods": false,
-      "coord_dir_str": "S_coord_dir",
-      "include_coordinates": false,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
-      "scene_dir_str": "S_scene_dir",
-      "use_cache": false
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
     }
    ],
    "outcome": {

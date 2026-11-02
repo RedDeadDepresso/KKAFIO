@@ -986,3 +986,92 @@ def test_the_settings_dialog_has_both_tabs_and_saves_the_folder_suggestions(tmp_
         assert saved["series_language"] == "ja_jp"
 
     assert run_dialog(monkeypatch, items, lambda t: [], mover([]), script) == 0
+
+
+def run_library(monkeypatch, items, script, **callbacks):
+    """Like `run_dialog`, but through `library_dialog` so the close callbacks (`on_archive`,
+    `on_trash`) can be given."""
+    errors = []
+
+    def fake_show(root, focus_widget=None, on_shown=None):
+        def go():
+            try:
+                pump(root, 0.6)
+                script(root)
+            except BaseException as e:
+                errors.append(e)
+            finally:
+                root.quit()
+        real_show_and_wait(root, focus_widget, on_shown=lambda: root.after(150, go))
+
+    monkeypatch.setattr(mgd, "show_and_wait", fake_show)
+    tab = mgd.LibraryTab("", items, lambda t: [], mover([]), None, mgd.COVER_RATIO)
+    result = mgd.library_dialog("test", [tab], **callbacks)
+    if errors:
+        raise errors[0]
+    return result
+
+
+def menu_labels(root):
+    import tkinter as tk
+    menus = [w for w in root.winfo_children() if isinstance(w, tk.Toplevel)]
+    assert len(menus) == 1
+    return menus[0], [w.cget("text") for w in walk(menus[0]) if w.__class__.__name__ == "CTkLabel"]
+
+
+def pick_menu_entry(menu, label):
+    entry = next(w for w in walk(menu) if w.__class__.__name__ == "CTkLabel" and w.cget("text").startswith(label))
+    entry._label.event_generate("<Button-1>", x=2, y=2)
+
+
+def right_click_first_card(root, cv):
+    x1, y1, x2, y2 = cv.bbox(first_unknown(cv))
+    cv.event_generate("<Button-3>", x=int((x1 + x2) / 2 - cv.canvasx(0)), y=int(y1 - 10 - cv.canvasy(0)))
+    pump(root, 0.3)
+
+
+def test_archive_queue_menu_shortcut_restore_and_the_handoff_on_close(tmp_path, monkeypatch):
+    items = make_items(tmp_path, 4)
+    seen = {}
+
+    def script(root):
+        cv = library_canvas(root)
+        show_all(root)
+        assert button(root, "Archive queue").cget("text").endswith("0")
+        rows = [w for w in walk(root) if w.__class__.__name__ == "CTkButton"]
+        names = [str(w.cget("text")).split("   ")[0] for w in rows]
+        assert names.index("Archive queue") + 1 == names.index("Trash")           # right above the trash
+
+        # right click: Move to trash and Archive; Archive queues the card (and it leaves "All")
+        right_click_first_card(root, cv)
+        menu, labels = menu_labels(root)
+        assert "Move to trash" in labels and "Archive" in labels and "F11" in labels
+        pick_menu_entry(menu, "Archive")
+        pump(root, 0.4)
+        assert button(root, "Archive queue").cget("text").endswith("1")
+        assert button(root, "All").cget("text").endswith("3")
+
+        # F11 archives the selected card
+        right_click_first_card(root, cv)                                          # selects the card
+        cv.event_generate("<Button-1>", x=5, y=5)                                 # and closes the menu again
+        pump(root, 0.3)
+        cv.focus_force()
+        pump(root, 0.2)
+        cv.event_generate("<KeyPress>", keysym="F11")
+        pump(root, 0.4)
+        assert button(root, "Archive queue").cget("text").endswith("2")
+
+        # the queue shows its cards; right click there offers Restore only
+        button(root, "Archive queue").invoke()
+        pump(root, 0.4)
+        right_click_first_card(root, cv)
+        menu, labels = menu_labels(root)
+        assert "Restore" in labels and "Archive" not in labels and "Move to trash" not in labels
+        pick_menu_entry(menu, "Restore")
+        pump(root, 0.4)
+        assert button(root, "Archive queue").cget("text").endswith("1")
+        assert button(root, "All").cget("text").endswith("3")
+
+    result = run_library(monkeypatch, items, script, on_archive=lambda paths: seen.setdefault("paths", paths))
+    assert result == [0]
+    assert len(seen["paths"]) == 1 and seen["paths"][0] in [i.path for i in items]      # what is left in the queue

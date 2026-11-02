@@ -30,9 +30,11 @@ ArchiveFormat = Literal["7z", "zip", "copy"]
 # ---------------------------------------------------------------------------
 
 class ArchiveCards(BaseTask):
-    def __init__(self, config, file_manager):
+    def __init__(self, config, file_manager, settings: dict | None = None):
+        """`settings` replaces the ArchiveCards config section — used by tasks that hand cards
+        over to this one (Manage Library archives its queue this way)."""
         super().__init__(config, file_manager)
-        cfg = self.config.archive_cards
+        cfg = settings if settings is not None else self.config.archive_cards
         self.content_paths      : list[str] = cfg.get("ContentPaths", [])
         self.format             : str       = cfg.get("Format", "7z")
         self.auto_resolve       : bool      = cfg.get("AutoResolve", True)

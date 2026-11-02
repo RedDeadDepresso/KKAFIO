@@ -55,8 +55,17 @@ def test_interface_json_declares_the_task():
     assert [c["name"] for c in opt["cases"]] == ["CheckSharedMods", "IncludeCoordinates"]
     for c in opt["cases"]:                       # labels and descriptions are the Delete Cards ones
         assert c["label"] == f"$option.{c['name']}.label" and c["description"] == f"$option.{c['name']}.description"
-    assert task["option"] == ["ManageLibraryDeleteOptions", "CharaDir", "SceneDir", "CoordDir", "InputModsDir",
-                              "OutputModsDir", "UseCache"]
+    assert task["option"] == ["ManageLibraryDeleteOptions", "ManageLibraryArchiveOutputPath",
+                              "ManageLibraryArchiveFormat", "ManageLibraryArchiveOptions", "CharaDir", "SceneDir",
+                              "CoordDir", "InputModsDir", "OutputModsDir", "UseCache"]
+    out = interface["option"]["ManageLibraryArchiveOutputPath"]
+    assert out["type"] == "folder" and out["default"] == "C:/KKAFIO/Archived Cards"
+    fmt = interface["option"]["ManageLibraryArchiveFormat"]
+    assert fmt["type"] == "select" and fmt["default_case"] == "7z"
+    assert [c["name"] for c in fmt["cases"]] == ["7z", "zip", "copy"]
+    arch = interface["option"]["ManageLibraryArchiveOptions"]
+    assert arch["type"] == "checkbox" and arch["default_case"] == ["ArchiveCombined", "ArchiveIncludeCoordinates"]
+    assert [c["name"] for c in arch["cases"]] == ["ArchiveCombined", "ArchiveIncludeModpack", "ArchiveIncludeCoordinates"]
 
 
 def test_scene_dir_custom_default_and_missing(tmp_path):
@@ -115,8 +124,9 @@ def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
     log = []
     shown = {}
 
-    def fake_dialog(title, tabs, initial=0, mods=None, on_trash=None):
-        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods, on_trash=on_trash)
+    def fake_dialog(title, tabs, initial=0, mods=None, on_trash=None, on_archive=None):
+        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods, on_trash=on_trash,
+                     on_archive=on_archive)
         return [0] * len(tabs)
 
     def chara(*a, **k):
@@ -189,3 +199,62 @@ def test_trashed_cards_are_handed_to_delete_cards_with_the_output_mods_dir(tmp_p
     with mock.patch("kkafio.tasks.delete_cards.DeleteCards", FakeDelete):
         shown["on_trash"]([tmp_path / "a.png"])
     assert seen["settings"]["ModsDir"] == ""
+
+
+def test_archive_options_to_config():
+    default = _build_task_config("ManageLibrary", True, {})
+    assert default["ArchiveOutputPath"] == "C:/KKAFIO/Archived Cards" and default["ArchiveFormat"] == "7z"
+    assert (default["ArchiveCombined"], default["ArchiveIncludeModpack"], default["ArchiveIncludeCoordinates"]) \
+        == (True, False, True)
+    cfg = _build_task_config("ManageLibrary", True, {
+        "ManageLibraryArchiveOutputPath": {"type": "folder", "path": "A"},
+        "ManageLibraryArchiveFormat": {"type": "select", "caseName": "zip"},
+        "ManageLibraryArchiveOptions": {"type": "checkbox", "caseNames": ["ArchiveIncludeModpack"]}})
+    assert (cfg["ArchiveOutputPath"], cfg["ArchiveFormat"]) == ("A", "zip")
+    assert (cfg["ArchiveCombined"], cfg["ArchiveIncludeModpack"], cfg["ArchiveIncludeCoordinates"]) \
+        == (False, True, False)
+
+
+def test_queued_cards_are_handed_to_archive_cards_with_the_archive_options(tmp_path):
+    mods, out, scenes, dest = tmp_path / "mods", tmp_path / "out", tmp_path / "s", tmp_path / "archives"
+    for d in (mods, out, scenes):
+        d.mkdir()
+    task = _task(tmp_path, game={"scene": scenes, "mods": mods}, InputModsDir=str(mods), OutputModsDir=str(out),
+                 UseCache=False, ArchiveOutputPath=str(dest), ArchiveFormat="zip", ArchiveCombined=False,
+                 ArchiveIncludeModpack=True, ArchiveIncludeCoordinates=False)
+    shown, _ = _run(task, tmp_path)
+    seen = {}
+
+    class FakeArchive:
+        def __init__(self, config, fm, settings=None):
+            seen["settings"] = settings
+
+        def run(self):
+            seen["ran"] = True
+
+    with mock.patch("kkafio.tasks.archive_cards.ArchiveCards", FakeArchive):
+        shown["on_archive"]([tmp_path / "a.png", tmp_path / "b.png"])
+    st = seen["settings"]
+    assert seen["ran"] and st["ContentPaths"] == [str(tmp_path / "a.png"), str(tmp_path / "b.png")]
+    assert st["OutputPath"] == str(dest) and st["Format"] == "zip" and st["CombinedArchive"] is False
+    assert st["IncludeModpack"] is True and st["IncludeCoordinates"] is False and st["UseCache"] is False
+    assert st["AutoResolve"] is False and st["ModsDir"] == str(mods) and st["CoordDir"] == str(tmp_path / "c")
+
+    # no input mods folder: the output one is where the mods are; no output path: next to each card
+    shown, _ = _run(_task(tmp_path, game={"scene": scenes}, OutputModsDir=str(out), ArchiveOutputPath=""), tmp_path)
+    with mock.patch("kkafio.tasks.archive_cards.ArchiveCards", FakeArchive):
+        shown["on_archive"]([tmp_path / "a.png"])
+    assert seen["settings"]["ModsDir"] == str(out) and seen["settings"]["OutputPath"] == ""
+    assert seen["settings"]["CombinedArchive"] is True and seen["settings"]["Format"] == "7z"     # the defaults
+
+
+def test_archive_cards_takes_its_settings_from_the_caller(tmp_path):
+    from kkafio.tasks.archive_cards import ArchiveCards
+    config = SimpleNamespace(archive_cards={"Format": "zip", "CombinedArchive": False})
+    own = {"Format": "copy", "CombinedArchive": True, "OutputPath": "X", "IncludeModpack": True,
+           "IncludeCoordinates": False, "ContentPaths": ["a.png"], "AutoResolve": False}
+    task = ArchiveCards(config, None, settings=own)
+    assert (task.format, task.combined_archive, task.output_dir_str, task.include_modpack) == ("copy", True, "X", True)
+    assert task.include_coordinates is False and task.content_paths == ["a.png"] and task.auto_resolve is False
+    assert ArchiveCards(config, None).format == "zip"                    # no settings: the config section
+

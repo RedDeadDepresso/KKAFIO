@@ -125,7 +125,7 @@ KKAFIO-dev/
 │   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
 │   │   ├── library/                 # The Manage Library window and its tabs; imports run one way: manage_library -> dialogs/library/<tab> -> model.py, and <tab> -> tasks/group_*
 │   │   │   ├── __init__.py          # Re-exports the public names (library_dialog, LibraryTab, CharaItem, ...)
-│   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, LibraryModel, DialogText, LibraryTab, file-rename helpers
+│   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, LibraryModel, DialogText, LibraryTab, file-rename helpers · the trash and Archive queue views (cards queued with right-click > Archive / F11 are handed to Archive Cards when the window closes)
 │   │   │   ├── window.py            # The window: draws the tabs, knows nothing about characters / coordinates / scenes; library_dialog() hosts them
 │   │   │   ├── mods_panel.py        # The mod dependencies sidebar's data, no GUI: which mods a card uses (cached per file) and which are installed (ModsLookup, CardMods)
 │   │   │   ├── mods_sidebar.py      # The collapsible mod dependencies sidebar itself (one canvas, card read on a worker thread)

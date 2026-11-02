@@ -20,9 +20,11 @@ The library can hold thousands of cards, and CustomTkinter widgets are heavy (ea
 canvas), so the grid is drawn on one plain Tk canvas and only the tiles in view exist: scrolling
 just draws the tiles that come into view, and covers are decoded on worker threads.
 
-Right-clicking a card offers "Move to trash" (the selected cards go along). Trashed cards leave every
-other view and wait in a Trash entry of the sidebar, under the unknown-series one — every tab has its
-own; right-click there to restore. The files are only sent to the Recycle Bin when the window closes.
+Right-clicking a card offers "Move to trash" and "Archive" (the selected cards go along). Trashed
+cards leave every other view and wait in a Trash entry of the sidebar, under the unknown-series one;
+archived cards wait in an Archive queue entry just above it — every tab has its own of each;
+right-click there to restore. The files are only sent to the Recycle Bin (or archived) when the
+window closes.
 
 `LibraryModel` (what is shown: view, search, sort) has no GUI dependency; the window is built in
 `_ctk_dialog()` (see common.py for the shared window behaviour).
@@ -58,13 +60,13 @@ from kkafio.dialogs.library.popup_menu import open_popup_menu
 from kkafio.dialogs.library.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
 from kkafio.dialogs.library.viewstate import LibraryViewState, TabView
 from kkafio.dialogs.library.shortcuts import (
-    ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
+    ACTION_ARCHIVE, ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
 )
 from kkafio.dialogs.library.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
     MODS_ALL, MODS_COMPLETE, MODS_MISSING,
-    VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, LibraryModel, LibraryTab,
-    chara_dialog_text, clean_file_stem, rename_card,
+    VIEW_ALL, VIEW_ARCHIVE, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, LibraryModel,
+    LibraryTab, chara_dialog_text, clean_file_stem, rename_card,
 )
 
 
@@ -338,8 +340,12 @@ def manual_dialog(title: str, items: Sequence[CharaItem],
     return library_dialog(title, [tab])[0]
 
 
+HELD_VIEWS = (VIEW_TRASH, VIEW_ARCHIVE)      # the views of cards waiting for the bin / Archive Cards
+
+
 def library_dialog(title: str, tabs: Sequence[LibraryTab], initial: int = 0,
-                   mods=None, on_trash: Callable[[list[Path]], None] | None = None) -> list[int]:
+                   mods=None, on_trash: Callable[[list[Path]], None] | None = None,
+                   on_archive: Callable[[list[Path]], None] | None = None) -> list[int]:
     """Show one window holding a library per tab; returns, per tab, how many cards were moved
     before it was closed. With a single tab there is no tab bar (that is `manual_dialog`).
 
@@ -348,11 +354,15 @@ def library_dialog(title: str, tabs: Sequence[LibraryTab], initial: int = 0,
 
     `on_trash` receives the paths of the cards left in the libraries' trash when the window closes
     normally, and deletes them itself (Manage Library hands them to Delete Cards); None sends them to
-    the Recycle Bin."""
+    the Recycle Bin.
+
+    `on_archive` receives the paths of the cards left in the libraries' archive queue when the
+    window closes normally (Manage Library hands them to Archive Cards); None leaves the queue
+    alone, nothing is archived."""
     if not tabs:
         raise ValueError("library_dialog needs at least one tab")
     try:
-        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1), mods, on_trash)
+        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1), mods, on_trash, on_archive)
     except ImportError as e:                       # tkinter / customtkinter missing
         raise TaskFailedError(f"The character library needs tkinter and customtkinter: {e}") from e
     finally:
@@ -388,6 +398,7 @@ class _Library:
         self.moved_count = lambda: 0               # cards moved so far
         self.view = lambda: TabView()              # its sort and cover size now (for the next run)
         self.trashed_items = lambda: []            # the cards in its trash (for the bin when the window closes)
+        self.archived_items = lambda: []           # the cards in its archive queue (for Archive Cards then)
         self.search_text = lambda: ""              # the search text this library is showing
         self.on_search_key = lambda: None          # the shared search input changed
         self.on_show = lambda: None                # its tab was opened
@@ -398,7 +409,8 @@ class _Library:
 
 
 def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
-                on_trash: Callable[[list[Path]], None] | None = None) -> list[int]:
+                on_trash: Callable[[list[Path]], None] | None = None,
+                on_archive: Callable[[list[Path]], None] | None = None) -> list[int]:
     import customtkinter as ctk
 
     root = new_window(title, topmost=False)       # sorting a library takes a while
@@ -504,6 +516,9 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
         view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, libraries)},
                             mods_open=sidebar.is_open if sidebar is not None else None)
     trashed = [item for g in libraries for item in g.trashed_items()]          # only a window that closed normally
+    archived = [item for g in libraries for item in g.archived_items()]
+    if archived and on_archive is not None:                # first: archiving only reads the cards
+        on_archive([item.path for item in archived])
     if on_trash is None:
         _send_to_bin(trashed)
     elif trashed:
@@ -676,7 +691,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     side = ctk.CTkFrame(body, fg_color=pair("side"), corner_radius=8, width=230)
     side.grid(row=0, column=0, sticky="ns", padx=(0, 10))
     side.grid_propagate(False)
-    side.grid_rowconfigure(5, weight=1)
+    side.grid_rowconfigure(6, weight=1)
     side.grid_columnconfigure(0, weight=1)
 
     def side_button(row: int, command) -> ctk.CTkButton:
@@ -687,13 +702,14 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
 
     all_btn = side_button(0, lambda: choose_view(VIEW_ALL))
     untagged_btn = side_button(1, lambda: choose_view(VIEW_UNTAGGED))
-    trash_btn = side_button(2, lambda: choose_view(VIEW_TRASH))       # under the unknown-series entry
+    archive_btn = side_button(2, lambda: choose_view(VIEW_ARCHIVE))   # under the unknown-series entry,
+    trash_btn = side_button(3, lambda: choose_view(VIEW_TRASH))       # just above the trash
     ctk.CTkLabel(side, text=txt.series_header, anchor="w", text_color=pair("muted"),
-                 font=ctk.CTkFont(size=11, weight="bold")).grid(row=3, column=0, padx=14, pady=(14, 2), sticky="ew")
+                 font=ctk.CTkFont(size=11, weight="bold")).grid(row=4, column=0, padx=14, pady=(14, 2), sticky="ew")
     series_filter_entry = ctk.CTkEntry(side, placeholder_text=txt.filter_series, height=30)
-    series_filter_entry.grid(row=4, column=0, padx=8, pady=(0, 6), sticky="ew")
+    series_filter_entry.grid(row=5, column=0, padx=8, pady=(0, 6), sticky="ew")
     list_frame = tk.Frame(side, bg=pal["side"])
-    list_frame.grid(row=5, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
+    list_frame.grid(row=6, column=0, padx=(8, 4), pady=(0, 8), sticky="nsew")
     list_frame.grid_columnconfigure(0, weight=1)
     list_frame.grid_rowconfigure(0, weight=1)
     # the list looks like the buttons above it: their font, height, corner radius and gap
@@ -1010,6 +1026,8 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         untagged_btn.configure(text=f"{txt.untagged}   {untagged:,}")
         all_btn.configure(fg_color=pair("sel") if model.mode == VIEW_ALL else "transparent")
         untagged_btn.configure(fg_color=pair("sel") if model.mode == VIEW_UNTAGGED else "transparent")
+        archive_btn.configure(text=f"{t('dialog.library.archive_queue')}   {model.archive_count():,}",
+                              fg_color=pair("sel") if model.mode == VIEW_ARCHIVE else "transparent")
         trash_btn.configure(text=f"{t('dialog.library.trash')}   {model.trash_count():,}",
                             fg_color=pair("sel") if model.mode == VIEW_TRASH else "transparent")
         entries = model.series_list(series_filter_entry.get())
@@ -1341,7 +1359,8 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         Unknown series) takes the selection with it, so the next card (at `first_idx`) is selected."""
         refresh_sidebar()
         if ((model.mode == VIEW_SERIES and model.series_count(model.series_filter) == 0)
-                or (model.mode == VIEW_TRASH and model.trash_count() == 0)):
+                or (model.mode == VIEW_TRASH and model.trash_count() == 0)
+                or (model.mode == VIEW_ARCHIVE and model.archive_count() == 0)):
             model.set_view(VIEW_ALL)
             refresh_sidebar()
         relayout(keep_scroll=True)
@@ -1374,7 +1393,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
             apply_selection(item, picked.values())
             return
         select_only(item)
-        if model.mode == VIEW_TRASH:
+        if model.mode in HELD_VIEWS:
             return
         if in_series:
             start_edit(idx)
@@ -1387,6 +1406,12 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         finish_assignment(first_idx)
         status.configure(text=t("dialog.library.trashed", count=len(targets)))
 
+    def archive_cards(targets: list) -> None:
+        first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
+        model.archive(targets)
+        finish_assignment(first_idx)
+        status.configure(text=t("dialog.library.archived", count=len(targets)))
+
     def restore_cards(targets: list) -> None:
         first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
         model.restore(targets)
@@ -1396,8 +1421,8 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     context_menu: dict = {"close": None}                    # closes the right-click menu that is open
 
     def on_context_menu(event) -> None:
-        """Right click on a card: Move to trash (Restore in the trash view), for the selected cards
-        when the card is one of them, else for that card alone."""
+        """Right click on a card: Move to trash and Archive (just Restore in the trash and archive
+        queue views), for the selected cards when the card is one of them, else for that card alone."""
         hit = locate(event.x, event.y)
         if edit["idx"] is not None:
             cancel_edit()
@@ -1408,16 +1433,19 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         if id(item) not in sel["picked"]:
             select_only(item)
         targets = picked_in_order() or [item]
-        in_trash = model.mode == VIEW_TRASH
-        label = t("dialog.library.menu_restore") if in_trash else t("dialog.library.menu_trash")
-        if len(targets) > 1:
-            label += f" ({len(targets)})"
+        suffix = f" ({len(targets)})" if len(targets) > 1 else ""
         if context_menu["close"] is not None:
             context_menu["close"]()                             # one menu at a time
-        entry = (label, shortcuts.combo(ACTION_RESTORE if in_trash else ACTION_DELETE),
-                 lambda: (restore_cards if in_trash else trash_cards)(targets))
+        if model.mode in HELD_VIEWS:
+            entries = [(t("dialog.library.menu_restore") + suffix, shortcuts.combo(ACTION_RESTORE),
+                        lambda: restore_cards(targets))]
+        else:
+            entries = [(t("dialog.library.menu_trash") + suffix, shortcuts.combo(ACTION_DELETE),
+                        lambda: trash_cards(targets)),
+                       (t("dialog.library.menu_archive") + suffix, shortcuts.combo(ACTION_ARCHIVE),
+                        lambda: archive_cards(targets))]
         context_menu["close"] = open_popup_menu(
-            canvas, event.x_root, event.y_root, [entry],
+            canvas, event.x_root, event.y_root, entries,
             {key: pair(name) for key, name in (("bg", "tile"), ("border", "border"), ("hover", "sel"),
                                                ("text", "text"), ("muted", "muted"))})
 
@@ -1425,7 +1453,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         """The "change folder" shortcut: the folder input of the selected card (one dialog for
         several)."""
         items = lay["items"]
-        if not items or model.mode == VIEW_TRASH:           # a trashed card isn't sorted or renamed
+        if not items or model.mode in HELD_VIEWS:           # a trashed / queued card isn't sorted or renamed
             return
         targets = picked_in_order()
         if len(targets) > 1:
@@ -1441,7 +1469,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     def rename_card_shortcut() -> None:
         """The "rename" shortcut: the file name input of the cursor card (or the first selected)."""
         items = lay["items"]
-        if not items or model.mode == VIEW_TRASH:
+        if not items or model.mode in HELD_VIEWS:
             return
         item = sel["item"] if sel["item"] is not None else (
             picked_in_order()[0] if sel["picked"] else items[first_visible_index()])
@@ -1451,23 +1479,35 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
             start_edit(idx, "name")
 
     def delete_shortcut() -> None:
-        """The "delete" shortcut: the selected cards go to the trash (nothing in the trash view)."""
-        if model.mode == VIEW_TRASH:
+        """The "delete" shortcut: the selected cards go to the trash (nothing in the trash and archive
+        queue views)."""
+        if model.mode in HELD_VIEWS:
             return
         targets = picked_in_order() or ([sel["item"]] if sel["item"] is not None else [])
         if targets:
             trash_cards(targets)
 
+    def archive_shortcut() -> None:
+        """The "archive" shortcut: the selected cards go to the archive queue (nothing in the trash
+        and archive queue views)."""
+        if model.mode in HELD_VIEWS:
+            return
+        targets = picked_in_order() or ([sel["item"]] if sel["item"] is not None else [])
+        if targets:
+            archive_cards(targets)
+
     def restore_shortcut() -> None:
-        """The "restore" shortcut: the selected cards leave the trash (only in the Trash view)."""
-        if model.mode != VIEW_TRASH:
+        """The "restore" shortcut: the selected cards leave the trash or the archive queue (only in
+        those two views)."""
+        if model.mode not in HELD_VIEWS:
             return
         targets = picked_in_order() or ([sel["item"]] if sel["item"] is not None else [])
         if targets:
             restore_cards(targets)
 
     shortcut_actions = {ACTION_RENAME: rename_card_shortcut, ACTION_FOLDER: change_folder,
-                        ACTION_DELETE: delete_shortcut, ACTION_RESTORE: restore_shortcut}
+                        ACTION_DELETE: delete_shortcut, ACTION_ARCHIVE: archive_shortcut,
+                        ACTION_RESTORE: restore_shortcut}
 
     def on_key(event) -> str | None:
         """Any key the library has no binding of its own for: the user's shortcuts (the settings
@@ -1637,7 +1677,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
 
     def on_motion(event) -> None:
         hit = locate(event.x, event.y)
-        canvas.configure(cursor="hand2" if hit is not None and (hit[1] or hit[2]) and model.mode != VIEW_TRASH else "")
+        canvas.configure(cursor="hand2" if hit is not None and (hit[1] or hit[2]) and model.mode not in HELD_VIEWS else "")
 
     def on_wheel(event) -> None:
         try:
@@ -1785,4 +1825,5 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     handle.moved_count = lambda: moved["count"]
     handle.view = lambda: TabView(now.sort, now.descending, now.size, now.mods)
     handle.trashed_items = lambda: [i for i in model.items if i.trashed]
+    handle.archived_items = lambda: [i for i in model.items if i.archived]
     return handle

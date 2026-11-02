@@ -33,6 +33,7 @@ MODS_ALL = "all"              # the mods filter: every card
 MODS_COMPLETE = "complete"    # ... only cards whose mods are all installed
 MODS_MISSING = "missing"      # ... only cards with at least one mod missing
 VIEW_TRASH = "trash"          # the cards marked for the Recycle Bin (sent there when the window closes)
+VIEW_ARCHIVE = "archive"      # the cards queued for Archive Cards (archived when the window closes)
 
 
 @dataclass
@@ -50,6 +51,13 @@ class CharaItem:
     mods_missing: bool | None = None   # some mod it uses isn't installed (None: not checked yet / unreadable)
     trashed: bool = False      # in the library's trash: hidden everywhere else, the file is only
                                # sent to the Recycle Bin when the window closes
+    archived: bool = False     # in the library's archive queue: hidden everywhere else, handed to
+                               # Archive Cards when the window closes (never trashed at the same time)
+
+    @property
+    def held(self) -> bool:
+        """In the trash or the archive queue: out of every normal view."""
+        return self.trashed or self.archived
 
 
 class LibraryModel:
@@ -75,7 +83,13 @@ class LibraryModel:
         want = self.series_filter.casefold()
         out = []
         for item in self.items:
-            if item.trashed != (self.mode == VIEW_TRASH):      # the trash only shows in its own view
+            if self.mode == VIEW_TRASH:                        # the trash and the archive queue only
+                if not item.trashed:                           # show in their own views
+                    continue
+            elif self.mode == VIEW_ARCHIVE:
+                if not item.archived:
+                    continue
+            elif item.held:
                 continue
             if self.mode == VIEW_UNTAGGED and item.series is not None:
                 continue
@@ -97,12 +111,15 @@ class LibraryModel:
     # -- the sidebar --------------------------------------------------------
 
     def counts(self) -> tuple[int, int]:
-        """(all cards, untagged cards); the cards in the trash are in neither."""
-        live = [i for i in self.items if not i.trashed]
+        """(all cards, untagged cards); the cards in the trash or the archive queue are in neither."""
+        live = [i for i in self.items if not i.held]
         return len(live), sum(1 for i in live if i.series is None)
 
     def trash_count(self) -> int:
         return sum(1 for i in self.items if i.trashed)
+
+    def archive_count(self) -> int:
+        return sum(1 for i in self.items if i.archived)
 
     def series_list(self, text: str = "") -> list[tuple[str, int]]:
         """(series, number of cards) for every series that has a card, by name; `text` filters
@@ -110,7 +127,7 @@ class LibraryModel:
         names: dict[str, str] = {}
         counts: dict[str, int] = {}
         for item in self.items:
-            if item.series and not item.trashed:
+            if item.series and not item.held:
                 k = item.series.casefold()
                 names.setdefault(k, item.series)
                 counts[k] = counts.get(k, 0) + 1
@@ -119,7 +136,7 @@ class LibraryModel:
 
     def series_count(self, series: str) -> int:
         k = series.casefold()
-        return sum(1 for i in self.items if not i.trashed and (i.series or "").casefold() == k)
+        return sum(1 for i in self.items if not i.held and (i.series or "").casefold() == k)
 
     # -- changes ------------------------------------------------------------
 
@@ -132,11 +149,20 @@ class LibraryModel:
         """Move the cards into the trash. Nothing happens to the files here."""
         for item in items:
             item.trashed = True
+            item.archived = False
+
+    def archive(self, items: Iterable[CharaItem]) -> None:
+        """Move the cards into the archive queue. Nothing happens to the files here."""
+        for item in items:
+            item.archived = True
+            item.trashed = False
 
     def restore(self, items: Iterable[CharaItem]) -> None:
-        """Take the cards out of the trash; each goes back to the folder it is still in."""
+        """Take the cards out of the trash or the archive queue; each goes back to the folder it
+        is still in."""
         for item in items:
             item.trashed = False
+            item.archived = False
 
     def renamed(self, item: CharaItem, new_path: Path) -> None:
         """`item`'s file was renamed to `new_path` (same folder); its shown name follows."""

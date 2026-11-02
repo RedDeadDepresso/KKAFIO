@@ -6,7 +6,7 @@ import json
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 from kkafio.core.session_store import SessionStore
 from kkafio.dialogs.library.shortcuts import (
-    ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, DEFAULTS, ShortcutSettings, combo_from_event)
+    ACTION_ARCHIVE, ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, DEFAULTS, ShortcutSettings, combo_from_event)
 
 CTRL, SHIFT, ALT_WIN = 0x4, 0x1, 0x20000
 
@@ -32,6 +32,8 @@ def test_defaults_and_refused_keys(tmp_path):
     assert s.set(ACTION_RENAME, "") == ("invalid", None)
     assert s.set(ACTION_RENAME, "F12") is None                         # its own key again is fine
     assert s.set(ACTION_RESTORE, "Delete") == ("taken", ACTION_DELETE)
+    assert s.keys[ACTION_ARCHIVE] == "F11"                             # archive: F11 by default
+    assert s.set(ACTION_RESTORE, "F11") == ("taken", ACTION_ARCHIVE)
 
 
 def test_changes_are_saved_and_read_back(tmp_path):
@@ -40,7 +42,8 @@ def test_changes_are_saved_and_read_back(tmp_path):
     assert s.set(ACTION_RENAME, "Ctrl+R") is None
     s.clear(ACTION_DELETE)
     assert json.loads(path.read_text("utf-8"))["shortcuts"] == {
-        ACTION_RENAME: "Ctrl+R", ACTION_FOLDER: "Enter", ACTION_DELETE: "", ACTION_RESTORE: "Insert"}
+        ACTION_RENAME: "Ctrl+R", ACTION_FOLDER: "Enter", ACTION_DELETE: "", ACTION_ARCHIVE: "F11",
+        ACTION_RESTORE: "Insert"}
     again = ShortcutSettings(SessionStore(path, "T"))
     assert again.keys == s.keys and again.action_for("Ctrl+R") == ACTION_RENAME
     again.reset()
@@ -55,4 +58,4 @@ def test_a_damaged_file_falls_back_to_the_defaults(tmp_path):
                     encoding="utf-8")
     s = ShortcutSettings(SessionStore(path, "T"))
     assert s.keys == {ACTION_RENAME: "F12", ACTION_FOLDER: "F3", ACTION_DELETE: "Delete",
-                      ACTION_RESTORE: "Insert"}   # bad / duplicate ones reset
+                      ACTION_ARCHIVE: "F11", ACTION_RESTORE: "Insert"}   # bad / duplicate ones reset
