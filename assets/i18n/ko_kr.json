@@ -37,7 +37,7 @@
   "option.DeleteOriginalCards.case.Yes.label": "원본 삭제",
   "option.DeleteOriginalCards.case.No.label": "둘 다 유지",
   "option.CompressMode.label": "압축 모드",
-  "option.CompressMode.description": "KoiCardTexTool이 텍스처를 다시 압축하는 방식:\n• 자동 — 텍스처마다 PNG 또는 JPEG 선택\n• PNG — 항상 PNG\n• JPG — 항상 JPEG\n• MainTex만 — MainTex만 압축하고 나머지 텍스처는 바이트 단위로 그대로 유지",
+  "option.CompressMode.description": "텍스처 재압축 방식(모두 최대 1024px로 축소):\n• 자동 — 완전히 불투명한 텍스처는 JPEG, 나머지(투명·노멀·마스크)는 무손실 PNG\n• PNG — 무손실 PNG만: 가장 안전하지만 파일이 큼\n• JPG — 전부 JPEG: 가장 작지만 손실 압축이며 투명도가 사라짐\n• MainTex만 — MainTex만 자동 방식으로 압축, 나머지는 바이트 단위로 그대로 유지",
   "option.CompressMode.case.auto.label": "자동",
   "option.CompressMode.case.png.label": "PNG",
   "option.CompressMode.case.jpg.label": "JPG",

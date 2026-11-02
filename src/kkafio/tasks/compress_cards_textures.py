@@ -45,8 +45,9 @@ COMPRESS_MODES = ("auto", "png", "jpg", "maintex")
 DEFAULT_MODE = "auto"
 
 # `mode` is positional and comes after `max_size`, so passing a mode means passing a max_size
-# too. Used only when a non-default mode is chosen; 1024 is the longest-edge limit the tool's
-# documentation uses in its own examples.
+# too. 1024 is the tool's own default for it (Program.cs, `batch`: `maxSize = ... : 1024`, with
+# mode defaulting to "auto"), so a non-default mode changes nothing but the mode. It is only
+# added when a non-default mode is chosen, which leaves the "auto" command line as it was.
 MODE_MAX_SIZE = "1024"
 
 # Appended to the input folder's path to name the output folder, and passed to

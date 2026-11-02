@@ -37,7 +37,7 @@
   "option.DeleteOriginalCards.case.Yes.label": "Удалять оригиналы",
   "option.DeleteOriginalCards.case.No.label": "Оставить оба",
   "option.CompressMode.label": "Режим сжатия",
-  "option.CompressMode.description": "Как KoiCardTexTool пересжимает текстуры:\n• Авто — для каждой текстуры выбирается PNG или JPEG\n• PNG — всегда PNG\n• JPG — всегда JPEG\n• Только MainTex — сжимаются только текстуры MainTex, остальные остаются побайтно без изменений",
+  "option.CompressMode.description": "Как пересжимаются текстуры (все уменьшаются до 1024 px):\n• Авто — JPEG для полностью непрозрачных текстур, остальные (прозрачность, normal- и mask-карты) — PNG без потерь\n• PNG — только PNG без потерь: самый безопасный вариант, но файлы больше\n• JPG — JPEG для всего: самый маленький размер, но с потерями и без прозрачности\n• Только MainTex — режим «Авто» только для MainTex, остальные текстуры остаются побайтно без изменений",
   "option.CompressMode.case.auto.label": "Авто",
   "option.CompressMode.case.png.label": "PNG",
   "option.CompressMode.case.jpg.label": "JPG",

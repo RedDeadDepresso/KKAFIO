@@ -37,7 +37,7 @@
   "option.DeleteOriginalCards.case.Yes.label": "元のカードを削除",
   "option.DeleteOriginalCards.case.No.label": "両方残す",
   "option.CompressMode.label": "圧縮モード",
-  "option.CompressMode.description": "KoiCardTexToolがテクスチャを再圧縮する方法：\n• 自動 — テクスチャごとにPNGかJPEGを選択\n• PNG — 常にPNG\n• JPG — 常にJPEG\n• MainTexのみ — MainTexだけを圧縮し、他のテクスチャはバイト単位で変更しない",
+  "option.CompressMode.description": "テクスチャの再圧縮方法（すべて最大1024pxに縮小）：\n• 自動 — 完全に不透明なテクスチャはJPEG、それ以外（透過・法線・マスク）は可逆PNG\n• PNG — 可逆PNGのみ：最も安全だがファイルは大きめ\n• JPG — すべてJPEG：最小サイズだが非可逆で透過は失われる\n• MainTexのみ — MainTexだけ自動で圧縮し、他はバイト単位で変更しない",
   "option.CompressMode.case.auto.label": "自動",
   "option.CompressMode.case.png.label": "PNG",
   "option.CompressMode.case.jpg.label": "JPG",

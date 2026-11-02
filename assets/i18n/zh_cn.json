@@ -37,7 +37,7 @@
   "option.DeleteOriginalCards.case.Yes.label": "删除原始文件",
   "option.DeleteOriginalCards.case.No.label": "两者都保留",
   "option.CompressMode.label": "压缩模式",
-  "option.CompressMode.description": "KoiCardTexTool 重新压缩贴图的方式：\n• 自动 — 为每张贴图选择 PNG 或 JPEG\n• PNG — 始终使用 PNG\n• JPG — 始终使用 JPEG\n• 仅 MainTex — 只压缩 MainTex，其余贴图的字节保持不变",
+  "option.CompressMode.description": "贴图的重新压缩方式（均缩小到最长边 1024 px）：\n• 自动 — 完全不透明的贴图用 JPEG，其余（含透明、法线、遮罩）用无损 PNG\n• PNG — 仅无损 PNG：最安全，但文件较大\n• JPG — 全部转 JPEG：体积最小，但有损且会丢失透明度\n• 仅 MainTex — 只对 MainTex 按“自动”压缩，其余贴图字节保持不变",
   "option.CompressMode.case.auto.label": "自动",
   "option.CompressMode.case.png.label": "PNG",
   "option.CompressMode.case.jpg.label": "JPG",

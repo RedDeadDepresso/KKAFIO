@@ -360,9 +360,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Folder containing (or where to install) KoiCardTexTool.exe "
                        "(default: the input folder itself)"),
             Value("--mode", key="Mode", choices=["auto", "png", "jpg", "maintex"], default=None,
-                  help="How the textures are recompressed: auto=pick PNG or JPEG per texture (default), "
-                       "png=always PNG, jpg=always JPEG, maintex=only compress MainTex textures and leave "
-                       "every other texture byte-for-byte untouched (default: CompressCardsTextures.Mode from config)"),
+                  help="How textures are recompressed: auto=JPEG for fully opaque textures, lossless PNG for the "
+                       "rest (default), png=lossless PNG only, jpg=JPEG for everything (smallest, but lossy and "
+                       "drops transparency), maintex=auto for MainTex only, other textures untouched "
+                       "(default: CompressCardsTextures.Mode from config)"),
             Toggle("delete-original", key="DeleteOriginalCards",
                    help="Send the original card to the Recycle Bin once a compressed "
                         "[zip] version exists alongside it (default: off)",

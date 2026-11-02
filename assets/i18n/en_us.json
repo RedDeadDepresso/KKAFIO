@@ -37,7 +37,7 @@
   "option.DeleteOriginalCards.case.Yes.label": "Delete Originals",
   "option.DeleteOriginalCards.case.No.label": "Keep Both",
   "option.CompressMode.label": "Compression Mode",
-  "option.CompressMode.description": "How KoiCardTexTool recompresses the textures:\n• Auto — pick PNG or JPEG for each texture\n• PNG — always PNG\n• JPG — always JPEG\n• MainTex only — only compress MainTex textures; every other texture is left byte-for-byte untouched",
+  "option.CompressMode.description": "How textures are recompressed (all are scaled down to 1024 px):\n• Auto — JPEG for fully opaque textures, lossless PNG for the rest (transparency, normal and mask maps)\n• PNG — lossless PNG only: safest, but larger files\n• JPG — JPEG for everything: smallest, but lossy and drops transparency\n• MainTex only — Auto for MainTex only; other textures stay byte-for-byte unchanged",
   "option.CompressMode.case.auto.label": "Auto",
   "option.CompressMode.case.png.label": "PNG",
   "option.CompressMode.case.jpg.label": "JPG",
