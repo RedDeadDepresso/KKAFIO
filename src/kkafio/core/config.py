@@ -301,8 +301,10 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("UseCache", "UseCache")
 
     elif task_name == "RunGallery":
-        _set("CheckSharedMods", "CheckSharedMods")
-        _set("IncludeCoordinates", "IncludeCoordinates")
+        selected = _extract_opt(opt_values, "RunGalleryDeleteOptions")
+        if selected is not None:
+            cfg["CheckSharedMods"] = "CheckSharedMods" in selected
+            cfg["IncludeCoordinates"] = "IncludeCoordinates" in selected
         _set("CharaDir", "CharaDir")
         _set("SceneDir", "SceneDir")
         _set("CoordDir", "CoordDir")

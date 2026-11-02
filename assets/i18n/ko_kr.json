@@ -242,6 +242,8 @@
   "option.CheckSharedMods.description": "zipmod를 삭제하기 전에 다른 설치된 캐릭터, 씬 또는 코디가 여전히 이를 사용 중인지 확인하고, 사용 중이면 유지합니다. 비활성화하면 속도는 빨라지지만 삭제하려는 대상과 모드를 공유하는 다른 콘텐츠가 손상될 위험이 있습니다.",
   "option.CheckSharedMods.case.Yes.label": "확인",
   "option.CheckSharedMods.case.No.label": "확인 건너뛰기",
+  "option.RunGalleryDeleteOptions.label": "삭제 옵션",
+  "option.RunGalleryDeleteOptions.description": "창을 닫을 때 갤러리 휴지통으로 옮긴 카드의 처리 방식: 카드 삭제로 삭제됩니다(모드는 출력 모드 디렉터리 사용)",
   "option.BackupFolders.label": "백업할 폴더",
   "option.BackupFolders.description": "백업에 포함할 게임 폴더를 선택합니다. 모드: 모드 폴더의 zipmod. 사이드로더 모드팩 폴더는 다시 다운로드할 수 있어 압축 파일이 불필요하게 커지므로 항상 제외됩니다.",
   "option.BackupFolders.case.Mods.label": "모드",

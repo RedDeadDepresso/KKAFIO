@@ -1302,6 +1302,30 @@
         }
       ]
     },
+    "RunGalleryDeleteOptions": {
+      "type": "checkbox",
+      "label": "$option.RunGalleryDeleteOptions.label",
+      "description": "$option.RunGalleryDeleteOptions.description",
+      "default_case": ["CheckSharedMods", "IncludeCoordinates"],
+      "cases": [
+        {
+          "name": "CheckSharedMods",
+          "label": "$option.CheckSharedMods.label",
+          "description": "$option.CheckSharedMods.description",
+          "pipeline_override": {
+            "CheckSharedMods": true
+          }
+        },
+        {
+          "name": "IncludeCoordinates",
+          "label": "$option.IncludeCoordinates.label",
+          "description": "$option.IncludeCoordinates.description",
+          "pipeline_override": {
+            "IncludeCoordinates": true
+          }
+        }
+      ]
+    },
     "BackupFolders": {
       "type": "checkbox",
       "label": "$option.BackupFolders.label",
@@ -1538,8 +1562,7 @@
       "description": "$task.RunGallery.description",
       "group": ["card-management"],
       "option": [
-        "CheckSharedMods",
-        "IncludeCoordinates",
+        "RunGalleryDeleteOptions",
         "CharaDir",
         "SceneDir",
         "CoordDir",

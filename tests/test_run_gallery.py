@@ -36,13 +36,27 @@ def test_options_to_config():
     assert _build_task_config("RunGallery", True, {})["UseCache"] is True
     assert _build_task_config("RunGallery", True, {})["CheckSharedMods"] is True
     assert _build_task_config("RunGallery", True, {})["IncludeCoordinates"] is True
+    both = _build_task_config("RunGallery", True, {
+        "RunGalleryDeleteOptions": {"type": "checkbox", "caseNames": ["CheckSharedMods", "IncludeCoordinates"]}})
+    assert (both["CheckSharedMods"], both["IncludeCoordinates"]) == (True, True)
+    one = _build_task_config("RunGallery", True, {
+        "RunGalleryDeleteOptions": {"type": "checkbox", "caseNames": ["IncludeCoordinates"]}})
+    assert (one["CheckSharedMods"], one["IncludeCoordinates"]) == (False, True)
+    none = _build_task_config("RunGallery", True, {
+        "RunGalleryDeleteOptions": {"type": "checkbox", "caseNames": []}})
+    assert (none["CheckSharedMods"], none["IncludeCoordinates"]) == (False, False)
 
 
 def test_interface_json_declares_the_task():
     interface = json.loads((ROOT / "interface.json").read_text(encoding="utf-8"))
     task = next(t for t in interface["task"] if t["name"] == "RunGallery")
-    assert task["option"] == ["CheckSharedMods", "IncludeCoordinates", "CharaDir", "SceneDir", "CoordDir", "InputModsDir",
-                            "OutputModsDir", "UseCache"]
+    opt = interface["option"]["RunGalleryDeleteOptions"]
+    assert opt["type"] == "checkbox" and opt["default_case"] == ["CheckSharedMods", "IncludeCoordinates"]
+    assert [c["name"] for c in opt["cases"]] == ["CheckSharedMods", "IncludeCoordinates"]
+    for c in opt["cases"]:                       # labels and descriptions are the Delete Cards ones
+        assert c["label"] == f"$option.{c['name']}.label" and c["description"] == f"$option.{c['name']}.description"
+    assert task["option"] == ["RunGalleryDeleteOptions", "CharaDir", "SceneDir", "CoordDir", "InputModsDir",
+                              "OutputModsDir", "UseCache"]
 
 
 def test_scene_dir_custom_default_and_missing(tmp_path):

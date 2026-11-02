@@ -242,6 +242,8 @@
   "option.CheckSharedMods.description": "zipmodを削除する前に、他のインストール済みキャラ、シーン、またはコーディネートがまだそれを使用していないか確認し、使用していれば残します。無効にすると処理は速くなりますが、削除対象とMODを共有している他のコンテンツが壊れる可能性があります。",
   "option.CheckSharedMods.case.Yes.label": "確認する",
   "option.CheckSharedMods.case.No.label": "確認をスキップ",
+  "option.RunGalleryDeleteOptions.label": "削除オプション",
+  "option.RunGalleryDeleteOptions.description": "ウィンドウを閉じたときにギャラリーのゴミ箱へ移動したカードをどうするか：カードの削除で削除されます（Mod は出力 Mod ディレクトリを使用）",
   "option.BackupFolders.label": "バックアップ対象のフォルダ",
   "option.BackupFolders.description": "バックアップに含めるゲームフォルダを選択します。MOD：MODフォルダ内のzipmod。サイドローダーMODパックのフォルダは再ダウンロード可能なため、アーカイブの肥大化を防ぐため常に除外されます。",
   "option.BackupFolders.case.Mods.label": "MOD",

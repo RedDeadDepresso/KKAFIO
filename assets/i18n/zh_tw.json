@@ -242,6 +242,8 @@
   "option.CheckSharedMods.description": "刪除某個 zipmod 前，檢查是否還有其他已安裝的角色、場景或衣裝在使用它，若有則保留該模組。停用此項可加快速度，但可能會破壞與待刪除內容共用模組的其他內容。",
   "option.CheckSharedMods.case.Yes.label": "檢查",
   "option.CheckSharedMods.case.No.label": "跳過檢查",
+  "option.RunGalleryDeleteOptions.label": "刪除選項",
+  "option.RunGalleryDeleteOptions.description": "關閉視窗時，移入圖庫資源回收筒的卡片會如何處理：透過「刪除卡片」刪除（模組使用輸出模組目錄）",
   "option.BackupFolders.label": "要備份的資料夾",
   "option.BackupFolders.description": "選擇要包含在備份中的遊戲資料夾。模組：來自你模組資料夾的 zipmod。Sideloader 模組包資料夾一律排除，因為它們可重新下載，納入會使壓縮檔過於臃腫。",
   "option.BackupFolders.case.Mods.label": "模組",

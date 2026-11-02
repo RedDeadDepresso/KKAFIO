@@ -242,6 +242,8 @@
   "option.CheckSharedMods.description": "Before deleting a zipmod, check that no other installed character, scene, or coordinate still uses it, and keep it if so. Disabling speeds things up but risks breaking content that shares a mod with what you're deleting.",
   "option.CheckSharedMods.case.Yes.label": "Check",
   "option.CheckSharedMods.case.No.label": "Skip Check",
+  "option.RunGalleryDeleteOptions.label": "Delete Options",
+  "option.RunGalleryDeleteOptions.description": "What happens to the cards moved to the gallery's trash when the window closes: they are deleted with Delete Cards (using the Output Mods Directory for mods)",
   "option.BackupFolders.label": "Folders to Back Up",
   "option.BackupFolders.description": "Select which game folders to include in the backup. Mods: zipmods from your mods folder. Sideloader Modpack folders are always excluded, since those are re-downloadable and would bloat the archive.",
   "option.BackupFolders.case.Mods.label": "Mods",
