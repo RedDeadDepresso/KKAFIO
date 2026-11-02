@@ -1541,7 +1541,8 @@
         "CharaDir",
         "SceneDir",
         "CoordDir",
-        "ModsDir",
+        "InputModsDir",
+        "OutputModsDir",
         "UseCache"
       ]
     },
@@ -1689,6 +1690,16 @@
         },
         {
           "name": "DownloadMissingMods",
+          "enabled": false,
+          "option": {
+            "OutputModsDir": "C:/KKAFIO/Downloads",
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "SceneDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads"
+          }
+        },
+        {
+          "name": "RunGallery",
           "enabled": false,
           "option": {
             "OutputModsDir": "C:/KKAFIO/Downloads",

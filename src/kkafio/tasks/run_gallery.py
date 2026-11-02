@@ -14,7 +14,8 @@ given. The caches the Group tasks use are used here too (the PNG hash cache for 
 character key cache, the coordinate caches) and brought along with every card that is moved.
 
 A collapsible sidebar on the right of the window lists the mods (GUIDs) the card under the cursor
-uses, marking each installed or missing in the mods folder (the game's, or Custom Mods Directory):
+uses, marking each installed or missing in the input and output mods folders (the game's, or the
+Input / Output Mods Directory — a mod in either counts as installed):
 a missing one has a search icon that looks its GUID up on Google (see dialogs/gallery/mods_panel.py).
 """
 
@@ -43,7 +44,8 @@ class RunGallery(BaseTask):
         self.chara_dir_str : str  = cfg.get("CharaDir", "")
         self.scene_dir_str : str  = cfg.get("SceneDir", "")
         self.coord_dir_str : str  = cfg.get("CoordDir", "")
-        self.mods_dir_str  : str  = cfg.get("ModsDir", "")
+        self.input_mods_dir_str  : str = cfg.get("InputModsDir", "")
+        self.output_mods_dir_str : str = cfg.get("OutputModsDir", "")
         self.use_cache     : bool = cfg.get("UseCache", True)
 
     # ------------------------------------------------------------------
@@ -77,25 +79,37 @@ class RunGallery(BaseTask):
             raise InputError(f"Coordinate directory does not exist: {folder}", tag=TAG)
         return folder
 
-    def _mods_dir(self) -> Path | None:
-        """The mods folder the sidebar checks mods against: the one given, else the game's. A
-        given folder that doesn't exist is an error; with none at all the sidebar still lists a
-        card's mods, it just can't say which are installed."""
-        folder = mods_dir_for(self.mods_dir_str, self.config.game_path.get("mods"))
-        if folder is None:
-            logger.warning(TAG, "No mods folder: no Mods Directory is set and none could be resolved from "
-                                "the game path — the mod dependencies sidebar can't tell which mods are installed.")
-        elif not folder.exists():
-            if self.mods_dir_str.strip():
-                raise InputError(f"Mods directory does not exist: {folder}", tag=TAG)
-            logger.warning(TAG, f"Mods folder not found: {folder} — the mod dependencies sidebar can't tell "
+    def _mods_dirs(self) -> tuple[Path | None, Path | None]:
+        """(input, output) mods folders the sidebar checks mods against; a mod installed in either
+        counts as installed. Each is the one given, else the game's. A given input folder that
+        doesn't exist is an error; a given output folder that doesn't exist is left out (Download
+        Missing Mods creates it, so it may simply not be there yet). With none at all the sidebar
+        still lists a card's mods, it just can't say which are installed."""
+        game_mods = self.config.game_path.get("mods")
+        input_dir = mods_dir_for(self.input_mods_dir_str, game_mods)
+        output_dir = mods_dir_for(self.output_mods_dir_str, game_mods)
+
+        if input_dir is not None and not input_dir.exists():
+            if self.input_mods_dir_str.strip():
+                raise InputError(f"Input mods directory does not exist: {input_dir}", tag=TAG)
+            logger.warning(TAG, f"Mods folder not found: {input_dir}")
+            input_dir = None
+        if output_dir is not None and not output_dir.exists():
+            if self.output_mods_dir_str.strip():
+                logger.warning(TAG, f"Output mods directory does not exist (yet): {output_dir} — ignored.")
+            else:
+                logger.warning(TAG, f"Mods folder not found: {output_dir}")
+            output_dir = None
+        if input_dir is None and output_dir is None:
+            logger.warning(TAG, "No mods folder: no Input/Output Mods Directory is set and none could be "
+                                "resolved from the game path — the mod dependencies sidebar can't tell "
                                 "which mods are installed.")
-            return None
-        return folder
+        return input_dir, output_dir
 
     def _card_mods(self) -> CardMods:
         game_type = getattr(self.config, "config_data", {}).get("Core", {}).get("GameType", GameType.KOIKATSU.value)
-        return CardMods(ModsLookup(self._mods_dir(), game_type, self.use_cache))
+        input_dir, output_dir = self._mods_dirs()
+        return CardMods(ModsLookup(input_dir, game_type, self.use_cache, extra_dirs=(output_dir,)))
 
     # ------------------------------------------------------------------
     # Run
@@ -110,7 +124,8 @@ class RunGallery(BaseTask):
         self.log_start(TAG, f"characters: {', '.join(str(d) for d in chara_dirs)}")
         logger.info(TAG, f"Scenes     : {scene_dir if scene_dir else '(none)'}")
         logger.info(TAG, f"Coordinates: {coord_dir}")
-        logger.info(TAG, f"Mods       : {card_mods.lookup.mods_dir if card_mods.lookup.available else '(none)'}")
+        mods_dirs = [d for d in card_mods.lookup.mods_dirs if d.is_dir()]
+        logger.info(TAG, f"Mods       : {', '.join(str(d) for d in mods_dirs) if mods_dirs else '(none)'}")
         logger.info(TAG, f"Use cache  : {self.use_cache}")
         logger.line()
 

@@ -103,6 +103,17 @@ def _download_missing_mods_prepare(args: argparse.Namespace, overrides: dict[str
         ]
 
 
+def _run_gallery_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+    # Same as Download Missing Mods: --mods-dir is the legacy single-directory flag and sets
+    # both directories unless the specific flag is also given.
+    input_dir = args.input_mods_dir or args.mods_dir or None
+    output_dir = args.output_mods_dir or args.mods_dir or None
+    if input_dir is not None:
+        overrides["InputModsDir"] = input_dir
+    if output_dir is not None:
+        overrides["OutputModsDir"] = output_dir
+
+
 def _filter_duplicates_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
     # --input is a shorthand: one folder for every content type, unless the
     # specific --*-dir flag is also given.
@@ -525,6 +536,8 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             "--scene-dir is given). The same caches as the Group tasks are used and kept up to date."
         ),
         target="kkafio.tasks.run_gallery:RunGallery",
+        # InputModsDir / OutputModsDir are combined from several flags in the hook.
+        prepare=_run_gallery_prepare,
         options=(
             Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom chara directory (default: the game's female and male chara folders; "
@@ -533,9 +546,15 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom scene directory (default: the game's Studio scene folder)"),
             Value("--coord-dir", key="CoordDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom coordinate directory (default: the game's coordinate folder)"),
-            Value("--mods-dir", key="ModsDir", ignore_blank=True, metavar="DIR", default=None,
-                  help="Custom mods directory, used by the mod dependencies sidebar to tell which of a "
-                       "card's mods are installed (default: the game's mods folder)"),
+            Value("--input-mods-dir", default=None, metavar="DIR",
+                  help="Mods directory used by the mod dependencies sidebar to tell which of a card's "
+                       "mods are installed (default: the game's mods folder)"),
+            Value("--output-mods-dir", default=None, metavar="DIR",
+                  help="Second mods directory (e.g. where Download Missing Mods puts its downloads); "
+                       "mods installed in it also count as installed in the sidebar "
+                       "(default: the game's mods folder)"),
+            Value("--mods-dir", default=None, metavar="DIR",
+                  help="Legacy shorthand: use DIR as both --input-mods-dir and --output-mods-dir"),
             Toggle("use-cache", key="UseCache",
                    help="Reuse the cached scene hashes, character keys and coordinate digests for "
                         "unchanged cards (default: on)",

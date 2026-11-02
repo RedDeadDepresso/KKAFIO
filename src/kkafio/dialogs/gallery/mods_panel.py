@@ -7,7 +7,7 @@ two questions behind it:
 
   * which GUIDs does a card use?   `CardMods.guids()` runs the tab's parser (`GalleryTab.guids`)
                                    and remembers the answer for as long as the file is unchanged;
-  * which of them are installed?   `ModsLookup` scans the mods folder once (the same incremental
+  * which of them are installed?   `ModsLookup` scans the mods folder(s) once (the same incremental
                                    cache Archive Cards uses) and resolves GUIDs against it.
 
 Sideloader Modpack mods are resolved through the bundled modpack index, like Archive Cards does:
@@ -79,22 +79,35 @@ def summarize(rows: Sequence[ModRow]) -> tuple[int, int]:
 class ModsLookup:
     """Which GUIDs are installed in a mods folder.
 
-    `mods_dir` None (or a folder that isn't there) means there is nothing to look in: `available`
-    is False and `resolve()` returns every GUID without a path.
+    `mods_dir` is the main folder (the input mods folder); `extra_dirs` are further folders (the
+    output mods folder) whose mods count as installed too — a GUID is installed when any of the
+    folders has it, the main folder being looked in first. With no folder at all (or none that
+    exists) there is nothing to look in: `available` is False and `resolve()` returns every GUID
+    without a path.
     """
 
     def __init__(self, mods_dir: Path | None, game_type: str = GameType.KOIKATSU.value,
-                 use_cache: bool = True):
+                 use_cache: bool = True, extra_dirs: Sequence[Path | None] = ()):
         self.mods_dir = Path(mods_dir).resolve() if mods_dir is not None else None
+        # every folder to look in, resolved, without repeats (input and output may be the same)
+        self.mods_dirs: list[Path] = []
+        for d in (mods_dir, *extra_dirs):
+            if d is None:
+                continue
+            d = Path(d).resolve()
+            if d not in self.mods_dirs:
+                self.mods_dirs.append(d)
+        if self.mods_dir is None and self.mods_dirs:
+            self.mods_dir = self.mods_dirs[0]
         self.game_type = game_type
         self.use_cache = use_cache
         self._lock = threading.Lock()
-        self._local: dict[str, Path] | None = None         # GUIDs of the mods outside the modpack
+        self._local: dict[Path, dict[str, Path]] | None = None   # per folder: GUIDs of the mods outside the modpack
         self._modpack: dict[str, str] | None = None        # the bundled index: GUID -> relative path
 
     @property
     def available(self) -> bool:
-        return self.mods_dir is not None and self.mods_dir.is_dir()
+        return any(d.is_dir() for d in self.mods_dirs)
 
     def _load(self) -> None:
         """Scan the mods folder (once; the first card pays for it)."""
@@ -102,13 +115,18 @@ class ModsLookup:
             if self._local is not None:
                 return
             self._modpack = load_modpack_index(game_type=self.game_type) or {}
-            try:
-                self._local = local_mods_map(self.mods_dir, include_modpack=False,
-                                             use_cache=self.use_cache)
-            except OSError as e:
-                logger.warning(TAG, f"Could not scan the mods folder {self.mods_dir}: {e}")
-                self._local = {}
-            logger.info(TAG, f"Mods folder: {len(self._local)} mod(s) found in {self.mods_dir}")
+            local: dict[Path, dict[str, Path]] = {}
+            for folder in self.mods_dirs:
+                if not folder.is_dir():
+                    continue
+                try:
+                    local[folder] = local_mods_map(folder, include_modpack=False,
+                                                   use_cache=self.use_cache)
+                except OSError as e:
+                    logger.warning(TAG, f"Could not scan the mods folder {folder}: {e}")
+                    local[folder] = {}
+                logger.info(TAG, f"Mods folder: {len(local[folder])} mod(s) found in {folder}")
+            self._local = local
 
     def find(self, guid: str) -> Path | None:
         """The zipmod of `guid`, or None when it isn't installed."""
@@ -118,8 +136,11 @@ class ModsLookup:
         # A Sideloader Modpack mod is checked at its indexed path (the modpack folders are never
         # opened); if it isn't there it may still be installed elsewhere in the mods folder,
         # which the local scan covers.
-        return resolve_guid(guid, self._local or {}, self._modpack or {}, self.mods_dir,
-                            include_modpack=True)
+        for folder, local in (self._local or {}).items():
+            found = resolve_guid(guid, local, self._modpack or {}, folder, include_modpack=True)
+            if found is not None:
+                return found
+        return None
 
     def resolve(self, guids: Sequence[str]) -> list[ModRow]:
         return [ModRow(g, self.find(g)) for g in guids]

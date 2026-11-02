@@ -542,7 +542,8 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
-      "mods_dir_str": "",
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -841,7 +842,8 @@
      "attrs": {
       "chara_dir_str": "",
       "coord_dir_str": "",
-      "mods_dir_str": "",
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },

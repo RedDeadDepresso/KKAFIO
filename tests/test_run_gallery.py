@@ -28,16 +28,18 @@ def test_options_to_config():
         "CharaDir": {"type": "folder", "path": "X"},
         "SceneDir": {"type": "folder", "path": "Y"},
         "CoordDir": {"type": "folder", "path": "Z"},
-        "ModsDir": {"type": "folder", "path": "M"},
+        "InputModsDir": {"type": "folder", "path": "M"},
+        "OutputModsDir": {"type": "folder", "path": "O"},
         "UseCache": {"type": "switch", "caseName": "No", "value": False}})
-    assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["ModsDir"]) == ("X", "Y", "Z", "M")
+    assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["InputModsDir"], cfg["OutputModsDir"]) \
+        == ("X", "Y", "Z", "M", "O")
     assert _build_task_config("RunGallery", True, {})["UseCache"] is True
 
 
 def test_interface_json_declares_the_task():
     interface = json.loads((ROOT / "interface.json").read_text(encoding="utf-8"))
     task = next(t for t in interface["task"] if t["name"] == "RunGallery")
-    assert task["option"] == ["CharaDir", "SceneDir", "CoordDir", "ModsDir", "UseCache"]
+    assert task["option"] == ["CharaDir", "SceneDir", "CoordDir", "InputModsDir", "OutputModsDir", "UseCache"]
 
 
 def test_scene_dir_custom_default_and_missing(tmp_path):
@@ -57,23 +59,31 @@ def test_coord_dir_must_exist(tmp_path):
         _task(tmp_path, CoordDir=str(tmp_path / "nope"))._coord_dir()
 
 
-def test_mods_dir_custom_default_and_missing(tmp_path):
-    mods = tmp_path / "mods"
+def test_mods_dirs_custom_default_and_missing(tmp_path):
+    mods, out = tmp_path / "mods", tmp_path / "out"
     mods.mkdir()
-    assert _task(tmp_path, ModsDir=str(mods))._mods_dir() == mods
-    assert _task(tmp_path, game={"mods": mods})._mods_dir() == mods
-    assert _task(tmp_path, game={"mods": mods}, ModsDir=str(tmp_path))._mods_dir() == tmp_path    # custom wins
-    assert _task(tmp_path)._mods_dir() is None                       # nothing known: the sidebar still opens
-    assert _task(tmp_path, game={"mods": tmp_path / "gone"})._mods_dir() is None
+    out.mkdir()
+    assert _task(tmp_path, InputModsDir=str(mods))._mods_dirs() == (mods, None)
+    assert _task(tmp_path, game={"mods": mods})._mods_dirs() == (mods, mods)
+    assert _task(tmp_path, game={"mods": mods}, InputModsDir=str(tmp_path))._mods_dirs() == (tmp_path, mods)
+    assert _task(tmp_path, game={"mods": mods}, OutputModsDir=str(out))._mods_dirs() == (mods, out)
+    assert _task(tmp_path)._mods_dirs() == (None, None)              # nothing known: the sidebar still opens
+    assert _task(tmp_path, game={"mods": tmp_path / "gone"})._mods_dirs() == (None, None)
+    # an output folder that isn't there yet is left out; a missing input folder is an error
+    assert _task(tmp_path, InputModsDir=str(mods), OutputModsDir=str(tmp_path / "later"))._mods_dirs() == (mods, None)
     with pytest.raises(InputError):
-        _task(tmp_path, ModsDir=str(tmp_path / "nope"))._mods_dir()
+        _task(tmp_path, InputModsDir=str(tmp_path / "nope"))._mods_dirs()
 
 
 def test_the_dialog_gets_the_mods_lookup(tmp_path):
-    mods = tmp_path / "mods"
+    mods, out = tmp_path / "mods", tmp_path / "out"
     mods.mkdir()
-    shown, _ = _run(_task(tmp_path, game={"scene": tmp_path}, ModsDir=str(mods), UseCache=False), tmp_path)
-    assert shown["mods"].lookup.mods_dir == mods.resolve() and shown["mods"].lookup.use_cache is False
+    out.mkdir()
+    shown, _ = _run(_task(tmp_path, game={"scene": tmp_path}, InputModsDir=str(mods), OutputModsDir=str(out),
+                          UseCache=False), tmp_path)
+    lookup = shown["mods"].lookup
+    assert lookup.mods_dir == mods.resolve() and lookup.use_cache is False
+    assert lookup.mods_dirs == [mods.resolve(), out.resolve()]
     shown, _ = _run(_task(tmp_path), tmp_path)
     assert not shown["mods"].lookup.available
 

@@ -434,3 +434,19 @@ def test_an_unreadable_guid_index_is_empty_and_not_retried(tmp_path):
     assert cards.index_for(load) == {}
     assert cards.index_for(load) == {}
     assert len(reads) == 1
+
+
+def test_lookup_counts_mods_of_the_extra_folder(tmp_path):
+    inp, out = tmp_path / "in", tmp_path / "out"
+    inp.mkdir()
+    out.mkdir()
+    zip_a, zip_b = inp / "a.zipmod", out / "b.zipmod"
+    zip_a.write_bytes(b"x")
+    zip_b.write_bytes(b"x")
+    maps = {inp.resolve(): {"a.guid": zip_a}, out.resolve(): {"b.guid": zip_b}}
+    with mock.patch.object(mp, "local_mods_map", lambda d, **k: maps[Path(d)]), \
+         mock.patch.object(mp, "load_modpack_index", lambda **k: {}):
+        lookup = ModsLookup(inp, use_cache=False, extra_dirs=(out, inp, None))
+        assert lookup.mods_dirs == [inp.resolve(), out.resolve()]
+        assert lookup.find("a.guid") == zip_a and lookup.find("b.guid") == zip_b and lookup.find("c.guid") is None
+        assert ModsLookup(None, extra_dirs=(out,)).available          # only the output folder is known
