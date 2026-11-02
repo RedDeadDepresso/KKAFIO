@@ -67,7 +67,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                                                  |
 | Filter Duplicate Contents  | `filter-duplicate-contents --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder> --overlays-dir <folder>` |
 | Download Missing Mods      | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --downloaded-mods-dir <folder>`                      |
-| Compress Cards Textures    | `compress-cards-textures --input <folder>`                                                                                             |
+| Compress Card Textures    | `compress-card-textures --input <folder>`                                                                                             |
 | Install Contents           | `install-contents --input <folder>`                                                                                                    |
 | Uninstall Contents         | `uninstall-contents --input <folder>`                                                                                                  |
 | Group Scenes               | `group-scenes --scene-dir <folder>`                                                                                                    |
@@ -263,7 +263,7 @@ https://t.me/kknowcc
 >
 > Practically: this is lower-risk as an occasional, moderate-sized cleanup task on an established account, and higher-risk if run repeatedly against very large missing-mods lists, especially on a brand-new number. Using a secondary account (as above) means any restriction lands there instead of your primary Telegram account.
 
-**6. Compress Cards Textures**
+**6. Compress Card Textures**
 
 - Recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
 - **KoiCardTexTool Path** — folder containing (or where to install) `KoiCardTexTool.exe`. Defaults to `C:/KoiCardTexTool`. If the exe isn't found there (checked recursively, in case the release zip nests it in a subfolder), KKAFIO downloads and extracts the latest release automatically before running it.
@@ -415,7 +415,7 @@ Presets are one-click bundles that check a fixed set of tasks and preconfigure t
 
 **📥 Download, Filter & Install**
 
-Checks Download Contents → Filter & Convert KKS Cards → Filter Duplicate Contents → Download Missing Mods → Compress Cards Textures → Install Contents. The full download-to-install pipeline: pull down new cards, convert any KKS ones and remove duplicates, grab whatever mods they need, shrink their textures, then install everything into the game.
+Checks Download Contents → Filter & Convert KKS Cards → Filter Duplicate Contents → Download Missing Mods → Compress Card Textures → Install Contents. The full download-to-install pipeline: pull down new cards, convert any KKS ones and remove duplicates, grab whatever mods they need, shrink their textures, then install everything into the game.
 
 This is the fastest end-to-end workflow for adding a large batch of new cards. All work happens in a temporary staging folder; the game directories are only touched at the final Install step.
 
@@ -459,9 +459,9 @@ These paths default to the staging folder already; adjust them only if you're sc
 
 **Step 5 — Compress textures** _(optional)_
 
-The preset enables **Compress Cards Textures** with the staging folder as **Input Directory**, and already turns on **Delete Original Cards**, so only the compressed copies get installed rather than both. This recompresses the textures inside your newly-staged chara/coordinate cards before they're installed, so the smaller `[zip]` versions are what end up in your game folders.
+The preset enables **Compress Card Textures** with the staging folder as **Input Directory**, and already turns on **Delete Original Cards**, so only the compressed copies get installed rather than both. This recompresses the textures inside your newly-staged chara/coordinate cards before they're installed, so the smaller `[zip]` versions are what end up in your game folders.
 
-Turning on Delete Duplicates, Delete (KKS Cards), and Delete Original Cards throughout this preset is deliberate: it keeps leftover and duplicate copies from piling up in the staging folder, avoids file conflicts at Install, and means compute-heavy steps like Compress Cards Textures aren't wasting time compressing textures on cards that are just going to be removed anyway.
+Turning on Delete Duplicates, Delete (KKS Cards), and Delete Original Cards throughout this preset is deliberate: it keeps leftover and duplicate copies from piling up in the staging folder, avoids file conflicts at Install, and means compute-heavy steps like Compress Card Textures aren't wasting time compressing textures on cards that are just going to be removed anyway.
 
 **Step 6 — Install**
 
@@ -560,7 +560,7 @@ kkafio_cli delete-unused-mods [--exceptions TEXT | --exceptions-file FILE]
                               [--use-cache | --no-use-cache]
                               [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
 
-kkafio_cli compress-cards-textures [--input DIR] [--tool-path DIR] [--mode {auto,png,jpg,maintex}]
+kkafio_cli compress-card-textures [--input DIR] [--tool-path DIR] [--mode {auto,png,jpg,maintex}]
                                    [--max-size PX]
                                    [--delete-original | --no-delete-original]
 
@@ -642,7 +642,7 @@ kkafio_cli --config PATH --instance N|context-menu <command>
 - [great-majority](https://github.com/great-majority) for [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader), a deserializer and serializer for character and scene data from Koikatu.
 - [xwc9527](https://github.com/xwc9527/telebackup) for [TeleBackup](https://github.com/xwc9527/telebackup), High-Speed Telegram Download Engine.
 - [galact-byte](https://github.com/galact-byte) for caching logic taken from [KKTools](https://github.com/galact-byte/KKTools).
-- [EeEeX4](github.com/EeEeX4/koikatsu-card-texture-tool) for [KoiCardTexTool](github.com/EeEeX4/koikatsu-card-texture-tool), the program used to compress cards textures.
+- [EeEeX4](github.com/EeEeX4/koikatsu-card-texture-tool) for [KoiCardTexTool](github.com/EeEeX4/koikatsu-card-texture-tool), the program used to compress card textures.
 - [FlYiNGPoTAToChiP](https://github.com/FlYiNGPoTAToChiP) for KK_SunshineCardFilter and the chara/coordinate distinction method.
 - [maguro-alternative](https://github.com/maguro-alternative) for [KoikatsuSceneConverter](https://github.com/maguro-alternative/KoikatsuSceneConverter), whose KKS → KK scene conversion logic was ported to Python for Filter & Convert KKS Cards.
 - [Evaanxd](https://www.patreon.com/user?u=3125561) and [GaryuX](https://www.patreon.com/GaryuX) for the [Ryuko Matoi card and image](https://www.pixiv.net/en/artworks/77738576).

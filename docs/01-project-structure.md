@@ -47,7 +47,7 @@ KKAFIO-dev/
 │   │   ├── base_task.py             # BaseTask class + validate_input_path() helper
 │   │   ├── content_resolver.py      # Shared PNG-dispatch mixin for Install/Uninstall Contents
 │   │   ├── archive_cards.py
-│   │   ├── compress_cards_textures.py
+│   │   ├── compress_card_textures.py
 │   │   ├── create_backup.py
 │   │   ├── delete_cards.py
 │   │   ├── download_contents.py     # Download Contents: parses the links, picks the client + downloader per site (the sites live in services/content_sources/)

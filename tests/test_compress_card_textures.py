@@ -1,10 +1,10 @@
-"""Compress Cards Textures: command line and original-deletion paths."""
+"""Compress Card Textures: command line and original-deletion paths."""
 
 from pathlib import Path
 from unittest import mock
 
 import card_factory as cf
-from kkafio.tasks import compress_cards_textures as cct
+from kkafio.tasks import compress_card_textures as cct
 
 
 class _FakeProc:
@@ -17,7 +17,7 @@ class _FakeProc:
 
 def _task(tmp_path: Path, delete_original=False, mode="auto", max_size=1024):
     cfg = mock.Mock()
-    cfg.compress_cards_textures = {
+    cfg.compress_card_textures = {
         "InputPath": str(tmp_path / "Downloads"),
         "KoiCardTexToolPath": str(tmp_path / "tool"),
         "Mode": mode,
@@ -27,15 +27,15 @@ def _task(tmp_path: Path, delete_original=False, mode="auto", max_size=1024):
     (tmp_path / "Downloads").mkdir()
     (tmp_path / "tool").mkdir()
     (tmp_path / "tool" / cct.KOICARDTEXTOOL_EXE).write_bytes(b"")
-    return cct.CompressCardsTextures(cfg, None)
+    return cct.CompressCardTextures(cfg, None)
 
 
 def _task_fresh(tmp_path: Path, max_size):
     cfg = mock.Mock()
-    cfg.compress_cards_textures = {"InputPath": str(tmp_path), "KoiCardTexToolPath": str(tmp_path),
+    cfg.compress_card_textures = {"InputPath": str(tmp_path), "KoiCardTexToolPath": str(tmp_path),
                                    "Mode": "auto", "MaxSize": max_size, "DeleteOriginalCards": False}
     (tmp_path / cct.KOICARDTEXTOOL_EXE).write_bytes(b"")
-    return cct.CompressCardsTextures(cfg, None)
+    return cct.CompressCardTextures(cfg, None)
 
 
 def test_command_uses_zip_output_folder_and_suffix(tmp_path):

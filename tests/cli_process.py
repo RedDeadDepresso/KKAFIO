@@ -61,7 +61,7 @@ def scenarios() -> dict[str, tuple[str, list[str], dict[str, str]]]:
         "enabled task folder missing (run)":  ("badtask", ["run"], {}),
         "input folder missing (ungroup)":     ("ok", ["ungroup-cards", "--input", "{ROOT}/missing_dir"], {}),
         "input folder missing (install)":     ("ok", ["install-contents", "--input", "{ROOT}/missing_dir"], {}),
-        "input folder blank (compress)":      ("ok", ["compress-cards-textures", "--input", ""], {}),
+        "input folder blank (compress)":      ("ok", ["compress-card-textures", "--input", ""], {}),
         "no content (archive)":               ("ok", ["archive-cards"], {}),
         "nothing found to archive":           ("ok", ["archive-cards", "{ROOT}/x.png", "--format", "copy"], {}),
         "no content (delete) logs and returns": ("ok", ["delete-cards"], {}),

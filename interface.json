@@ -1583,11 +1583,11 @@
       ]
     },
     {
-      "name": "CompressCardsTextures",
-      "label": "$task.CompressCardsTextures.label",
-      "entry": "CompressCardsTextures",
+      "name": "CompressCardTextures",
+      "label": "$task.CompressCardTextures.label",
+      "entry": "CompressCardTextures",
       "default_check": false,
-      "description": "$task.CompressCardsTextures.description",
+      "description": "$task.CompressCardTextures.description",
       "group": ["card-management"],
       "option": [
         "DownloadsInputPath",
@@ -1858,7 +1858,7 @@
           }
         },
         {
-          "name": "CompressCardsTextures"
+          "name": "CompressCardTextures"
         },
         {
           "name": "InstallContents"
@@ -1952,7 +1952,7 @@
           }
         },
         {
-          "name": "CompressCardsTextures",
+          "name": "CompressCardTextures",
           "enabled": false
         },
         {

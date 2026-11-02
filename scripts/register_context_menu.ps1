@@ -45,7 +45,7 @@ $FolderTasks = @(
     [ordered]@{ Id = 'FilterConvertKKS';       Cli = 'filter-convert-kks';       ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'FilterDuplicateContents'; Cli = 'filter-duplicate-contents'; ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --mods-dir "{P}" --overlays-dir "{P}"' }
     [ordered]@{ Id = 'DownloadMissingMods';     Cli = 'download-missing-mods';     ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --downloaded-mods-dir "{P}"' }
-    [ordered]@{ Id = 'CompressCardsTextures';   Cli = 'compress-cards-textures';   ArgsTemplate = '--input "{P}"' }
+    [ordered]@{ Id = 'CompressCardTextures';   Cli = 'compress-card-textures';   ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'InstallContents';         Cli = 'install-contents';          ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'UninstallContents';       Cli = 'uninstall-contents';        ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'GroupScenes';              Cli = 'group-scenes';               ArgsTemplate = '--scene-dir "{P}"' }
@@ -73,7 +73,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 Filter & Convert KKS Cards"
         FilterDuplicateContents = "🧹 Filter Duplicate Contents"
         DownloadMissingMods     = "📥 Download Missing Mods"
-        CompressCardsTextures   = "🗜️ Compress Cards Textures"
+        CompressCardTextures   = "🗜️ Compress Card Textures"
         InstallContents         = "📦 Install Contents"
         UninstallContents       = "↩️ Uninstall Contents"
         GroupScenes              = "🎬 Group Scenes"
@@ -89,7 +89,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 过滤并转换 KKS 卡片"
         FilterDuplicateContents = "🧹 过滤重复内容"
         DownloadMissingMods     = "📥 下载缺失模组"
-        CompressCardsTextures   = "🗜️ 压缩卡片纹理"
+        CompressCardTextures   = "🗜️ 压缩卡片纹理"
         InstallContents         = "📦 安装内容"
         UninstallContents       = "↩️ 卸载内容"
         GroupScenes              = "🎬 分组场景"
@@ -105,7 +105,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 過濾並轉換 KKS 卡片"
         FilterDuplicateContents = "🧹 過濾重複內容"
         DownloadMissingMods     = "📥 下載遺失模組"
-        CompressCardsTextures   = "🗜️ 壓縮卡片紋理"
+        CompressCardTextures   = "🗜️ 壓縮卡片紋理"
         InstallContents         = "📦 安裝內容"
         UninstallContents       = "↩️ 解除安裝內容"
         GroupScenes              = "🎬 分組場景"
@@ -121,7 +121,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 KKSカードのフィルタと変換"
         FilterDuplicateContents = "🧹 重複コンテンツをフィルタ"
         DownloadMissingMods     = "📥 不足しているMODをダウンロード"
-        CompressCardsTextures   = "🗜️ カードテクスチャを圧縮"
+        CompressCardTextures   = "🗜️ カードテクスチャを圧縮"
         InstallContents         = "📦 コンテンツをインストール"
         UninstallContents       = "↩️ コンテンツをアンインストール"
         GroupScenes              = "🎬 シーンをグループ化"
@@ -137,7 +137,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 KKS 카드 필터 및 변환"
         FilterDuplicateContents = "🧹 중복 콘텐츠 필터"
         DownloadMissingMods     = "📥 누락된 모드 다운로드"
-        CompressCardsTextures   = "🗜️ 카드 텍스처 압축"
+        CompressCardTextures   = "🗜️ 카드 텍스처 압축"
         InstallContents         = "📦 콘텐츠 설치"
         UninstallContents       = "↩️ 콘텐츠 제거"
         GroupScenes              = "🎬 씬 그룹화"
@@ -153,7 +153,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 Фильтр и конвертация карточек KKS"
         FilterDuplicateContents = "🧹 Фильтр дублирующегося содержимого"
         DownloadMissingMods     = "📥 Загрузить недостающие моды"
-        CompressCardsTextures   = "🗜️ Сжать текстуры карточек"
+        CompressCardTextures   = "🗜️ Сжать текстуры карточек"
         InstallContents         = "📦 Установить содержимое"
         UninstallContents       = "↩️ Удалить содержимое"
         GroupScenes              = "🎬 Группировать сцены"

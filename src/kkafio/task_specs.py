@@ -350,12 +350,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
-        name="CompressCardsTextures", command="compress-cards-textures",
+        name="CompressCardTextures", command="compress-card-textures",
         help="Recompress the textures inside chara/coordinate cards with KoiCardTexTool",
-        target="kkafio.tasks.compress_cards_textures:CompressCardsTextures",
+        target="kkafio.tasks.compress_card_textures:CompressCardTextures",
         options=(
             Value("--input", "-i", key="InputPath", metavar="DIR", default=None,
-                  help="Folder to scan (default: CompressCardsTextures.InputPath from config)"),
+                  help="Folder to scan (default: CompressCardTextures.InputPath from config)"),
             Value("--tool-path", key="KoiCardTexToolPath", metavar="DIR", default=None,
                   help="Folder containing (or where to install) KoiCardTexTool.exe "
                        "(default: the input folder itself)"),
@@ -363,10 +363,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="How textures are recompressed: auto=JPEG for fully opaque textures, lossless PNG for the "
                        "rest (default), png=lossless PNG only, jpg=JPEG for everything (smallest, but lossy and "
                        "drops transparency), maintex=auto for MainTex only, other textures untouched "
-                       "(default: CompressCardsTextures.Mode from config)"),
+                       "(default: CompressCardTextures.Mode from config)"),
             Value("--max-size", key="MaxSize", type=int, metavar="PX", default=None,
                   help="Longest edge, in pixels, that textures are scaled down to; 0 = don't scale "
-                       "(default: CompressCardsTextures.MaxSize from config, 1024)"),
+                       "(default: CompressCardTextures.MaxSize from config, 1024)"),
             Toggle("delete-original", key="DeleteOriginalCards",
                    help="Send the original card to the Recycle Bin once a compressed "
                         "[zip] version exists alongside it (default: off)",

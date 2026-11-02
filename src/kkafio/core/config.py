@@ -139,7 +139,7 @@ _TASK_KEY = {
     "FilterConvertKKS": "FilterConvertKKS",
     "FilterDuplicateContents": "FilterDuplicateContents",
     "DownloadMissingMods": "DownloadMissingMods",
-    "CompressCardsTextures": "CompressCardsTextures",
+    "CompressCardTextures": "CompressCardTextures",
     "InstallContents": "InstallContents",
     "UninstallContents": "UninstallContents",
     "GroupScenes": "GroupScenes",
@@ -161,7 +161,7 @@ _TASK_DEFAULTS = {
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Request"},
     "FilterDuplicateContents": {"Enable": False, "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "Keep": "Oldest", "DuplicateAction": "Delete", "UseCache": True, "CharaDir": "", "SceneDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
     "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OpenReport": True, "UseCache": True, "InstalledModsDir": "", "DownloadedModsDir": "", "CharaDir": "", "SceneDir": "", "CoordDir": ""},
-    "CompressCardsTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "Mode": "auto", "MaxSize": 1024, "DeleteOriginalCards": True},
+    "CompressCardTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "Mode": "auto", "MaxSize": 1024, "DeleteOriginalCards": True},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "FileConflicts": "Rename", "ExtractArchive": True, "Password": "Request"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Chara": True, "Mods": True, "Coords": True, "Scenes": True, "Overlays": True, "CheckSharedMods": True, "UseCache": True},
     "GroupScenes": {"Enable": False, "SceneDir": "", "IncludeSubfolders": False, "SubgroupByYear": True, "UseCache": True},
@@ -245,7 +245,7 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SceneDir", "SceneDir")
         _set("CoordDir", "CoordDir")
 
-    elif task_name == "CompressCardsTextures":
+    elif task_name == "CompressCardTextures":
         _set("InputPath", "DownloadsInputPath")
         _set("KoiCardTexToolPath", "KoiCardTexToolPath")
         _set("Mode", "CompressMode")
@@ -582,7 +582,7 @@ class Config:
     _DEFAULT_TASK_PATHS = {
         ("CreateBackup", "OutputPath"): "C:/KKAFIO/Backups",
         ("FilterConvertKKS", "InputPath"): "C:/KKAFIO/Downloads",
-        ("CompressCardsTextures", "InputPath"): "C:/KKAFIO/Downloads",
+        ("CompressCardTextures", "InputPath"): "C:/KKAFIO/Downloads",
         ("InstallContents", "InputPath"): "C:/KKAFIO/Downloads",
         ("UninstallContents", "InputPath"): "C:/KKAFIO/Downloads",
         ("ArchiveCards", "OutputPath"): "C:/KKAFIO/Archived Cards",
@@ -637,7 +637,7 @@ class Config:
         self.filter_convert_kks        = self.config_data["FilterConvertKKS"]
         self.filter_duplicate_contents = self.config_data["FilterDuplicateContents"]
         self.download_missing_mods     = self.config_data["DownloadMissingMods"]
-        self.compress_cards_textures   = self.config_data["CompressCardsTextures"]
+        self.compress_card_textures    = self.config_data["CompressCardTextures"]
         self.install_contents          = self.config_data["InstallContents"]
         self.uninstall_contents        = self.config_data["UninstallContents"]
         self.group_scenes              = self.config_data["GroupScenes"]

@@ -1,5 +1,5 @@
 """
-compress_cards_textures.py — Recompress the textures embedded inside
+compress_card_textures.py — Recompress the textures embedded inside
 Koikatsu chara/coordinate cards using KoiCardTexTool
 (https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking card file
 size dramatically (often -50% to -80%) with minimal quality loss.
@@ -68,10 +68,10 @@ KOICARDTEXTOOL_SHA256 = (
 )
 
 
-class CompressCardsTextures(BaseTask):
+class CompressCardTextures(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.compress_cards_textures
+        cfg = self.config.compress_card_textures
         self.input_path_str  : str  = cfg.get("InputPath", "")
         self.tool_path_str   : str  = cfg.get("KoiCardTexToolPath", "C:/KoiCardTexTool")
         self.mode            : str  = cfg.get("Mode", DEFAULT_MODE)
@@ -307,7 +307,7 @@ class CompressCardsTextures(BaseTask):
 
         exe_path = self._ensure_tool(tool_dir)
         if exe_path is None:
-            raise ToolNotFoundError("CompressCardsTextures: KoiCardTexTool is not available", tag="KOITEX")
+            raise ToolNotFoundError("CompressCardTextures: KoiCardTexTool is not available", tag="KOITEX")
 
         # Compressed copies go to "<input folder>[zip]" (a sibling folder).
         output_path = Path(f"{input_path}{ZIP_SUFFIX}")
@@ -354,7 +354,7 @@ class CompressCardsTextures(BaseTask):
                         "Skipping original-card deletion — KoiCardTexTool did not exit "
                         "successfully, so its output cannot be trusted.")
                 raise TaskFailedError(
-                    f"CompressCardsTextures: KoiCardTexTool exited with code {process.returncode}")
+                    f"CompressCardTextures: KoiCardTexTool exited with code {process.returncode}")
 
             logger.success("KOITEX", "Compression complete")
 

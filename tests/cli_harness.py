@@ -40,7 +40,7 @@ TASK_CLASSES: dict[str, tuple[str, str]] = {
     "FilterConvertKKS":        ("kkafio.tasks.filter_convert_kks", "FilterConvertKKS"),
     "FilterDuplicateContents": ("kkafio.tasks.filter_duplicate_contents", "FilterDuplicateContents"),
     "DownloadMissingMods":     ("kkafio.tasks.download_missing_mods", "DownloadMissingMods"),
-    "CompressCardsTextures":   ("kkafio.tasks.compress_cards_textures", "CompressCardsTextures"),
+    "CompressCardTextures":   ("kkafio.tasks.compress_card_textures", "CompressCardTextures"),
     "InstallContents":         ("kkafio.tasks.install_contents", "InstallContents"),
     "UninstallContents":       ("kkafio.tasks.uninstall_contents", "UninstallContents"),
     "GroupScenes":              ("kkafio.tasks.group_scenes", "GroupScenes"),
@@ -407,7 +407,7 @@ def configured_tasks() -> list[dict]:
           TelegramSources=opt_checkbox("KoikatsuCards", "ChatLinks"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OpenReport=sw(False),
           InstalledModsDir=f("/cfg/in-mods"), DownloadedModsDir=f("/cfg/out-mods"), CharaDir=f("/cfg/chara"),
           SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coord")),
-        t("CompressCardsTextures", DownloadsInputPath=f("/cfg/in"), KoiCardTexToolPath=f("/cfg/tool"),
+        t("CompressCardTextures", DownloadsInputPath=f("/cfg/in"), KoiCardTexToolPath=f("/cfg/tool"),
           CompressMode=opt_select("maintex"), CompressMaxSize=opt_input("2048"), DeleteOriginalCards=sw(True)),
         t("InstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Mods"),
           ExtractArchive=sw(False)),
@@ -460,7 +460,7 @@ def pipeline_cases(root: Path) -> dict[str, tuple[list[dict], dict]]:
     # default folders (C:\\KKAFIO\\... on Windows), which would touch the real disk and differ by OS.
     path_option = {"CreateBackup": "BackupOutputPath", "ArchiveCards": "ArchiveOutputPath",
                    "ExportMods": "ExportOutputPath", "FilterConvertKKS": "DownloadsInputPath",
-                   "CompressCardsTextures": "DownloadsInputPath",
+                   "CompressCardTextures": "DownloadsInputPath",
                    "InstallContents": "DownloadsInputPath", "UninstallContents": "DownloadsInputPath",
                    "GroupScenes": "SceneDir", "GroupChara": "CharaDir", "UngroupCards": "InputPath", "RenameChara": "CharaDir"}
     def _task(name, enabled=True, **opts):                                                  # noqa: E306

@@ -450,11 +450,11 @@
       "mode": "auto",
       "tool_path_str": "C:/KoiCardTexTool"
      },
-     "class": "CompressCardsTextures",
+     "class": "CompressCardTextures",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "CompressCardsTextures"
+     "task": "CompressCardTextures"
     },
     {
      "attrs": {
@@ -965,11 +965,11 @@
       "mode": "auto",
       "tool_path_str": "C:/KoiCardTexTool"
      },
-     "class": "CompressCardsTextures",
+     "class": "CompressCardTextures",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "CompressCardsTextures"
+     "task": "CompressCardTextures"
     },
     {
      "attrs": {
