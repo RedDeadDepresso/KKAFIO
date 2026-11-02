@@ -407,13 +407,20 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
     keys = [tab.key or f"tab{i}" for i, tab in enumerate(tabs)]
     initial = view_state.initial_index(keys, initial, [bool(tab.items) for tab in tabs])   # the tab left open last
 
-    # search bar, with the tabs on its left
+    # search bar, with the tabs on its left and the Settings button on its right
     top = ctk.CTkFrame(root, fg_color="transparent")
     top.grid(row=0, column=0, padx=12, pady=(12, 8), sticky="ew")
     top.grid_columnconfigure(1, weight=1)
     first_text = tabs[initial].text if tabs[initial].text is not None else chara_dialog_text()
     search_entry = ctk.CTkEntry(top, placeholder_text=first_text.search_placeholder, height=34)
     search_entry.grid(row=0, column=1, sticky="ew")
+
+    def open_settings() -> None:
+        from kkafio.dialogs.gallery.settings_dialog import open_settings_dialog
+        open_settings_dialog(root, shortcuts, suggestions)
+
+    ctk.CTkButton(top, text="\u2699 " + t("dialog.settings.button"), width=110, height=34,
+                  command=open_settings).grid(row=0, column=2, padx=(10, 0))
 
     stack = ctk.CTkFrame(root, fg_color="transparent")          # the galleries sit on top of each other
     stack.grid(row=1, column=0, sticky="nsew")
@@ -649,10 +656,6 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                 except tk.TclError:
                     pass
 
-    def open_settings() -> None:
-        from kkafio.dialogs.gallery.settings_dialog import open_settings_dialog
-        open_settings_dialog(root, shortcuts, suggestions)
-
     # ---- widgets -------------------------------------------------------------
     # (the search input belongs to the window: it is the `search_entry` passed in)
     body = ctk.CTkFrame(host, fg_color="transparent")
@@ -758,9 +761,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     foot.grid_columnconfigure(0, weight=1)
     status = ctk.CTkLabel(foot, text="", anchor="w")
     status.grid(row=0, column=0, sticky="ew")
-    ctk.CTkButton(foot, text=t("dialog.settings.button"), width=110, command=open_settings).grid(
-        row=0, column=1, padx=(0, 8))
-    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=2)
+    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=1)
 
     # -----------------------------------------------------------------------
     # layout + drawing
