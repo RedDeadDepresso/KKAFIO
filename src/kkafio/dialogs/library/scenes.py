@@ -1,5 +1,5 @@
 """
-scenes.py — The Scene tab of Run Gallery: Studio scenes sorted into author folders by hand.
+scenes.py — The Scene tab of Manage Library: Studio scenes sorted into author folders by hand.
 
 The user names an author for a scene and the card is moved into <scene folder>/<author>/ at once.
 The suggestions are the known authors (indices/author.py) and the folders that exist. The scenes
@@ -12,8 +12,8 @@ from pathlib import Path
 
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
-from kkafio.dialogs.gallery.model import GalleryTab
-from kkafio.dialogs.gallery.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
+from kkafio.dialogs.library.model import LibraryTab
+from kkafio.dialogs.library.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
 from kkafio.indices.author import canonical_name, load_authors, suggest_authors
 from kkafio.tasks.group_scenes import TAG, save_hash_cache, scan_scenes
 from kkafio.cards.mods.parsing import parse_scene_guids
@@ -24,7 +24,7 @@ SCENE_COVER_RATIO = 180 / 320       # a scene card's picture is landscape (320x1
 
 def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str],
                      max_suggestions: int = 8):
-    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the author
+    """(suggest, assign) for the library dialog. `known` ({casefolded: name}) holds the author
     folders that exist and grows as folders are created; `authors` are the known authors (see
     indices/author). Every move `assign` makes is recorded in `moves` ({old path: new path}) so the
     caller can bring the hash cache along."""
@@ -83,15 +83,15 @@ def _move_unique(src: Path, dest_dir: Path) -> Path | None:
     return dest
 
 
-def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
-    """The Manual gallery of the scenes under `folder` (subfolders included): the user names an
+def scene_library_tab(folder: Path, use_cache: bool, label: str = ""):
+    """The Manual library of the scenes under `folder` (subfolders included): the user names an
     author per scene and each card is moved at once.
 
-    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
-    must be called once the gallery is closed, also when it failed: it brings the hash cache
+    Returns a LibraryTab (its `.items` is empty when there is nothing to show) whose `finish()`
+    must be called once the library is closed, also when it failed: it brings the hash cache
     along with the scenes that were moved."""
     logger.info(TAG, "Manual: reading the scenes")
-    # Always with subfolders: the gallery is the whole library, with each scene's author (its
+    # Always with subfolders: the library window shows the whole library, with each scene's author (its
     # folder) shown; "Include subfolders" only decides what the automatic grouping looks at.
     scenes, cache, new_entries = scan_scenes(folder, True, use_cache)
     items = []
@@ -110,7 +110,7 @@ def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
     seed_known(known, items)
     moves: dict[str, str] = {}
     suggest, assign = manual_callbacks(known, authors, moves)
-    logger.info(TAG, f"{len(items)} scene(s) and {len(authors)} known author(s) for the gallery")
+    logger.info(TAG, f"{len(items)} scene(s) and {len(authors)} known author(s) for the library")
 
     def finish() -> None:
         if use_cache and moves:
@@ -120,5 +120,5 @@ def scene_gallery_tab(folder: Path, use_cache: bool, label: str = ""):
                     new_entries[new] = entry
             save_hash_cache(folder, cache, new_entries, set(moves))
 
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish, "scene", parse_scene_guids,
+    return LibraryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish, "scene", parse_scene_guids,
                       lambda: collect_scene_guids_by_file([folder], use_cache))

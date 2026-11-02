@@ -1,12 +1,12 @@
 """
-run_gallery.py — One gallery window for the three kinds of card: scenes, characters, outfits.
+manage_library.py — One library window for the three kinds of card: scenes, characters, outfits.
 
 It is where scenes, characters and outfits are sorted by hand (Group Scenes, Group Characters and
 Group Coordinates only run automatically / with the LLM), side by side in a single dialog. Tabs on
-the left of the search input (Scene, Character, Outfit) switch between the three galleries — each
+the left of the search input (Scene, Character, Outfit) switch between the three libraries — each
 with its own sidebar, sorting, selection and series/author/character input — and a card is moved
 into its folder the moment you confirm it
-(see dialogs/gallery/: the window, and what each tab scans, suggests and moves). Every tab keeps its own search text, sort and scroll position.
+(see dialogs/library/: the window, and what each tab scans, suggests and moves). Every tab keeps its own search text, sort and scroll position.
 
 The folders default to the game's (Studio scene folder, female + male chara folders, coordinate
 folder); the Scene folder is left out of the window when the game has no Studio and no folder was
@@ -16,9 +16,9 @@ character key cache, the coordinate caches) and brought along with every card th
 A collapsible sidebar on the right of the window lists the mods (GUIDs) the card under the cursor
 uses, marking each installed or missing in the input and output mods folders (the game's, or the
 Input / Output Mods Directory — a mod in either counts as installed):
-a missing one has a search icon that looks its GUID up on Google (see dialogs/gallery/mods_panel.py).
+a missing one has a search icon that looks its GUID up on Google (see dialogs/library/mods_panel.py).
 
-Cards sent to a gallery's trash are not sent to the Recycle Bin directly: when the window closes
+Cards sent to a library's trash are not sent to the Recycle Bin directly: when the window closes
 they are handed to Delete Cards, which also deletes the character's matching coordinates (Include
 Coordinates) and the mods nothing else uses (Check Shared Mods), looking for mods in the output
 mods directory.
@@ -34,19 +34,19 @@ from kkafio.core.config import GameType
 from kkafio.core.errors import InputError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.dialogs.gallery.characters import chara_gallery_tab
-from kkafio.dialogs.gallery.coordinates import coordinate_gallery_tab
-from kkafio.dialogs.gallery.mods_panel import CardMods, ModsLookup, mods_dir_for
-from kkafio.dialogs.gallery.scenes import scene_gallery_tab
+from kkafio.dialogs.library.characters import chara_library_tab
+from kkafio.dialogs.library.coordinates import coordinate_library_tab
+from kkafio.dialogs.library.mods_panel import CardMods, ModsLookup, mods_dir_for
+from kkafio.dialogs.library.scenes import scene_library_tab
 from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 
-TAG = "GALLERY"
+TAG = "LIBRARY"
 
 
-class RunGallery(BaseTask):
+class ManageLibrary(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.run_gallery
+        cfg = self.config.manage_library
         self.chara_dir_str : str  = cfg.get("CharaDir", "")
         self.scene_dir_str : str  = cfg.get("SceneDir", "")
         self.coord_dir_str : str  = cfg.get("CoordDir", "")
@@ -127,10 +127,10 @@ class RunGallery(BaseTask):
 
     def _delete_cards_settings(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
                                coord_dir: Path, output_mods_dir: Path | None) -> dict:
-        """The Delete Cards options for the cards left in the gallery's trash. The mods folder is
+        """The Delete Cards options for the cards left in the library's trash. The mods folder is
         the output mods directory (explicit, so AutoResolve is off): that is where the downloaded
         mods live, and the only folder whose zipmods are deleted. The shared-mod check sees every
-        folder the gallery shows plus the game's own, so a mod another card still uses is kept."""
+        folder the library shows plus the game's own, so a mod another card still uses is kept."""
         game = self.config.game_path
         dirs: list[str] = []
         seen: set[str] = set()
@@ -179,18 +179,18 @@ class RunGallery(BaseTask):
         logger.line()
 
         # The Character tab suggests series from the character index. The language of the titles is
-        # the gallery's Settings (English until the user picks another); this only turns the index on
+        # the library's Settings (English until the user picks another); this only turns the index on
         # (Group Characters reads the language from the prompt, which this task has none of).
         hint_lang = hint_language.DEFAULT_LANGUAGE
 
         tabs = []
         try:
             if scene_dir is not None:
-                tabs.append(scene_gallery_tab(scene_dir, self.use_cache, t("dialog.gallery.tab_scene")))
+                tabs.append(scene_library_tab(scene_dir, self.use_cache, t("dialog.library.tab_scene")))
                 logger.line()
-            tabs.append(chara_gallery_tab(chara_dirs, hint_lang, self.use_cache, t("dialog.gallery.tab_chara")))
+            tabs.append(chara_library_tab(chara_dirs, hint_lang, self.use_cache, t("dialog.library.tab_chara")))
             logger.line()
-            tabs.append(coordinate_gallery_tab(chara_dirs, coord_dir, self.use_cache, t("dialog.gallery.tab_outfit")))
+            tabs.append(coordinate_library_tab(chara_dirs, coord_dir, self.use_cache, t("dialog.library.tab_outfit")))
         except BaseException:
             for tab in tabs:                                # the caches of the tabs that were read
                 if tab.finish is not None:
@@ -204,17 +204,17 @@ class RunGallery(BaseTask):
                     tab.finish()
             return
 
-        from kkafio.dialogs.gallery import gallery_dialog
+        from kkafio.dialogs.library import library_dialog
 
-        # Opens on the first tab that has cards; gallery_dialog() runs every tab's finish() (cache
+        # Opens on the first tab that has cards; library_dialog() runs every tab's finish() (cache
         # saving) when the window is gone, also if it failed.
         initial = next(i for i, tab in enumerate(tabs) if tab.items)
-        logger.info(TAG, "Opening the gallery: " + ", ".join(f"{tab.label} {len(tab.items)}" for tab in tabs))
+        logger.info(TAG, "Opening the library: " + ", ".join(f"{tab.label} {len(tab.items)}" for tab in tabs))
         # The sidebar's lookup keeps the output folder only when it exists; that is the one whose
         # mods Delete Cards may delete.
         output_mods_dir = self._output_mods_dir
-        moved = gallery_dialog(
-            t("dialog.gallery.title"), tabs, initial, card_mods,
+        moved = library_dialog(
+            t("dialog.library.title"), tabs, initial, card_mods,
             on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, output_mods_dir))
         logger.line()
         logger.success(TAG, "Done — moved: " + ", ".join(f"{tab.label} {n}" for tab, n in zip(tabs, moved)))

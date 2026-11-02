@@ -61,7 +61,7 @@ KKAFIO-dev/
 │   │   ├── install_contents.py
 │   │   ├── rename_chara.py
 │   │   ├── review_similar_chara.py
-│   │   ├── run_gallery.py
+│   │   ├── manage_library.py
 │   │   ├── ungroup_cards.py
 │   │   └── uninstall_contents.py
 │   │
@@ -101,7 +101,7 @@ KKAFIO-dev/
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
 │   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> path inside the modpack
-│   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for the Scene gallery (Run Gallery)
+│   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for the Scene library (Manage Library)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
@@ -123,10 +123,10 @@ KKAFIO-dev/
 │   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait · format_size
 │   │   ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
 │   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
-│   │   ├── gallery/                 # The Run Gallery window and its tabs; imports run one way: run_gallery -> dialogs/gallery/<tab> -> model.py, and <tab> -> tasks/group_*
-│   │   │   ├── __init__.py          # Re-exports the public names (gallery_dialog, GalleryTab, CharaItem, ...)
-│   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, GalleryModel, DialogText, GalleryTab, file-rename helpers
-│   │   │   ├── window.py            # The window: draws the tabs, knows nothing about characters / coordinates / scenes; gallery_dialog() hosts them
+│   │   ├── library/                 # The Manage Library window and its tabs; imports run one way: manage_library -> dialogs/library/<tab> -> model.py, and <tab> -> tasks/group_*
+│   │   │   ├── __init__.py          # Re-exports the public names (library_dialog, LibraryTab, CharaItem, ...)
+│   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, LibraryModel, DialogText, LibraryTab, file-rename helpers
+│   │   │   ├── window.py            # The window: draws the tabs, knows nothing about characters / coordinates / scenes; library_dialog() hosts them
 │   │   │   ├── mods_panel.py        # The mod dependencies sidebar's data, no GUI: which mods a card uses (cached per file) and which are installed (ModsLookup, CardMods)
 │   │   │   ├── mods_sidebar.py      # The collapsible mod dependencies sidebar itself (one canvas, card read on a worker thread)
 │   │   │   ├── common.py            # What the three tabs share: folder checks, building items, ranking suggestions, the wording
@@ -229,7 +229,7 @@ in the subpackage that fits it:
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
 | `services/` | tied to an external account, credential store or remote mod source (site sessions, Telegram, BetterRepack, the Download Contents sites) |
 | `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, kkc mods), or a shipped one (scene authors, the Sideloader Modpack) |
-| `dialogs/` | a CustomTkinter window the user interacts with (prompts, galleries, review screens) |
+| `dialogs/` | a CustomTkinter window the user interacts with (prompts, libraries, review screens) |
 | `system/` | an OS-facing helper (job objects, subprocess quirks, MXU automation, context-menu batching) |
 
 Task modules should mostly be: read config → validate input → call into the

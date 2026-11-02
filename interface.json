@@ -1302,10 +1302,10 @@
         }
       ]
     },
-    "RunGalleryDeleteOptions": {
+    "ManageLibraryDeleteOptions": {
       "type": "checkbox",
-      "label": "$option.RunGalleryDeleteOptions.label",
-      "description": "$option.RunGalleryDeleteOptions.description",
+      "label": "$option.ManageLibraryDeleteOptions.label",
+      "description": "$option.ManageLibraryDeleteOptions.description",
       "default_case": ["CheckSharedMods", "IncludeCoordinates"],
       "cases": [
         {
@@ -1555,14 +1555,14 @@
       ]
     },
     {
-      "name": "RunGallery",
-      "label": "$task.RunGallery.label",
-      "entry": "RunGallery",
+      "name": "ManageLibrary",
+      "label": "$task.ManageLibrary.label",
+      "entry": "ManageLibrary",
       "default_check": false,
-      "description": "$task.RunGallery.description",
+      "description": "$task.ManageLibrary.description",
       "group": ["card-management"],
       "option": [
-        "RunGalleryDeleteOptions",
+        "ManageLibraryDeleteOptions",
         "CharaDir",
         "SceneDir",
         "CoordDir",
@@ -1724,7 +1724,7 @@
           }
         },
         {
-          "name": "RunGallery",
+          "name": "ManageLibrary",
           "enabled": false,
           "option": {
             "OutputModsDir": "C:/KKAFIO/Downloads",
@@ -1860,7 +1860,7 @@
           "enabled": false
         },
         {
-          "name": "RunGallery",
+          "name": "ManageLibrary",
           "enabled": false
         },
         {

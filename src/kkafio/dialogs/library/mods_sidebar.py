@@ -1,5 +1,5 @@
 """
-mods_sidebar — The collapsible "Mod dependencies" sidebar on the right of the gallery window.
+mods_sidebar — The collapsible "Mod dependencies" sidebar on the right of the library window.
 
 It lists the mods the card under the keyboard cursor uses, one row per GUID:
 
@@ -25,8 +25,8 @@ from pathlib import Path
 
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
-from kkafio.dialogs.gallery.window import ellipsize
-from kkafio.dialogs.gallery.mods_panel import (
+from kkafio.dialogs.library.window import ellipsize
+from kkafio.dialogs.library.mods_panel import (
     CardMods, ModRow, google_search_url, reveal_in_file_manager, summarize,
 )
 
@@ -56,10 +56,10 @@ class ModsSidebar:
 
         self._path: Path | None = None
         self._parse: Callable[[Path], Sequence[str]] | None = None
-        self._load_index: Callable | None = None       # the tab's GalleryTab.guid_index
+        self._load_index: Callable | None = None       # the tab's LibraryTab.guid_index
         self._index_asked: set = set()                 # the readers already started
         self._rows: list[ModRow] = []
-        self._message = t("dialog.gallery.mods_select")
+        self._message = t("dialog.library.mods_select")
         self._top = 0                                      # pixels scrolled
         self._hover_icon = False
         self._token = 0                                    # a result for an older card is ignored
@@ -89,7 +89,7 @@ class ModsSidebar:
         self._panel.grid_propagate(False)
         self._panel.grid_columnconfigure(0, weight=1)
         self._panel.grid_rowconfigure(2, weight=1)
-        ctk.CTkLabel(self._panel, text=t("dialog.gallery.mods_title"), anchor="w", text_color=pair("text"),
+        ctk.CTkLabel(self._panel, text=t("dialog.library.mods_title"), anchor="w", text_color=pair("text"),
                      font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, columnspan=2, padx=14,
                                                                     pady=(12, 0), sticky="ew")
         self._summary = ctk.CTkLabel(self._panel, text="", anchor="w", text_color=pair("muted"),
@@ -125,11 +125,11 @@ class ModsSidebar:
         self._token += 1
         self._cancel_timer()
         if path is None or parse is None:
-            self._set_message(t("dialog.gallery.mods_select"))
+            self._set_message(t("dialog.library.mods_select"))
             return
         if not self._open:
             return                                         # read when it is expanded
-        self._set_message(t("dialog.gallery.mods_reading"))
+        self._set_message(t("dialog.library.mods_reading"))
         self._start_index_read()
         token = self._token
         self._timer = self._root.after(_READ_DELAY_MS, lambda: self._submit(token, path, parse))
@@ -192,7 +192,7 @@ class ModsSidebar:
             try:
                 self._results.put((token, self._cards.rows(path, parse), None))
             except Exception as e:                         # an unreadable card must not kill the window
-                logger.warning("GALLERY", f"Could not read the mods of {path.name}: {e}")
+                logger.warning("LIBRARY", f"Could not read the mods of {path.name}: {e}")
                 self._results.put((token, None, e))
 
         try:
@@ -211,9 +211,9 @@ class ModsSidebar:
             token, rows, error = latest
             if token == self._token:                       # still the card the cursor is on
                 if error is not None:
-                    self._set_message(t("dialog.gallery.mods_failed"))
+                    self._set_message(t("dialog.library.mods_failed"))
                 elif not rows:
-                    self._set_message(t("dialog.gallery.mods_none"))
+                    self._set_message(t("dialog.library.mods_none"))
                 else:
                     self._rows, self._message, self._top = rows, "", 0
                     self._summary.configure(text=self._summary_text(rows))
@@ -222,9 +222,9 @@ class ModsSidebar:
 
     def _summary_text(self, rows: Sequence[ModRow]) -> str:
         if not self._cards.lookup.available:
-            return t("dialog.gallery.mods_summary_unknown", count=len(rows))
+            return t("dialog.library.mods_summary_unknown", count=len(rows))
         installed, missing = summarize(rows)
-        return t("dialog.gallery.mods_summary", installed=installed, missing=missing)
+        return t("dialog.library.mods_summary", installed=installed, missing=missing)
 
     def _set_message(self, message: str) -> None:
         self._rows, self._message, self._top = [], message, 0

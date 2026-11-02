@@ -5067,9 +5067,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery": {
+ "configured: manage-library": {
   "argv": [
-   "run-gallery"
+   "manage-library"
   ],
   "result": {
    "events": [
@@ -5085,11 +5085,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5099,9 +5099,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery --chara-dir=<blank>": {
+ "configured: manage-library --chara-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--chara-dir",
    ""
   ],
@@ -5119,11 +5119,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5133,9 +5133,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery --coord-dir=<blank>": {
+ "configured: manage-library --coord-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--coord-dir",
    ""
   ],
@@ -5153,11 +5153,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5167,9 +5167,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery --input-mods-dir=<blank>": {
+ "configured: manage-library --input-mods-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--input-mods-dir",
    ""
   ],
@@ -5187,11 +5187,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5201,9 +5201,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery --mods-dir=<blank>": {
+ "configured: manage-library --mods-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--mods-dir",
    ""
   ],
@@ -5221,11 +5221,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5235,9 +5235,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery --output-mods-dir=<blank>": {
+ "configured: manage-library --output-mods-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--output-mods-dir",
    ""
   ],
@@ -5255,11 +5255,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5269,9 +5269,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery --scene-dir=<blank>": {
+ "configured: manage-library --scene-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--scene-dir",
    ""
   ],
@@ -5289,11 +5289,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5303,9 +5303,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery [all-first]": {
+ "configured: manage-library [all-first]": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--check-shared-mods",
    "--include-coordinates",
    "--chara-dir",
@@ -5336,11 +5336,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -5350,9 +5350,9 @@
   },
   "world": "configured"
  },
- "configured: run-gallery [all-last]": {
+ "configured: manage-library [all-last]": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--no-check-shared-mods",
    "--no-include-coordinates",
    "--chara-dir",
@@ -5383,11 +5383,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16652,9 +16652,9 @@
   },
   "world": "default"
  },
- "run-gallery": {
+ "manage-library": {
   "argv": [
-   "run-gallery"
+   "manage-library"
   ],
   "result": {
    "events": [
@@ -16670,11 +16670,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16684,9 +16684,9 @@
   },
   "world": "default"
  },
- "run-gallery --chara-dir=<blank>": {
+ "manage-library --chara-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--chara-dir",
    ""
   ],
@@ -16704,11 +16704,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16718,9 +16718,9 @@
   },
   "world": "default"
  },
- "run-gallery --chara-dir=S_chara_dir": {
+ "manage-library --chara-dir=S_chara_dir": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--chara-dir",
    "S_chara_dir"
   ],
@@ -16738,11 +16738,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16752,9 +16752,9 @@
   },
   "world": "default"
  },
- "run-gallery --check-shared-mods": {
+ "manage-library --check-shared-mods": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--check-shared-mods"
   ],
   "result": {
@@ -16771,11 +16771,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16785,9 +16785,9 @@
   },
   "world": "default"
  },
- "run-gallery --coord-dir=<blank>": {
+ "manage-library --coord-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--coord-dir",
    ""
   ],
@@ -16805,11 +16805,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16819,9 +16819,9 @@
   },
   "world": "default"
  },
- "run-gallery --coord-dir=S_coord_dir": {
+ "manage-library --coord-dir=S_coord_dir": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--coord-dir",
    "S_coord_dir"
   ],
@@ -16839,11 +16839,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16853,9 +16853,9 @@
   },
   "world": "default"
  },
- "run-gallery --include-coordinates": {
+ "manage-library --include-coordinates": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--include-coordinates"
   ],
   "result": {
@@ -16872,11 +16872,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16886,9 +16886,9 @@
   },
   "world": "default"
  },
- "run-gallery --input-mods-dir=<blank>": {
+ "manage-library --input-mods-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--input-mods-dir",
    ""
   ],
@@ -16906,11 +16906,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16920,9 +16920,9 @@
   },
   "world": "default"
  },
- "run-gallery --input-mods-dir=S_input_mods_dir": {
+ "manage-library --input-mods-dir=S_input_mods_dir": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--input-mods-dir",
    "S_input_mods_dir"
   ],
@@ -16940,11 +16940,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16954,9 +16954,9 @@
   },
   "world": "default"
  },
- "run-gallery --mods-dir=<blank>": {
+ "manage-library --mods-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--mods-dir",
    ""
   ],
@@ -16974,11 +16974,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -16988,9 +16988,9 @@
   },
   "world": "default"
  },
- "run-gallery --mods-dir=S_mods_dir": {
+ "manage-library --mods-dir=S_mods_dir": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--mods-dir",
    "S_mods_dir"
   ],
@@ -17008,11 +17008,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17022,9 +17022,9 @@
   },
   "world": "default"
  },
- "run-gallery --no-check-shared-mods": {
+ "manage-library --no-check-shared-mods": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--no-check-shared-mods"
   ],
   "result": {
@@ -17041,11 +17041,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17055,9 +17055,9 @@
   },
   "world": "default"
  },
- "run-gallery --no-include-coordinates": {
+ "manage-library --no-include-coordinates": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--no-include-coordinates"
   ],
   "result": {
@@ -17074,11 +17074,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17088,9 +17088,9 @@
   },
   "world": "default"
  },
- "run-gallery --no-use-cache": {
+ "manage-library --no-use-cache": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--no-use-cache"
   ],
   "result": {
@@ -17107,11 +17107,11 @@
       "scene_dir_str": "",
       "use_cache": false
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17121,9 +17121,9 @@
   },
   "world": "default"
  },
- "run-gallery --output-mods-dir=<blank>": {
+ "manage-library --output-mods-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--output-mods-dir",
    ""
   ],
@@ -17141,11 +17141,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17155,9 +17155,9 @@
   },
   "world": "default"
  },
- "run-gallery --output-mods-dir=S_output_mods_dir": {
+ "manage-library --output-mods-dir=S_output_mods_dir": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--output-mods-dir",
    "S_output_mods_dir"
   ],
@@ -17175,11 +17175,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17189,9 +17189,9 @@
   },
   "world": "default"
  },
- "run-gallery --scene-dir=<blank>": {
+ "manage-library --scene-dir=<blank>": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--scene-dir",
    ""
   ],
@@ -17209,11 +17209,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17223,9 +17223,9 @@
   },
   "world": "default"
  },
- "run-gallery --scene-dir=S_scene_dir": {
+ "manage-library --scene-dir=S_scene_dir": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--scene-dir",
    "S_scene_dir"
   ],
@@ -17243,11 +17243,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17257,9 +17257,9 @@
   },
   "world": "default"
  },
- "run-gallery --use-cache": {
+ "manage-library --use-cache": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--use-cache"
   ],
   "result": {
@@ -17276,11 +17276,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17290,9 +17290,9 @@
   },
   "world": "default"
  },
- "run-gallery [all-first]": {
+ "manage-library [all-first]": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--check-shared-mods",
    "--include-coordinates",
    "--chara-dir",
@@ -17323,11 +17323,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {
@@ -17337,9 +17337,9 @@
   },
   "world": "default"
  },
- "run-gallery [all-last]": {
+ "manage-library [all-last]": {
   "argv": [
-   "run-gallery",
+   "manage-library",
    "--no-check-shared-mods",
    "--no-include-coordinates",
    "--chara-dir",
@@ -17370,11 +17370,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     }
    ],
    "outcome": {

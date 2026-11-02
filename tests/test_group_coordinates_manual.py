@@ -1,6 +1,6 @@
-"""Group Coordinates' manual gallery (opened from Run Gallery): the gallery's data (scan, folder names,
+"""Group Coordinates' manual library (opened from Manage Library): the library's data (scan, folder names,
 suggestions, moving) and the coordinate wording. Group Coordinates itself always groups automatically.
-The gallery itself is shared with Group Characters (test_gallery_gui.py)."""
+The library itself is shared with Group Characters (test_library_gui.py)."""
 
 import json
 from pathlib import Path
@@ -11,8 +11,8 @@ import pytest
 
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 from kkafio.core.config import _build_task_config
-from kkafio.dialogs.gallery import coordinates as gal
-from kkafio.dialogs.gallery.common import dialog_text, existing_folders
+from kkafio.dialogs.library import coordinates as gal
+from kkafio.dialogs.library.common import dialog_text, existing_folders
 from kkafio.tasks import group_coordinates as gc
 
 
@@ -149,7 +149,7 @@ def test_run_always_groups_automatically(tmp_path):
     assert calls == ["auto", "auto"]
 
 
-def test_gallery_tab_opens_with_the_cards_and_updates_the_caches(tmp_path):
+def test_library_tab_opens_with_the_cards_and_updates_the_caches(tmp_path):
     chara, coord = tmp_path / "chara", tmp_path / "coord"
     _png(chara / "Rin.png")
     _png(chara / "Fate" / "Saber.png")
@@ -158,7 +158,7 @@ def test_gallery_tab_opens_with_the_cards_and_updates_the_caches(tmp_path):
 
     with mock.patch.object(gal, "build_coord_cache", return_value={str(loose): "k"}), \
          mock.patch.object(gal, "update_coord_cache") as update:
-        tab = gal.coordinate_gallery_tab([chara], coord, True)
+        tab = gal.coordinate_library_tab([chara], coord, True)
         try:
             names = [i.name for i in tab.items]
             suggested = tab.suggest("")
@@ -172,9 +172,9 @@ def test_gallery_tab_opens_with_the_cards_and_updates_the_caches(tmp_path):
     update.assert_called_once_with(coord, {str(loose): str(coord / "Rin" / "a.png")})
 
 
-def test_gallery_tab_with_no_coordinates_is_empty(tmp_path):
+def test_library_tab_with_no_coordinates_is_empty(tmp_path):
     with mock.patch.object(gal, "build_coord_cache", return_value={}):
-        tab = gal.coordinate_gallery_tab([tmp_path], tmp_path, True)
+        tab = gal.coordinate_library_tab([tmp_path], tmp_path, True)
         tab.finish()
     assert tab.items == []
 

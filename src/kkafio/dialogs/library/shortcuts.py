@@ -1,11 +1,11 @@
 """
-shortcuts.py — The keyboard shortcuts of the gallery window, and where they are saved.
+shortcuts.py — The keyboard shortcuts of the library window, and where they are saved.
 
 Four actions can be given a key by the user (Shortcuts tab of the window's Settings): rename the card,
 change its folder, delete it (move it to the trash) and restore it (out of the trash). One `ShortcutSettings` is shared by every
 tab of the window, so a change applies to all of them at once. It is saved in
-``<CONFIG_DIR>/config/gallery-shortcuts.json`` (on Windows: %APPDATA%/KKAFIO/config), next to the
-GUI's own config, and read again the next time the gallery opens.
+``<CONFIG_DIR>/config/library-shortcuts.json`` (on Windows: %APPDATA%/KKAFIO/config), next to the
+GUI's own config, and read again the next time the library opens.
 
 A shortcut is written as text — "F12", "Delete", "Enter", "Ctrl+R", "Ctrl+Shift+F5" — made of the
 modifiers Ctrl, Alt, Shift (in that order) and one key. No GUI in here (see shortcuts_dialog.py for
@@ -20,8 +20,8 @@ from pathlib import Path
 from kkafio.core.logger import logger
 from kkafio.core.session_store import SessionStore
 
-TAG = "GALLERY"
-FILE_NAME = "gallery-shortcuts.json"
+TAG = "LIBRARY"
+FILE_NAME = "library-shortcuts.json"
 
 ACTION_RENAME = "rename"
 ACTION_FOLDER = "folder"
@@ -31,7 +31,7 @@ ACTIONS = (ACTION_RENAME, ACTION_FOLDER, ACTION_DELETE, ACTION_RESTORE)
 
 DEFAULTS = {ACTION_RENAME: "F12", ACTION_FOLDER: "Enter", ACTION_DELETE: "Delete", ACTION_RESTORE: "Insert"}
 
-# Keys the gallery already uses to move around and select (with any modifier held); they can't
+# Keys the library already uses to move around and select (with any modifier held); they can't
 # be given to an action.
 RESERVED_KEYS = frozenset({"Escape", "Left", "Right", "Up", "Down", "W", "A", "S", "D", "Space",
                            "PageUp", "PageDown", "Home", "End"})
@@ -80,7 +80,7 @@ def is_reserved(combo: str) -> bool:
 
 
 class ShortcutSettings:
-    """The shortcuts the gallery window listens to: {action: shortcut text}; "" = no shortcut.
+    """The shortcuts the library window listens to: {action: shortcut text}; "" = no shortcut.
 
     `store` is where they are kept (None: nothing is read or written, e.g. in tests)."""
 

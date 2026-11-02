@@ -550,11 +550,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     },
     {
      "attrs": {
@@ -853,11 +853,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "RunGallery",
+     "class": "ManageLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "RunGallery"
+     "task": "ManageLibrary"
     },
     {
      "attrs": {

@@ -1,5 +1,5 @@
-"""Group Scenes' manual gallery (opened from Run Gallery): the authors file and the gallery's data (folder
-names, suggestions, moving). Group Scenes itself always groups automatically. The gallery itself is shared
+"""Group Scenes' manual library (opened from Manage Library): the authors file and the library's data (folder
+names, suggestions, moving). Group Scenes itself always groups automatically. The library itself is shared
 with Group Characters."""
 
 import json
@@ -10,8 +10,8 @@ from unittest import mock
 import card_factory as cf
 from kkafio.core.config import _build_task_config
 from kkafio.core.paths import ASSETS_DATA_DIR
-from kkafio.dialogs.gallery import scenes as gal
-from kkafio.dialogs.gallery.common import dialog_text
+from kkafio.dialogs.library import scenes as gal
+from kkafio.dialogs.library.common import dialog_text
 from kkafio.indices import author as sa
 from kkafio.indices.author import Author
 from kkafio.tasks import group_scenes as gs
@@ -137,7 +137,7 @@ def test_run_always_groups_automatically(tmp_path):
     assert calls == ["auto", "auto"]
 
 
-def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_path):
+def test_library_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_path):
     a, b = cf.scene_card([["a"]]), cf.scene_card([["b"]])
     cf.write(tmp_path / "s1.png", a)
     cf.write(tmp_path / "Bob" / "s2.png", b)
@@ -146,7 +146,7 @@ def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
 
     with mock.patch.object(gal, "load_authors", return_value=AUTHORS), \
          mock.patch.object(gs, "load_scene_index", side_effect=AssertionError("Manual needs no index")):
-        tab = gal.scene_gallery_tab(tmp_path, True)
+        tab = gal.scene_library_tab(tmp_path, True)
         try:
             items = sorted((i.name, i.series) for i in tab.items)
             suggested = tab.suggest("al")
@@ -162,9 +162,9 @@ def test_gallery_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
     assert str(tmp_path / "Alice" / "s1.png") in cache and str(tmp_path / "s1.png") not in cache
 
 
-def test_gallery_tab_with_no_scenes_is_empty(tmp_path):
+def test_library_tab_with_no_scenes_is_empty(tmp_path):
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))
-    tab = gal.scene_gallery_tab(tmp_path, True)
+    tab = gal.scene_library_tab(tmp_path, True)
     tab.finish()
     assert tab.items == []
 

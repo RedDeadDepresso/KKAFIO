@@ -1,10 +1,10 @@
 """
-model — What the gallery window shows and is told, with no GUI in it.
+model — What the library window shows and is told, with no GUI in it.
 
-`CharaItem` (one card), `GalleryModel` (which cards show: view, search, sort), `DialogText` (the
-window's sentences), `GalleryTab` (one tab: its items and the suggest / assign callbacks that do
+`CharaItem` (one card), `LibraryModel` (which cards show: view, search, sort), `DialogText` (the
+window's sentences), `LibraryTab` (one tab: its items and the suggest / assign callbacks that do
 the real work) and the plain file helpers behind renaming a card. The tabs (characters.py,
-coordinates.py, scenes.py) build `GalleryTab`s from this module; window.py draws them.
+coordinates.py, scenes.py) build `LibraryTab`s from this module; window.py draws them.
 
 The dialog doesn't know what a "series" is: a card's `series` is just the folder it sits in under
 `CharaItem.root`, and every sentence that names things comes from a `DialogText`.
@@ -37,7 +37,7 @@ VIEW_TRASH = "trash"          # the cards marked for the Recycle Bin (sent there
 
 @dataclass
 class CharaItem:
-    """One character card in the gallery."""
+    """One character card in the library."""
 
     path: Path
     root: Path                 # the chara folder it was found under; series folders go inside it
@@ -48,12 +48,12 @@ class CharaItem:
     ctime: float = 0.0         # created (0: unknown)
     alias: str = ""            # extra text the search also looks at (e.g. the character's own name)
     mods_missing: bool | None = None   # some mod it uses isn't installed (None: not checked yet / unreadable)
-    trashed: bool = False      # in the gallery's trash: hidden everywhere else, the file is only
+    trashed: bool = False      # in the library's trash: hidden everywhere else, the file is only
                                # sent to the Recycle Bin when the window closes
 
 
-class GalleryModel:
-    """Which cards the gallery shows: the sidebar view, the search text and the sort order."""
+class LibraryModel:
+    """Which cards the library shows: the sidebar view, the search text and the sort order."""
 
     def __init__(self, items: Iterable[CharaItem]):
         self.items = list(items)
@@ -181,7 +181,7 @@ def rename_card(path: Path, stem: str) -> Path:
 
 @dataclass(frozen=True)
 class DialogText:
-    """The words of one use of the gallery. Plain translated strings; the ones with `{...}` in them
+    """The words of one use of the library. Plain translated strings; the ones with `{...}` in them
     are str.format templates:
       status / status_filtered   {total} {untagged}  /  {shown} {total} {untagged}
       moved                      {name} {series}
@@ -236,15 +236,15 @@ AssignFn = Callable[[CharaItem, str], "tuple[Path, str] | None"]
 
 
 @dataclass
-class GalleryTab:
-    """One gallery of a `gallery_dialog()`.
+class LibraryTab:
+    """One library of a `library_dialog()`.
 
     label        the tab's text
     items        the cards it shows
     suggest      text typed so far -> series names to offer (best first)
     assign       (item, text typed) -> (new path, series folder) after moving the card there, or
                  None if it couldn't be done. The dialog only shows; this does the moving.
-    text         the sentences of this gallery (default: Group Characters')
+    text         the sentences of this library (default: Group Characters')
     cover_ratio  cover height / width (default: a character card's portrait; scenes are landscape)
     finish       called once when the window is gone, also if it failed: whatever the task has to
                  tidy up after the moves (it saves its caches here). Optional.

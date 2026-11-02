@@ -1,11 +1,11 @@
 """
-mods_panel — What the gallery's mod dependencies sidebar knows, with no GUI in it.
+mods_panel — What the library's mod dependencies sidebar knows, with no GUI in it.
 
 For the card the cursor is on, the sidebar lists the GUIDs of the mods the card uses, each marked
 installed or missing (like the "Mod dependencies" list of a mod manager). This module answers the
 two questions behind it:
 
-  * which GUIDs does a card use?   `CardMods.guids()` runs the tab's parser (`GalleryTab.guids`)
+  * which GUIDs does a card use?   `CardMods.guids()` runs the tab's parser (`LibraryTab.guids`)
                                    and remembers the answer for as long as the file is unchanged;
   * which of them are installed?   `ModsLookup` scans the mods folder(s) once (the same incremental
                                    cache Archive Cards uses) and resolves GUIDs against it.
@@ -33,7 +33,7 @@ from kkafio.core.logger import logger
 from kkafio.cards.mods.zipmods import local_mods_map, resolve_guid
 from kkafio.indices.modpack import load_modpack_index
 
-TAG = "GALLERY"
+TAG = "LIBRARY"
 
 
 @dataclass(frozen=True)
@@ -151,7 +151,7 @@ class CardMods:
 
     A card's GUIDs come, in order, from the in-memory cache (keyed by path, mtime and size), from
     the tab's on-disk GUID index when the window has handed one over with `set_index`, and
-    finally from `parse` (the tab's `GalleryTab.guids`) reading the card file. The result is
+    finally from `parse` (the tab's `LibraryTab.guids`) reading the card file. The result is
     sorted with `sort_rows`; a card that can't be read raises whatever `parse` raises, so the
     window can say so.
     """
@@ -167,7 +167,7 @@ class CardMods:
         self._load_lock = threading.Lock()              # one index read at a time, each only once
 
     def index_for(self, load: Callable[[], Mapping[str, Sequence[str]]]) -> Mapping[str, Sequence[str]]:
-        """The index `load()` returns (the tab's `GalleryTab.guid_index`), read once however many
+        """The index `load()` returns (the tab's `LibraryTab.guid_index`), read once however many
         callers ask — the filter scan and the sidebar share it. A caller that arrives while it is
         being read waits for that read rather than starting another. An index that can't be read
         is empty, and not tried again; the cards are then read one by one."""

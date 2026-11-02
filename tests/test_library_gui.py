@@ -1,4 +1,4 @@
-"""The Manual-mode gallery window, driven with synthetic events. Needs a display (xvfb-run is
+"""The Manual-mode library window, driven with synthetic events. Needs a display (xvfb-run is
 enough); skipped where Tk can't open one."""
 
 import time
@@ -18,7 +18,7 @@ except tk.TclError:
 
 from PIL import Image
 
-from kkafio.dialogs.gallery import window as mgd
+from kkafio.dialogs.library import window as mgd
 from kkafio.dialogs.common import show_and_wait as real_show_and_wait
 
 
@@ -38,7 +38,7 @@ def make_items(folder: Path, count: int, tagged: dict[int, str] | None = None) -
 
 
 def mover(calls: list):
-    """assign(): records the call and really moves the card, like gallery.characters.manual_callbacks."""
+    """assign(): records the call and really moves the card, like library.characters.manual_callbacks."""
     def assign(item, text):
         calls.append((item.name, text))
         if not text.strip("."):
@@ -63,7 +63,7 @@ def walk(w):
         yield from walk(child)
 
 
-def gallery_canvas(root):
+def library_canvas(root):
     return max((w for w in walk(root) if isinstance(w, tk.Canvas)), key=lambda w: w.winfo_width() * w.winfo_height())
 
 
@@ -115,13 +115,13 @@ def button(root, start):
 
 
 def show_all(root, label="All"):
-    """The gallery opens on the "All" entry; click it anyway (a no-op there, and it waits for the redraw)."""
+    """The library opens on the "All" entry; click it anyway (a no-op there, and it waits for the redraw)."""
     button(root, label).invoke()
     pump(root, 0.4)
 
 
 def run_dialog(monkeypatch, items, suggest, assign, script):
-    """Open the gallery; `script(root)` runs once it is up (and must not close it)."""
+    """Open the library; `script(root)` runs once it is up (and must not close it)."""
     errors = []
 
     def fake_show(root, focus_widget=None, on_shown=None):
@@ -152,7 +152,7 @@ def test_tiles_show_name_unknown_series_and_covers_even_when_they_load_late(tmp_
     monkeypatch.setattr(mgd, "load_cover", lambda p: (time.sleep(0.2), real(p))[1])   # slower than the first draw
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         show_all(root)
         pump(root, 1.5)
         assert len(texts(cv, "Not in a folder")) == 11 and texts(cv, "Fate")
@@ -169,7 +169,7 @@ def test_click_type_pick_a_suggestion_and_enter_moves_the_card(tmp_path, monkeyp
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         show_all(root)
         click(cv, first_unknown(cv))
         pump(root, 0.2)
@@ -198,7 +198,7 @@ def test_enter_without_choosing_uses_the_typed_text_and_tab_completes(tmp_path, 
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         click(cv, first_unknown(cv))
         pump(root, 0.2)
         entry = editor(cv)
@@ -225,7 +225,7 @@ def test_escape_blank_text_and_failed_moves_change_nothing(tmp_path, monkeypatch
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         click(cv, first_unknown(cv))
         pump(root, 0.2)
         type_into(editor(cv), "Fate")
@@ -257,7 +257,7 @@ def test_sidebar_views_search_and_sort(tmp_path, monkeypatch):
     items = make_items(tmp_path, 6, tagged={0: "Fate", 1: "Fate", 2: "SAO"})
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         assert button(root, "All characters").cget("text").endswith("6")
         assert button(root, "Not in a folder").cget("text").endswith("3")
         series_box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
@@ -302,7 +302,7 @@ def test_a_big_library_only_draws_what_is_in_view_and_loads_covers_on_scroll(tmp
     items = make_items(tmp_path, 300)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         pump(root, 1.0)
         assert 0 < len(texts(cv, "Not in a folder")) < 40               # not 300 tiles' worth of items
         cv.yview_moveto(0.6)
@@ -323,7 +323,7 @@ def test_a_card_without_a_cover_says_so(tmp_path, monkeypatch):
     items[0].path.write_bytes(b"not a png")
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         pump(root, 0.8)
         assert texts(cv, "no\npreview")
 
@@ -356,7 +356,7 @@ def test_click_selects_and_keys_move_the_selection_and_enter_edits(tmp_path, mon
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         show_all(root)
         assert _highlighted(cv) is None
         name_id = texts(cv, "Char 013")[0]                           # newest = first tile
@@ -391,7 +391,7 @@ def test_click_selects_and_keys_move_the_selection_and_enter_edits(tmp_path, mon
         pump(root, 0.4)
         assert calls == [("Char 012", "Fate")] and _highlighted(cv) == "Char 012"
 
-        _press(cv, "Return")                                         # focus is back on the gallery
+        _press(cv, "Return")                                         # focus is back on the library
         pump(root, 0.2)
         assert editor(cv) is not None
         editor(cv).event_generate("<Escape>")
@@ -407,7 +407,7 @@ def test_keyboard_selection_scrolls_and_skips_to_the_next_card_after_leaving_a_v
     items = make_items(tmp_path, 60)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         for _ in range(3):
             _press(cv, "Down")                                       # first press selects, the rest move
         assert cv.canvasy(0) > 0 or _highlighted(cv) is not None
@@ -474,7 +474,7 @@ def test_ctrl_click_adds_cards_and_a_plain_click_goes_back_to_one(tmp_path, monk
     items = make_items(tmp_path, 8)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         click(cv, texts(cv, "Char 007")[0])
         _ctrl_click(cv, texts(cv, "Char 005")[0])
         _ctrl_click(cv, texts(cv, "Char 004")[0])
@@ -495,7 +495,7 @@ def test_ctrl_arrows_space_ctrl_a_and_escape(tmp_path, monkeypatch):
     items = make_items(tmp_path, 8)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         click(cv, texts(cv, "Char 007")[0])
         _ctrl_press(cv, "Right")                                     # cursor moves, selection stays
         assert _picked(cv) == ["Char 007"] and len(_cursor_only(cv)) == 1
@@ -521,7 +521,7 @@ def test_enter_with_several_cards_opens_a_dialog_and_enter_moves_them_all(tmp_pa
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         show_all(root)
         click(cv, texts(cv, "Char 007")[0])
         _ctrl_click(cv, texts(cv, "Char 005")[0])
@@ -576,7 +576,7 @@ def test_the_series_dialog_can_be_cancelled_and_a_partial_failure_is_reported(tm
         return dlg, entry
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         dlg, entry = open_dialog(root, cv, ["Char 004", "Char 003"])
         entry.insert(0, "Nope")
         entry._entry.event_generate("<Escape>")
@@ -607,7 +607,7 @@ def test_sort_menu_options_order_default_and_effect(tmp_path, monkeypatch):
                    key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0]))
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         menu = next(w for w in walk(root) if w.__class__.__name__ == "CTkOptionMenu")
         assert list(menu.cget("values")) == ["Created date", "Updated date", "Name", "File name", "File size"]
         assert menu.get() == "Updated date"
@@ -670,7 +670,7 @@ def test_a_long_series_list_scrolls_with_wheel_and_scrollbar_and_picks_by_click(
     items = make_items(tmp_path, 40, tagged={i: f"Series {i:02d}" for i in range(40)})
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         box = next(w for w in walk(root) if isinstance(w, mgd.SideList))
         pump(root, 0.5)
         assert box.size() == 40 and box.canvasy(0) == 0
@@ -689,15 +689,15 @@ def test_a_long_series_list_scrolls_with_wheel_and_scrollbar_and_picks_by_click(
     run_dialog(monkeypatch, items, lambda t: [], mover([]), script)
 
 
-def test_the_gallery_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch):
-    """Group Coordinates reuses the gallery with its own sentences: nothing says "series" or "characters"."""
-    from kkafio.dialogs.gallery.common import dialog_text
+def test_the_library_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch):
+    """Group Coordinates reuses the library with its own sentences: nothing says "series" or "characters"."""
+    from kkafio.dialogs.library.common import dialog_text
     items = make_items(tmp_path, 6, tagged={0: "Rin"})
     text = dialog_text("dialog.manual_coord")
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         show_all(root, text.all)
         pump(root, 0.8)
         assert len(texts(cv, text.unknown_series)) == 5 and texts(cv, "Rin")
@@ -740,7 +740,7 @@ def test_cover_ratio_makes_landscape_tiles(tmp_path, monkeypatch):
     heights = {}
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         pump(root, 0.8)
         for i in cv.find_all():
             if cv.type(i) == "image":
@@ -772,11 +772,11 @@ def run_dialog_ratio(monkeypatch, items, script, ratio):
     return moved
 
 
-def test_the_gallery_always_opens_on_the_all_entry(tmp_path, monkeypatch):
+def test_the_library_always_opens_on_the_all_entry(tmp_path, monkeypatch):
     items = make_items(tmp_path, 6, tagged={0: "Rin", 1: "Rin"})
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         pump(root, 0.8)
         assert len(texts(cv, "Not in a folder")) == 4 and texts(cv, "Rin")     # every card is shown
         button(root, "Not in a folder").invoke()                    # the other entry is one click away
@@ -856,7 +856,7 @@ def test_rename_card_never_overwrites(tmp_path):
 
 def test_model_renamed_follows_the_file(tmp_path):
     item = mgd.CharaItem(tmp_path / "old.png", tmp_path, "old", None, 1, 0.0)
-    mgd.GalleryModel([item]).renamed(item, tmp_path / "new name.png")
+    mgd.LibraryModel([item]).renamed(item, tmp_path / "new name.png")
     assert item.path.name == "new name.png" and item.name == "new name"
 
 
@@ -865,7 +865,7 @@ def test_clicking_the_file_name_renames_the_file(tmp_path, monkeypatch):
     calls = []
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         click(cv, texts(cv, "Char 002")[0])                          # the bold file name of the first tile
         pump(root, 0.2)
         entry = editor(cv)
@@ -897,7 +897,7 @@ def test_rename_refuses_taken_and_invalid_names_and_esc_cancels(tmp_path, monkey
     items = make_items(tmp_path, 3)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
 
         def rename_to(text, key="<Return>"):
             click(cv, texts(cv, "Char 002")[0])
@@ -932,7 +932,7 @@ def test_clicking_the_series_line_still_opens_the_series_input(tmp_path, monkeyp
     items = make_items(tmp_path, 2)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         click(cv, first_unknown(cv))
         pump(root, 0.2)
         entry = editor(cv)
@@ -947,7 +947,7 @@ def test_the_right_click_menu_is_a_customtkinter_menu_that_runs_and_closes(tmp_p
     items = make_items(tmp_path, 3)
 
     def script(root):
-        cv = gallery_canvas(root)
+        cv = library_canvas(root)
         show_all(root)
         x1, y1, x2, y2 = cv.bbox(first_unknown(cv))
         cv.event_generate("<Button-3>", x=(x1 + x2) // 2, y=y1 - 10)
@@ -968,7 +968,7 @@ def test_the_settings_dialog_has_both_tabs_and_saves_the_folder_suggestions(tmp_
     items = make_items(tmp_path, 3)
 
     def script(root):
-        gallery_canvas(root)
+        library_canvas(root)
         pump(root, 0.3)
         button(root, "Settings").invoke()
         pump(root, 0.5)
@@ -981,7 +981,7 @@ def test_the_settings_dialog_has_both_tabs_and_saves_the_folder_suggestions(tmp_
         assert menus[3].get() == "English"                                          # and the series language
         menus[3]._dropdown_callback("日本語")
         menus[0]._dropdown_callback("No")                                         # the Character tab
-        saved = json.loads((CONFIG_DIR / "config" / "gallery-suggestions.json").read_text("utf-8"))
+        saved = json.loads((CONFIG_DIR / "config" / "library-suggestions.json").read_text("utf-8"))
         assert saved["suggestions"] == {"chara": "none", "outfit": "all", "scene": "all"}
         assert saved["series_language"] == "ja_jp"
 

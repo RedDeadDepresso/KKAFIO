@@ -1,14 +1,14 @@
 """
-window — The gallery window of Run Gallery (scenes, characters, outfits).
+window — The library window of Manage Library (scenes, characters, outfits).
 
 This module is the window: it draws the tabs and knows nothing about characters, coordinates or
 scenes. The submodules are the tabs' data and callbacks: characters.py (series folders),
 coordinates.py (character folders), scenes.py (author folders) and common.py (what the three
 share). Each scans its cards, suggests folder names, moves a card when a name is confirmed and
-returns a `GalleryTab` for `gallery_dialog()`. Imports run one way: tasks/run_gallery.py ->
-dialogs/gallery/<tab> -> tasks/group_*; the Group tasks never import this package.
+returns a `LibraryTab` for `library_dialog()`. Imports run one way: tasks/manage_library.py ->
+dialogs/library/<tab> -> tasks/group_*; the Group tasks never import this package.
 
-A library-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
+A browser-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
 folders that exist) and a grid of character covers. Under every cover is the character's name and
 its series — "Unknown series" until it has one. Click that text to type a series (with
 suggestions); Enter confirms it and the card is moved straight into that series' folder, which is
@@ -16,7 +16,7 @@ created if it doesn't exist yet. Nothing is moved until a series is confirmed, a
 be closed at any time: every confirmed card has already been moved. Click the file name (the bold
 text) instead to rename the file in place: Enter renames it, Esc cancels.
 
-The gallery can hold thousands of cards, and CustomTkinter widgets are heavy (each is its own
+The library can hold thousands of cards, and CustomTkinter widgets are heavy (each is its own
 canvas), so the grid is drawn on one plain Tk canvas and only the tiles in view exist: scrolling
 just draws the tiles that come into view, and covers are decoded on worker threads.
 
@@ -24,18 +24,18 @@ Right-clicking a card offers "Move to trash" (the selected cards go along). Tras
 other view and wait in a Trash entry of the sidebar, under the unknown-series one — every tab has its
 own; right-click there to restore. The files are only sent to the Recycle Bin when the window closes.
 
-`GalleryModel` (what is shown: view, search, sort) has no GUI dependency; the window is built in
+`LibraryModel` (what is shown: view, search, sort) has no GUI dependency; the window is built in
 `_ctk_dialog()` (see common.py for the shared window behaviour).
 
 The dialog doesn't know what a "series" is: a card's `series` is just the folder it sits in under
 `CharaItem.root`, and every sentence that names things (the sidebar buttons, the status line, the
 hint ...) comes from a `DialogText`. a tab without one gets the defaults (series folders of
-characters); the others pass their own `DialogText` (see gallery/common.py).
+characters); the others pass their own `DialogText` (see library/common.py).
 Moving and suggesting are callbacks, so a task only has to supply `items`, `suggest` and `assign`.
 
-`gallery_dialog()` puts several of these galleries in one window (Run Gallery: scenes, characters,
+`library_dialog()` puts several of these libraries in one window (Manage Library: scenes, characters,
 outfits): a tab bar on the left of the search input switches between them, each tab keeping its own
-sidebar, search text, sort, selection and scroll position. `manual_dialog()` is the one-gallery case.
+sidebar, search text, sort, selection and scroll position. `manual_dialog()` is the one-library case.
 """
 
 from __future__ import annotations
@@ -54,16 +54,16 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
-from kkafio.dialogs.gallery.popup_menu import open_popup_menu
-from kkafio.dialogs.gallery.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
-from kkafio.dialogs.gallery.viewstate import GalleryViewState, TabView
-from kkafio.dialogs.gallery.shortcuts import (
+from kkafio.dialogs.library.popup_menu import open_popup_menu
+from kkafio.dialogs.library.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
+from kkafio.dialogs.library.viewstate import LibraryViewState, TabView
+from kkafio.dialogs.library.shortcuts import (
     ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
 )
-from kkafio.dialogs.gallery.model import (
+from kkafio.dialogs.library.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
     MODS_ALL, MODS_COMPLETE, MODS_MISSING,
-    VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, GalleryModel, GalleryTab,
+    VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, LibraryModel, LibraryTab,
     chara_dialog_text, clean_file_stem, rename_card,
 )
 
@@ -326,7 +326,7 @@ class SideList(tk.Canvas if tk is not None else object):
 def manual_dialog(title: str, items: Sequence[CharaItem],
                   suggest: Callable[[str], list[str]], assign: AssignFn,
                   text: DialogText | None = None, cover_ratio: float = COVER_RATIO) -> int:
-    """Show the gallery; returns how many cards were moved into a series before it was closed.
+    """Show the library; returns how many cards were moved into a series before it was closed.
 
     suggest   text typed so far -> series names to offer (best first)
     assign    (item, text typed) -> (new path, series folder) after moving the card there, or
@@ -334,38 +334,38 @@ def manual_dialog(title: str, items: Sequence[CharaItem],
     text      the dialog's sentences (default: Group Characters')
     cover_ratio  cover height / width (default: a character card's portrait; scenes are landscape)
     """
-    tab = GalleryTab("", items, suggest, assign, text, cover_ratio)
-    return gallery_dialog(title, [tab])[0]
+    tab = LibraryTab("", items, suggest, assign, text, cover_ratio)
+    return library_dialog(title, [tab])[0]
 
 
-def gallery_dialog(title: str, tabs: Sequence[GalleryTab], initial: int = 0,
+def library_dialog(title: str, tabs: Sequence[LibraryTab], initial: int = 0,
                    mods=None, on_trash: Callable[[list[Path]], None] | None = None) -> list[int]:
-    """Show one window holding a gallery per tab; returns, per tab, how many cards were moved
+    """Show one window holding a library per tab; returns, per tab, how many cards were moved
     before it was closed. With a single tab there is no tab bar (that is `manual_dialog`).
 
     `mods` (a mods_panel.CardMods) adds the collapsible mod dependencies sidebar on the right,
     listing the mods of the card under the cursor; None leaves it out.
 
-    `on_trash` receives the paths of the cards left in the galleries' trash when the window closes
-    normally, and deletes them itself (Run Gallery hands them to Delete Cards); None sends them to
+    `on_trash` receives the paths of the cards left in the libraries' trash when the window closes
+    normally, and deletes them itself (Manage Library hands them to Delete Cards); None sends them to
     the Recycle Bin."""
     if not tabs:
-        raise ValueError("gallery_dialog needs at least one tab")
+        raise ValueError("library_dialog needs at least one tab")
     try:
         return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1), mods, on_trash)
     except ImportError as e:                       # tkinter / customtkinter missing
-        raise TaskFailedError(f"The character gallery needs tkinter and customtkinter: {e}") from e
+        raise TaskFailedError(f"The character library needs tkinter and customtkinter: {e}") from e
     finally:
         for tab in tabs:                           # one tab failing to tidy up must not stop the others
             if tab.finish is not None:
                 try:
                     tab.finish()
                 except Exception as e:
-                    logger.warning("GALLERY", f"Could not finish the '{tab.label}' tab: {e}")
+                    logger.warning("LIBRARY", f"Could not finish the '{tab.label}' tab: {e}")
 
 
 def _send_to_bin(items: Sequence[CharaItem]) -> None:
-    """Send the files of the cards that were left in the galleries' trash to the Recycle Bin."""
+    """Send the files of the cards that were left in the libraries' trash to the Recycle Bin."""
     if not items:
         return
     from send2trash import send2trash
@@ -375,20 +375,20 @@ def _send_to_bin(items: Sequence[CharaItem]) -> None:
             send2trash(str(item.path))
             done += 1
         except Exception as e:                     # one failing must not keep the others in the library
-            logger.warning("GALLERY", f"Could not send {item.path.name} to the bin: {e}")
-    logger.info("GALLERY", f"Sent {done} of {len(items)} trashed card(s) to the bin")
+            logger.warning("LIBRARY", f"Could not send {item.path.name} to the bin: {e}")
+    logger.info("LIBRARY", f"Sent {done} of {len(items)} trashed card(s) to the bin")
 
 
-class _Gallery:
-    """What `_build_gallery` hands back to the window that hosts it."""
+class _Library:
+    """What `_build_library` hands back to the window that hosts it."""
 
     def __init__(self):
-        self.frame = None                          # the gallery's widgets (a CTkFrame)
+        self.frame = None                          # the library's widgets (a CTkFrame)
         self.canvas = None                         # the tile canvas (takes the keyboard focus)
         self.moved_count = lambda: 0               # cards moved so far
         self.view = lambda: TabView()              # its sort and cover size now (for the next run)
         self.trashed_items = lambda: []            # the cards in its trash (for the bin when the window closes)
-        self.search_text = lambda: ""              # the search text this gallery is showing
+        self.search_text = lambda: ""              # the search text this library is showing
         self.on_search_key = lambda: None          # the shared search input changed
         self.on_show = lambda: None                # its tab was opened
         self.on_hide = lambda: None                # its tab was closed
@@ -397,7 +397,7 @@ class _Gallery:
         self.cursor = lambda: None                 # the card under the keyboard cursor (None: no card)
 
 
-def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
+def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
                 on_trash: Callable[[list[Path]], None] | None = None) -> list[int]:
     import customtkinter as ctk
 
@@ -408,7 +408,7 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
 
     shortcuts = ShortcutSettings.from_user_config()     # one for the whole window: every tab shares it
     suggestions = SuggestionSettings.from_user_config()  # (and what the folder box offers, per kind of card)
-    view_state = GalleryViewState.from_user_config()    # the last tab and each tab's sort / size
+    view_state = LibraryViewState.from_user_config()    # the last tab and each tab's sort / size
     keys = [tab.key or f"tab{i}" for i, tab in enumerate(tabs)]
     initial = view_state.initial_index(keys, initial, [bool(tab.items) for tab in tabs])   # the tab left open last
 
@@ -421,23 +421,23 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
     search_entry.grid(row=0, column=1, sticky="ew")
 
     def open_settings() -> None:
-        from kkafio.dialogs.gallery.settings_dialog import open_settings_dialog
+        from kkafio.dialogs.library.settings_dialog import open_settings_dialog
         open_settings_dialog(root, shortcuts, suggestions)
 
     ctk.CTkButton(top, text="\u2699 " + t("dialog.settings.button"), width=110, height=34,
                   command=open_settings).grid(row=0, column=2, padx=(10, 0))
 
-    stack = ctk.CTkFrame(root, fg_color="transparent")          # the galleries sit on top of each other
+    stack = ctk.CTkFrame(root, fg_color="transparent")          # the libraries sit on top of each other
     stack.grid(row=1, column=0, sticky="nsew")
     stack.grid_columnconfigure(0, weight=1)
     stack.grid_rowconfigure(0, weight=1)
 
     def on_close(_event=None) -> None:
-        for g in galleries:
+        for g in libraries:
             g.close_popups()
         root.quit()
 
-    galleries: list[_Gallery] = []
+    libraries: list[_Library] = []
     texts = [tab.text if tab.text is not None else chara_dialog_text() for tab in tabs]
     current = {"index": initial}
     sidebar = None                                              # the mod dependencies sidebar, if asked for
@@ -448,12 +448,12 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
             sidebar.show(item.path if item is not None else None, tabs[index].guids, tabs[index].guid_index)
 
     for i, tab in enumerate(tabs):
-        galleries.append(_build_gallery(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
+        libraries.append(_build_library(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
                                     shortcuts=shortcuts, suggestions=suggestions, view=view_state.view(keys[i]), mods=mods,
                                     on_cursor=lambda item, i=i: on_cursor(i, item)))
 
     if mods is not None:
-        from kkafio.dialogs.gallery.mods_sidebar import ModsSidebar      # (it imports this module)
+        from kkafio.dialogs.library.mods_sidebar import ModsSidebar      # (it imports this module)
         import customtkinter as _ctk
         _dark = _ctk.get_appearance_mode() == "Dark"
         try:
@@ -465,11 +465,11 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
         sidebar.frame.grid(row=1, column=1, sticky="ns", padx=(0, 12), pady=(0, 10))
 
     def show_tab(index: int) -> None:
-        old = galleries[current["index"]]
+        old = libraries[current["index"]]
         old.on_hide()
         old.frame.grid_remove()
         current["index"] = index
-        g = galleries[index]
+        g = libraries[index]
         g.frame.grid(row=0, column=0, sticky="nsew")
         search_entry.configure(placeholder_text=texts[index].search_placeholder)
         if sidebar is not None:
@@ -489,33 +489,33 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
         tab_bar.set(labels[initial])
         tab_bar.grid(row=0, column=0, padx=(0, 10))
 
-    galleries[initial].frame.grid(row=0, column=0, sticky="nsew")
-    search_entry.bind("<KeyRelease>", lambda _e: galleries[current["index"]].on_search_key())
+    libraries[initial].frame.grid(row=0, column=0, sticky="nsew")
+    search_entry.bind("<KeyRelease>", lambda _e: libraries[current["index"]].on_search_key())
     root.bind("<Escape>", on_close)
     root.protocol("WM_DELETE_WINDOW", on_close)
 
     try:
-        show_and_wait(root, galleries[initial].canvas, on_shown=lambda: maximize(root))      # always full screen
+        show_and_wait(root, libraries[initial].canvas, on_shown=lambda: maximize(root))      # always full screen
     finally:
-        for g in galleries:
+        for g in libraries:
             g.dispose()
         if sidebar is not None:
             sidebar.dispose()
-        view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, galleries)},
+        view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, libraries)},
                             mods_open=sidebar.is_open if sidebar is not None else None)
-    trashed = [item for g in galleries for item in g.trashed_items()]          # only a window that closed normally
+    trashed = [item for g in libraries for item in g.trashed_items()]          # only a window that closed normally
     if on_trash is None:
         _send_to_bin(trashed)
     elif trashed:
         on_trash([item.path for item in trashed])
-    return [g.moved_count() for g in galleries]
+    return [g.moved_count() for g in libraries]
 
 
-def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry, on_close, active: bool,
+def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry, on_close, active: bool,
                    shortcuts: ShortcutSettings | None = None, suggestions: SuggestionSettings | None = None,
                    view: TabView | None = None,
-                   on_cursor: Callable[[CharaItem | None], None] | None = None, mods=None) -> _Gallery:
-    """One gallery inside `parent` (a frame of the window `root`); it shows when its frame is
+                   on_cursor: Callable[[CharaItem | None], None] | None = None, mods=None) -> _Library:
+    """One library inside `parent` (a frame of the window `root`); it shows when its frame is
     gridded. `search_entry` is the window's shared search input, which only the open tab listens to.
     `on_cursor(item)` is called whenever the keyboard cursor moves to another card. `mods` (a
     mods_panel.CardMods) adds the toolbar's mods filter (all cards / all mods installed / missing mods)."""
@@ -550,8 +550,8 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             return list(getattr(suggest_source, "existing", suggest_source)(text))
         return list(suggest_source(text))
     view = view or TabView()                            # how the tab was left last time
-    handle = _Gallery()
-    model = GalleryModel(items)
+    handle = _Library()
+    model = LibraryModel(items)
 
     model.set_view(VIEW_ALL)           # always opens on the "All" entry of the sidebar
     moved = {"count": 0}
@@ -710,7 +710,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     series_box.configure(yscrollcommand=series_sb.set)
     series_names: list[str] = []                   # what each row of series_box stands for
 
-    # main area: toolbar + gallery
+    # main area: toolbar + library
     main = ctk.CTkFrame(body, fg_color="transparent")
     main.grid(row=0, column=1, sticky="nsew")
     main.grid_columnconfigure(0, weight=1)
@@ -742,12 +742,12 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
     now = TabView(view.sort, view.descending, view.size, view.mods)
 
     # the mods filter: which cards have all their mods / miss some (only with a known mods folder)
-    mods_labels = {t("dialog.gallery.mods_filter_all"): MODS_ALL,
-                   t("dialog.gallery.mods_filter_complete"): MODS_COMPLETE,
-                   t("dialog.gallery.mods_filter_missing"): MODS_MISSING}
+    mods_labels = {t("dialog.library.mods_filter_all"): MODS_ALL,
+                   t("dialog.library.mods_filter_complete"): MODS_COMPLETE,
+                   t("dialog.library.mods_filter_missing"): MODS_MISSING}
     scan: dict = {"queue": queue.Queue(), "stop": False, "started": set(), "total": 0, "done": 0}
     if mods is not None and tab.guids is not None and mods.lookup.available:
-        ctk.CTkLabel(bar, text=t("dialog.gallery.mods_filter_label"), text_color=pair("muted")).grid(
+        ctk.CTkLabel(bar, text=t("dialog.library.mods_filter_label"), text_color=pair("muted")).grid(
             row=0, column=4, padx=(0, 8))
         mods_menu = ctk.CTkOptionMenu(bar, values=list(mods_labels), width=190, command=lambda _v: on_mods_filter())
         model.mods_filter = view.mods                      # the filter the tab was left with
@@ -1010,7 +1010,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         untagged_btn.configure(text=f"{txt.untagged}   {untagged:,}")
         all_btn.configure(fg_color=pair("sel") if model.mode == VIEW_ALL else "transparent")
         untagged_btn.configure(fg_color=pair("sel") if model.mode == VIEW_UNTAGGED else "transparent")
-        trash_btn.configure(text=f"{t('dialog.gallery.trash')}   {model.trash_count():,}",
+        trash_btn.configure(text=f"{t('dialog.library.trash')}   {model.trash_count():,}",
                             fg_color=pair("sel") if model.mode == VIEW_TRASH else "transparent")
         entries = model.series_list(series_filter_entry.get())
         series_names[:] = [name for name, _n in entries]
@@ -1086,7 +1086,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         if len(sel["picked"]) > 1:
             text += " · " + t("dialog.manual.selected", count=len(sel["picked"]))
         if model.mods_filter != MODS_ALL and scan["done"] < scan["total"]:
-            text += " · " + t("dialog.gallery.mods_checking", done=scan["done"], total=scan["total"])
+            text += " · " + t("dialog.library.mods_checking", done=scan["done"], total=scan["total"])
         status.configure(text=text)
 
     def choose_view(mode: str, series: str = "") -> None:
@@ -1306,10 +1306,10 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             status.configure(text=t("dialog.manual.rename_exists", new=stem + old_path.suffix))
             return
         except OSError as e:
-            logger.warning("GALLERY", f"Could not rename {old_path.name}: {e}")
+            logger.warning("LIBRARY", f"Could not rename {old_path.name}: {e}")
             status.configure(text=t("dialog.manual.rename_failed", name=old_path.name))
             return
-        logger.success("GALLERY", f"Renamed {old_path.name} -> {new_path.name}")
+        logger.success("LIBRARY", f"Renamed {old_path.name} -> {new_path.name}")
         if old_path in pil_cache:                           # the cover follows the file
             pil_cache[new_path] = pil_cache.pop(old_path)
         model.renamed(item, new_path)
@@ -1385,13 +1385,13 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
         model.trash(targets)
         finish_assignment(first_idx)
-        status.configure(text=t("dialog.gallery.trashed", count=len(targets)))
+        status.configure(text=t("dialog.library.trashed", count=len(targets)))
 
     def restore_cards(targets: list) -> None:
         first_idx = min((i for i in (index_of(item) for item in targets) if i is not None), default=0)
         model.restore(targets)
         finish_assignment(first_idx)
-        status.configure(text=t("dialog.gallery.restored", count=len(targets)))
+        status.configure(text=t("dialog.library.restored", count=len(targets)))
 
     context_menu: dict = {"close": None}                    # closes the right-click menu that is open
 
@@ -1409,7 +1409,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
             select_only(item)
         targets = picked_in_order() or [item]
         in_trash = model.mode == VIEW_TRASH
-        label = t("dialog.gallery.menu_restore") if in_trash else t("dialog.gallery.menu_trash")
+        label = t("dialog.library.menu_restore") if in_trash else t("dialog.library.menu_trash")
         if len(targets) > 1:
             label += f" ({len(targets)})"
         if context_menu["close"] is not None:
@@ -1470,7 +1470,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
                         ACTION_DELETE: delete_shortcut, ACTION_RESTORE: restore_shortcut}
 
     def on_key(event) -> str | None:
-        """Any key the gallery has no binding of its own for: the user's shortcuts (the settings
+        """Any key the library has no binding of its own for: the user's shortcuts (the settings
         are read on every press, so a change in the Shortcuts dialog applies at once)."""
         action = shortcuts.action_for(combo_from_event(event.keysym, event.state) or "")
         if action is None:
@@ -1493,7 +1493,7 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
         return "break"
 
     def on_escape(_event=None) -> str | None:
-        """Esc on the gallery: a multi-selection shrinks to the cursor card; otherwise it closes."""
+        """Esc on the library: a multi-selection shrinks to the cursor card; otherwise it closes."""
         cur = sel["item"]
         if len(sel["picked"]) > 1 or (cur is not None and id(cur) not in sel["picked"] and sel["picked"]):
             select_only(cur if cur is not None else picked_in_order()[0])

@@ -45,8 +45,8 @@ share hair with each other but with no folder move together into a new
 UNKNOWN_<n> folder. Hair that appears in several folders is ambiguous, so those
 coordinates stay where they are.
 
-Grouping by hand (naming a character for each coordinate in a gallery dialog) is not part of
-this task; it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery/).
+Grouping by hand (naming a character for each coordinate in a library dialog) is not part of
+this task; it lives in the Manage Library task (see manage_library.py and dialogs/library/).
 
 The chara folder(s) are always scanned recursively. With Include Subfolders off
 (the default) only coordinates directly inside the coordinate folder are

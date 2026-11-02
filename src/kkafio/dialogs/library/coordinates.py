@@ -1,5 +1,5 @@
 """
-coordinates.py — The Outfit tab of Run Gallery: coordinate cards sorted into character folders by hand.
+coordinates.py — The Outfit tab of Manage Library: coordinate cards sorted into character folders by hand.
 
 The user names a character for a coordinate and the card is moved into <coordinate folder>/<name>/
 at once. The suggestions are the folders that exist plus the filenames of the character cards.
@@ -11,8 +11,8 @@ from pathlib import Path
 from kkafio.cards.chara.outfits import build_coord_cache
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
-from kkafio.dialogs.gallery.model import COVER_RATIO, GalleryTab
-from kkafio.dialogs.gallery.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
+from kkafio.dialogs.library.model import COVER_RATIO, LibraryTab
+from kkafio.dialogs.library.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
 from kkafio.tasks.group_coordinates import TAG, move_unique, sorted_charas, update_coord_cache
 from kkafio.cards.mods.parsing import parse_coord_guids
 from kkafio.cards.mods.png_guids import collect_coord_guids_by_file
@@ -28,7 +28,7 @@ def chara_folder_names(chara_dirs: list[Path]) -> dict[str, str]:
 
 
 def scan_manual_items(coord_dir: Path, use_cache: bool) -> list:
-    """The coordinate cards under coord_dir (subfolders included) for the gallery, as CharaItems:
+    """The coordinate cards under coord_dir (subfolders included) for the library, as CharaItems:
     named after the file, in the folder directly under coord_dir that holds it (None: directly
     in coord_dir)."""
     items = []
@@ -45,7 +45,7 @@ def scan_manual_items(coord_dir: Path, use_cache: bool) -> list:
 
 def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestions: int = 8,
                      extra: dict[str, str] | None = None):
-    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the folders that
+    """(suggest, assign) for the library dialog. `known` ({casefolded: name}) holds the folders that
     exist and grows as folders are created; `extra` ({casefolded: name}) the other names to
     suggest — the characters' filenames — which `suggest.existing` leaves out. Every move `assign`
     makes is recorded in `moves` ({old path: new path}) so the caller can bring the caches along."""
@@ -91,13 +91,13 @@ def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestio
     return Suggester(suggest, existing), assign
 
 
-def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: bool, label: str = ""):
-    """The Manual gallery of the coordinate cards under `coord_dir`: the user names a character per
+def coordinate_library_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: bool, label: str = ""):
+    """The Manual library of the coordinate cards under `coord_dir`: the user names a character per
     coordinate and each card is moved at once; the character filenames under `chara_dirs` (without
     .png) are the suggestions.
 
-    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
-    must be called once the gallery is closed, also when it failed: it brings the coordinate
+    Returns a LibraryTab (its `.items` is empty when there is nothing to show) whose `finish()`
+    must be called once the library is closed, also when it failed: it brings the coordinate
     caches along with the cards that were moved."""
     logger.info(TAG, "Manual: reading the coordinate cards")
     items = scan_manual_items(coord_dir, use_cache)
@@ -106,11 +106,11 @@ def coordinate_gallery_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
     extra = chara_folder_names(chara_dirs)
     moves: dict[str, str] = {}
     suggest, assign = manual_callbacks(known, moves, extra=extra)
-    logger.info(TAG, f"{len(items)} coordinate(s) and {len({**extra, **known})} suggested name(s) for the gallery")
+    logger.info(TAG, f"{len(items)} coordinate(s) and {len({**extra, **known})} suggested name(s) for the library")
 
     def finish() -> None:
         if use_cache and moves:
             update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
 
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish, "outfit", parse_coord_guids,
+    return LibraryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish, "outfit", parse_coord_guids,
                       lambda: collect_coord_guids_by_file([coord_dir], use_cache))

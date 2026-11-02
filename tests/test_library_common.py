@@ -1,5 +1,5 @@
-"""What the character, coordinate and scene galleries share (kkafio/dialogs/gallery/common.py), and the
-promise that importing the gallery package never pulls in the window (tkinter)."""
+"""What the character, coordinate and scene libraries share (kkafio/dialogs/library/common.py), and the
+promise that importing the library package never pulls in the window (tkinter)."""
 
 import os
 import subprocess
@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
-from kkafio.dialogs.gallery import DialogText, chara_dialog_text
-from kkafio.dialogs.gallery import common
+from kkafio.dialogs.library import DialogText, chara_dialog_text
+from kkafio.dialogs.library import common
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -47,7 +47,7 @@ def test_existing_folders_skips_a_root_that_is_missing(tmp_path):
     assert common.existing_folders() == {}
 
 
-# --- the gallery's items -------------------------------------------------------------------------------
+# --- the library's items -------------------------------------------------------------------------------
 
 def test_make_item_names_it_after_the_file_and_takes_the_series_from_the_first_folder(tmp_path):
     loose = _file(tmp_path / "Rin.png", b"12345")
@@ -90,27 +90,27 @@ def test_rank_suggestions_puts_names_starting_with_the_text_first():
 # --- the window's wording ------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("prefix", ["dialog.manual", "dialog.manual_coord", "dialog.manual_scene"])
-def test_dialog_text_is_complete_for_every_gallery(prefix):
+def test_dialog_text_is_complete_for_every_library(prefix):
     text = common.dialog_text(prefix)
     assert isinstance(text, DialogText)
     assert all(getattr(text, f) and not getattr(text, f).startswith("dialog.") for f in text.__dataclass_fields__)
 
 
 def test_dialog_text_for_characters_is_the_windows_own_default():
-    """The window (dialogs/gallery/window.py) falls back to chara_dialog_text() when a tab has no wording of its own;
+    """The window (dialogs/library/window.py) falls back to chara_dialog_text() when a tab has no wording of its own;
     the Character tab passes dialog_text("dialog.manual"). They must stay the same words."""
     assert common.dialog_text("dialog.manual") == chara_dialog_text()
 
 
 # --- importing never builds a window ---------------------------------------------------------------
 
-def test_importing_the_gallery_modules_does_not_import_customtkinter():
+def test_importing_the_library_modules_does_not_import_customtkinter():
     """The modules live inside the window's package, so the window module (and tkinter, which it
     imports optionally) is loaded with them; customtkinter and the window itself are not."""
     code = (
         "import sys\n"
-        "import kkafio.dialogs.gallery.common, kkafio.dialogs.gallery.characters, kkafio.dialogs.gallery.coordinates, kkafio.dialogs.gallery.scenes\n"
-        "import kkafio.tasks.run_gallery\n"
+        "import kkafio.dialogs.library.common, kkafio.dialogs.library.characters, kkafio.dialogs.library.coordinates, kkafio.dialogs.library.scenes\n"
+        "import kkafio.tasks.manage_library\n"
         "bad = sorted(m for m in sys.modules if m == 'customtkinter')\n"
         "assert not bad, bad\n"
     )

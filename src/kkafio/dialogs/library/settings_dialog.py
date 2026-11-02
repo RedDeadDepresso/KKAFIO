@@ -1,5 +1,5 @@
 """
-settings_dialog.py — The gallery window's Settings dialog (the Settings button of every tab).
+settings_dialog.py — The library window's Settings dialog (the Settings button of every tab).
 
 Two tabs: Shortcuts (shortcuts_dialog.py) and Folder suggestions, where each kind of card has a
 drop-down: No / Existing folders / Existing folders + Series (characters), Characters
@@ -11,18 +11,18 @@ from __future__ import annotations
 
 from kkafio.cards.chara.hint_language import available_languages
 from kkafio.core.i18n import t
-from kkafio.dialogs.gallery.shortcuts import ShortcutSettings
-from kkafio.dialogs.gallery.shortcuts_dialog import build_shortcuts_panel
-from kkafio.dialogs.gallery.suggestions import (
+from kkafio.dialogs.library.shortcuts import ShortcutSettings
+from kkafio.dialogs.library.shortcuts_dialog import build_shortcuts_panel
+from kkafio.dialogs.library.suggestions import (
     CATEGORIES, CATEGORY_CHARA, CATEGORY_OUTFIT, CATEGORY_SCENE, SUGGEST_ALL, SUGGEST_EXISTING, SUGGEST_NONE,
     SuggestionSettings)
 
 
 def category_labels() -> dict[str, str]:
-    """The gallery's tab names: Character, Outfit, Scene."""
-    return {CATEGORY_CHARA: t("dialog.gallery.tab_chara"),
-            CATEGORY_OUTFIT: t("dialog.gallery.tab_outfit"),
-            CATEGORY_SCENE: t("dialog.gallery.tab_scene")}
+    """The library's tab names: Character, Outfit, Scene."""
+    return {CATEGORY_CHARA: t("dialog.library.tab_chara"),
+            CATEGORY_OUTFIT: t("dialog.library.tab_outfit"),
+            CATEGORY_SCENE: t("dialog.library.tab_scene")}
 
 
 def mode_labels(category: str) -> dict[str, str]:
@@ -116,7 +116,7 @@ def open_settings_dialog(root, shortcuts: ShortcutSettings, suggestions: Suggest
 
     dlg.bind("<KeyPress>", on_key)
 
-    dlg.update_idletasks()                              # centered over the gallery window
+    dlg.update_idletasks()                              # centered over the library window
     w, h = dlg.winfo_reqwidth(), dlg.winfo_reqheight()
     x = root.winfo_rootx() + max(0, (root.winfo_width() - w) // 2)
     y = root.winfo_rooty() + max(0, (root.winfo_height() - h) // 3)

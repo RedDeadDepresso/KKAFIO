@@ -1,12 +1,12 @@
-"""The gallery's folder suggestion settings (what the folder box offers per kind of card)."""
+"""The library's folder suggestion settings (what the folder box offers per kind of card)."""
 
 import json
 
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 
 from kkafio.core.session_store import SessionStore
-from kkafio.dialogs.gallery.common import Suggester
-from kkafio.dialogs.gallery.suggestions import (
+from kkafio.dialogs.library.common import Suggester
+from kkafio.dialogs.library.suggestions import (
     CATEGORIES, SUGGEST_ALL, SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings)
 
 

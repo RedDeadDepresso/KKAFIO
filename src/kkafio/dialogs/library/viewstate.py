@@ -1,11 +1,11 @@
 """
-viewstate.py — What the gallery window remembers between runs: the tab that was open last and,
+viewstate.py — What the library window remembers between runs: the tab that was open last and,
 for each tab, how its cards were sorted (by what, ascending or descending) and how big they were.
 
-Saved in ``<CONFIG_DIR>/config/gallery-view.json`` (on Windows: %APPDATA%/KKAFIO/config), next to
-gallery-shortcuts.json but in a file of its own: the shortcuts are written the moment the user
+Saved in ``<CONFIG_DIR>/config/library-view.json`` (on Windows: %APPDATA%/KKAFIO/config), next to
+library-shortcuts.json but in a file of its own: the shortcuts are written the moment the user
 changes one, this is written once when the window closes, and neither should be able to
-overwrite the other. A tab is known by its `GalleryTab.key` ("scene", "chara", "outfit"), not by its
+overwrite the other. A tab is known by its `LibraryTab.key` ("scene", "chara", "outfit"), not by its
 translated label, so the language can change. No GUI in here.
 
 Anything unreadable or out of range is ignored and the default is used instead.
@@ -17,10 +17,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from kkafio.core.session_store import SessionStore
-from kkafio.dialogs.gallery.model import MODS_ALL, MODS_COMPLETE, MODS_MISSING, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED
+from kkafio.dialogs.library.model import MODS_ALL, MODS_COMPLETE, MODS_MISSING, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED
 
-TAG = "GALLERY"
-FILE_NAME = "gallery-view.json"
+TAG = "LIBRARY"
+FILE_NAME = "library-view.json"
 _MODS_FILTERS = frozenset({MODS_ALL, MODS_COMPLETE, MODS_MISSING})
 _SORT_KEYS = frozenset({SORT_CREATED, SORT_UPDATED, SORT_NAME, SORT_FILENAME, SORT_SIZE})
 
@@ -35,7 +35,7 @@ class TabView:
     mods: str = MODS_ALL                    # the mods filter (all cards / all mods installed / missing mods)
 
 
-class GalleryViewState:
+class LibraryViewState:
     """The remembered view of every tab. `store` is where it is kept (None: nothing is read or
     written, e.g. in tests)."""
 
@@ -48,7 +48,7 @@ class GalleryViewState:
             self._load()
 
     @classmethod
-    def from_user_config(cls) -> "GalleryViewState":
+    def from_user_config(cls) -> "LibraryViewState":
         from kkafio.core.paths import CONFIG_DIR
         return cls(SessionStore(CONFIG_DIR / "config" / FILE_NAME, TAG))
 

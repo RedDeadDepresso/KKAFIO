@@ -1,6 +1,6 @@
-"""Group Characters' manual gallery (opened from Run Gallery): the gallery's data (scan, series folder
-names, suggestions, moving) and the gallery model. Group Characters itself always runs the LLM
-workflow. The window itself is in test_gallery_gui.py."""
+"""Group Characters' manual library (opened from Manage Library): the library's data (scan, series folder
+names, suggestions, moving) and the library model. Group Characters itself always runs the LLM
+workflow. The window itself is in test_library_gui.py."""
 
 import json
 from contextlib import contextmanager
@@ -14,10 +14,10 @@ from kkafio.indices import agv
 from kkafio.indices.text import norm
 from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
 from kkafio.core.config import _build_task_config
-from kkafio.dialogs.gallery import characters as gal
-from kkafio.dialogs.gallery.common import existing_folders
-from kkafio.dialogs.gallery import (
-    SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, CharaItem, GalleryModel, ellipsize)
+from kkafio.dialogs.library import characters as gal
+from kkafio.dialogs.library.common import existing_folders
+from kkafio.dialogs.library import (
+    SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, CharaItem, LibraryModel, ellipsize)
 from kkafio.tasks import group_chara
 
 from test_agv import _index
@@ -49,11 +49,11 @@ def _item(name, series=None, size=1, mtime=0.0, folder=Path("/chara")):
 
 
 # ---------------------------------------------------------------------------
-# the gallery model
+# the library model
 # ---------------------------------------------------------------------------
 
 def test_model_views_counts_and_series_list():
-    m = GalleryModel([_item("Rin", "Fate"), _item("Saber", "fate"), _item("Asuka"), _item("Kirito", "SAO")])
+    m = LibraryModel([_item("Rin", "Fate"), _item("Saber", "fate"), _item("Asuka"), _item("Kirito", "SAO")])
     assert m.counts() == (4, 1)
     assert m.series_list() == [("Fate", 2), ("SAO", 1)]               # Fate / fate are one series
     assert m.series_list("sa") == [("SAO", 1)]
@@ -66,7 +66,7 @@ def test_model_views_counts_and_series_list():
 
 def test_trashed_cards_only_show_in_the_trash_view_and_come_back_on_restore():
     rin, saber, asuka = _item("Rin", "Fate"), _item("Saber", "Fate"), _item("Asuka")
-    m = GalleryModel([rin, saber, asuka])
+    m = LibraryModel([rin, saber, asuka])
     m.trash([rin, asuka])
     assert m.trash_count() == 2 and m.counts() == (1, 0)            # not counted in All / untagged
     assert m.series_list() == [("Fate", 1)] and m.series_count("Fate") == 1
@@ -86,7 +86,7 @@ def test_model_search_looks_at_name_filename_and_series_and_sorts():
     b = _item("Asuka", None, size=10, mtime=3)
     c = _item("Zed", "Other", size=20, mtime=2)
     c.path = c.path.with_name("rin_copy.png")
-    m = GalleryModel([a, b, c])
+    m = LibraryModel([a, b, c])
     assert [i.name for i in m.visible()] == ["Asuka", "Zed", "Rin"]   # default: updated date, newest first
     m.sort_key, m.descending = SORT_NAME, False
     assert [i.name for i in m.visible()] == ["Asuka", "Rin", "Zed"]
@@ -109,7 +109,7 @@ def test_model_search_looks_at_name_filename_and_series_and_sorts():
 
 def test_model_assigned_updates_the_item(tmp_path):
     item = _item("Rin")
-    m = GalleryModel([item])
+    m = LibraryModel([item])
     m.assigned(item, tmp_path / "Fate" / "Rin.png", "Fate")
     assert item.series == "Fate" and item.path == tmp_path / "Fate" / "Rin.png"
     assert m.counts() == (1, 0)
@@ -272,7 +272,7 @@ def test_scan_shows_the_filename_and_keeps_the_character_name_searchable(tmp_pat
          mock.patch.object(group_chara, "CHARA_CARD_TYPES", ("KK",)):
         (item,) = gal.scan_manual_items([tmp_path], False, CharaKeyCache([], False))
     assert item.name == "a" and item.alias == "Nick"
-    m = GalleryModel([item]); m.search = "nick"
+    m = LibraryModel([item]); m.search = "nick"
     assert [i.name for i in m.visible()] == ["a"]                       # found by the character's name
 
 
@@ -305,10 +305,10 @@ def test_run_always_runs_the_llm_workflow(tmp_path):
     assert calls == ["llm", "llm"]
 
 
-def test_gallery_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
+def test_library_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes(), mock.patch.object(group_chara.hint_language, "resolve", return_value=None):
-        tab = gal.chara_gallery_tab([tmp_path], None, True)
+        tab = gal.chara_library_tab([tmp_path], None, True)
         try:
             names = [i.name for i in tab.items]
             moved = tab.assign(tab.items[0], "Fate")
@@ -320,16 +320,16 @@ def test_gallery_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
     assert str(tmp_path / "Fate" / "a.png") in files                                  # cache saved after the moves
 
 
-def test_gallery_tab_with_no_cards_is_empty(tmp_path):
+def test_library_tab_with_no_cards_is_empty(tmp_path):
     with manual_fakes():
-        tab = gal.chara_gallery_tab([tmp_path], None, True)
+        tab = gal.chara_library_tab([tmp_path], None, True)
         tab.finish()
     assert tab.items == []
 
 
 def test_round_corners_and_polygon_points():
     from PIL import Image
-    from kkafio.dialogs.gallery import round_corners, rounded_rect_points
+    from kkafio.dialogs.library import round_corners, rounded_rect_points
     out = round_corners(Image.new("RGB", (60, 80), (200, 10, 10)), 12)
     assert out.mode == "RGBA" and out.size == (60, 80)
     assert out.getpixel((0, 0))[3] == 0 and out.getpixel((59, 79))[3] == 0     # corners cut away
@@ -338,11 +338,11 @@ def test_round_corners_and_polygon_points():
     assert len(pts) == 24 and min(pts[0::2]) == 0 and max(pts[0::2]) == 10 and max(pts[1::2]) == 20
 
 
-def test_gallery_always_includes_subfolders(tmp_path):
+def test_library_always_includes_subfolders(tmp_path):
     _cards(tmp_path, top="Rin")
     _file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
     with manual_fakes():
-        tab = gal.chara_gallery_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
+        tab = gal.chara_library_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
         tab.finish()
     assert sorted((i.name, i.series) for i in tab.items) == [("top", None), ("x", "Fate")]
 

@@ -1,7 +1,7 @@
 """
-suggestions.py — What the gallery's folder box offers while you type, and where that is saved.
+suggestions.py — What the library's folder box offers while you type, and where that is saved.
 
-Each kind of card (the gallery's tabs) has its own setting:
+Each kind of card (the library's tabs) has its own setting:
 
     none      no suggestions
     existing  the folders that already exist
@@ -9,8 +9,8 @@ Each kind of card (the gallery's tabs) has its own setting:
               filenames (coordinates) or the known authors (scenes)  — what it always did
 
 One `SuggestionSettings` is shared by every tab of the window, so a change applies at once. It is
-saved in ``<CONFIG_DIR>/config/gallery-suggestions.json`` (on Windows: %APPDATA%/KKAFIO/config), a
-file of its own next to gallery-shortcuts.json: each setting is written the moment the user changes
+saved in ``<CONFIG_DIR>/config/library-suggestions.json`` (on Windows: %APPDATA%/KKAFIO/config), a
+file of its own next to library-shortcuts.json: each setting is written the moment the user changes
 it, and neither file has to know about the other's content. No GUI in here (see settings_dialog.py).
 
 Besides, the language the series suggestions of the Character tab are written in (the character
@@ -23,10 +23,10 @@ from kkafio.cards.chara.hint_language import DEFAULT_LANGUAGE, available_languag
 from kkafio.core.logger import logger
 from kkafio.core.session_store import SessionStore
 
-TAG = "GALLERY"
-FILE_NAME = "gallery-suggestions.json"
+TAG = "LIBRARY"
+FILE_NAME = "library-suggestions.json"
 
-# The tabs' keys (GalleryTab.key)
+# The tabs' keys (LibraryTab.key)
 CATEGORY_CHARA = "chara"
 CATEGORY_OUTFIT = "outfit"
 CATEGORY_SCENE = "scene"
@@ -41,7 +41,7 @@ DEFAULT_MODE = SUGGEST_ALL
 
 
 class SuggestionSettings:
-    """{category: mode} for the gallery window; a category it doesn't know (a tab without a key)
+    """{category: mode} for the library window; a category it doesn't know (a tab without a key)
     gets every suggestion; `language` is the language of the series suggestions. `store` is where
     it is kept (None: nothing is read or written, e.g. in tests)."""
 

@@ -1,4 +1,4 @@
-"""Run Gallery: config, registration, folder resolution and how the task assembles the tabs."""
+"""Manage Library: config, registration, folder resolution and how the task assembles the tabs."""
 
 import json
 from pathlib import Path
@@ -10,8 +10,8 @@ import pytest
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 from kkafio.core.config import _build_task_config
 from kkafio.core.errors import InputError
-from kkafio.dialogs.gallery import CharaItem, GalleryTab
-from kkafio.tasks import run_gallery as rg
+from kkafio.dialogs.library import CharaItem, LibraryTab
+from kkafio.tasks import manage_library as rg
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,12 +19,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def _task(tmp_path, game=None, **cfg):
     game_path = {"charaFemale": tmp_path / "f", "charaMale": tmp_path / "m", "coordinate": tmp_path / "c"}
     game_path.update(game or {})
-    config = SimpleNamespace(run_gallery=cfg, game_path=game_path)
-    return rg.RunGallery(config, None)
+    config = SimpleNamespace(manage_library=cfg, game_path=game_path)
+    return rg.ManageLibrary(config, None)
 
 
 def test_options_to_config():
-    cfg = _build_task_config("RunGallery", True, {
+    cfg = _build_task_config("ManageLibrary", True, {
         "CharaDir": {"type": "folder", "path": "X"},
         "SceneDir": {"type": "folder", "path": "Y"},
         "CoordDir": {"type": "folder", "path": "Z"},
@@ -33,29 +33,29 @@ def test_options_to_config():
         "UseCache": {"type": "switch", "caseName": "No", "value": False}})
     assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["InputModsDir"], cfg["OutputModsDir"]) \
         == ("X", "Y", "Z", "M", "O")
-    assert _build_task_config("RunGallery", True, {})["UseCache"] is True
-    assert _build_task_config("RunGallery", True, {})["CheckSharedMods"] is True
-    assert _build_task_config("RunGallery", True, {})["IncludeCoordinates"] is True
-    both = _build_task_config("RunGallery", True, {
-        "RunGalleryDeleteOptions": {"type": "checkbox", "caseNames": ["CheckSharedMods", "IncludeCoordinates"]}})
+    assert _build_task_config("ManageLibrary", True, {})["UseCache"] is True
+    assert _build_task_config("ManageLibrary", True, {})["CheckSharedMods"] is True
+    assert _build_task_config("ManageLibrary", True, {})["IncludeCoordinates"] is True
+    both = _build_task_config("ManageLibrary", True, {
+        "ManageLibraryDeleteOptions": {"type": "checkbox", "caseNames": ["CheckSharedMods", "IncludeCoordinates"]}})
     assert (both["CheckSharedMods"], both["IncludeCoordinates"]) == (True, True)
-    one = _build_task_config("RunGallery", True, {
-        "RunGalleryDeleteOptions": {"type": "checkbox", "caseNames": ["IncludeCoordinates"]}})
+    one = _build_task_config("ManageLibrary", True, {
+        "ManageLibraryDeleteOptions": {"type": "checkbox", "caseNames": ["IncludeCoordinates"]}})
     assert (one["CheckSharedMods"], one["IncludeCoordinates"]) == (False, True)
-    none = _build_task_config("RunGallery", True, {
-        "RunGalleryDeleteOptions": {"type": "checkbox", "caseNames": []}})
+    none = _build_task_config("ManageLibrary", True, {
+        "ManageLibraryDeleteOptions": {"type": "checkbox", "caseNames": []}})
     assert (none["CheckSharedMods"], none["IncludeCoordinates"]) == (False, False)
 
 
 def test_interface_json_declares_the_task():
     interface = json.loads((ROOT / "interface.json").read_text(encoding="utf-8"))
-    task = next(t for t in interface["task"] if t["name"] == "RunGallery")
-    opt = interface["option"]["RunGalleryDeleteOptions"]
+    task = next(t for t in interface["task"] if t["name"] == "ManageLibrary")
+    opt = interface["option"]["ManageLibraryDeleteOptions"]
     assert opt["type"] == "checkbox" and opt["default_case"] == ["CheckSharedMods", "IncludeCoordinates"]
     assert [c["name"] for c in opt["cases"]] == ["CheckSharedMods", "IncludeCoordinates"]
     for c in opt["cases"]:                       # labels and descriptions are the Delete Cards ones
         assert c["label"] == f"$option.{c['name']}.label" and c["description"] == f"$option.{c['name']}.description"
-    assert task["option"] == ["RunGalleryDeleteOptions", "CharaDir", "SceneDir", "CoordDir", "InputModsDir",
+    assert task["option"] == ["ManageLibraryDeleteOptions", "CharaDir", "SceneDir", "CoordDir", "InputModsDir",
                               "OutputModsDir", "UseCache"]
 
 
@@ -107,7 +107,7 @@ def test_the_dialog_gets_the_mods_lookup(tmp_path):
 
 def _fake_tab(label, n, log):
     items = [CharaItem(Path(f"/x/{label}{i}.png"), Path("/x"), f"{label}{i}", None, 1, 0.0) for i in range(n)]
-    return GalleryTab(label, items, lambda t: [], lambda i, t: None, None, 1.0, lambda: log.append(f"finish {label}"))
+    return LibraryTab(label, items, lambda t: [], lambda i, t: None, None, 1.0, lambda: log.append(f"finish {label}"))
 
 
 def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
@@ -124,11 +124,11 @@ def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
             raise chara_error
         return _fake_tab(a[-1] if isinstance(a[-1], str) else k["label"], counts[1], log)
 
-    with mock.patch.object(rg, "scene_gallery_tab", lambda f, c, label="": _fake_tab(label, counts[0], log)), \
-         mock.patch.object(rg, "chara_gallery_tab", lambda f, h, c, label="": chara_error and (_ for _ in ()).throw(chara_error)
+    with mock.patch.object(rg, "scene_library_tab", lambda f, c, label="": _fake_tab(label, counts[0], log)), \
+         mock.patch.object(rg, "chara_library_tab", lambda f, h, c, label="": chara_error and (_ for _ in ()).throw(chara_error)
                            or _fake_tab(label, counts[1], log)), \
-         mock.patch.object(rg, "coordinate_gallery_tab", lambda cd, d, c, label="": _fake_tab(label, counts[2], log)), \
-         mock.patch("kkafio.dialogs.gallery.gallery_dialog", dialog or fake_dialog):
+         mock.patch.object(rg, "coordinate_library_tab", lambda cd, d, c, label="": _fake_tab(label, counts[2], log)), \
+         mock.patch("kkafio.dialogs.library.library_dialog", dialog or fake_dialog):
         task.run()
     return shown, log
 

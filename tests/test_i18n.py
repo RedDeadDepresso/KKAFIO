@@ -40,7 +40,7 @@ def _dialog_keys_in_source() -> set[str]:
 
 
 def _dialog_text_prefixes_in_source() -> set[str]:
-    """The literal prefixes of the dialog_text("...") calls (see gallery/common.py); a prefix that
+    """The literal prefixes of the dialog_text("...") calls (see library/common.py); a prefix that
     isn't a literal can't be checked, so it is refused."""
     prefixes: set[str] = set()
     for path in SRC.rglob("*.py"):
@@ -55,8 +55,8 @@ def _dialog_text_prefixes_in_source() -> set[str]:
 
 
 def _dialog_text_fields() -> set[str]:
-    """The field names of DialogText (dialogs/gallery/model.py): dialog_text() reads one key per field."""
-    tree = ast.parse((SRC / "dialogs" / "gallery" / "model.py").read_text(encoding="utf-8"))
+    """The field names of DialogText (dialogs/library/model.py): dialog_text() reads one key per field."""
+    tree = ast.parse((SRC / "dialogs" / "library" / "model.py").read_text(encoding="utf-8"))
     (cls,) = [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == "DialogText"]
     return {n.target.id for n in cls.body if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name)}
 

@@ -1,5 +1,5 @@
 """
-characters.py — The Character tab of Run Gallery: character cards sorted into series folders by hand.
+characters.py — The Character tab of Manage Library: character cards sorted into series folders by hand.
 
 The user types a series for a character and the card is moved into <chara folder>/<series>/ at
 once. The scan reads the cards with the same key cache the LLM workflow uses (group_chara.py), and
@@ -12,8 +12,8 @@ from typing import Sequence
 from kkafio.cards.chara.chara_key_cache import CharaKeyCache
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
-from kkafio.dialogs.gallery.model import COVER_RATIO, GalleryTab
-from kkafio.dialogs.gallery.common import (
+from kkafio.dialogs.library.model import COVER_RATIO, LibraryTab
+from kkafio.dialogs.library.common import (
     Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known,
 )
 from kkafio.tasks.group_chara import move_card, read_card
@@ -23,7 +23,7 @@ from kkafio.cards.mods.png_guids import collect_chara_guids_by_file
 
 def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
                       key_cache: CharaKeyCache) -> list:
-    """The character cards for the gallery dialog, as CharaItems. A card directly in a chara
+    """The character cards for the library dialog, as CharaItems. A card directly in a chara
     folder has no series; one inside a folder has that (first) folder as its series."""
     import os
     from concurrent.futures import ThreadPoolExecutor
@@ -34,7 +34,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
         for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png")):
             if all(is_plain_dir(part) for part in png.relative_to(root).parts[:-1]):
                 found.append((root, png))
-    logger.info("GROUP", f"Scanning {len(found)} PNG file(s) for the gallery")
+    logger.info("GROUP", f"Scanning {len(found)} PNG file(s) for the library")
 
     unique = dict.fromkeys(png for _root, png in found)
     root_of = {png: root for root, png in found}
@@ -69,7 +69,7 @@ def resolve_series_folder(text: str, known: dict[str, str], lang: str | None) ->
 
 def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str | None,
                      max_suggestions: int = 8):
-    """(suggest, assign) for the gallery dialog. `known` ({casefolded: name}) holds the series
+    """(suggest, assign) for the library dialog. `known` ({casefolded: name}) holds the series
     folders that exist and grows as new ones are created; `lang` is the language of the index's
     series titles (None: no index, only the existing folders are suggested); `suggest.set_language`
     changes it later (not for a tab that has no index)."""
@@ -121,12 +121,12 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
     return Suggester(suggest, existing, set_language), assign
 
 
-def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache: bool, label: str = ""):
-    """The Manual gallery of the character cards under `folders`: the user types a series per
+def chara_library_tab(folders: Sequence[Path], hint_lang: str | None, use_cache: bool, label: str = ""):
+    """The Manual library of the character cards under `folders`: the user types a series per
     character and each card is moved at once.
 
-    Returns a GalleryTab (its `.items` is empty when there is nothing to show) whose `finish()`
-    must be called once the gallery is closed, also when it failed: it saves the key cache.
+    Returns a LibraryTab (its `.items` is empty when there is nothing to show) whose `finish()`
+    must be called once the library is closed, also when it failed: it saves the key cache.
     `hint_lang` is the language of the character index's series titles (None: no index, only the
     existing series folders are suggested)."""
     if hint_lang:
@@ -145,7 +145,7 @@ def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
             key_cache.save()
 
     try:
-        # Always with subfolders: the gallery is the whole library, with each card's series
+        # Always with subfolders: the library window shows the whole library, with each card's series
         # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
         items = scan_manual_items(folders, True, key_cache)
         known = existing_folders(*folders)
@@ -154,5 +154,5 @@ def chara_gallery_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
     except BaseException:
         finish()
         raise
-    return GalleryTab(label, items, suggest, assign, dialog_text("dialog.manual"), COVER_RATIO, finish, "chara", parse_chara_guids,
+    return LibraryTab(label, items, suggest, assign, dialog_text("dialog.manual"), COVER_RATIO, finish, "chara", parse_chara_guids,
                       lambda: collect_chara_guids_by_file(list(folders), use_cache))

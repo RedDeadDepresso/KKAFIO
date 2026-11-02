@@ -1,11 +1,11 @@
-"""The gallery's keyboard shortcuts (kkafio/dialogs/gallery/shortcuts.py): reading a key press,
+"""The library's keyboard shortcuts (kkafio/dialogs/library/shortcuts.py): reading a key press,
 refusing keys that are taken, and the file they are saved in."""
 
 import json
 
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 from kkafio.core.session_store import SessionStore
-from kkafio.dialogs.gallery.shortcuts import (
+from kkafio.dialogs.library.shortcuts import (
     ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, DEFAULTS, ShortcutSettings, combo_from_event)
 
 CTRL, SHIFT, ALT_WIN = 0x4, 0x1, 0x20000

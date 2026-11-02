@@ -1,7 +1,7 @@
 """
-common.py — The pieces the character, coordinate and scene galleries have in common.
+common.py — The pieces the character, coordinate and scene libraries have in common.
 
-Each gallery still has its own scan (key cache / coordinate cache / hash cache), its own source of
+Each library still has its own scan (key cache / coordinate cache / hash cache), its own source of
 suggestions (series index / character names / authors) and its own `finish()`; what is the same
 in all three lives here: which folders count, listing the folders that exist, building a card's
 `CharaItem`, ranking the suggestions, and the window's wording.
@@ -12,12 +12,12 @@ from dataclasses import fields
 from pathlib import Path
 
 from kkafio.core.i18n import t
-from kkafio.dialogs.gallery.model import CharaItem, DialogText
+from kkafio.dialogs.library.model import CharaItem, DialogText
 
 
 def is_plain_dir(name: str) -> bool:
     """Folders starting with "_" or "." (e.g. _duplicates_) are not series / character / author
-    folders: the galleries neither list them nor show the cards inside them."""
+    folders: the libraries neither list them nor show the cards inside them."""
     return not name.startswith(("_", "."))
 
 
@@ -36,7 +36,7 @@ def existing_folders(*roots: Path) -> dict[str, str]:
 
 
 def make_item(png: Path, root: Path, parts: tuple[str, ...], alias: str = "") -> CharaItem | None:
-    """The gallery's item for the card `png`, named after the file. `parts` is its path relative
+    """The library's item for the card `png`, named after the file. `parts` is its path relative
     to `root`: a card inside a folder has that (first) folder as its series, one directly in
     `root` has none. `alias` is extra text the search also looks at. None if the file can't be
     stat'ed (it vanished)."""
@@ -92,7 +92,7 @@ class Suggester:
 
 
 def dialog_text(prefix: str) -> DialogText:
-    """The gallery's wording from the i18n keys "<prefix>.<field>" — one key per DialogText field,
+    """The library's wording from the i18n keys "<prefix>.<field>" — one key per DialogText field,
     e.g. "dialog.manual_scene.no_cards" for prefix "dialog.manual_scene"."""
     names = [f.name for f in fields(DialogText)]
     # tests/test_i18n.py knows this exact f-string: the prefix must be a literal at the call site

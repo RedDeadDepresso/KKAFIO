@@ -1,4 +1,4 @@
-"""The tabbed gallery window (Run Gallery). Needs a display (xvfb-run); skipped without one."""
+"""The tabbed library window (Manage Library). Needs a display (xvfb-run); skipped without one."""
 
 import pytest
 
@@ -10,8 +10,8 @@ try:
 except tk.TclError:
     pytest.skip("no display available for Tk", allow_module_level=True)
 
-import test_gallery_gui as g
-from kkafio.dialogs.gallery import window as mgd
+import test_library_gui as g
+from kkafio.dialogs.library import window as mgd
 
 
 def _run(monkeypatch, tabs, script, initial=0):
@@ -29,7 +29,7 @@ def _run(monkeypatch, tabs, script, initial=0):
         g.real_show_and_wait(root, focus_widget, on_shown=lambda: root.after(150, go))
 
     monkeypatch.setattr(mgd, "show_and_wait", fake_show)
-    out = mgd.gallery_dialog("test", tabs, initial)
+    out = mgd.library_dialog("test", tabs, initial)
     if errors:
         raise errors[0]
     return out
@@ -41,7 +41,7 @@ def _tabs(tmp_path, calls):
         items = g.make_items(tmp_path / name, 3)
         for i in items:
             i.name = f"{name} {i.name}"
-        tabs.append(mgd.GalleryTab(name, items, lambda t: [], g.mover(calls[name]), None, mgd.COVER_RATIO,
+        tabs.append(mgd.LibraryTab(name, items, lambda t: [], g.mover(calls[name]), None, mgd.COVER_RATIO,
                                    lambda n=name: calls["finish"].append(n)))
     return tabs
 
@@ -50,7 +50,7 @@ def _segmented(root):
     return next(w for w in g.walk(root) if w.__class__.__name__ == "CTkSegmentedButton")
 
 
-def test_tabs_switch_galleries_and_keep_their_own_search(tmp_path, monkeypatch):
+def test_tabs_switch_libraries_and_keep_their_own_search(tmp_path, monkeypatch):
     calls = {"Scene": [], "Character": [], "Outfit": [], "finish": []}
 
     def script(root):

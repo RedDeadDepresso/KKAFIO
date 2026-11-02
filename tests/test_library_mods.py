@@ -1,4 +1,4 @@
-"""The gallery's mod dependencies sidebar: the lookup behind it (kkafio/dialogs/gallery/mods_panel.py)
+"""The library's mod dependencies sidebar: the lookup behind it (kkafio/dialogs/library/mods_panel.py)
 and the sidebar itself, driven with synthetic events (the GUI part needs a display: xvfb-run is
 enough; it is skipped where Tk can't open one)."""
 
@@ -10,9 +10,9 @@ import pytest
 
 import conftest  # noqa: F401  (sandbox env must be set before kkafio is imported)
 from card_factory import zipmod
-from kkafio.dialogs.gallery import mods_panel as mp
-from kkafio.dialogs.gallery.mods_panel import CardMods, ModRow, ModsLookup
-from kkafio.dialogs.gallery.viewstate import GalleryViewState
+from kkafio.dialogs.library import mods_panel as mp
+from kkafio.dialogs.library.mods_panel import CardMods, ModRow, ModsLookup
+from kkafio.dialogs.library.viewstate import LibraryViewState
 from kkafio.core.session_store import SessionStore
 
 
@@ -114,26 +114,26 @@ def test_a_failing_parser_raises_so_the_window_can_say_so(tmp_path):
 
 def test_the_sidebar_state_is_remembered(tmp_path):
     path = tmp_path / "v.json"
-    s = GalleryViewState(SessionStore(path, "T"))
+    s = LibraryViewState(SessionStore(path, "T"))
     assert s.mods_open is True                                      # open until the user collapses it
     s.remember("chara", {}, mods_open=False)
-    assert GalleryViewState(SessionStore(path, "T")).mods_open is False
+    assert LibraryViewState(SessionStore(path, "T")).mods_open is False
     s.remember("chara", {})                                         # not told: stays as it was
-    assert GalleryViewState(SessionStore(path, "T")).mods_open is False
+    assert LibraryViewState(SessionStore(path, "T")).mods_open is False
     path.write_text('{"mods_open": "yes"}', encoding="utf-8")
-    assert GalleryViewState(SessionStore(path, "T")).mods_open is True      # junk: the default
+    assert LibraryViewState(SessionStore(path, "T")).mods_open is True      # junk: the default
 
 
 def test_the_mods_filter_is_remembered_per_tab(tmp_path):
-    from kkafio.dialogs.gallery.viewstate import TabView
+    from kkafio.dialogs.library.viewstate import TabView
     path = tmp_path / "v.json"
-    s = GalleryViewState(SessionStore(path, "T"))
+    s = LibraryViewState(SessionStore(path, "T"))
     assert s.view("chara").mods == "all"
     s.remember("chara", {"chara": TabView(mods="missing"), "scene": TabView(mods="complete")})
-    again = GalleryViewState(SessionStore(path, "T"))
+    again = LibraryViewState(SessionStore(path, "T"))
     assert (again.view("chara").mods, again.view("scene").mods, again.view("outfit").mods) == ("missing", "complete", "all")
     path.write_text('{"tabs": {"chara": {"mods": "bogus"}}}', encoding="utf-8")
-    assert GalleryViewState(SessionStore(path, "T")).view("chara").mods == "all"
+    assert LibraryViewState(SessionStore(path, "T")).view("chara").mods == "all"
 
 
 # ---------------------------------------------------------------------------
@@ -149,9 +149,9 @@ try:
 except tk.TclError:
     pytest.skip("no display available for Tk", allow_module_level=True)
 
-import test_gallery_gui as g                                        # noqa: E402
-from kkafio.dialogs.gallery import mods_sidebar as ms               # noqa: E402
-from kkafio.dialogs.gallery import window as mgd                    # noqa: E402
+import test_library_gui as g                                        # noqa: E402
+from kkafio.dialogs.library import mods_sidebar as ms               # noqa: E402
+from kkafio.dialogs.library import window as mgd                    # noqa: E402
 
 
 def _run(monkeypatch, tabs, mods, script, state=None):
@@ -175,8 +175,8 @@ def _run(monkeypatch, tabs, mods, script, state=None):
 
     monkeypatch.setattr(ms.ModsSidebar, "__init__", init)
     monkeypatch.setattr(mgd, "show_and_wait", fake_show)
-    monkeypatch.setattr(mgd.GalleryViewState, "from_user_config", classmethod(lambda cls: state or cls()))   # nothing saved
-    mgd.gallery_dialog("test", tabs, 0, mods)
+    monkeypatch.setattr(mgd.LibraryViewState, "from_user_config", classmethod(lambda cls: state or cls()))   # nothing saved
+    mgd.library_dialog("test", tabs, 0, mods)
     if errors:
         raise errors[0]
 
@@ -184,7 +184,7 @@ def _run(monkeypatch, tabs, mods, script, state=None):
 def _tab(tmp_path, wanted):
     items = g.make_items(tmp_path / "cards", len(wanted))
     guids = {item.path: w for item, w in zip(items, wanted)}
-    return mgd.GalleryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara",
+    return mgd.LibraryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara",
                           lambda p: guids[p])
 
 
@@ -198,7 +198,7 @@ def test_the_sidebar_follows_the_card_under_the_cursor(tmp_path, monkeypatch):
     tab = _tab(tmp_path, [["com.have", "com.gone"], []])
 
     def script(root, sb):
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         g.show_all(root)
         assert _shown(sb) == ["Select a card to see its mods"]      # nothing under the cursor yet
         g.click_cover(cv, g.texts(cv, "Char 000")[0])
@@ -222,7 +222,7 @@ def test_icons_search_a_missing_guid_and_reveal_an_installed_mod(tmp_path, monke
     monkeypatch.setattr(ms, "reveal_in_file_manager", revealed.append)
 
     def script(root, sb):
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         g.show_all(root)
         g.click_cover(cv, g.texts(cv, "Char 000")[0])
         g.pump(root, 0.8)
@@ -242,7 +242,7 @@ def test_collapsing_hides_the_list_and_stops_reading_cards(tmp_path, monkeypatch
     tab = _tab(tmp_path, [["com.a"], ["com.b"]])
 
     def script(root, sb):
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         g.show_all(root)
         g.click_cover(cv, g.texts(cv, "Char 000")[0])
         g.pump(root, 0.8)
@@ -270,10 +270,10 @@ def test_an_unreadable_card_says_so(tmp_path, monkeypatch):
     def boom(_p):
         raise ValueError("corrupt")
 
-    tab = mgd.GalleryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara", boom)
+    tab = mgd.LibraryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara", boom)
 
     def script(root, sb):
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         g.show_all(root)
         g.click_cover(cv, g.texts(cv, "Char 000")[0])
         g.pump(root, 0.8)
@@ -292,7 +292,7 @@ def test_the_mods_filter_shows_cards_with_all_mods_or_with_missing_ones(tmp_path
     tab = _tab(tmp_path, [["com.have"], ["com.have", "com.gone"], []])       # Char 000, 001, 002
 
     def names(root):
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         return sorted(cv.itemcget(i, "text") for i in cv.find_all()
                       if cv.type(i) == "text" and cv.itemcget(i, "text").startswith("Char "))
 
@@ -324,7 +324,7 @@ def test_the_mods_filter_reads_the_guid_index_and_only_parses_cards_missing_from
         parsed.append(path)
         return ["com.gone"]
 
-    tab = mgd.GalleryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara",
+    tab = mgd.LibraryTab("Character", items, lambda t: [], g.mover([]), None, mgd.COVER_RATIO, None, "chara",
                          parse, lambda: index)
 
     def script(root, sb):
@@ -332,7 +332,7 @@ def test_the_mods_filter_reads_the_guid_index_and_only_parses_cards_missing_from
         menu = _menu(root, "Missing mods")
         menu.set("Missing mods"); menu.cget("command")("Missing mods")
         g.pump(root, 1.2)
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         shown = sorted(cv.itemcget(i, "text") for i in cv.find_all()
                        if cv.type(i) == "text" and cv.itemcget(i, "text").startswith("Char "))
         assert shown == ["Char 001", "Char 002"]
@@ -352,18 +352,18 @@ def test_there_is_no_mods_filter_without_a_mods_folder(tmp_path, monkeypatch):
 
 
 def test_the_mods_filter_is_restored_and_saved(tmp_path, monkeypatch):
-    from kkafio.dialogs.gallery.viewstate import TabView
+    from kkafio.dialogs.library.viewstate import TabView
     zipmod(tmp_path / "mods" / "a.zipmod", "com.have")
     mods = CardMods(ModsLookup(tmp_path / "mods", use_cache=False))
     tab = _tab(tmp_path, [["com.have"], ["com.gone"]])
-    state = GalleryViewState()
+    state = LibraryViewState()
     state.tabs["chara"] = TabView(mods="missing")
     saved = {}
-    monkeypatch.setattr(GalleryViewState, "remember", lambda self, last, views, mods_open=None:
+    monkeypatch.setattr(LibraryViewState, "remember", lambda self, last, views, mods_open=None:
                         saved.update(views) or True)
 
     def script(root, sb):
-        cv = g.gallery_canvas(root)
+        cv = g.library_canvas(root)
         g.show_all(root)
         g.pump(root, 1.0)
         menu = _menu(root, "Missing mods")

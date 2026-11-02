@@ -1,15 +1,15 @@
 """
-shortcuts_dialog.py — The Shortcuts tab of the gallery's Settings window: where the keyboard
+shortcuts_dialog.py — The Shortcuts tab of the library's Settings window: where the keyboard
 shortcuts are set.
 
 Click the shortcut of an action, press the keys you want (Esc cancels); a change is applied and
-saved at once, to the `ShortcutSettings` every tab of the gallery window shares.
+saved at once, to the `ShortcutSettings` every tab of the library window shares.
 """
 
 from __future__ import annotations
 
 from kkafio.core.i18n import t
-from kkafio.dialogs.gallery.shortcuts import (
+from kkafio.dialogs.library.shortcuts import (
     ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ACTIONS, ShortcutSettings, combo_from_event)
 
 

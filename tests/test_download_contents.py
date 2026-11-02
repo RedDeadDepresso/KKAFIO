@@ -223,7 +223,7 @@ def test_pixiv_directive_and_link_page(tmp_path, monkeypatch):
         asyncio.run(pixiv.download_pixiv(_fake_pixiv_client(works), url, Path(tmp_path), {}, True, s, e))
         return sum(len(x) for x in seen)
 
-    assert run(base) == 100                    # no page -> whole gallery
+    assert run(base) == 100                    # no page -> whole library
     assert run(base + "?p=3") == 4             # ?p= in the link -> that page only
     assert run(base + "?p=3", 1, 1) == 48      # directive beats ?p=
     assert run(base, 2, None) == 52            # page 2 to the end
@@ -2566,7 +2566,7 @@ def test_pixiv_external_links_are_always_downloaded_but_artworks_only_when_follo
 
 
 # ---------------------------------------------------------------------------
-# Tag-filtered galleries: /users/ID/illustrations/TAG
+# Tag-filtered libraries: /users/ID/illustrations/TAG
 # ---------------------------------------------------------------------------
 
 TAG_URL = ("https://www.pixiv.net/en/users/3986523/illustrations/"

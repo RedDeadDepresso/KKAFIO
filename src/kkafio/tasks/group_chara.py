@@ -1,8 +1,8 @@
 """
 group_chara.py — Group character cards into folders by series, with an LLM.
 
-Grouping by hand (typing each character's series in a gallery dialog) is not part of this task;
-it lives in the Run Gallery task (see run_gallery.py and dialogs/gallery/).
+Grouping by hand (typing each character's series in a library dialog) is not part of this task;
+it lives in the Manage Library task (see manage_library.py and dialogs/library/).
 
 With "Resolve Locally" on (and Hints Language not "no"), a card whose name matches exactly one
 character in the indexes, or one of several with the card's own birthMonth / birthDay, is

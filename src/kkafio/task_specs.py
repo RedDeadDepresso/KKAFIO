@@ -103,7 +103,7 @@ def _download_missing_mods_prepare(args: argparse.Namespace, overrides: dict[str
         ]
 
 
-def _run_gallery_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+def _manage_library_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
     # Same as Download Missing Mods: --mods-dir is the legacy single-directory flag and sets
     # both directories unless the specific flag is also given.
     input_dir = args.input_mods_dir or args.mods_dir or None
@@ -524,23 +524,23 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
-        name="RunGallery", command="run-gallery",
-        help="Open one gallery window to sort scenes, characters and coordinates into folders by hand, "
+        name="ManageLibrary", command="manage-library",
+        help="Open one library window to sort scenes, characters and coordinates into folders by hand, "
              "as tabs (Scene, Character, Outfit)",
         description=(
-            "Opens a single gallery dialog with three tabs on the left of the search input: Scene, "
+            "Opens a single library dialog with three tabs on the left of the search input: Scene, "
             "Character and Outfit. Each tab is the by-hand counterpart of the matching Group task — "
             "scenes are sorted into author folders, characters into series folders and coordinates "
             "(outfits) into character folders — and a confirmed card is moved at once. The folders "
             "default to the game's (the Scene tab is left out when the game has no Studio and no "
             "--scene-dir is given). The same caches as the Group tasks are used and kept up to date."
         ),
-        target="kkafio.tasks.run_gallery:RunGallery",
+        target="kkafio.tasks.manage_library:ManageLibrary",
         # InputModsDir / OutputModsDir are combined from several flags in the hook.
-        prepare=_run_gallery_prepare,
+        prepare=_manage_library_prepare,
         options=(
             Toggle("check-shared-mods", key="CheckSharedMods",
-                   help="When the gallery closes, cards moved to the trash are deleted with Delete Cards; "
+                   help="When the library closes, cards moved to the trash are deleted with Delete Cards; "
                         "before it deletes a zipmod from the output mods directory it verifies no other "
                         "installed character/scene/coordinate still uses it (default: on)",
                    off_help="Skip the shared-mod check — faster, but may delete mods other characters still need"),
