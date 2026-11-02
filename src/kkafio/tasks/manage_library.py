@@ -14,8 +14,8 @@ given. The caches the Group tasks use are used here too (the PNG hash cache for 
 character key cache, the coordinate caches) and brought along with every card that is moved.
 
 A collapsible sidebar on the right of the window lists the mods (GUIDs) the card under the cursor
-uses, marking each installed or missing in the input and output mods folders (the game's, or the
-Input / Output Mods Directory — a mod in either counts as installed):
+uses, marking each installed or missing in the installed and downloaded mods folders (the game's, or the
+Installed / Downloaded Mods Directory — a mod in either counts as installed):
 a missing one has a search icon that looks its GUID up on Google (see dialogs/library/mods_panel.py).
 
 Cards sent to a library's Archive queue (right-click > Archive, F11) are left alone until the
@@ -26,7 +26,7 @@ originals stay where they are; Restore in the queue takes a card out of it again
 
 Cards sent to a library's trash are not sent to the Recycle Bin directly: when the window closes
 they are handed to Delete Cards, which also deletes the character's matching coordinates (Include
-Coordinates) and the mods nothing else uses (Check Shared Mods), looking for mods in the output
+Coordinates) and the mods nothing else uses (Check Shared Mods), looking for mods in the downloaded
 mods directory.
 """
 
@@ -56,8 +56,8 @@ class ManageLibrary(BaseTask):
         self.chara_dir_str : str  = cfg.get("CharaDir", "")
         self.scene_dir_str : str  = cfg.get("SceneDir", "")
         self.coord_dir_str : str  = cfg.get("CoordDir", "")
-        self.input_mods_dir_str  : str = cfg.get("InputModsDir", "")
-        self.output_mods_dir_str : str = cfg.get("OutputModsDir", "")
+        self.installed_mods_dir_str  : str = cfg.get("InstalledModsDir", "")
+        self.downloaded_mods_dir_str : str = cfg.get("DownloadedModsDir", "")
         self.use_cache     : bool = cfg.get("UseCache", True)
         self.check_shared_mods  : bool = cfg.get("CheckSharedMods", True)
         self.include_coordinates: bool = cfg.get("IncludeCoordinates", True)
@@ -66,8 +66,8 @@ class ManageLibrary(BaseTask):
         self.archive_combined       : bool = cfg.get("ArchiveCombined", True)
         self.archive_include_modpack: bool = cfg.get("ArchiveIncludeModpack", False)
         self.archive_include_coords : bool = cfg.get("ArchiveIncludeCoordinates", True)
-        self._input_mods_dir   : Path | None = None     # set by _card_mods(): where Archive Cards looks for mods
-        self._output_mods_dir  : Path | None = None     # set by _card_mods(): where Delete Cards looks for mods
+        self._installed_mods_dir   : Path | None = None     # set by _card_mods(): where Archive Cards looks for mods
+        self._downloaded_mods_dir  : Path | None = None     # set by _card_mods(): where Delete Cards looks for mods
 
     # ------------------------------------------------------------------
     # Folders
@@ -101,47 +101,47 @@ class ManageLibrary(BaseTask):
         return folder
 
     def _mods_dirs(self) -> tuple[Path | None, Path | None]:
-        """(input, output) mods folders the sidebar checks mods against; a mod installed in either
-        counts as installed. Each is the one given, else the game's. A given input folder that
-        doesn't exist is an error; a given output folder that doesn't exist is left out (Download
+        """(installed, downloaded) mods folders the sidebar checks mods against; a mod installed in either
+        counts as installed. Each is the one given, else the game's. A given installed folder that
+        doesn't exist is an error; a given downloaded folder that doesn't exist is left out (Download
         Missing Mods creates it, so it may simply not be there yet). With none at all the sidebar
         still lists a card's mods, it just can't say which are installed."""
         game_mods = self.config.game_path.get("mods")
-        input_dir = mods_dir_for(self.input_mods_dir_str, game_mods)
-        output_dir = mods_dir_for(self.output_mods_dir_str, game_mods)
+        installed_dir = mods_dir_for(self.installed_mods_dir_str, game_mods)
+        downloaded_dir = mods_dir_for(self.downloaded_mods_dir_str, game_mods)
 
-        if input_dir is not None and not input_dir.exists():
-            if self.input_mods_dir_str.strip():
-                raise InputError(f"Input mods directory does not exist: {input_dir}", tag=TAG)
-            logger.warning(TAG, f"Mods folder not found: {input_dir}")
-            input_dir = None
-        if output_dir is not None and not output_dir.exists():
-            if self.output_mods_dir_str.strip():
-                logger.warning(TAG, f"Output mods directory does not exist (yet): {output_dir} — ignored.")
+        if installed_dir is not None and not installed_dir.exists():
+            if self.installed_mods_dir_str.strip():
+                raise InputError(f"Installed mods directory does not exist: {installed_dir}", tag=TAG)
+            logger.warning(TAG, f"Mods folder not found: {installed_dir}")
+            installed_dir = None
+        if downloaded_dir is not None and not downloaded_dir.exists():
+            if self.downloaded_mods_dir_str.strip():
+                logger.warning(TAG, f"Downloaded mods directory does not exist (yet): {downloaded_dir} — ignored.")
             else:
-                logger.warning(TAG, f"Mods folder not found: {output_dir}")
-            output_dir = None
-        if input_dir is None and output_dir is None:
-            logger.warning(TAG, "No mods folder: no Input/Output Mods Directory is set and none could be "
+                logger.warning(TAG, f"Mods folder not found: {downloaded_dir}")
+            downloaded_dir = None
+        if installed_dir is None and downloaded_dir is None:
+            logger.warning(TAG, "No mods folder: no Installed/Downloaded Mods Directory is set and none could be "
                                 "resolved from the game path — the mod dependencies sidebar can't tell "
                                 "which mods are installed.")
-        return input_dir, output_dir
+        return installed_dir, downloaded_dir
 
     def _card_mods(self) -> CardMods:
         game_type = getattr(self.config, "config_data", {}).get("Core", {}).get("GameType", GameType.KOIKATSU.value)
-        input_dir, output_dir = self._mods_dirs()
-        self._input_mods_dir = input_dir
-        self._output_mods_dir = output_dir
-        return CardMods(ModsLookup(input_dir, game_type, self.use_cache, extra_dirs=(output_dir,)))
+        installed_dir, downloaded_dir = self._mods_dirs()
+        self._installed_mods_dir = installed_dir
+        self._downloaded_mods_dir = downloaded_dir
+        return CardMods(ModsLookup(installed_dir, game_type, self.use_cache, extra_dirs=(downloaded_dir,)))
 
     # ------------------------------------------------------------------
     # Deleting the trashed cards
     # ------------------------------------------------------------------
 
     def _delete_cards_settings(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
-                               coord_dir: Path, output_mods_dir: Path | None) -> dict:
+                               coord_dir: Path, downloaded_mods_dir: Path | None) -> dict:
         """The Delete Cards options for the cards left in the library's trash. The mods folder is
-        the output mods directory (explicit, so AutoResolve is off): that is where the downloaded
+        the downloaded mods directory (explicit, so AutoResolve is off): that is where the downloaded
         mods live, and the only folder whose zipmods are deleted. The shared-mod check sees every
         folder the library shows plus the game's own, so a mod another card still uses is kept."""
         game = self.config.game_path
@@ -158,20 +158,20 @@ class ManageLibrary(BaseTask):
             "IncludeCoordinates": self.include_coordinates,
             "UseCache": self.use_cache,
             "AutoResolve": False,
-            "ModsDir": str(output_mods_dir) if output_mods_dir is not None else "",
+            "ModsDir": str(downloaded_mods_dir) if downloaded_mods_dir is not None else "",
             "CharaDirs": dirs,
             "SceneDir": str(scene_dir) if scene_dir is not None else "",
             "CoordDir": str(coord_dir),
         }
 
     def _delete_trashed(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
-                        coord_dir: Path, output_mods_dir: Path | None) -> None:
+                        coord_dir: Path, downloaded_mods_dir: Path | None) -> None:
         from kkafio.tasks.delete_cards import DeleteCards
         logger.line()
         logger.info(TAG, f"{len(paths)} trashed card(s) - handing them to Delete Cards")
         DeleteCards(self.config, self.file_manager,
                     settings=self._delete_cards_settings(paths, chara_dirs, scene_dir, coord_dir,
-                                                         output_mods_dir)).run()
+                                                         downloaded_mods_dir)).run()
 
     # ------------------------------------------------------------------
     # Archiving the queued cards
@@ -191,11 +191,11 @@ class ManageLibrary(BaseTask):
         return Path(text)
 
     def _archive_cards_settings(self, paths: list[Path], coord_dir: Path,
-                                input_mods_dir: Path | None, output_mods_dir: Path | None) -> dict:
+                                installed_mods_dir: Path | None, downloaded_mods_dir: Path | None) -> dict:
         """The Archive Cards options for the cards left in the library's archive queue. Mods and
         coordinates come from the folders the library shows (explicit, so AutoResolve is off): the
-        input mods folder, else the output one."""
-        mods_dir = input_mods_dir or output_mods_dir
+        installed mods folder, else the downloaded one."""
+        mods_dir = installed_mods_dir or downloaded_mods_dir
         output_dir = self._archive_output_dir()
         return {
             "Enable": True,
@@ -211,14 +211,14 @@ class ManageLibrary(BaseTask):
             "CoordDir": str(coord_dir),
         }
 
-    def _archive_queued(self, paths: list[Path], coord_dir: Path, input_mods_dir: Path | None,
-                        output_mods_dir: Path | None) -> None:
+    def _archive_queued(self, paths: list[Path], coord_dir: Path, installed_mods_dir: Path | None,
+                        downloaded_mods_dir: Path | None) -> None:
         from kkafio.tasks.archive_cards import ArchiveCards
         logger.line()
         logger.info(TAG, f"{len(paths)} queued card(s) - handing them to Archive Cards")
         ArchiveCards(self.config, self.file_manager,
-                     settings=self._archive_cards_settings(paths, coord_dir, input_mods_dir,
-                                                           output_mods_dir)).run()
+                     settings=self._archive_cards_settings(paths, coord_dir, installed_mods_dir,
+                                                           downloaded_mods_dir)).run()
 
     # ------------------------------------------------------------------
     # Run
@@ -270,13 +270,13 @@ class ManageLibrary(BaseTask):
         # saving) when the window is gone, also if it failed.
         initial = next(i for i, tab in enumerate(tabs) if tab.items)
         logger.info(TAG, "Opening the library: " + ", ".join(f"{tab.label} {len(tab.items)}" for tab in tabs))
-        # The sidebar's lookup keeps the output folder only when it exists; that is the one whose
+        # The sidebar's lookup keeps the downloaded folder only when it exists; that is the one whose
         # mods Delete Cards may delete.
-        output_mods_dir = self._output_mods_dir
-        input_mods_dir = self._input_mods_dir
+        downloaded_mods_dir = self._downloaded_mods_dir
+        installed_mods_dir = self._installed_mods_dir
         moved = library_dialog(
             t("dialog.library.title"), tabs, initial, card_mods,
-            on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, output_mods_dir),
-            on_archive=lambda paths: self._archive_queued(paths, coord_dir, input_mods_dir, output_mods_dir))
+            on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, downloaded_mods_dir),
+            on_archive=lambda paths: self._archive_queued(paths, coord_dir, installed_mods_dir, downloaded_mods_dir))
         logger.line()
         logger.success(TAG, "Done — moved: " + ", ".join(f"{tab.label} {n}" for tab, n in zip(tabs, moved)))

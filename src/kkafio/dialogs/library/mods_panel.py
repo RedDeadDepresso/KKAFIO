@@ -79,8 +79,8 @@ def summarize(rows: Sequence[ModRow]) -> tuple[int, int]:
 class ModsLookup:
     """Which GUIDs are installed in a mods folder.
 
-    `mods_dir` is the main folder (the input mods folder); `extra_dirs` are further folders (the
-    output mods folder) whose mods count as installed too — a GUID is installed when any of the
+    `mods_dir` is the main folder (the installed mods folder); `extra_dirs` are further folders (the
+    downloaded mods folder) whose mods count as installed too — a GUID is installed when any of the
     folders has it, the main folder being looked in first. With no folder at all (or none that
     exists) there is nothing to look in: `available` is False and `resolve()` returns every GUID
     without a path.
@@ -89,7 +89,7 @@ class ModsLookup:
     def __init__(self, mods_dir: Path | None, game_type: str = GameType.KOIKATSU.value,
                  use_cache: bool = True, extra_dirs: Sequence[Path | None] = ()):
         self.mods_dir = Path(mods_dir).resolve() if mods_dir is not None else None
-        # every folder to look in, resolved, without repeats (input and output may be the same)
+        # every folder to look in, resolved, without repeats (installed and downloaded may be the same)
         self.mods_dirs: list[Path] = []
         for d in (mods_dir, *extra_dirs):
             if d is None:

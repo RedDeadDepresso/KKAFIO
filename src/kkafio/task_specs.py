@@ -88,12 +88,12 @@ _CONTEXT_MENU_HELP = (
 def _download_missing_mods_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
     # --mods-dir is the legacy single-directory flag: it sets both directories
     # unless the specific flag is also given.
-    input_dir = args.input_mods_dir or args.mods_dir or None
-    output_dir = args.output_mods_dir or args.mods_dir or None
-    if input_dir is not None:
-        overrides["InputModsDir"] = input_dir
-    if output_dir is not None:
-        overrides["OutputModsDir"] = output_dir
+    installed_dir = args.installed_mods_dir or args.mods_dir or None
+    downloaded_dir = args.downloaded_mods_dir or args.mods_dir or None
+    if installed_dir is not None:
+        overrides["InstalledModsDir"] = installed_dir
+    if downloaded_dir is not None:
+        overrides["DownloadedModsDir"] = downloaded_dir
     if args.no_chara or args.no_scene or args.no_coord:
         overrides["ContentTypes"] = [
             name for name, skipped in (("Chara", args.no_chara),
@@ -106,12 +106,12 @@ def _download_missing_mods_prepare(args: argparse.Namespace, overrides: dict[str
 def _manage_library_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
     # Same as Download Missing Mods: --mods-dir is the legacy single-directory flag and sets
     # both directories unless the specific flag is also given.
-    input_dir = args.input_mods_dir or args.mods_dir or None
-    output_dir = args.output_mods_dir or args.mods_dir or None
-    if input_dir is not None:
-        overrides["InputModsDir"] = input_dir
-    if output_dir is not None:
-        overrides["OutputModsDir"] = output_dir
+    installed_dir = args.installed_mods_dir or args.mods_dir or None
+    downloaded_dir = args.downloaded_mods_dir or args.mods_dir or None
+    if installed_dir is not None:
+        overrides["InstalledModsDir"] = installed_dir
+    if downloaded_dir is not None:
+        overrides["DownloadedModsDir"] = downloaded_dir
 
 
 def _filter_duplicates_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
@@ -260,16 +260,16 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
         name="DownloadMissingMods", command="download-missing-mods",
         help="Find mods referenced by chara cards but missing locally, then download them",
         target="kkafio.tasks.download_missing_mods:DownloadMissingMods",
-        # InputModsDir / OutputModsDir / ContentTypes are combined from several flags in the hook.
+        # InstalledModsDir / DownloadedModsDir / ContentTypes are combined from several flags in the hook.
         prepare=_download_missing_mods_prepare,
         options=(
-            Value("--input-mods-dir", default=None, metavar="DIR",
+            Value("--installed-mods-dir", default=None, metavar="DIR",
                   help="Mods directory whose installed mods count as present (default: game mods dir from config)"),
-            Value("--output-mods-dir", default=None, metavar="DIR",
-                  help="Mods directory that missing mods are downloaded into; its installed mods "
+            Value("--downloaded-mods-dir", default=None, metavar="DIR",
+                  help="Mods directory that missing mods are downloaded into; mods already in it "
                        "also count as present (default: game mods dir from config)"),
             Value("--mods-dir", default=None, metavar="DIR",
-                  help="Legacy shorthand: use DIR as both --input-mods-dir and --output-mods-dir"),
+                  help="Legacy shorthand: use DIR as both --installed-mods-dir and --downloaded-mods-dir"),
             Value("--chara-dir", key="CharaDir", ignore_blank=True, default=None, metavar="DIR",
                   help="Override the chara directory to scan (default: game chara dirs from config)"),
             Value("--scene-dir", key="SceneDir", ignore_blank=True, default=None, metavar="DIR",
@@ -539,12 +539,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             "(--archive-* options)."
         ),
         target="kkafio.tasks.manage_library:ManageLibrary",
-        # InputModsDir / OutputModsDir are combined from several flags in the hook.
+        # InstalledModsDir / DownloadedModsDir are combined from several flags in the hook.
         prepare=_manage_library_prepare,
         options=(
             Toggle("check-shared-mods", key="CheckSharedMods",
                    help="When the library closes, cards moved to the trash are deleted with Delete Cards; "
-                        "before it deletes a zipmod from the output mods directory it verifies no other "
+                        "before it deletes a zipmod from the downloaded mods directory it verifies no other "
                         "installed character/scene/coordinate still uses it (default: on)",
                    off_help="Skip the shared-mod check — faster, but may delete mods other characters still need"),
             Toggle("include-coordinates", key="IncludeCoordinates",
@@ -576,15 +576,15 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom scene directory (default: the game's Studio scene folder)"),
             Value("--coord-dir", key="CoordDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom coordinate directory (default: the game's coordinate folder)"),
-            Value("--input-mods-dir", default=None, metavar="DIR",
+            Value("--installed-mods-dir", default=None, metavar="DIR",
                   help="Mods directory used by the mod dependencies sidebar to tell which of a card's "
                        "mods are installed (default: the game's mods folder)"),
-            Value("--output-mods-dir", default=None, metavar="DIR",
+            Value("--downloaded-mods-dir", default=None, metavar="DIR",
                   help="Second mods directory (e.g. where Download Missing Mods puts its downloads); "
                        "mods installed in it also count as installed in the sidebar "
                        "(default: the game's mods folder)"),
             Value("--mods-dir", default=None, metavar="DIR",
-                  help="Legacy shorthand: use DIR as both --input-mods-dir and --output-mods-dir"),
+                  help="Legacy shorthand: use DIR as both --installed-mods-dir and --downloaded-mods-dir"),
             Toggle("use-cache", key="UseCache",
                    help="Reuse the cached scene hashes, character keys and coordinate digests for "
                         "unchanged cards (default: on)",

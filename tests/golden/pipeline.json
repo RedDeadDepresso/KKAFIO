@@ -422,10 +422,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -540,8 +540,8 @@
     },
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -550,9 +550,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -849,8 +849,8 @@
     },
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -859,9 +859,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -976,10 +976,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [

@@ -2768,10 +2768,10 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -2809,10 +2809,10 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -2850,10 +2850,10 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -2876,10 +2876,10 @@
   },
   "world": "configured"
  },
- "configured: download-missing-mods --input-mods-dir=<blank>": {
+ "configured: download-missing-mods --downloaded-mods-dir=<blank>": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
+   "--downloaded-mods-dir",
    ""
   ],
   "result": {
@@ -2891,10 +2891,51 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
+      "scene_dir_str": "/cfg/scene",
+      "telegram_chat_links_raw": "cfg-chat",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": false
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: download-missing-mods --installed-mods-dir=<blank>": {
+  "argv": [
+   "download-missing-mods",
+   "--installed-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "content_types": [
+       "Chara"
+      ],
+      "coord_dir_str": "/cfg/coord",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
+      "modpack_mode": "All",
+      "open_report": false,
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -2932,51 +2973,10 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
-      "scene_dir_str": "/cfg/scene",
-      "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
-      "use_cache": false
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: download-missing-mods --output-mods-dir=<blank>": {
-  "argv": [
-   "download-missing-mods",
-   "--output-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "/cfg/chara",
-      "content_types": [
-       "Chara"
-      ],
-      "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
-      "modpack_mode": "All",
-      "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3014,10 +3014,10 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3055,10 +3055,10 @@
        "Chara"
       ],
       "coord_dir_str": "/cfg/coord",
-      "input_mods_dir_str": "/cfg/in-mods",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "/cfg/out-mods",
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "",
       "telegram_sources": [
@@ -3084,10 +3084,10 @@
  "configured: download-missing-mods [all-first]": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--chara-dir",
@@ -3115,10 +3115,10 @@
       "chara_dir_str": "S_chara_dir",
       "content_types": [],
       "coord_dir_str": "S_coord_dir",
-      "input_mods_dir_str": "S_input_mods_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "Skip",
       "open_report": true,
-      "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -3143,10 +3143,10 @@
  "configured: download-missing-mods [all-last]": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--chara-dir",
@@ -3174,10 +3174,10 @@
       "chara_dir_str": "S_chara_dir",
       "content_types": [],
       "coord_dir_str": "S_coord_dir",
-      "input_mods_dir_str": "S_input_mods_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -4578,8 +4578,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4588,9 +4588,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4618,8 +4618,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4628,9 +4628,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4658,8 +4658,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4668,9 +4668,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4698,8 +4698,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4708,9 +4708,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4728,18 +4728,18 @@
   },
   "world": "configured"
  },
- "configured: manage-library --input-mods-dir=<blank>": {
+ "configured: manage-library --downloaded-mods-dir=<blank>": {
   "argv": [
    "manage-library",
-   "--input-mods-dir",
+   "--downloaded-mods-dir",
    ""
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4748,9 +4748,49 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: manage-library --installed-mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--installed-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "include_coordinates": true,
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4778,8 +4818,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4788,49 +4828,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "configured"
- },
- "configured: manage-library --output-mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--output-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
-      "archive_combined": true,
-      "archive_format": "7z",
-      "archive_include_coords": true,
-      "archive_include_modpack": false,
-      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4858,8 +4858,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4868,9 +4868,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -4906,10 +4906,10 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--use-cache"
@@ -4918,8 +4918,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -4928,9 +4928,9 @@
       "chara_dir_str": "S_chara_dir",
       "check_shared_mods": true,
       "coord_dir_str": "S_coord_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "include_coordinates": true,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
@@ -4966,10 +4966,10 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--no-use-cache"
@@ -4978,8 +4978,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": false,
       "archive_format": "copy",
       "archive_include_coords": false,
@@ -4988,9 +4988,9 @@
       "chara_dir_str": "S_chara_dir",
       "check_shared_mods": false,
       "coord_dir_str": "S_coord_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "include_coordinates": false,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
@@ -7924,10 +7924,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -7950,57 +7950,12 @@
   },
   "world": "default"
  },
- "dmm --mods-dir + --input-mods-dir": {
+ "dmm --mods-dir + --downloaded-mods-dir": {
   "argv": [
    "download-missing-mods",
    "--mods-dir",
    "M",
-   "--input-mods-dir",
-   "I"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "input_mods_dir_str": "I",
-      "modpack_mode": "OnlyUsed",
-      "open_report": true,
-      "output_mods_dir_str": "M",
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
-      "use_cache": true
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "dmm --mods-dir + --output-mods-dir": {
-  "argv": [
-   "download-missing-mods",
-   "--mods-dir",
-   "M",
-   "--output-mods-dir",
+   "--downloaded-mods-dir",
    "O"
   ],
   "result": {
@@ -8014,10 +7969,55 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "M",
+      "downloaded_mods_dir_str": "O",
+      "installed_mods_dir_str": "M",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "O",
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "dmm --mods-dir + --installed-mods-dir": {
+  "argv": [
+   "download-missing-mods",
+   "--mods-dir",
+   "M",
+   "--installed-mods-dir",
+   "I"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "M",
+      "installed_mods_dir_str": "I",
+      "modpack_mode": "OnlyUsed",
+      "open_report": true,
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8057,10 +8057,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "M",
+      "downloaded_mods_dir_str": "M",
+      "installed_mods_dir_str": "M",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "M",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8098,10 +8098,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8138,10 +8138,10 @@
       "chara_dir_str": "",
       "content_types": [],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8179,10 +8179,10 @@
        "Chara"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8222,10 +8222,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "",
       "telegram_sources": [
@@ -8266,10 +8266,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8308,10 +8308,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [],
@@ -8696,10 +8696,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8739,10 +8739,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8782,10 +8782,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8825,10 +8825,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8868,10 +8868,10 @@
        "Coord"
       ],
       "coord_dir_str": "S_coord_dir",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8894,10 +8894,10 @@
   },
   "world": "default"
  },
- "download-missing-mods --input-mods-dir=<blank>": {
+ "download-missing-mods --downloaded-mods-dir=<blank>": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
+   "--downloaded-mods-dir",
    ""
   ],
   "result": {
@@ -8911,10 +8911,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8937,11 +8937,11 @@
   },
   "world": "default"
  },
- "download-missing-mods --input-mods-dir=S_input_mods_dir": {
+ "download-missing-mods --downloaded-mods-dir=S_downloaded_mods_dir": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
-   "S_input_mods_dir"
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir"
   ],
   "result": {
    "events": [
@@ -8954,10 +8954,96 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "S_input_mods_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --installed-mods-dir=<blank>": {
+  "argv": [
+   "download-missing-mods",
+   "--installed-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "modpack_mode": "OnlyUsed",
+      "open_report": true,
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --installed-mods-dir=S_installed_mods_dir": {
+  "argv": [
+   "download-missing-mods",
+   "--installed-mods-dir",
+   "S_installed_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "S_installed_mods_dir",
+      "modpack_mode": "OnlyUsed",
+      "open_report": true,
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8997,10 +9083,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "All",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9040,10 +9126,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9083,10 +9169,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "Skip",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9126,10 +9212,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9169,10 +9255,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "S_mods_dir",
+      "downloaded_mods_dir_str": "S_mods_dir",
+      "installed_mods_dir_str": "S_mods_dir",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "S_mods_dir",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9210,10 +9296,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9251,10 +9337,10 @@
        "Scene"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9293,10 +9379,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": false,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9334,10 +9420,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9376,10 +9462,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9418,96 +9504,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
-      "use_cache": true
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "download-missing-mods --output-mods-dir=<blank>": {
-  "argv": [
-   "download-missing-mods",
-   "--output-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "input_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "open_report": true,
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
-      "use_cache": true
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "download-missing-mods --output-mods-dir=S_output_mods_dir": {
-  "argv": [
-   "download-missing-mods",
-   "--output-mods-dir",
-   "S_output_mods_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "input_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "open_report": true,
-      "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9547,10 +9547,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9590,10 +9590,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9633,10 +9633,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "",
       "telegram_sources": [
@@ -9676,10 +9676,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -9719,10 +9719,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9761,10 +9761,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9802,10 +9802,10 @@
        "Coord"
       ],
       "coord_dir_str": "",
-      "input_mods_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "open_report": true,
-      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9831,10 +9831,10 @@
  "download-missing-mods [all-first]": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--chara-dir",
@@ -9862,10 +9862,10 @@
       "chara_dir_str": "S_chara_dir",
       "content_types": [],
       "coord_dir_str": "S_coord_dir",
-      "input_mods_dir_str": "S_input_mods_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "Skip",
       "open_report": true,
-      "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -9890,10 +9890,10 @@
  "download-missing-mods [all-last]": {
   "argv": [
    "download-missing-mods",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--chara-dir",
@@ -9921,10 +9921,10 @@
       "chara_dir_str": "S_chara_dir",
       "content_types": [],
       "coord_dir_str": "S_coord_dir",
-      "input_mods_dir_str": "S_input_mods_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
       "open_report": false,
-      "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -14860,8 +14860,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -14870,9 +14870,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -14899,8 +14899,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -14909,9 +14909,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -14939,8 +14939,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -14949,9 +14949,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -14979,8 +14979,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "copy",
       "archive_include_coords": true,
@@ -14989,9 +14989,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15019,8 +15019,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "zip",
       "archive_include_coords": true,
@@ -15029,9 +15029,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15058,8 +15058,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15068,9 +15068,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15097,8 +15097,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15107,9 +15107,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15137,8 +15137,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15147,9 +15147,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15177,8 +15177,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15187,9 +15187,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15217,8 +15217,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15227,9 +15227,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15257,8 +15257,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15267,9 +15267,9 @@
       "chara_dir_str": "S_chara_dir",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15296,8 +15296,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15306,9 +15306,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15336,8 +15336,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15346,9 +15346,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15376,8 +15376,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15386,9 +15386,89 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "S_coord_dir",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --downloaded-mods-dir=<blank>": {
+  "argv": [
+   "manage-library",
+   "--downloaded-mods-dir",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "include_coordinates": true,
+      "installed_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "ManageLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ManageLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "manage-library --downloaded-mods-dir=S_downloaded_mods_dir": {
+  "argv": [
+   "manage-library",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
+      "include_coordinates": true,
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15415,8 +15495,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15425,9 +15505,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15445,18 +15525,18 @@
   },
   "world": "default"
  },
- "manage-library --input-mods-dir=<blank>": {
+ "manage-library --installed-mods-dir=<blank>": {
   "argv": [
    "manage-library",
-   "--input-mods-dir",
+   "--installed-mods-dir",
    ""
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15465,9 +15545,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15485,18 +15565,18 @@
   },
   "world": "default"
  },
- "manage-library --input-mods-dir=S_input_mods_dir": {
+ "manage-library --installed-mods-dir=S_installed_mods_dir": {
   "argv": [
    "manage-library",
-   "--input-mods-dir",
-   "S_input_mods_dir"
+   "--installed-mods-dir",
+   "S_installed_mods_dir"
   ],
   "result": {
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15505,9 +15585,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15535,8 +15615,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15545,9 +15625,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15575,8 +15655,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15585,9 +15665,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "S_mods_dir",
       "include_coordinates": true,
-      "input_mods_dir_str": "S_mods_dir",
-      "output_mods_dir_str": "S_mods_dir",
+      "installed_mods_dir_str": "S_mods_dir",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15614,8 +15694,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": false,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15624,9 +15704,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15653,8 +15733,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": false,
@@ -15663,9 +15743,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15692,8 +15772,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15702,9 +15782,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15731,8 +15811,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15741,9 +15821,9 @@
       "chara_dir_str": "",
       "check_shared_mods": false,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15770,8 +15850,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15780,9 +15860,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": false,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15809,8 +15889,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15819,91 +15899,11 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": false
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --output-mods-dir=<blank>": {
-  "argv": [
-   "manage-library",
-   "--output-mods-dir",
-   ""
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
-      "archive_combined": true,
-      "archive_format": "7z",
-      "archive_include_coords": true,
-      "archive_include_modpack": false,
-      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
-      "scene_dir_str": "",
-      "use_cache": true
-     },
-     "class": "ManageLibrary",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "ManageLibrary"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "manage-library --output-mods-dir=S_output_mods_dir": {
-  "argv": [
-   "manage-library",
-   "--output-mods-dir",
-   "S_output_mods_dir"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
-      "archive_combined": true,
-      "archive_format": "7z",
-      "archive_include_coords": true,
-      "archive_include_modpack": false,
-      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
-      "chara_dir_str": "",
-      "check_shared_mods": true,
-      "coord_dir_str": "",
-      "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "S_output_mods_dir",
-      "scene_dir_str": "",
-      "use_cache": true
      },
      "class": "ManageLibrary",
      "enabled": true,
@@ -15929,8 +15929,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15939,9 +15939,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -15969,8 +15969,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -15979,9 +15979,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
@@ -16008,8 +16008,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -16018,9 +16018,9 @@
       "chara_dir_str": "",
       "check_shared_mods": true,
       "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
       "include_coordinates": true,
-      "input_mods_dir_str": "",
-      "output_mods_dir_str": "",
+      "installed_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16056,10 +16056,10 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--use-cache"
@@ -16068,8 +16068,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": true,
       "archive_format": "7z",
       "archive_include_coords": true,
@@ -16078,9 +16078,9 @@
       "chara_dir_str": "S_chara_dir",
       "check_shared_mods": true,
       "coord_dir_str": "S_coord_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "include_coordinates": true,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
@@ -16116,10 +16116,10 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
-   "--input-mods-dir",
-   "S_input_mods_dir",
-   "--output-mods-dir",
-   "S_output_mods_dir",
+   "--installed-mods-dir",
+   "S_installed_mods_dir",
+   "--downloaded-mods-dir",
+   "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
    "--no-use-cache"
@@ -16128,8 +16128,8 @@
    "events": [
     {
      "attrs": {
-      "_input_mods_dir": null,
-      "_output_mods_dir": null,
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
       "archive_combined": false,
       "archive_format": "copy",
       "archive_include_coords": false,
@@ -16138,9 +16138,9 @@
       "chara_dir_str": "S_chara_dir",
       "check_shared_mods": false,
       "coord_dir_str": "S_coord_dir",
+      "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "include_coordinates": false,
-      "input_mods_dir_str": "S_input_mods_dir",
-      "output_mods_dir_str": "S_output_mods_dir",
+      "installed_mods_dir_str": "S_installed_mods_dir",
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },

@@ -28,10 +28,10 @@ def test_options_to_config():
         "CharaDir": {"type": "folder", "path": "X"},
         "SceneDir": {"type": "folder", "path": "Y"},
         "CoordDir": {"type": "folder", "path": "Z"},
-        "InputModsDir": {"type": "folder", "path": "M"},
-        "OutputModsDir": {"type": "folder", "path": "O"},
+        "InstalledModsDir": {"type": "folder", "path": "M"},
+        "DownloadedModsDir": {"type": "folder", "path": "O"},
         "UseCache": {"type": "switch", "caseName": "No", "value": False}})
-    assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["InputModsDir"], cfg["OutputModsDir"]) \
+    assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["InstalledModsDir"], cfg["DownloadedModsDir"]) \
         == ("X", "Y", "Z", "M", "O")
     assert _build_task_config("ManageLibrary", True, {})["UseCache"] is True
     assert _build_task_config("ManageLibrary", True, {})["CheckSharedMods"] is True
@@ -57,7 +57,7 @@ def test_interface_json_declares_the_task():
         assert c["label"] == f"$option.{c['name']}.label" and c["description"] == f"$option.{c['name']}.description"
     assert task["option"] == ["ManageLibraryDeleteOptions", "ManageLibraryArchiveOutputPath",
                               "ManageLibraryArchiveFormat", "ManageLibraryArchiveOptions", "CharaDir", "SceneDir",
-                              "CoordDir", "InputModsDir", "OutputModsDir", "UseCache"]
+                              "CoordDir", "InstalledModsDir", "DownloadedModsDir", "UseCache"]
     out = interface["option"]["ManageLibraryArchiveOutputPath"]
     assert out["type"] == "folder" and out["default"] == "C:/KKAFIO/Archived Cards"
     fmt = interface["option"]["ManageLibraryArchiveFormat"]
@@ -89,23 +89,23 @@ def test_mods_dirs_custom_default_and_missing(tmp_path):
     mods, out = tmp_path / "mods", tmp_path / "out"
     mods.mkdir()
     out.mkdir()
-    assert _task(tmp_path, InputModsDir=str(mods))._mods_dirs() == (mods, None)
+    assert _task(tmp_path, InstalledModsDir=str(mods))._mods_dirs() == (mods, None)
     assert _task(tmp_path, game={"mods": mods})._mods_dirs() == (mods, mods)
-    assert _task(tmp_path, game={"mods": mods}, InputModsDir=str(tmp_path))._mods_dirs() == (tmp_path, mods)
-    assert _task(tmp_path, game={"mods": mods}, OutputModsDir=str(out))._mods_dirs() == (mods, out)
+    assert _task(tmp_path, game={"mods": mods}, InstalledModsDir=str(tmp_path))._mods_dirs() == (tmp_path, mods)
+    assert _task(tmp_path, game={"mods": mods}, DownloadedModsDir=str(out))._mods_dirs() == (mods, out)
     assert _task(tmp_path)._mods_dirs() == (None, None)              # nothing known: the sidebar still opens
     assert _task(tmp_path, game={"mods": tmp_path / "gone"})._mods_dirs() == (None, None)
     # an output folder that isn't there yet is left out; a missing input folder is an error
-    assert _task(tmp_path, InputModsDir=str(mods), OutputModsDir=str(tmp_path / "later"))._mods_dirs() == (mods, None)
+    assert _task(tmp_path, InstalledModsDir=str(mods), DownloadedModsDir=str(tmp_path / "later"))._mods_dirs() == (mods, None)
     with pytest.raises(InputError):
-        _task(tmp_path, InputModsDir=str(tmp_path / "nope"))._mods_dirs()
+        _task(tmp_path, InstalledModsDir=str(tmp_path / "nope"))._mods_dirs()
 
 
 def test_the_dialog_gets_the_mods_lookup(tmp_path):
     mods, out = tmp_path / "mods", tmp_path / "out"
     mods.mkdir()
     out.mkdir()
-    shown, _ = _run(_task(tmp_path, game={"scene": tmp_path}, InputModsDir=str(mods), OutputModsDir=str(out),
+    shown, _ = _run(_task(tmp_path, game={"scene": tmp_path}, InstalledModsDir=str(mods), DownloadedModsDir=str(out),
                           UseCache=False), tmp_path)
     lookup = shown["mods"].lookup
     assert lookup.mods_dir == mods.resolve() and lookup.use_cache is False
@@ -169,11 +169,11 @@ def test_a_failing_tab_still_finishes_the_ones_already_read(tmp_path):
         _run(task, tmp_path, chara_error=RuntimeError("boom"))
 
 
-def test_trashed_cards_are_handed_to_delete_cards_with_the_output_mods_dir(tmp_path):
+def test_trashed_cards_are_handed_to_delete_cards_with_the_downloaded_mods_dir(tmp_path):
     mods, out, scenes = tmp_path / "mods", tmp_path / "out", tmp_path / "s"
     for d in (mods, out, scenes):
         d.mkdir()
-    task = _task(tmp_path, game={"scene": scenes, "mods": mods}, InputModsDir=str(mods), OutputModsDir=str(out),
+    task = _task(tmp_path, game={"scene": scenes, "mods": mods}, InstalledModsDir=str(mods), DownloadedModsDir=str(out),
                  CheckSharedMods=False, IncludeCoordinates=False, UseCache=False)
     shown, _ = _run(task, tmp_path)
     seen = {}
@@ -194,7 +194,7 @@ def test_trashed_cards_are_handed_to_delete_cards_with_the_output_mods_dir(tmp_p
     assert st["CoordDir"] == str(tmp_path / "c") and st["SceneDir"] == str(scenes)
     assert str(tmp_path / "f") in st["CharaDirs"]
 
-    # no output folder: Delete Cards gets no mods folder (and, not auto-resolving, leaves mods alone)
+    # no downloaded folder: Delete Cards gets no mods folder (and, not auto-resolving, leaves mods alone)
     shown, _ = _run(_task(tmp_path), tmp_path)
     with mock.patch("kkafio.tasks.delete_cards.DeleteCards", FakeDelete):
         shown["on_trash"]([tmp_path / "a.png"])
@@ -219,7 +219,7 @@ def test_queued_cards_are_handed_to_archive_cards_with_the_archive_options(tmp_p
     mods, out, scenes, dest = tmp_path / "mods", tmp_path / "out", tmp_path / "s", tmp_path / "archives"
     for d in (mods, out, scenes):
         d.mkdir()
-    task = _task(tmp_path, game={"scene": scenes, "mods": mods}, InputModsDir=str(mods), OutputModsDir=str(out),
+    task = _task(tmp_path, game={"scene": scenes, "mods": mods}, InstalledModsDir=str(mods), DownloadedModsDir=str(out),
                  UseCache=False, ArchiveOutputPath=str(dest), ArchiveFormat="zip", ArchiveCombined=False,
                  ArchiveIncludeModpack=True, ArchiveIncludeCoordinates=False)
     shown, _ = _run(task, tmp_path)
@@ -240,8 +240,8 @@ def test_queued_cards_are_handed_to_archive_cards_with_the_archive_options(tmp_p
     assert st["IncludeModpack"] is True and st["IncludeCoordinates"] is False and st["UseCache"] is False
     assert st["AutoResolve"] is False and st["ModsDir"] == str(mods) and st["CoordDir"] == str(tmp_path / "c")
 
-    # no input mods folder: the output one is where the mods are; no output path: next to each card
-    shown, _ = _run(_task(tmp_path, game={"scene": scenes}, OutputModsDir=str(out), ArchiveOutputPath=""), tmp_path)
+    # no installed mods folder: the downloaded one is where the mods are; no output path: next to each card
+    shown, _ = _run(_task(tmp_path, game={"scene": scenes}, DownloadedModsDir=str(out), ArchiveOutputPath=""), tmp_path)
     with mock.patch("kkafio.tasks.archive_cards.ArchiveCards", FakeArchive):
         shown["on_archive"]([tmp_path / "a.png"])
     assert seen["settings"]["ModsDir"] == str(out) and seen["settings"]["OutputPath"] == ""
