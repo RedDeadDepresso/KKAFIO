@@ -214,6 +214,21 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
         assert assign(rin, "Fate") == (new_path, "Fate")                  # already there: untouched
 
 
+def test_assign_blank_moves_the_card_up_out_of_its_folder(tmp_path):
+    _cards(tmp_path, a="Rin")
+    with manual_fakes():
+        cache = CharaKeyCache([tmp_path], True, "GROUP")
+        rin = next(i for i in gal.scan_manual_items([tmp_path], True, cache) if i.alias == "Rin")
+        _s, assign = gal.manual_callbacks(existing_folders(tmp_path), cache, None)
+
+        assert assign(rin, "") is None                                    # at the top already: nothing to do
+        in_folder, _ = assign(rin, "Fate")
+        rin.path = in_folder
+        up, name = assign(rin, "   ")                                     # blank: back up to the chara folder
+        assert up == tmp_path / "a.png" and name == tmp_path.name
+        assert up.exists() and not in_folder.exists()
+
+
 def test_assign_reports_a_failed_move(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes():

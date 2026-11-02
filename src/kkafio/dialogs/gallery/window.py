@@ -1560,12 +1560,14 @@ def _build_gallery(root, parent, tab: GalleryTab, txt: DialogText, search_entry,
 
         def confirm_multi(text: str | None = None) -> str:
             text = (text if text is not None else (chosen() or entry.get())).strip()
-            close()
             if not text:                                    # blank: move the ones in a folder up
                 targets_in_folder = [i for i in targets if i.series is not None]
-                if targets_in_folder:
-                    apply_many(targets_in_folder, text)
+                if not targets_in_folder:
+                    return "break"                          # none is in a folder: nothing to do
+                close()
+                apply_many(targets_in_folder, text)
                 return "break"
+            close()
             apply_many(targets, text)
             return "break"
 

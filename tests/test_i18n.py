@@ -176,7 +176,7 @@ def test_config_read_sets_the_language_from_the_gui_setting(tmp_path):
 def test_t_formats_and_falls_back(monkeypatch):
     try:
         i18n.set_language("ja_jp")
-        assert i18n.t("dialog.review.page", page=2, pages=5) == "2 / 5 ページ"
+        assert i18n.t("dialog.review.summary", total=2, files=5) == "2グループ · 5ファイル"
         assert i18n.t("dialog.cancel") == "キャンセル"
         assert i18n.t("no.such.key") == "no.such.key"
         # missing from the chosen language -> English

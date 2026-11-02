@@ -12,7 +12,7 @@ GUI files that ``interface.json`` doesn't reference.
 Usage::
 
     from kkafio.core.i18n import t
-    t("dialog.review.page", page=2, pages=5)        # "Page 2 of 5"
+    t("dialog.review.summary", total=2, files=5)    # "2 groups · 5 files"
 
 Values are `str.format` templates, so placeholders are ``{name}`` and a literal
 brace is ``{{`` / ``}}``. A key missing from the chosen language falls back to

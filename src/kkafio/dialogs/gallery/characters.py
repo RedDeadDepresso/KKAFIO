@@ -97,7 +97,7 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
     def assign(item, text: str):
         if not text.strip():                              # blank: up out of the series folder
             if item.path.parent == item.root:
-                return item.path, item.root.name          # already at the top
+                return None                               # already at the top: nothing to do
             dest = move_card(item.path, item.root, item.root.name, key_cache)
             return None if dest is None else (dest, item.root.name)
         folder = resolve_series_folder(text, known, state["lang"])

@@ -60,7 +60,7 @@ def manual_callbacks(known: dict[str, str], moves: dict[str, str], max_suggestio
     def assign(item, text: str):
         if not text.strip():                              # blank: up out of the character folder
             if item.path.parent == item.root:
-                return item.path, item.root.name          # already at the top
+                return None                               # already at the top: nothing to do
             try:
                 dest = move_unique(item.path, item.root)
             except Exception as e:

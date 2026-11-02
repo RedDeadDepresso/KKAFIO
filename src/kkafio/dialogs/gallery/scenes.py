@@ -42,7 +42,7 @@ def manual_callbacks(known: dict[str, str], authors: list, moves: dict[str, str]
     def assign(item, text: str):
         if not text.strip():                               # blank: up out of the author folder
             if item.path.parent == item.root:
-                return item.path, item.root.name           # already at the top
+                return None                                # already at the top: nothing to do
             dest = _move_unique(item.path, item.root)
             if dest is None:
                 return None

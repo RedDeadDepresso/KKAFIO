@@ -15,7 +15,11 @@ How the lock works (one lock per group, in the group's header):
     it can be re-applied with another strategy until the user is happy.
   * "Undo auto-select" steps back one Auto-select at a time. It only touches groups
     that are still unlocked, so choices you made by hand since then are kept.
-  * Keys: Left / Right change page, Up / Down scroll the list.
+  * Keys: Left / Right (A / D) scroll a page, Up / Down (W / S) scroll a little.
+
+The list is drawn like the Run Gallery grid: one plain Tk canvas, only the rows in view exist
+(a group's header, one row per card), and thumbnails are decoded on worker threads. So any
+number of groups can be shown in one scrolling list without lag; there are no pages.
 
 `review_dialog()` returns the cards the user chose to trash (empty if the
 dialog was closed without trashing). The dialog itself never deletes anything.
@@ -144,10 +148,7 @@ class ReviewState:
 THUMB_MAX = (100, 140)
 DETAILS_MAX = (340, 460)       # the cover in the Details window is scaled to fit this box
 
-# Groups shown per page. CustomTkinter widgets are heavy (each is its own canvas), so
-# putting every card in one scrolling list makes scrolling and restoring the window
-# stutter; a page keeps the live widget count small.
-GROUPS_PER_PAGE = 6
+THUMB_CACHE_MAX = 600          # cover images kept as PhotoImages (least recently drawn go first)
 
 
 def format_date(timestamp: float) -> str:
@@ -163,9 +164,9 @@ def created_timestamp(st: os.stat_result) -> float:
     return getattr(st, "st_birthtime", st.st_ctime)
 
 
-def load_thumbnail(path: Path):
-    """The card's cover as a small RGBA PIL image, or None. Safe to call from
-    a worker thread (touches no Tk objects). Reads only the PNG part of the file."""
+def load_thumbnail(path: Path, box: tuple[int, int] = THUMB_MAX):
+    """The card's cover as a small RGBA PIL image fitting `box`, or None. Safe to call
+    from a worker thread (touches no Tk objects). Reads only the PNG part of the file."""
     from PIL import Image
     from kkafio.cards.chara.similarity import read_png_preview
 
@@ -173,7 +174,7 @@ def load_thumbnail(path: Path):
     if not data:
         return None
     with Image.open(io.BytesIO(data)) as im:
-        im.thumbnail(THUMB_MAX)
+        im.thumbnail(box)
         return im.convert("RGBA")
 
 
@@ -253,11 +254,9 @@ def review_dialog(
 
 # (light, dark) colour pairs, as CustomTkinter expects
 _MUTED = ("gray40", "gray65")
-_ACCENT = ("#15803d", "#4ade80")
-_GROUP_BG = ("gray88", "gray17")
-_THUMB_BG = ("gray78", "gray25")
-_LOCK_ON = ("#b45309", "#fbbf24")
+_LOCK_ON = ("#b45309", "#fbbf24")        # (light, dark); the canvas picks the one for the theme
 _LOCK_OFF = ("gray45", "gray60")
+_ACCENT = ("#15803d", "#4ade80")
 _BTN_GREY = ("gray75", "gray30")
 _BTN_GREY_HOVER = ("gray68", "gray38")
 _TRASH = ("#b91c1c", "#dc2626")
@@ -266,8 +265,13 @@ _TRASH_HOVER = ("#991b1b", "#b91c1c")
 
 def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list[Path]:
     import tkinter as tk
+    from bisect import bisect_right
+    from collections import OrderedDict
+    from tkinter import font as tkfont
     from tkinter import messagebox
     import customtkinter as ctk
+    from PIL import ImageTk
+    from kkafio.dialogs.gallery.window import _DARK, _LIGHT, ellipsize, round_corners, rounded_rect_points
 
     state = ReviewState(groups, select_keep)
     result: list[Path] = []
@@ -280,18 +284,54 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(2, weight=1)       # the list takes all extra space
 
-    # ---- widgets & per-card views, rebuilt whenever the search changes -----
-    views: dict[tuple[int, int], dict] = {}   # (group, card) -> its widgets
-    thumb_labels: dict[Path, object] = {}     # cover label of each rendered card
-    group_frames: list = []
-    group_locks: dict[int, object] = {}      # group -> its lock button
-    build = {"order": [], "page": 0}
-    timers: dict[str, str | None] = {"poll": None, "search": None}
+    dark = ctk.get_appearance_mode() == "Dark"
+    pal = _DARK if dark else _LIGHT           # the canvas takes the colours of the theme
+    lock_on, lock_off = (_LOCK_ON[1], _LOCK_OFF[1]) if dark else (_LOCK_ON[0], _LOCK_OFF[0])
+    accent = _ACCENT[1] if dark else _ACCENT[0]
+
+    try:
+        scale = float(root._get_window_scaling())
+    except Exception:
+        scale = 1.0
+
+    def px(n: float) -> int:
+        return max(1, int(round(n * scale)))
+
+    family = tkfont.nametofont("TkDefaultFont").actual("family")
+    f_group = tkfont.Font(root=root, family=family, size=13, weight="bold")
+    f_name = tkfont.Font(root=root, family=family, size=12, weight="bold")
+    f_small = tkfont.Font(root=root, family=family, size=11)
+    f_lock = tkfont.Font(root=root, family=family, size=15)
+    lh_group = f_group.metrics("linespace")
+    lh_name = f_name.metrics("linespace") + px(2)
+    lh_small = f_small.metrics("linespace") + px(1)
+
+    # ---- geometry of the rows (all fixed, so a row's position is plain arithmetic) --------
+    thumb_w, thumb_h = px(THUMB_MAX[0]), px(THUMB_MAX[1])
+    card_h = thumb_h + px(16)                          # a card's row
+    hdr_h = max(px(44), lh_group + lh_small + px(24))  # a group's header row
+    gap_h = px(10)                                     # between two groups
+    margin = px(4)                                     # the group panel's distance from the sides
+    radius = px(8)
+    check_size = px(24)
+    check_x = margin + px(16)
+    btn_w, btn_h = px(110), px(32)
+    ROW_HEADER, ROW_CARD, ROW_GAP = 0, 1, 2
+
+    # ---- what is shown ------------------------------------------------------------------
+    build = {"order": []}                     # group indices that match the search
+    # rows: (kind, group, card) per row of the list; tops: the y of each row's top edge
+    lay: dict = {"rows": [], "tops": [], "total": 0, "cw": 1, "region_h": 1}
+    drawn: dict[int, list[int]] = {}          # row -> its canvas items
+    thumb_items: dict[int, tuple[int, int]] = {}   # card row -> (cover image item, "no preview" text item)
+    meta_cache: dict[Path, str] = {}
+    timers: dict[str, str | None] = {"poll": None, "search": None, "layout": None, "draw": None}
 
     # ---- thumbnails: decoded on worker threads, applied on the Tk thread ---
     thumb_queue: queue.Queue = queue.Queue()
     executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="kkafio-thumb")
-    images: dict[Path, object] = {}           # path -> CTkImage, or None if no preview
+    photos: OrderedDict[Path, object] = OrderedDict()   # path -> PhotoImage (least recently drawn first)
+    no_preview: set[Path] = set()
     requested: set[Path] = set()
 
     # -----------------------------------------------------------------------
@@ -310,21 +350,18 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     search = ctk.CTkEntry(root, placeholder_text=t("dialog.review.search_placeholder"))
     search.grid(row=1, column=0, sticky="ew", padx=16, pady=(10, 8))
 
-    listing = ctk.CTkScrollableFrame(root, width=820, height=420, fg_color="transparent")
-    listing.grid(row=2, column=0, sticky="nsew", padx=(10, 6))
+    listing = ctk.CTkFrame(root, fg_color="transparent")
+    listing.grid(row=2, column=0, sticky="nsew", padx=(16, 10))
     listing.grid_columnconfigure(0, weight=1)
-
-    pager = ctk.CTkFrame(root, fg_color="transparent")
-    pager.grid(row=3, column=0, pady=(6, 0))
-    prev_btn = ctk.CTkButton(pager, text=t("dialog.review.previous"), width=110, command=lambda: go_page(-1))
-    prev_btn.grid(row=0, column=0, padx=8)
-    page_label = ctk.CTkLabel(pager, text="", width=190)
-    page_label.grid(row=0, column=1)
-    next_btn = ctk.CTkButton(pager, text=t("dialog.review.next"), width=110, command=lambda: go_page(1))
-    next_btn.grid(row=0, column=2, padx=8)
+    listing.grid_rowconfigure(0, weight=1)
+    canvas = tk.Canvas(listing, bg=pal["bg"], highlightthickness=0, borderwidth=0,
+                       width=px(820), height=px(420), yscrollincrement=px(40), takefocus=1)
+    canvas.grid(row=0, column=0, sticky="nsew")
+    scroll_sb = ctk.CTkScrollbar(listing, command=canvas.yview)
+    scroll_sb.grid(row=0, column=1, sticky="ns", padx=(4, 0))
 
     bar = ctk.CTkFrame(root, fg_color="transparent")
-    bar.grid(row=4, column=0, sticky="ew", padx=16, pady=12)
+    bar.grid(row=3, column=0, sticky="ew", padx=16, pady=12)
     bar.grid_columnconfigure(3, weight=1)
 
     auto_menu = ctk.CTkOptionMenu(bar, values=[label for label, _ in keep_choices], width=260,
@@ -348,36 +385,13 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
                   text_color=("gray10", "gray90"), command=lambda: on_close()).grid(row=0, column=4)
 
     # -----------------------------------------------------------------------
-    # refreshing widgets from the state
+    # counts / summary
     # -----------------------------------------------------------------------
-    def refresh_card(gi: int, ci: int) -> None:
-        view = views.get((gi, ci))
-        if view is None:
-            return
-        view["var"].set(state.selected[gi][ci])
-
-    def refresh_lock(gi: int) -> None:
-        button = group_locks.get(gi)
-        if button is not None:
-            locked = state.locked[gi]
-            button.configure(text="🔒" if locked else "🔓",
-                             text_color=_LOCK_ON if locked else _LOCK_OFF)
-
-    def refresh_all() -> None:
-        for gi, ci in list(views):
-            refresh_card(gi, ci)
-        for gi in list(group_locks):
-            refresh_lock(gi)
-        update_counts()
-
     def update_counts() -> None:
         n = state.selected_count()
         trash_btn.configure(text=t("dialog.review.trash", count=n),
                             state="normal" if n else "disabled")
         undo_btn.configure(state="normal" if state.can_undo() else "disabled")
-
-    def page_count() -> int:
-        return max(1, -(-len(build["order"]) // GROUPS_PER_PAGE))
 
     def update_summary(shown: int) -> None:
         total = len(state.groups)
@@ -387,103 +401,250 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
         else:
             text = t("dialog.review.summary", total=total, files=files)
         summary.configure(text=text)
-        pages = page_count()
-        page_label.configure(text=t("dialog.review.page", page=build["page"] + 1, pages=pages))
-        prev_btn.configure(state="normal" if build["page"] > 0 else "disabled")
-        next_btn.configure(state="normal" if build["page"] < pages - 1 else "disabled")
 
     # -----------------------------------------------------------------------
-    # building the list (one group per timer tick, so the window stays responsive)
+    # layout + drawing (only the rows in view exist on the canvas)
     # -----------------------------------------------------------------------
-    def build_card(parent, gi: int, ci: int, path: Path, row: int) -> None:
-        card = ctk.CTkFrame(parent, fg_color="transparent")
-        card.grid(row=row, column=0, columnspan=2, sticky="ew", padx=10, pady=4)
-        card.grid_columnconfigure(2, weight=1)
+    def build_rows() -> None:
+        """The list of rows for the groups in `build["order"]` and where each one starts."""
+        rows: list[tuple[int, int, int]] = []
+        tops: list[int] = []
+        y = px(2)
+        for gi in build["order"]:
+            rows.append((ROW_HEADER, gi, -1))
+            tops.append(y)
+            y += hdr_h
+            for ci in range(len(state.groups[gi].paths)):
+                rows.append((ROW_CARD, gi, ci))
+                tops.append(y)
+                y += card_h
+            rows.append((ROW_GAP, gi, -1))
+            tops.append(y)
+            y += gap_h
+        lay.update(rows=rows, tops=tops, total=y)
 
-        var = tk.BooleanVar(value=state.selected[gi][ci])
-        check = ctk.CTkCheckBox(card, text="", width=26, checkbox_width=24, checkbox_height=24,
-                                variable=var, command=lambda: on_check(gi, ci))
-        check.grid(row=0, column=0, padx=(4, 8))
+    def relayout(keep_scroll: bool = True) -> None:
+        """Size the scroll region for the window and draw what is in view."""
+        timers["layout"] = None
+        y0 = canvas.canvasy(0) if keep_scroll else 0
+        cw, ch = max(canvas.winfo_width(), px(300)), max(canvas.winfo_height(), px(200))
+        region_h = max(lay["total"], ch)
+        lay.update(cw=cw, region_h=region_h)
+        canvas.delete("all")
+        drawn.clear()
+        thumb_items.clear()
+        canvas.configure(scrollregion=(0, 0, cw, region_h))
+        canvas.yview_moveto(min(max(0.0, y0 / region_h), 1.0) if keep_scroll else 0.0)
+        if not lay["rows"]:
+            canvas.create_text(cw // 2, ch // 3, text=t("dialog.review.no_matches"), fill=pal["muted"], font=f_name)
+        draw_visible()
 
-        thumb = ctk.CTkLabel(card, text="", width=THUMB_MAX[0], height=THUMB_MAX[1],
-                             fg_color=_THUMB_BG, corner_radius=4)
-        thumb.grid(row=0, column=1, padx=(0, 12))
+    def schedule_layout(delay: int = 80, keep_scroll: bool = True) -> None:
+        if timers["layout"] is not None:
+            root.after_cancel(timers["layout"])
+        timers["layout"] = root.after(delay, lambda: relayout(keep_scroll))
 
-        try:
-            st = path.stat()
-            meta = t("dialog.review.card_meta", size=format_size(st.st_size),
-                     date=format_date(created_timestamp(st)))
-        except OSError:
-            meta = t("dialog.review.file_not_found")
-        info = ctk.CTkFrame(card, fg_color="transparent")
-        info.grid(row=0, column=2, sticky="w")
-        ctk.CTkLabel(info, text=path.name, anchor="w",
-                     font=ctk.CTkFont(size=15, weight="bold")).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(info, text=meta, anchor="w", text_color=_MUTED).grid(row=1, column=0, sticky="w")
-        ctk.CTkLabel(info, text=str(path.parent), anchor="w", justify="left", wraplength=520,
-                     text_color=_MUTED).grid(row=2, column=0, sticky="w")
+    def draw_visible() -> None:
+        timers["draw"] = None
+        rows, tops = lay["rows"], lay["tops"]
+        if not rows:
+            return
+        y_top = canvas.canvasy(0)
+        y_bottom = y_top + canvas.winfo_height()
+        lo = max(0, bisect_right(tops, y_top) - 2)
+        hi = min(len(rows), bisect_right(tops, y_bottom) + 1)
+        for idx in [i for i in drawn if i < lo or i >= hi]:
+            for cid in drawn.pop(idx):
+                canvas.delete(cid)
+            thumb_items.pop(idx, None)
+        for idx in range(lo, hi):
+            if idx not in drawn:
+                draw_row(idx)
 
-        ctk.CTkButton(card, text=t("dialog.review.details_button"), width=110, fg_color=_BTN_GREY,
-                      hover_color=_BTN_GREY_HOVER, text_color=("gray10", "gray90"),
-                      command=lambda: show_details(path)).grid(row=0, column=3, padx=(12, 4))
+    def schedule_draw() -> None:
+        if timers["draw"] is None:
+            timers["draw"] = root.after_idle(draw_visible)
 
-        views[(gi, ci)] = {"var": var, "check": check}
-        thumb_labels[path] = thumb
-        refresh_card(gi, ci)
-        request_thumb(path)
+    def card_meta(path: Path) -> str:
+        meta = meta_cache.get(path)
+        if meta is None:
+            try:
+                st = path.stat()
+                meta = t("dialog.review.card_meta", size=format_size(st.st_size),
+                         date=format_date(created_timestamp(st)))
+            except OSError:
+                meta = t("dialog.review.file_not_found")
+            meta_cache[path] = meta
+        return meta
 
-    def build_group(gi: int) -> None:
+    def panel(x0: float, y0: float, x1: float, y1: float) -> int:
+        return canvas.create_polygon(rounded_rect_points(x0, y0, x1, y1, radius), smooth=True,
+                                     fill=pal["tile"], outline="")
+
+    def draw_row(idx: int) -> None:
+        kind, gi, ci = lay["rows"][idx]
+        top = lay["tops"][idx]
+        x0, x1 = margin, lay["cw"] - margin
+        ids: list[int] = []
+        drawn[idx] = ids
+        if kind == ROW_GAP:
+            return
         group = state.groups[gi]
-        frame = ctk.CTkFrame(listing, corner_radius=8, fg_color=_GROUP_BG)
-        frame.grid(row=len(group_frames), column=0, sticky="ew", padx=2, pady=(0, 10))
-        frame.grid_columnconfigure(1, weight=1)
-        lock = ctk.CTkButton(frame, text="🔓", width=34, height=34, fg_color="transparent",
-                             hover_color=_BTN_GREY_HOVER, text_color=_LOCK_OFF,
-                             font=ctk.CTkFont(size=18), command=lambda: on_lock(gi))
-        lock.grid(row=0, column=0, rowspan=2, padx=(10, 2), pady=(8, 2), sticky="n")
-        group_locks[gi] = lock
-        ctk.CTkLabel(frame, text=t("dialog.review.group_header", count=len(group.paths), label=group.label), anchor="w",
-                     font=ctk.CTkFont(size=16, weight="bold"),
-                     text_color=_ACCENT).grid(row=0, column=1, sticky="w", padx=(4, 14), pady=(10, 0))
-        ctk.CTkLabel(frame, text=group.description, anchor="w", justify="left", wraplength=760,
-                     text_color=_MUTED).grid(row=1, column=1, sticky="w", padx=(4, 14), pady=(0, 4))
-        refresh_lock(gi)
-        for ci, path in enumerate(group.paths):
-            build_card(frame, gi, ci, path, row=2 + ci)
-        group_frames.append(frame)
+        n = len(group.paths)
+        if kind == ROW_HEADER:
+            # the panel's top corners are rounded: the polygon reaches into the first card row's padding
+            ids.append(panel(x0, top, x1, top + hdr_h + (radius if n else 0)))
+            locked = state.locked[gi]
+            ids.append(canvas.create_text(x0 + px(26), top + px(24), text="🔒" if locked else "🔓", font=f_lock,
+                                          fill=lock_on if locked else lock_off))
+            text_x = x0 + px(54)
+            text_w = x1 - text_x - px(14)
+            ids.append(canvas.create_text(
+                text_x, top + px(10), anchor="nw", fill=accent, font=f_group,
+                text=ellipsize(f_group.measure,
+                               t("dialog.review.group_header", count=n, label=group.label), text_w)))
+            ids.append(canvas.create_text(
+                text_x, top + px(10) + lh_group + px(2), anchor="nw", fill=pal["muted"], font=f_small,
+                text=ellipsize(f_small.measure, " ".join(group.description.split()), text_w)))
+            return
+        path = group.paths[ci]
+        if ci == n - 1:                                   # the last card: the panel's bottom corners
+            ids.append(panel(x0, top - radius, x1, top + card_h))
+        else:
+            ids.append(canvas.create_rectangle(x0, top, x1, top + card_h, fill=pal["tile"], outline=""))
+        # the checkbox
+        by = top + (card_h - check_size) // 2
+        checked = state.selected[gi][ci]
+        ids.append(canvas.create_polygon(
+            rounded_rect_points(check_x, by, check_x + check_size, by + check_size, px(5)), smooth=True,
+            fill=pal["accent"] if checked else pal["input"], outline=pal["accent"] if checked else pal["muted"],
+            width=px(2)))
+        if checked:
+            ids.append(canvas.create_text(check_x + check_size // 2, by + check_size // 2, text="✓",
+                                          fill=pal["bg"], font=f_name))
+        # the cover
+        tx = check_x + check_size + px(14)
+        ty = top + px(8)
+        ids.append(canvas.create_polygon(rounded_rect_points(tx, ty, tx + thumb_w, ty + thumb_h, px(4)),
+                                         smooth=True, fill=pal["cover"], outline=""))
+        request_thumb(path)
+        photo = photos.get(path)
+        if photo is not None:
+            photos.move_to_end(path)
+        cx, cy = tx + thumb_w // 2, ty + thumb_h // 2
+        # Both items always exist: the cover can arrive after the row is drawn (apply_thumb), and
+        # a text item can't take an image.
+        image_id = canvas.create_image(cx, cy, image=photo if photo is not None else "")
+        note_id = canvas.create_text(cx, cy, fill=pal["muted"], font=f_small, justify="center",
+                                     text=t("dialog.review.no_preview") if path in no_preview else "")
+        ids += [image_id, note_id]
+        thumb_items[idx] = (image_id, note_id)
+        # the file's details
+        info_x = tx + thumb_w + px(14)
+        info_w = max(px(60), x1 - btn_w - px(30) - info_x)
+        y = top + (card_h - (lh_name + 2 * lh_small)) // 2
+        ids.append(canvas.create_text(info_x, y, anchor="nw", fill=pal["text"], font=f_name,
+                                      text=ellipsize(f_name.measure, path.name, info_w)))
+        ids.append(canvas.create_text(info_x, y + lh_name, anchor="nw", fill=pal["muted"], font=f_small,
+                                      text=ellipsize(f_small.measure, card_meta(path), info_w)))
+        ids.append(canvas.create_text(info_x, y + lh_name + lh_small, anchor="nw", fill=pal["muted"],
+                                      font=f_small, text=ellipsize(f_small.measure, str(path.parent), info_w)))
+        # the Details button
+        bx0, by0 = x1 - px(14) - btn_w, top + (card_h - btn_h) // 2
+        ids.append(canvas.create_polygon(rounded_rect_points(bx0, by0, bx0 + btn_w, by0 + btn_h, px(8)),
+                                         smooth=True, fill=pal["sel"], outline=""))
+        ids.append(canvas.create_text(bx0 + btn_w // 2, by0 + btn_h // 2, fill=pal["text"], font=f_small,
+                                      text=t("dialog.review.details_button")))
+
+    def redraw_row(idx: int) -> None:
+        if idx in drawn:
+            for cid in drawn.pop(idx):
+                canvas.delete(cid)
+            thumb_items.pop(idx, None)
+            draw_row(idx)
+
+    def redraw_group(gi: int) -> None:
+        for idx in [i for i in drawn if lay["rows"][i][1] == gi]:
+            redraw_row(idx)
+
+    def redraw_all() -> None:
+        for idx in list(drawn):
+            redraw_row(idx)
+
+    def locate(ex: int, ey: int):
+        """What is at a point of the canvas window: ("lock", group), ("check", group, card),
+        ("details", group, card), or None."""
+        tops = lay["tops"]
+        if not tops:
+            return None
+        x, y = canvas.canvasx(ex), canvas.canvasy(ey)
+        idx = bisect_right(tops, y) - 1
+        if idx < 0:
+            return None
+        kind, gi, ci = lay["rows"][idx]
+        top = tops[idx]
+        if kind == ROW_HEADER:
+            if margin + px(6) <= x <= margin + px(46) and y <= top + hdr_h:
+                return ("lock", gi)
+        elif kind == ROW_CARD:
+            if margin + px(6) <= x <= check_x + check_size + px(8):
+                return ("check", gi, ci)
+            bx0 = lay["cw"] - margin - px(14) - btn_w
+            by0 = top + (card_h - btn_h) // 2
+            if bx0 <= x <= bx0 + btn_w and by0 <= y <= by0 + btn_h:
+                return ("details", gi, ci)
+        return None
+
+    def on_click(event) -> None:
+        canvas.focus_set()                      # the keys work on the list again (the search box lets go)
+        hit = locate(event.x, event.y)
+        if hit is None:
+            return
+        if hit[0] == "lock":
+            on_lock(hit[1])
+        elif hit[0] == "check":
+            on_check(hit[1], hit[2])
+        else:
+            show_details(state.groups[hit[1]].paths[hit[2]])
+
+    def on_motion(event) -> None:
+        try:
+            canvas.configure(cursor="hand2" if locate(event.x, event.y) is not None else "")
+        except tk.TclError:
+            pass
+
+    def on_yscroll(first, last) -> None:
+        scroll_sb.set(first, last)
+        schedule_draw()
+
+    def on_wheel(event) -> None:
+        try:
+            target = root.winfo_containing(event.x_root, event.y_root)
+        except (KeyError, tk.TclError):
+            return
+        if target is not canvas:
+            return
+        if getattr(event, "num", 0) == 4:
+            step = -1
+        elif getattr(event, "num", 0) == 5:
+            step = 1
+        else:
+            step = -1 if event.delta > 0 else 1
+        canvas.yview_scroll(step * 3, "units")
 
     def haystack(group: ReviewGroup) -> str:
         return " ".join([group.label, group.description, *map(str, group.paths)]).lower()
 
-    def render_page() -> None:
-        """Replace the list with the groups of the current page."""
-        for frame in group_frames:
-            frame.destroy()
-        group_frames.clear()
-        views.clear()
-        group_locks.clear()
-        thumb_labels.clear()
-        start = build["page"] * GROUPS_PER_PAGE
-        for gi in build["order"][start:start + GROUPS_PER_PAGE]:
-            build_group(gi)
-        if not build["order"]:
-            empty = ctk.CTkLabel(listing, text=t("dialog.review.no_matches"), text_color=_MUTED)
-            empty.grid(row=0, column=0, pady=40)
-            group_frames.append(empty)
-        update_summary(len(build["order"]))
-        update_counts()
-        try:
-            listing._parent_canvas.yview_moveto(0)     # back to the top
-        except (AttributeError, tk.TclError):
-            pass
-
     def rebuild() -> None:
-        """Re-apply the search filter and go back to the first page."""
+        """Re-apply the search filter and go back to the top of the list."""
+        timers["search"] = None
         needle = search.get().strip().lower()
         build["order"] = [gi for gi, g in enumerate(state.groups)
                           if not needle or needle in haystack(g)]
-        build["page"] = 0
-        render_page()
+        build_rows()
+        update_summary(len(build["order"]))
+        update_counts()
+        relayout(keep_scroll=False)
 
     def typing_in_entry() -> bool:
         """True while a text field has focus: the arrow keys belong to it then."""
@@ -493,18 +654,17 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
         except (KeyError, tk.TclError):
             return False
 
-    def on_arrow(step: int):
+    def on_page_key(step: int):
         def handler(event=None):
             if typing_in_entry() or not is_plain_key(event):
                 return None
-            go_page(step)
+            canvas.yview_scroll(step, "pages")
             return "break"
         return handler
 
     def scroll_list(direction: int, fraction: float = 0.15) -> None:
         """Scroll the list by a fraction of what's visible (the same step at any
         window size or display scaling), clamped to the ends."""
-        canvas = listing._parent_canvas
         top, bottom = canvas.yview()
         if bottom - top >= 1.0:
             return                                   # everything fits: nothing to scroll
@@ -521,42 +681,50 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
             return "break"
         return handler
 
-    def go_page(step: int) -> None:
-        new = min(max(build["page"] + step, 0), page_count() - 1)
-        if new != build["page"]:
-            build["page"] = new
-            render_page()
+    def on_home_end(fraction: float):
+        def handler(event=None):
+            if typing_in_entry() or not is_plain_key(event):
+                return None
+            canvas.yview_moveto(fraction)
+            return "break"
+        return handler
 
     # -----------------------------------------------------------------------
     # thumbnails
     # -----------------------------------------------------------------------
     def apply_thumb(path: Path) -> None:
-        label = thumb_labels.get(path)
-        if label is None:
-            return
-        image = images.get(path)
-        try:
-            if image is None:
-                label.configure(text=t("dialog.review.no_preview"))
-            else:
-                label.configure(image=image, text="")
-        except tk.TclError:
-            pass  # that card was rebuilt or the window is closing
+        """A cover finished loading: show it (or "no preview") on every drawn row that has it."""
+        photo = photos.get(path)
+        for idx, (image_id, note_id) in list(thumb_items.items()):
+            if idx not in drawn:
+                continue
+            _kind, gi, ci = lay["rows"][idx]
+            if state.groups[gi].paths[ci] != path:
+                continue
+            try:
+                if photo is not None:
+                    canvas.itemconfigure(image_id, image=photo)
+                    canvas.itemconfigure(note_id, text="")
+                else:
+                    canvas.itemconfigure(note_id, text=t("dialog.review.no_preview"))
+            except tk.TclError:
+                pass  # the window is closing
 
     def request_thumb(path: Path) -> None:
-        if path in images:
-            apply_thumb(path)
-        elif path not in requested:
-            requested.add(path)
+        if path in photos or path in no_preview or path in requested:
+            return
+        requested.add(path)
 
-            def work() -> None:
-                try:
-                    pil = load_thumbnail(path)
-                except Exception:
-                    pil = None
-                thumb_queue.put((path, pil))
+        def work() -> None:
+            try:
+                pil = load_thumbnail(path, (thumb_w, thumb_h))
+                if pil is not None:
+                    pil = round_corners(pil, px(4))
+            except Exception:
+                pil = None
+            thumb_queue.put((path, pil))
 
-            executor.submit(work)
+        executor.submit(work)
 
     def poll_thumbs() -> None:
         for _ in range(8):                      # a few per tick keeps the UI smooth
@@ -564,8 +732,13 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
                 path, pil = thumb_queue.get_nowait()
             except queue.Empty:
                 break
-            images[path] = (ctk.CTkImage(light_image=pil, dark_image=pil, size=pil.size)
-                            if pil is not None else None)
+            requested.discard(path)
+            if pil is None:
+                no_preview.add(path)
+            else:
+                photos[path] = ImageTk.PhotoImage(pil)
+                while len(photos) > THUMB_CACHE_MAX:
+                    photos.popitem(last=False)
             apply_thumb(path)
         timers["poll"] = root.after(60, poll_thumbs)
 
@@ -573,20 +746,20 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     # user actions
     # -----------------------------------------------------------------------
     def on_check(gi: int, ci: int) -> None:
-        state.set_selected(gi, ci, views[(gi, ci)]["var"].get())   # also locks the group
-        refresh_card(gi, ci)
-        refresh_lock(gi)
+        state.set_selected(gi, ci, not state.selected[gi][ci])      # also locks the group
+        redraw_group(gi)
         update_counts()
         status.configure(text="")
 
     def on_lock(gi: int) -> None:
         state.set_locked(gi, not state.locked[gi])
-        refresh_lock(gi)
+        redraw_group(gi)
 
     def on_auto(choice: str) -> None:
         auto_menu.set(t("dialog.review.auto_placeholder"))
         applied, skipped, failed = state.apply_keep(keep_by_label[choice])
-        refresh_all()
+        redraw_all()
+        update_counts()
         parts = [t("dialog.review.status_applied", choice=choice, count=applied)]
         if skipped:
             parts.append(t("dialog.review.status_skipped", count=skipped))
@@ -596,7 +769,8 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
     def on_undo() -> None:
         restored, kept = state.undo_auto()
-        refresh_all()
+        redraw_all()
+        update_counts()
         parts = [t("dialog.review.status_undone", count=restored)]
         if kept:
             parts.append(t("dialog.review.status_kept", count=kept))
@@ -702,15 +876,24 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
 
     search.bind("<KeyRelease>", on_search_key)
     root.bind("<Escape>", on_close)
-    for keys, handler in ((("<Left>", "<a>", "<A>"), on_arrow(-1)),
-                          (("<Right>", "<d>", "<D>"), on_arrow(1)),
+    for keys, handler in ((("<Left>", "<a>", "<A>", "<Prior>"), on_page_key(-1)),
+                          (("<Right>", "<d>", "<D>", "<Next>"), on_page_key(1)),
                           (("<Up>", "<w>", "<W>"), on_scroll_key(-1)),
-                          (("<Down>", "<s>", "<S>"), on_scroll_key(1))):
+                          (("<Down>", "<s>", "<S>"), on_scroll_key(1)),
+                          (("<Home>",), on_home_end(0.0)),
+                          (("<End>",), on_home_end(1.0))):
         for key in keys:
             root.bind(key, handler)
     # Enter in the search box hands the keyboard back to the list, so WASD / arrows work again.
-    search.bind("<Return>", lambda _e: root.focus_set())
+    search.bind("<Return>", lambda _e: canvas.focus_set())
     root.protocol("WM_DELETE_WINDOW", on_close)
+
+    canvas.configure(yscrollcommand=on_yscroll)
+    canvas.bind("<Button-1>", on_click)
+    canvas.bind("<Motion>", on_motion)
+    canvas.bind("<Configure>", lambda _e: schedule_layout(60, keep_scroll=True))
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        root.bind(seq, on_wheel, add="+")
 
     update_counts()
     rebuild()
