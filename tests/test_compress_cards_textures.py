@@ -15,11 +15,12 @@ class _FakeProc:
         return 0
 
 
-def _task(tmp_path: Path, delete_original=False):
+def _task(tmp_path: Path, delete_original=False, mode="auto"):
     cfg = mock.Mock()
     cfg.compress_cards_textures = {
         "InputPath": str(tmp_path / "Downloads"),
         "KoiCardTexToolPath": str(tmp_path / "tool"),
+        "Mode": mode,
         "DeleteOriginalCards": delete_original,
     }
     (tmp_path / "Downloads").mkdir()
@@ -35,6 +36,25 @@ def test_command_uses_zip_output_folder_and_suffix(tmp_path):
     cmd = popen.call_args.args[0]
     assert cmd == [str(tmp_path / "tool" / cct.KOICARDTEXTOOL_EXE), "batch",
                    str(tmp_path / "Downloads"), f"{tmp_path / 'Downloads'}[zip]", "suffix=[zip]"]
+
+
+def test_non_default_mode_is_passed_after_max_size(tmp_path):
+    task = _task(tmp_path, mode="maintex")
+    with mock.patch.object(cct, "popen_text", return_value=_FakeProc()) as popen:
+        task.run()
+    cmd = popen.call_args.args[0]
+    assert cmd == [str(tmp_path / "tool" / cct.KOICARDTEXTOOL_EXE), "batch",
+                   str(tmp_path / "Downloads"), f"{tmp_path / 'Downloads'}[zip]",
+                   cct.MODE_MAX_SIZE, "maintex", "suffix=[zip]"]
+
+
+def test_unknown_mode_is_rejected_before_anything_runs(tmp_path):
+    import pytest
+    from kkafio.core.errors import InputError
+    task = _task(tmp_path, mode="webp")
+    with mock.patch.object(cct, "popen_text") as popen, pytest.raises(InputError):
+        task.run()
+    popen.assert_not_called()
 
 
 def test_merge_moves_files_back_and_removes_output_folder(tmp_path):

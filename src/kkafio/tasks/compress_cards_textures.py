@@ -40,6 +40,15 @@ KOICARDTEXTOOL_URL = (
 )
 KOICARDTEXTOOL_EXE = "KoiCardTexTool.exe"
 
+# Values of KoiCardTexTool's `mode` argument. "auto" is the tool's own default.
+COMPRESS_MODES = ("auto", "png", "jpg", "maintex")
+DEFAULT_MODE = "auto"
+
+# `mode` is positional and comes after `max_size`, so passing a mode means passing a max_size
+# too. Used only when a non-default mode is chosen; 1024 is the longest-edge limit the tool's
+# documentation uses in its own examples.
+MODE_MAX_SIZE = "1024"
+
 # Appended to the input folder's path to name the output folder, and passed to
 # the tool as `suffix=` so every compressed card is named "<name>[zip].png".
 ZIP_SUFFIX = "[zip]"
@@ -66,6 +75,7 @@ class CompressCardsTextures(BaseTask):
         cfg = self.config.compress_cards_textures
         self.input_path_str  : str  = cfg.get("InputPath", "")
         self.tool_path_str   : str  = cfg.get("KoiCardTexToolPath", "C:/KoiCardTexTool")
+        self.mode            : str  = cfg.get("Mode", DEFAULT_MODE)
         self.delete_original : bool = cfg.get("DeleteOriginalCards", False)
 
     def _find_exe(self, tool_dir: Path) -> Path | None:
@@ -276,6 +286,10 @@ class CompressCardsTextures(BaseTask):
         # ever explicitly cleared out (its normal default is C:/KoiCardTexTool).
         tool_dir = Path(self.tool_path_str) if self.tool_path_str else input_path
 
+        if self.mode not in COMPRESS_MODES:
+            raise InputError(f"Unknown compression mode {self.mode!r} "
+                             f"(expected one of: {', '.join(COMPRESS_MODES)}).", tag="KOITEX")
+
         exe_path = self._ensure_tool(tool_dir)
         if exe_path is None:
             raise ToolNotFoundError("CompressCardsTextures: KoiCardTexTool is not available", tag="KOITEX")
@@ -287,6 +301,7 @@ class CompressCardsTextures(BaseTask):
         logger.info("KOITEX", f"Input folder    : {input_path}")
         logger.info("KOITEX", f"Output folder   : {output_path}")
         logger.info("KOITEX", f"KoiCardTexTool  : {exe_path}")
+        logger.info("KOITEX", f"Mode            : {self.mode}")
         logger.info("KOITEX", f"Delete originals: {self.delete_original}")
         logger.line()
 
@@ -294,7 +309,10 @@ class CompressCardsTextures(BaseTask):
         # back afterwards even if the run fails.
         backed_up = self._backup_zip_cards(input_path)
         try:
-            cmd = [str(exe_path), "batch", str(input_path), str(output_path), f"suffix={ZIP_SUFFIX}"]
+            cmd = [str(exe_path), "batch", str(input_path), str(output_path)]
+            if self.mode != DEFAULT_MODE:
+                cmd += [MODE_MAX_SIZE, self.mode]       # positional: [max_size] [mode]
+            cmd.append(f"suffix={ZIP_SUFFIX}")
 
             try:
                 process = popen_text(

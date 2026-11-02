@@ -446,6 +446,7 @@
       "input_path_str": {
        "__path__": "<ROOT>/work"
       },
+      "mode": "auto",
       "tool_path_str": "C:/KoiCardTexTool"
      },
      "class": "CompressCardsTextures",
@@ -959,6 +960,7 @@
       "input_path_str": {
        "__path__": "<ROOT>/work"
       },
+      "mode": "auto",
       "tool_path_str": "C:/KoiCardTexTool"
      },
      "class": "CompressCardsTextures",

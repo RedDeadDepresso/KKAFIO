@@ -268,8 +268,9 @@ https://t.me/kknowcc
 - Recompress the textures embedded inside chara/coordinate cards with [KoiCardTexTool](https://github.com/EeEeX4/koikatsu-card-texture-tool), shrinking file size dramatically (often -50% to -80%) with minimal quality loss:
 - **KoiCardTexTool Path** — folder containing (or where to install) `KoiCardTexTool.exe`. Defaults to `C:/KoiCardTexTool`. If the exe isn't found there (checked recursively, in case the release zip nests it in a subfolder), KKAFIO downloads and extracts the latest release automatically before running it.
 - Before running the tool, any card in the input folder already named `<name>[zip].png` (from an earlier run) is renamed to `<name>[zip].png.bak` so it isn't compressed again, and renamed back afterwards, even if the run fails. If the tool just made a fresh compressed copy of the same name, the fresh one is kept and the `.bak` is dropped.
-- Runs `KoiCardTexTool.exe batch <input> <input>[zip] suffix=[zip]`, so KoiCardTexTool first writes its compressed copies to a temporary sibling folder named after the input folder plus `[zip]` (for example `C:/KKAFIO/Downloads` → `C:/KKAFIO/Downloads[zip]`), named `CardA[zip].png` for an original `CardA.png`. Its output is streamed live into the log, the same way 7-Zip's output is.
+- Runs `KoiCardTexTool.exe batch <input> <input>[zip] suffix=[zip]` (with the default **Compression Mode**; for any other mode it is `batch <input> <input>[zip] 1024 <mode> suffix=[zip]`, because the tool takes the mode positionally after the max size), so KoiCardTexTool first writes its compressed copies to a temporary sibling folder named after the input folder plus `[zip]` (for example `C:/KKAFIO/Downloads` → `C:/KKAFIO/Downloads[zip]`), named `CardA[zip].png` for an original `CardA.png`. Its output is streamed live into the log, the same way 7-Zip's output is.
 - When it finishes, KKAFIO moves everything from the `[zip]` folder back into the input folder (keeping the subfolder layout, overwriting any older `[zip]` copy), then deletes the `[zip]` folder. If any file can't be moved, the `[zip]` folder is kept so nothing is lost. The result is the same as before: compressed copies sit right alongside the originals.
+- **Compression Mode** _(Auto by default)_ — how KoiCardTexTool recompresses the textures: **Auto** picks PNG or JPEG per texture, **PNG** and **JPG** force one format, and **MainTex only** compresses only MainTex textures and leaves every other texture byte-for-byte untouched. CLI: `--mode {auto,png,jpg,maintex}`.
 - **Delete Original Cards** _(off by default)_: after the files have been moved back, finds every card whose filename ends in `[zip]`, and if the matching original (with `[zip]` removed from the name) still exists alongside it, sends the original to the Recycle Bin. Originals are only deleted when the compressed card is valid (complete PNG with a card payload); its size isn't compared.
 
 **7. Install Contents**
@@ -558,7 +559,7 @@ kkafio_cli delete-unused-mods [--exceptions TEXT | --exceptions-file FILE]
                               [--use-cache | --no-use-cache]
                               [--mods-dir DIR] [--chara-dir DIR] [--scene-dir DIR] [--coord-dir DIR]
 
-kkafio_cli compress-cards-textures [--input DIR] [--tool-path DIR]
+kkafio_cli compress-cards-textures [--input DIR] [--tool-path DIR] [--mode {auto,png,jpg,maintex}]
                                    [--delete-original | --no-delete-original]
 
 kkafio_cli create-backup  [--output DIR] [--filename NAME]

@@ -193,6 +193,42 @@
         }
       ]
     },
+    "CompressMode": {
+      "type": "select",
+      "label": "$option.CompressMode.label",
+      "description": "$option.CompressMode.description",
+      "default_case": "auto",
+      "cases": [
+        {
+          "name": "auto",
+          "label": "$option.CompressMode.case.auto.label",
+          "pipeline_override": {
+            "Mode": "auto"
+          }
+        },
+        {
+          "name": "png",
+          "label": "$option.CompressMode.case.png.label",
+          "pipeline_override": {
+            "Mode": "png"
+          }
+        },
+        {
+          "name": "jpg",
+          "label": "$option.CompressMode.case.jpg.label",
+          "pipeline_override": {
+            "Mode": "jpg"
+          }
+        },
+        {
+          "name": "maintex",
+          "label": "$option.CompressMode.case.maintex.label",
+          "pipeline_override": {
+            "Mode": "maintex"
+          }
+        }
+      ]
+    },
     "Convert": {
       "type": "switch",
       "label": "$option.Convert.label",
@@ -1538,6 +1574,7 @@
       "option": [
         "DownloadsInputPath",
         "KoiCardTexToolPath",
+        "CompressMode",
         "DeleteOriginalCards"
       ]
     },
