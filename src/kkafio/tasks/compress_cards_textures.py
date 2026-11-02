@@ -44,11 +44,9 @@ KOICARDTEXTOOL_EXE = "KoiCardTexTool.exe"
 COMPRESS_MODES = ("auto", "png", "jpg", "maintex")
 DEFAULT_MODE = "auto"
 
-# `mode` is positional and comes after `max_size`, so passing a mode means passing a max_size
-# too. 1024 is the tool's own default for it (Program.cs, `batch`: `maxSize = ... : 1024`, with
-# mode defaulting to "auto"), so a non-default mode changes nothing but the mode. It is only
-# added when a non-default mode is chosen, which leaves the "auto" command line as it was.
-MODE_MAX_SIZE = "1024"
+# KoiCardTexTool's own default for `max_size` (longest edge in px; 0 = don't scale). `max_size`
+# and `mode` are positional arguments of `batch`, in that order, and are always passed.
+DEFAULT_MAX_SIZE = 1024
 
 # Appended to the input folder's path to name the output folder, and passed to
 # the tool as `suffix=` so every compressed card is named "<name>[zip].png".
@@ -77,7 +75,21 @@ class CompressCardsTextures(BaseTask):
         self.input_path_str  : str  = cfg.get("InputPath", "")
         self.tool_path_str   : str  = cfg.get("KoiCardTexToolPath", "C:/KoiCardTexTool")
         self.mode            : str  = cfg.get("Mode", DEFAULT_MODE)
+        self.max_size_raw    : int | str | None = cfg.get("MaxSize", DEFAULT_MAX_SIZE)
         self.delete_original : bool = cfg.get("DeleteOriginalCards", False)
+
+    def _max_size(self) -> int:
+        """The configured longest-edge limit as a non-negative int (0 = don't scale)."""
+        raw = self.max_size_raw
+        if raw is None or (isinstance(raw, str) and not raw.strip()):
+            return DEFAULT_MAX_SIZE
+        try:
+            value = int(str(raw).strip())
+        except ValueError:
+            raise InputError(f"Max size must be a whole number of pixels, got {raw!r}.", tag="KOITEX")
+        if value < 0:
+            raise InputError(f"Max size can't be negative, got {value}.", tag="KOITEX")
+        return value
 
     def _find_exe(self, tool_dir: Path) -> Path | None:
         """Look for the exe directly inside tool_dir, then recursively (the
@@ -291,6 +303,8 @@ class CompressCardsTextures(BaseTask):
             raise InputError(f"Unknown compression mode {self.mode!r} "
                              f"(expected one of: {', '.join(COMPRESS_MODES)}).", tag="KOITEX")
 
+        max_size = self._max_size()
+
         exe_path = self._ensure_tool(tool_dir)
         if exe_path is None:
             raise ToolNotFoundError("CompressCardsTextures: KoiCardTexTool is not available", tag="KOITEX")
@@ -303,6 +317,7 @@ class CompressCardsTextures(BaseTask):
         logger.info("KOITEX", f"Output folder   : {output_path}")
         logger.info("KOITEX", f"KoiCardTexTool  : {exe_path}")
         logger.info("KOITEX", f"Mode            : {self.mode}")
+        logger.info("KOITEX", f"Max size        : {max_size if max_size else 'no scaling'}")
         logger.info("KOITEX", f"Delete originals: {self.delete_original}")
         logger.line()
 
@@ -310,10 +325,9 @@ class CompressCardsTextures(BaseTask):
         # back afterwards even if the run fails.
         backed_up = self._backup_zip_cards(input_path)
         try:
-            cmd = [str(exe_path), "batch", str(input_path), str(output_path)]
-            if self.mode != DEFAULT_MODE:
-                cmd += [MODE_MAX_SIZE, self.mode]       # positional: [max_size] [mode]
-            cmd.append(f"suffix={ZIP_SUFFIX}")
+            # positional: <in_dir> <out_dir> [max_size] [mode]
+            cmd = [str(exe_path), "batch", str(input_path), str(output_path),
+                   str(max_size), self.mode, f"suffix={ZIP_SUFFIX}"]
 
             try:
                 process = popen_text(

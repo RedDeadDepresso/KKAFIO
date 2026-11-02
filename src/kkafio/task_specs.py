@@ -364,6 +364,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "rest (default), png=lossless PNG only, jpg=JPEG for everything (smallest, but lossy and "
                        "drops transparency), maintex=auto for MainTex only, other textures untouched "
                        "(default: CompressCardsTextures.Mode from config)"),
+            Value("--max-size", key="MaxSize", type=int, metavar="PX", default=None,
+                  help="Longest edge, in pixels, that textures are scaled down to; 0 = don't scale "
+                       "(default: CompressCardsTextures.MaxSize from config, 1024)"),
             Toggle("delete-original", key="DeleteOriginalCards",
                    help="Send the original card to the Recycle Bin once a compressed "
                         "[zip] version exists alongside it (default: off)",

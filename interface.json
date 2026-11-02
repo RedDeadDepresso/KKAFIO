@@ -171,6 +171,24 @@
         "KoiCardTexToolPath": "{koi_card_tex_tool_path}"
       }
     },
+    "CompressMaxSize": {
+      "type": "input",
+      "label": "$option.CompressMaxSize.label",
+      "description": "$option.CompressMaxSize.description",
+      "inputs": [
+        {
+          "name": "max_size",
+          "label": "$option.CompressMaxSize.input.max_size.label",
+          "default": "1024",
+          "pipeline_type": "int",
+          "verify": "^\\d+$",
+          "pattern_msg": "$option.CompressMaxSize.input.max_size.pattern_msg"
+        }
+      ],
+      "pipeline_override": {
+        "MaxSize": "{max_size}"
+      }
+    },
     "DeleteOriginalCards": {
       "type": "switch",
       "label": "$option.DeleteOriginalCards.label",
@@ -1575,6 +1593,7 @@
         "DownloadsInputPath",
         "KoiCardTexToolPath",
         "CompressMode",
+        "CompressMaxSize",
         "DeleteOriginalCards"
       ]
     },

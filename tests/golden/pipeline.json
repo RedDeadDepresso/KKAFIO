@@ -446,6 +446,7 @@
       "input_path_str": {
        "__path__": "<ROOT>/work"
       },
+      "max_size_raw": 1024,
       "mode": "auto",
       "tool_path_str": "C:/KoiCardTexTool"
      },
@@ -960,6 +961,7 @@
       "input_path_str": {
        "__path__": "<ROOT>/work"
       },
+      "max_size_raw": 1024,
       "mode": "auto",
       "tool_path_str": "C:/KoiCardTexTool"
      },

@@ -15,17 +15,26 @@ class _FakeProc:
         return 0
 
 
-def _task(tmp_path: Path, delete_original=False, mode="auto"):
+def _task(tmp_path: Path, delete_original=False, mode="auto", max_size=1024):
     cfg = mock.Mock()
     cfg.compress_cards_textures = {
         "InputPath": str(tmp_path / "Downloads"),
         "KoiCardTexToolPath": str(tmp_path / "tool"),
         "Mode": mode,
+        "MaxSize": max_size,
         "DeleteOriginalCards": delete_original,
     }
     (tmp_path / "Downloads").mkdir()
     (tmp_path / "tool").mkdir()
     (tmp_path / "tool" / cct.KOICARDTEXTOOL_EXE).write_bytes(b"")
+    return cct.CompressCardsTextures(cfg, None)
+
+
+def _task_fresh(tmp_path: Path, max_size):
+    cfg = mock.Mock()
+    cfg.compress_cards_textures = {"InputPath": str(tmp_path), "KoiCardTexToolPath": str(tmp_path),
+                                   "Mode": "auto", "MaxSize": max_size, "DeleteOriginalCards": False}
+    (tmp_path / cct.KOICARDTEXTOOL_EXE).write_bytes(b"")
     return cct.CompressCardsTextures(cfg, None)
 
 
@@ -35,17 +44,34 @@ def test_command_uses_zip_output_folder_and_suffix(tmp_path):
         task.run()
     cmd = popen.call_args.args[0]
     assert cmd == [str(tmp_path / "tool" / cct.KOICARDTEXTOOL_EXE), "batch",
-                   str(tmp_path / "Downloads"), f"{tmp_path / 'Downloads'}[zip]", "suffix=[zip]"]
+                   str(tmp_path / "Downloads"), f"{tmp_path / 'Downloads'}[zip]", "1024", "auto", "suffix=[zip]"]
 
 
-def test_non_default_mode_is_passed_after_max_size(tmp_path):
-    task = _task(tmp_path, mode="maintex")
+def test_mode_and_max_size_are_passed_positionally(tmp_path):
+    task = _task(tmp_path, mode="maintex", max_size="2048")
     with mock.patch.object(cct, "popen_text", return_value=_FakeProc()) as popen:
         task.run()
     cmd = popen.call_args.args[0]
     assert cmd == [str(tmp_path / "tool" / cct.KOICARDTEXTOOL_EXE), "batch",
                    str(tmp_path / "Downloads"), f"{tmp_path / 'Downloads'}[zip]",
-                   cct.MODE_MAX_SIZE, "maintex", "suffix=[zip]"]
+                   "2048", "maintex", "suffix=[zip]"]
+
+
+def test_max_size_zero_means_no_scaling(tmp_path):
+    task = _task(tmp_path, max_size=0)
+    with mock.patch.object(cct, "popen_text", return_value=_FakeProc()) as popen:
+        task.run()
+    assert popen.call_args.args[0][4] == "0"
+
+
+def test_bad_max_size_is_rejected_before_anything_runs(tmp_path):
+    import pytest
+    from kkafio.core.errors import InputError
+    for bad in (-1, "abc"):
+        task = _task_fresh(tmp_path, bad)
+        with mock.patch.object(cct, "popen_text") as popen, pytest.raises(InputError):
+            task.run()
+        popen.assert_not_called()
 
 
 def test_unknown_mode_is_rejected_before_anything_runs(tmp_path):

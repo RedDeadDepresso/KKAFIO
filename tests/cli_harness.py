@@ -408,7 +408,7 @@ def configured_tasks() -> list[dict]:
           InstalledModsDir=f("/cfg/in-mods"), DownloadedModsDir=f("/cfg/out-mods"), CharaDir=f("/cfg/chara"),
           SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coord")),
         t("CompressCardsTextures", DownloadsInputPath=f("/cfg/in"), KoiCardTexToolPath=f("/cfg/tool"),
-          CompressMode=opt_select("maintex"), DeleteOriginalCards=sw(True)),
+          CompressMode=opt_select("maintex"), CompressMaxSize=opt_input("2048"), DeleteOriginalCards=sw(True)),
         t("InstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Mods"),
           ExtractArchive=sw(False)),
         t("UninstallContents", DownloadsInputPath=f("/cfg/in"), InstallContentTypes=opt_checkbox("Chara")),
