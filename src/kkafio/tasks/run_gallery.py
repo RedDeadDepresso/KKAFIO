@@ -17,10 +17,16 @@ A collapsible sidebar on the right of the window lists the mods (GUIDs) the card
 uses, marking each installed or missing in the input and output mods folders (the game's, or the
 Input / Output Mods Directory — a mod in either counts as installed):
 a missing one has a search icon that looks its GUID up on Google (see dialogs/gallery/mods_panel.py).
+
+Cards sent to a gallery's trash are not sent to the Recycle Bin directly: when the window closes
+they are handed to Delete Cards, which also deletes the character's matching coordinates (Include
+Coordinates) and the mods nothing else uses (Check Shared Mods), looking for mods in the output
+mods directory.
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from kkafio.cards.chara import hint_language
@@ -47,6 +53,9 @@ class RunGallery(BaseTask):
         self.input_mods_dir_str  : str = cfg.get("InputModsDir", "")
         self.output_mods_dir_str : str = cfg.get("OutputModsDir", "")
         self.use_cache     : bool = cfg.get("UseCache", True)
+        self.check_shared_mods  : bool = cfg.get("CheckSharedMods", True)
+        self.include_coordinates: bool = cfg.get("IncludeCoordinates", True)
+        self._output_mods_dir  : Path | None = None     # set by _card_mods(): where Delete Cards looks for mods
 
     # ------------------------------------------------------------------
     # Folders
@@ -109,7 +118,47 @@ class RunGallery(BaseTask):
     def _card_mods(self) -> CardMods:
         game_type = getattr(self.config, "config_data", {}).get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         input_dir, output_dir = self._mods_dirs()
+        self._output_mods_dir = output_dir
         return CardMods(ModsLookup(input_dir, game_type, self.use_cache, extra_dirs=(output_dir,)))
+
+    # ------------------------------------------------------------------
+    # Deleting the trashed cards
+    # ------------------------------------------------------------------
+
+    def _delete_cards_settings(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
+                               coord_dir: Path, output_mods_dir: Path | None) -> dict:
+        """The Delete Cards options for the cards left in the gallery's trash. The mods folder is
+        the output mods directory (explicit, so AutoResolve is off): that is where the downloaded
+        mods live, and the only folder whose zipmods are deleted. The shared-mod check sees every
+        folder the gallery shows plus the game's own, so a mod another card still uses is kept."""
+        game = self.config.game_path
+        dirs: list[str] = []
+        seen: set[str] = set()
+        for d in [*chara_dirs, game.get("charaFemale"), game.get("charaMale")]:
+            if d and (key := os.path.normcase(os.path.realpath(str(d)))) not in seen:
+                seen.add(key)
+                dirs.append(str(d))
+        return {
+            "Enable": True,
+            "ContentPaths": [str(p) for p in paths],
+            "CheckSharedMods": self.check_shared_mods,
+            "IncludeCoordinates": self.include_coordinates,
+            "UseCache": self.use_cache,
+            "AutoResolve": False,
+            "ModsDir": str(output_mods_dir) if output_mods_dir is not None else "",
+            "CharaDirs": dirs,
+            "SceneDir": str(scene_dir) if scene_dir is not None else "",
+            "CoordDir": str(coord_dir),
+        }
+
+    def _delete_trashed(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
+                        coord_dir: Path, output_mods_dir: Path | None) -> None:
+        from kkafio.tasks.delete_cards import DeleteCards
+        logger.line()
+        logger.info(TAG, f"{len(paths)} trashed card(s) - handing them to Delete Cards")
+        DeleteCards(self.config, self.file_manager,
+                    settings=self._delete_cards_settings(paths, chara_dirs, scene_dir, coord_dir,
+                                                         output_mods_dir)).run()
 
     # ------------------------------------------------------------------
     # Run
@@ -161,6 +210,11 @@ class RunGallery(BaseTask):
         # saving) when the window is gone, also if it failed.
         initial = next(i for i, tab in enumerate(tabs) if tab.items)
         logger.info(TAG, "Opening the gallery: " + ", ".join(f"{tab.label} {len(tab.items)}" for tab in tabs))
-        moved = gallery_dialog(t("dialog.gallery.title"), tabs, initial, card_mods)
+        # The sidebar's lookup keeps the output folder only when it exists; that is the one whose
+        # mods Delete Cards may delete.
+        output_mods_dir = self._output_mods_dir
+        moved = gallery_dialog(
+            t("dialog.gallery.title"), tabs, initial, card_mods,
+            on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, output_mods_dir))
         logger.line()
         logger.success(TAG, "Done — moved: " + ", ".join(f"{tab.label} {n}" for tab, n in zip(tabs, moved)))

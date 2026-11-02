@@ -540,8 +540,11 @@
     },
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -840,8 +843,11 @@
     },
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",

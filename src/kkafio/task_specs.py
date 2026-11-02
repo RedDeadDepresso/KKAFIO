@@ -539,6 +539,15 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
         # InputModsDir / OutputModsDir are combined from several flags in the hook.
         prepare=_run_gallery_prepare,
         options=(
+            Toggle("check-shared-mods", key="CheckSharedMods",
+                   help="When the gallery closes, cards moved to the trash are deleted with Delete Cards; "
+                        "before it deletes a zipmod from the output mods directory it verifies no other "
+                        "installed character/scene/coordinate still uses it (default: on)",
+                   off_help="Skip the shared-mod check — faster, but may delete mods other characters still need"),
+            Toggle("include-coordinates", key="IncludeCoordinates",
+                   help="When deleting a trashed character card, also delete its matching coordinate "
+                        "cards and their mods (default: on)",
+                   off_help="Only delete the character card itself, leave its coordinates alone"),
             Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "pointing it at the game's chara folder also uses female/ and male/)"),

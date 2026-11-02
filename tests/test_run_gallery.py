@@ -34,12 +34,15 @@ def test_options_to_config():
     assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["InputModsDir"], cfg["OutputModsDir"]) \
         == ("X", "Y", "Z", "M", "O")
     assert _build_task_config("RunGallery", True, {})["UseCache"] is True
+    assert _build_task_config("RunGallery", True, {})["CheckSharedMods"] is True
+    assert _build_task_config("RunGallery", True, {})["IncludeCoordinates"] is True
 
 
 def test_interface_json_declares_the_task():
     interface = json.loads((ROOT / "interface.json").read_text(encoding="utf-8"))
     task = next(t for t in interface["task"] if t["name"] == "RunGallery")
-    assert task["option"] == ["CharaDir", "SceneDir", "CoordDir", "InputModsDir", "OutputModsDir", "UseCache"]
+    assert task["option"] == ["CheckSharedMods", "IncludeCoordinates", "CharaDir", "SceneDir", "CoordDir", "InputModsDir",
+                            "OutputModsDir", "UseCache"]
 
 
 def test_scene_dir_custom_default_and_missing(tmp_path):
@@ -98,8 +101,8 @@ def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
     log = []
     shown = {}
 
-    def fake_dialog(title, tabs, initial=0, mods=None):
-        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods)
+    def fake_dialog(title, tabs, initial=0, mods=None, on_trash=None):
+        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods, on_trash=on_trash)
         return [0] * len(tabs)
 
     def chara(*a, **k):
@@ -140,3 +143,35 @@ def test_a_failing_tab_still_finishes_the_ones_already_read(tmp_path):
     task = _task(tmp_path, game={"scene": tmp_path})
     with pytest.raises(RuntimeError):
         _run(task, tmp_path, chara_error=RuntimeError("boom"))
+
+
+def test_trashed_cards_are_handed_to_delete_cards_with_the_output_mods_dir(tmp_path):
+    mods, out, scenes = tmp_path / "mods", tmp_path / "out", tmp_path / "s"
+    for d in (mods, out, scenes):
+        d.mkdir()
+    task = _task(tmp_path, game={"scene": scenes, "mods": mods}, InputModsDir=str(mods), OutputModsDir=str(out),
+                 CheckSharedMods=False, IncludeCoordinates=False, UseCache=False)
+    shown, _ = _run(task, tmp_path)
+    seen = {}
+
+    class FakeDelete:
+        def __init__(self, config, fm, settings=None):
+            seen["settings"] = settings
+
+        def run(self):
+            seen["ran"] = True
+
+    with mock.patch("kkafio.tasks.delete_cards.DeleteCards", FakeDelete):
+        shown["on_trash"]([tmp_path / "a.png", tmp_path / "b.png"])
+    st = seen["settings"]
+    assert seen["ran"] and st["ContentPaths"] == [str(tmp_path / "a.png"), str(tmp_path / "b.png")]
+    assert st["ModsDir"] == str(out) and st["AutoResolve"] is False
+    assert st["CheckSharedMods"] is False and st["IncludeCoordinates"] is False and st["UseCache"] is False
+    assert st["CoordDir"] == str(tmp_path / "c") and st["SceneDir"] == str(scenes)
+    assert str(tmp_path / "f") in st["CharaDirs"]
+
+    # no output folder: Delete Cards gets no mods folder (and, not auto-resolving, leaves mods alone)
+    shown, _ = _run(_task(tmp_path), tmp_path)
+    with mock.patch("kkafio.tasks.delete_cards.DeleteCards", FakeDelete):
+        shown["on_trash"]([tmp_path / "a.png"])
+    assert seen["settings"]["ModsDir"] == ""

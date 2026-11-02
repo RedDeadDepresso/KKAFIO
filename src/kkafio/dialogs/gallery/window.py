@@ -339,16 +339,20 @@ def manual_dialog(title: str, items: Sequence[CharaItem],
 
 
 def gallery_dialog(title: str, tabs: Sequence[GalleryTab], initial: int = 0,
-                   mods=None) -> list[int]:
+                   mods=None, on_trash: Callable[[list[Path]], None] | None = None) -> list[int]:
     """Show one window holding a gallery per tab; returns, per tab, how many cards were moved
     before it was closed. With a single tab there is no tab bar (that is `manual_dialog`).
 
     `mods` (a mods_panel.CardMods) adds the collapsible mod dependencies sidebar on the right,
-    listing the mods of the card under the cursor; None leaves it out."""
+    listing the mods of the card under the cursor; None leaves it out.
+
+    `on_trash` receives the paths of the cards left in the galleries' trash when the window closes
+    normally, and deletes them itself (Run Gallery hands them to Delete Cards); None sends them to
+    the Recycle Bin."""
     if not tabs:
         raise ValueError("gallery_dialog needs at least one tab")
     try:
-        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1), mods)
+        return _ctk_dialog(title, list(tabs), min(max(initial, 0), len(tabs) - 1), mods, on_trash)
     except ImportError as e:                       # tkinter / customtkinter missing
         raise TaskFailedError(f"The character gallery needs tkinter and customtkinter: {e}") from e
     finally:
@@ -393,7 +397,8 @@ class _Gallery:
         self.cursor = lambda: None                 # the card under the keyboard cursor (None: no card)
 
 
-def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> list[int]:
+def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None,
+                on_trash: Callable[[list[Path]], None] | None = None) -> list[int]:
     import customtkinter as ctk
 
     root = new_window(title, topmost=False)       # sorting a library takes a while
@@ -498,7 +503,11 @@ def _ctk_dialog(title: str, tabs: list[GalleryTab], initial: int, mods=None) -> 
             sidebar.dispose()
         view_state.remember(keys[current["index"]], {k: g.view() for k, g in zip(keys, galleries)},
                             mods_open=sidebar.is_open if sidebar is not None else None)
-    _send_to_bin([item for g in galleries for item in g.trashed_items()])      # only a window that closed normally
+    trashed = [item for g in galleries for item in g.trashed_items()]          # only a window that closed normally
+    if on_trash is None:
+        _send_to_bin(trashed)
+    elif trashed:
+        on_trash([item.path for item in trashed])
     return [g.moved_count() for g in galleries]
 
 

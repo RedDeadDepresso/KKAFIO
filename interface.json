@@ -1538,6 +1538,8 @@
       "description": "$task.RunGallery.description",
       "group": ["card-management"],
       "option": [
+        "CheckSharedMods",
+        "IncludeCoordinates",
         "CharaDir",
         "SceneDir",
         "CoordDir",

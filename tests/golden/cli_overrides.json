@@ -5075,8 +5075,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5106,8 +5109,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5137,8 +5143,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5168,8 +5177,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5199,8 +5211,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5230,8 +5245,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5261,8 +5279,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -5285,6 +5306,8 @@
  "configured: run-gallery [all-first]": {
   "argv": [
    "run-gallery",
+   "--check-shared-mods",
+   "--include-coordinates",
    "--chara-dir",
    "S_chara_dir",
    "--scene-dir",
@@ -5303,8 +5326,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": true,
       "coord_dir_str": "S_coord_dir",
+      "include_coordinates": true,
       "input_mods_dir_str": "S_input_mods_dir",
       "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
@@ -5327,6 +5353,8 @@
  "configured: run-gallery [all-last]": {
   "argv": [
    "run-gallery",
+   "--no-check-shared-mods",
+   "--no-include-coordinates",
    "--chara-dir",
    "S_chara_dir",
    "--scene-dir",
@@ -5345,8 +5373,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": false,
       "coord_dir_str": "S_coord_dir",
+      "include_coordinates": false,
       "input_mods_dir_str": "S_input_mods_dir",
       "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
@@ -16629,8 +16660,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16660,8 +16694,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16691,8 +16728,44 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --check-shared-mods": {
+  "argv": [
+   "run-gallery",
+   "--check-shared-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_output_mods_dir": null,
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16722,8 +16795,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16753,8 +16829,44 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "S_coord_dir",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --include-coordinates": {
+  "argv": [
+   "run-gallery",
+   "--include-coordinates"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_output_mods_dir": null,
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16784,8 +16896,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16815,8 +16930,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "S_input_mods_dir",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16846,8 +16964,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16877,10 +16998,79 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "S_mods_dir",
       "output_mods_dir_str": "S_mods_dir",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --no-check-shared-mods": {
+  "argv": [
+   "run-gallery",
+   "--no-check-shared-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_output_mods_dir": null,
+      "chara_dir_str": "",
+      "check_shared_mods": false,
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "RunGallery",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RunGallery"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "run-gallery --no-include-coordinates": {
+  "argv": [
+   "run-gallery",
+   "--no-include-coordinates"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_output_mods_dir": null,
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "include_coordinates": false,
+      "input_mods_dir_str": "",
+      "output_mods_dir_str": "",
       "scene_dir_str": "",
       "use_cache": true
      },
@@ -16907,8 +17097,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16938,8 +17131,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -16969,8 +17165,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "",
@@ -17000,8 +17199,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -17031,8 +17233,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "S_scene_dir",
@@ -17061,8 +17266,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "",
+      "check_shared_mods": true,
       "coord_dir_str": "",
+      "include_coordinates": true,
       "input_mods_dir_str": "",
       "output_mods_dir_str": "",
       "scene_dir_str": "",
@@ -17085,6 +17293,8 @@
  "run-gallery [all-first]": {
   "argv": [
    "run-gallery",
+   "--check-shared-mods",
+   "--include-coordinates",
    "--chara-dir",
    "S_chara_dir",
    "--scene-dir",
@@ -17103,8 +17313,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": true,
       "coord_dir_str": "S_coord_dir",
+      "include_coordinates": true,
       "input_mods_dir_str": "S_input_mods_dir",
       "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
@@ -17127,6 +17340,8 @@
  "run-gallery [all-last]": {
   "argv": [
    "run-gallery",
+   "--no-check-shared-mods",
+   "--no-include-coordinates",
    "--chara-dir",
    "S_chara_dir",
    "--scene-dir",
@@ -17145,8 +17360,11 @@
    "events": [
     {
      "attrs": {
+      "_output_mods_dir": null,
       "chara_dir_str": "S_chara_dir",
+      "check_shared_mods": false,
       "coord_dir_str": "S_coord_dir",
+      "include_coordinates": false,
       "input_mods_dir_str": "S_input_mods_dir",
       "output_mods_dir_str": "S_output_mods_dir",
       "scene_dir_str": "S_scene_dir",
