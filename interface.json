@@ -443,17 +443,17 @@
       "default_case": ["Chara", "Mods", "Coords", "Scenes", "Overlays"],
       "cases": [
         {
+          "name": "Scenes",
+          "label": "$option.InstallContentTypes.case.Scenes.label",
+          "pipeline_override": {
+            "Scenes": true
+          }
+        },
+        {
           "name": "Chara",
           "label": "$option.InstallContentTypes.case.Chara.label",
           "pipeline_override": {
             "Chara": true
-          }
-        },
-        {
-          "name": "Mods",
-          "label": "$option.InstallContentTypes.case.Mods.label",
-          "pipeline_override": {
-            "Mods": true
           }
         },
         {
@@ -464,10 +464,10 @@
           }
         },
         {
-          "name": "Scenes",
-          "label": "$option.InstallContentTypes.case.Scenes.label",
+          "name": "Mods",
+          "label": "$option.InstallContentTypes.case.Mods.label",
           "pipeline_override": {
-            "Scenes": true
+            "Mods": true
           }
         },
         {
@@ -992,17 +992,17 @@
       "default_case": ["Chara", "Scene", "Coord"],
       "cases": [
         {
-          "name": "Chara",
-          "label": "$option.ContentTypes.case.Chara.label",
-          "pipeline_override": {
-            "ScanChara": true
-          }
-        },
-        {
           "name": "Scene",
           "label": "$option.ContentTypes.case.Scene.label",
           "pipeline_override": {
             "ScanScene": true
+          }
+        },
+        {
+          "name": "Chara",
+          "label": "$option.ContentTypes.case.Chara.label",
+          "pipeline_override": {
+            "ScanChara": true
           }
         },
         {
@@ -1554,8 +1554,8 @@
         "KeepStrategy",
         "DuplicateAction",
         "UseCache",
-        "CharaDir",
         "SceneDir",
+        "CharaDir",
         "CoordDir",
         "ModsDir",
         "OverlaysDir"
@@ -1575,11 +1575,11 @@
         "TelegramChatLinks",
         "OpenReport",
         "UseCache",
-        "InstalledModsDir",
-        "DownloadedModsDir",
-        "CharaDir",
         "SceneDir",
-        "CoordDir"
+        "CharaDir",
+        "CoordDir",
+        "InstalledModsDir",
+        "DownloadedModsDir"
       ]
     },
     {
@@ -1687,8 +1687,8 @@
         "ManageLibraryArchiveOutputPath",
         "ManageLibraryArchiveFormat",
         "ManageLibraryArchiveOptions",
-        "CharaDir",
         "SceneDir",
+        "CharaDir",
         "CoordDir",
         "InstalledModsDir",
         "DownloadedModsDir",
@@ -1740,8 +1740,8 @@
         "IncludeCoordinates",
         "AutoResolve",
         "UseCache",
-        "ModsDir",
-        "CoordDir"
+        "CoordDir",
+        "ModsDir"
       ]
     },
     {
@@ -1757,10 +1757,10 @@
         "IncludeCoordinates",
         "AutoResolve",
         "UseCache",
-        "ModsDir",
-        "CharaDir",
         "SceneDir",
-        "CoordDir"
+        "CharaDir",
+        "CoordDir",
+        "ModsDir"
       ]
     },
     {
@@ -1776,10 +1776,10 @@
         "IncludeCoordinates",
         "AutoResolve",
         "UseCache",
-        "ModsDir",
-        "CharaDir",
         "SceneDir",
-        "CoordDir"
+        "CharaDir",
+        "CoordDir",
+        "ModsDir"
       ]
     },
     {
@@ -1807,10 +1807,10 @@
       "option": [
         "ExceptionList",
         "UseCache",
-        "ModsDir",
-        "CharaDir",
         "SceneDir",
-        "CoordDir"
+        "CharaDir",
+        "CoordDir",
+        "ModsDir"
       ]
     }
   ],
@@ -1830,8 +1830,8 @@
         {
           "name": "FilterDuplicateContents",
           "option": {
-            "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
+            "CharaDir": "C:/KKAFIO/Downloads",
             "CoordDir": "C:/KKAFIO/Downloads",
             "ModsDir": "C:/KKAFIO/Downloads",
             "OverlaysDir": "C:/KKAFIO/Downloads"
@@ -1841,20 +1841,20 @@
           "name": "DownloadMissingMods",
           "enabled": false,
           "option": {
-            "DownloadedModsDir": "C:/KKAFIO/Downloads",
-            "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
-            "CoordDir": "C:/KKAFIO/Downloads"
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads",
+            "DownloadedModsDir": "C:/KKAFIO/Downloads"
           }
         },
         {
           "name": "ManageLibrary",
           "enabled": false,
           "option": {
-            "DownloadedModsDir": "C:/KKAFIO/Downloads",
-            "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
-            "CoordDir": "C:/KKAFIO/Downloads"
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads",
+            "DownloadedModsDir": "C:/KKAFIO/Downloads"
           }
         },
         {
@@ -1870,6 +1870,10 @@
       "label": "$preset.OrganizeInstalledContents.label",
       "description": "$preset.OrganizeInstalledContents.description",
       "task": [
+        {
+          "name": "DeleteCards",
+          "enabled": false
+        },
         {
           "name": "FilterDuplicateContents",
           "enabled": false
@@ -1887,6 +1891,10 @@
           "enabled": false
         },
         {
+          "name": "ReviewSimilarChara",
+          "enabled": false
+        },
+        {
           "name": "GroupCoordinates",
           "enabled": false
         },
@@ -1899,7 +1907,7 @@
           "enabled": false
         },
         {
-          "name": "DeleteCards",
+          "name": "ManageLibrary",
           "enabled": false
         }
       ]
@@ -1945,10 +1953,10 @@
           "name": "DownloadMissingMods",
           "enabled": false,
           "option": {
-            "DownloadedModsDir": "C:/KKAFIO/Downloads",
-            "CharaDir": "C:/KKAFIO/Downloads",
             "SceneDir": "C:/KKAFIO/Downloads",
-            "CoordDir": "C:/KKAFIO/Downloads"
+            "CharaDir": "C:/KKAFIO/Downloads",
+            "CoordDir": "C:/KKAFIO/Downloads",
+            "DownloadedModsDir": "C:/KKAFIO/Downloads"
           }
         },
         {
