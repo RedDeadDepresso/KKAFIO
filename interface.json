@@ -1487,13 +1487,13 @@
       "default_expand": true
     },
     {
-      "name": "chara-management",
-      "label": "$group.chara-management.label",
+      "name": "scene-management",
+      "label": "$group.scene-management.label",
       "default_expand": true
     },
     {
-      "name": "scene-management",
-      "label": "$group.scene-management.label",
+      "name": "chara-management",
+      "label": "$group.chara-management.label",
       "default_expand": true
     },
     {
