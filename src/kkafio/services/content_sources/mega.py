@@ -32,6 +32,7 @@ import os
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
+from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.net import RETRY_ATTEMPTS, is_transient, retry_delay, safe_filename
@@ -338,11 +339,13 @@ async def _download_mega_file(
     hkey = f"mega:{share_handle or '-'}:{file['handle']}"
     if skip_downloaded and hkey in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[hkey]).name}")
+        progress.count("skipped")
         return hkey, None, True
 
     dest = directory / file["name"]
     part = _mega_part_path(dest, file["key"])
     for attempt in range(1, RETRY_ATTEMPTS + 1):
+        handle = None
         try:
             import aiofiles
             dl = await _mega_link_for(client, file["handle"], folder=share_handle)
@@ -376,11 +379,14 @@ async def _download_mega_file(
                     logger.info("DLOAD", f"Resuming: {file['name']} from {offset} bytes")
                 else:
                     logger.info("DLOAD", f"Downloading: {file['name']}")
+                handle = progress.begin(file["name"], expected or None)
+                handle.update(written)
                 async with aiofiles.open(part, "ab" if offset else "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
                         plain = decryptor.update(chunk)
                         written += len(plain)
                         await f.write(plain)
+                        handle.update(written)
                     tail = decryptor.finalize()
                     if tail:
                         written += len(tail)
@@ -391,6 +397,7 @@ async def _download_mega_file(
                 raise IOError(f"incomplete download ({written} of {expected} bytes)")
             os.replace(part, dest)
             history[hkey] = str(dest)
+            handle.close(ok=True)
             return hkey, None, False
         except Exception as exc:
             if attempt < RETRY_ATTEMPTS and (is_transient(exc) or isinstance(exc, IOError)):
@@ -399,7 +406,11 @@ async def _download_mega_file(
                     f"  {file['name']} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
                 continue
+            progress.count("failed")
             return hkey, exc, False
+        finally:
+            if handle is not None:
+                handle.close()          # no-op after a success; drops the row on a retry / cancel
     return hkey, RuntimeError("retries exhausted"), False  # not reached
 
 

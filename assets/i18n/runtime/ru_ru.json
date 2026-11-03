@@ -187,5 +187,15 @@
   "dialog.password.pawchive_body": "Войдите на pawchive.pw, затем:\n1. Откройте DevTools (инструменты разработчика) в браузере (F12)\n2. Chrome/Edge: Application (Приложение) → Storage (Хранилище) → Cookies (Файлы cookie) → https://pawchive.pw\n    Firefox: Storage → Cookies → https://pawchive.pw\n3. Найдите «session» и скопируйте его Value (значение)\n\nВставьте значение ниже (Отмена — продолжить без входа; большие временные файлы на t1.pawchive.pw скачаны не будут):",
   "dialog.password.archive_title": "Введите пароль",
   "dialog.password.archive_body": "Ошибка при обработке архива {archive}. Возможно, он защищён паролем?",
-  "dialog.password.archive_retry": "Неверный пароль, либо {archive} повреждён. Введите пароль ещё раз или нажмите «Отмена»."
+  "dialog.password.archive_retry": "Неверный пароль, либо {archive} повреждён. Введите пароль ещё раз или нажмите «Отмена».",
+  "dialog.progress.mods_title": "KKAFIO — Загрузка модов",
+  "dialog.progress.contents_title": "KKAFIO — Загрузка контента",
+  "dialog.progress.waiting": "Ожидание первой загрузки…",
+  "dialog.progress.working_on": "Обрабатывается: {name}",
+  "dialog.progress.items_mods": "Обработано модов: {done} из {total}",
+  "dialog.progress.items_links": "Обработано ссылок: {done} из {total}",
+  "dialog.progress.counts": "Загружено {ok} · Пропущено {skipped} · Ошибок {failed}",
+  "dialog.progress.cancelling": "Отмена…",
+  "dialog.progress.finished": "Готово",
+  "dialog.progress.finished_issues": "Готово — ошибок: {failed}. Подробности в журнале и отчёте."
 }

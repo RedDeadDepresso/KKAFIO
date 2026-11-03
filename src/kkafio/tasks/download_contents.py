@@ -66,7 +66,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from kkafio.core import progress
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
+from kkafio.dialogs.progress_dialog import download_progress
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.bepis import BEPIS_URL, download_bepis
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
@@ -268,9 +271,17 @@ class DownloadContents(BaseTask):
         totals = _Totals()
         results: list[_LinkResult] = []
 
+        async def _run() -> None:
+            # The progress window is shown for the whole run; Cancel in it cancels this coroutine.
+            async with download_progress(t("dialog.progress.contents_title"), "links", len(urls)):
+                await self._download_all(
+                    urls, output_dir, history, totals, kkd_session, pixiv_session, results)
+
         try:
-            asyncio.run(self._download_all(
-                urls, output_dir, history, totals, kkd_session, pixiv_session, results))
+            try:
+                asyncio.run(_run())
+            except asyncio.CancelledError:
+                logger.warning("DLOAD", "Cancelled from the progress window — stopping.")
         finally:
             # Also when interrupted: the links not reached are listed as such.
             report_path = self._write_report(output_dir, urls, results, totals)
@@ -448,6 +459,7 @@ class DownloadContents(BaseTask):
             for link in urls:
                 url_str, page_start, page_end, follow_illustrations = link
                 entry = _LinkResult(link)
+                progress.set_current(_link_label(link))
                 try:
                     result = await self._download_url(
                         run, url_str, page_start, page_end, follow_illustrations)
@@ -457,6 +469,8 @@ class DownloadContents(BaseTask):
                         entry.error = "Skipped — no session / unsupported link (see the log)"
                         if results is not None:
                             results.append(entry)
+                        progress.count("failed")
+                        progress.item_done()
                         continue
                     entry.ok, entry.skipped, entry.failed = result
                 except Exception as exc:
@@ -464,9 +478,11 @@ class DownloadContents(BaseTask):
                     logger.error("DLOAD", f"Failed to process {url_str}: {exc}")
                     entry.failed += 1
                     entry.error = f"Error: {exc}"
+                    progress.count("failed")
                 totals.add(entry.ok, entry.skipped, entry.failed)
                 if results is not None:
                     results.append(entry)
+                progress.item_done()
                 # Persist after every URL so an interrupted run keeps
                 # everything downloaded so far.
                 history_store.save_history(history)
@@ -529,6 +545,7 @@ class DownloadContents(BaseTask):
 
         logger.error("DLOAD",
             f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, mega.nz or drive.google.com): {url_str}")
+        progress.count("failed")
         return 0, 0, 1
 
     @staticmethod

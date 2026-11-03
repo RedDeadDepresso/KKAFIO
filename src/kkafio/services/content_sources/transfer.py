@@ -11,6 +11,7 @@ import asyncio
 import os
 from pathlib import Path
 
+from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.net import MAX_CONNECTIONS, MAX_CONSECUTIVE_BAD_PAGES, RETRY_ATTEMPTS, is_transient, resolve_filename, retry_delay, strip_page
@@ -22,6 +23,7 @@ async def download_file(
     """Download one file. Returns (url, error, was_skipped)."""
     if skip_downloaded and url in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
+        progress.count("skipped")
         return url, None, True
 
     for attempt in range(1, RETRY_ATTEMPTS + 1):
@@ -31,6 +33,7 @@ async def download_file(
         # Contents would happily pick it up).
         part: Path | None = None
         completed = False
+        handle = None
         try:
             import aiofiles
             async with client.stream("GET", url) as response:
@@ -39,12 +42,17 @@ async def download_file(
                 dest = directory / filename
                 part = dest.with_name(dest.name + ".part")
                 logger.info("DLOAD", f"Downloading: {filename}")
+                handle = progress.begin(filename, progress.content_length(response))
+                received = 0
                 async with aiofiles.open(part, "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
                         await f.write(chunk)
+                        received += len(chunk)
+                        handle.update(received)
             os.replace(part, dest)
             completed = True
             history[url] = str(dest)
+            handle.close(ok=True)
             return url, None, False
         except Exception as exc:
             if attempt < RETRY_ATTEMPTS and is_transient(exc):
@@ -53,8 +61,11 @@ async def download_file(
                     f"  {url} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
                 continue
+            progress.count("failed")
             return url, exc, False
         finally:
+            if handle is not None:
+                handle.close()          # no-op after a success; drops the row on a retry / cancel
             if part is not None and not completed:
                 # Covers errors and cancellation (Stop / Ctrl+C) alike.
                 try:

@@ -6,6 +6,7 @@ import asyncio
 import os
 from pathlib import Path
 
+from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.services.content_sources.card_size import kk_size_matches
 from kkafio.services.content_sources.net import RETRY_ATTEMPTS, is_rate_limited, is_transient, retry_after_seconds, retry_delay
@@ -37,6 +38,7 @@ async def _download_pawchive_url(
         # filtered transfer never leaves anything under the final name.
         part: Path | None = None
         completed = False
+        handle = None
         try:
             import aiofiles
             verdict: bool | None = None        # None until the PNG header is checked
@@ -44,11 +46,17 @@ async def _download_pawchive_url(
                 response.raise_for_status()
                 part = dest.with_name(dest.name + ".part")
                 received = 0
+                written = 0
+                length = progress.content_length(response)
                 if not check:
                     logger.info("DLOAD", f"Downloading: {name}")
+                    handle = progress.begin(name, length)
                 async with aiofiles.open(part, "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
                         await f.write(chunk)
+                        written += len(chunk)
+                        if handle is not None:
+                            handle.update(written)
                         if check and verdict is None:
                             received += len(chunk)
                             if received >= _PAWCHIVE_HEAD_BYTES:
@@ -57,6 +65,9 @@ async def _download_pawchive_url(
                                 if not verdict:
                                     break
                                 logger.info("DLOAD", f"Downloading: {name}")
+                                # A card is small, but show it like any other download.
+                                handle = progress.begin(name, length)
+                                handle.update(written)
                     if check and verdict is None:      # whole file shorter than a header
                         await f.flush()
                         verdict = _pawchive_png_matches(part)
@@ -64,6 +75,8 @@ async def _download_pawchive_url(
                 return None, "filtered"
             os.replace(part, dest)
             completed = True
+            if handle is not None:
+                handle.close(ok=True)
             return None, "ok"
         except Exception as exc:
             if is_rate_limited(exc):
@@ -76,6 +89,8 @@ async def _download_pawchive_url(
                 continue
             return exc, "ok"
         finally:
+            if handle is not None:
+                handle.close()          # no-op after a success; drops the row on a retry / cancel
             if part is not None and not completed:
                 try:
                     part.unlink(missing_ok=True)
@@ -108,6 +123,7 @@ async def download_pawchive_file(
     key = pawchive_item_key(item)
     if skip_downloaded and key in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[key]).name}")
+        progress.count("skipped")
         return url, None, "skipped"
 
     dest = directory / name
@@ -132,4 +148,5 @@ async def download_pawchive_file(
             return url, None, status
         if i + 1 < len(urls):
             logger.warning("DLOAD", f"  {candidate} — {err}; trying {urls[i + 1]}")
+    progress.count("failed")
     return url, err, "ok"

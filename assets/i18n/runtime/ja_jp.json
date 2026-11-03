@@ -187,5 +187,15 @@
   "dialog.password.pawchive_body": "pawchive.pwにログインし、次の手順に従ってください：\n1. ブラウザーのDevTools（開発者ツール）を開く（F12）\n2. Chrome／Edge：Application（アプリケーション／アプリ）→ Storage（ストレージ）→ Cookies（Cookie）→ https://pawchive.pw\n    Firefox：Storage → Cookies → https://pawchive.pw\n3. 「session」を探し、その Value（値）をコピー\n\n下に値を貼り付けてください（キャンセルするとログインせずに続行します。t1.pawchive.pw の大容量一時ファイルは取得できません）：",
   "dialog.password.archive_title": "パスワードを入力",
   "dialog.password.archive_body": "アーカイブ {archive} でエラーが発生しました。パスワードが必要かもしれません。",
-  "dialog.password.archive_retry": "パスワードが違うか、{archive} が破損しています。もう一度パスワードを入力するか、キャンセルをクリックしてください。"
+  "dialog.password.archive_retry": "パスワードが違うか、{archive} が破損しています。もう一度パスワードを入力するか、キャンセルをクリックしてください。",
+  "dialog.progress.mods_title": "KKAFIO — MODをダウンロード中",
+  "dialog.progress.contents_title": "KKAFIO — コンテンツをダウンロード中",
+  "dialog.progress.waiting": "最初のダウンロードを待っています…",
+  "dialog.progress.working_on": "処理中: {name}",
+  "dialog.progress.items_mods": "MOD {done}/{total} 件を処理済み",
+  "dialog.progress.items_links": "リンク {done}/{total} 件を処理済み",
+  "dialog.progress.counts": "ダウンロード {ok} · スキップ {skipped} · 失敗 {failed}",
+  "dialog.progress.cancelling": "キャンセルしています…",
+  "dialog.progress.finished": "完了",
+  "dialog.progress.finished_issues": "完了 — {failed} 件失敗。ログとレポートに詳細があります。"
 }

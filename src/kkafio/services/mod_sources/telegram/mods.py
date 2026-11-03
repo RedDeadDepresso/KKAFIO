@@ -6,6 +6,7 @@ import asyncio
 from pathlib import Path
 
 from kkafio.cards.mods.zipmods import guid_from_zipmod
+from kkafio.core import progress
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.services.mod_sources.telegram.links import parse_tme_link
@@ -216,6 +217,7 @@ async def search_chat_links_and_download(
 
             logger.info("DLMOD", f"    Found in {where} — downloading {file_name}")
             downloads_this_chat += 1
+            handle = progress.begin(file_name, file_size)
 
             # Use teleget9527 if available (reuse the passed-in downloader instance),
             # matching download_via_teleget's exact pattern.
@@ -233,7 +235,8 @@ async def search_chat_links_and_download(
                     raw_chat_id = get_peer_id(entity)
 
                     def _on_progress(downloaded: int, total: int, pct: float,
-                                     _name: str = file_name) -> None:
+                                     _name: str = file_name, _handle=handle) -> None:
+                        _handle.update(downloaded, total)
                         if total > 0:
                             mb_done  = downloaded // 1024 // 1024
                             mb_total = total      // 1024 // 1024
@@ -255,6 +258,7 @@ async def search_chat_links_and_download(
                 except Exception as e:
                     logger.error("DLMOD",
                         f"    teleget9527 download failed [{guid}] from {where}: {e}")
+                    handle.close()
                     dest.unlink(missing_ok=True)
                     continue  # try the next candidate
 
@@ -265,12 +269,15 @@ async def search_chat_links_and_download(
                 try:
                     await _retry_flood_wait(
                         client.download_media, message, file=str(dest),
+                        progress_callback=lambda cur, total, _h=handle: _h.update(cur, total),
                         context=f"downloading {file_name} from {where}")
                 except Exception as e:
                     logger.error("DLMOD", f"    Download failed [{guid}] from {where}: {e}")
+                    handle.close()
                     dest.unlink(missing_ok=True)
                     continue  # try the next candidate
 
+            handle.close()
             if not dest.exists() or dest.stat().st_size != file_size:
                 logger.error("DLMOD", f"    Download incomplete [{guid}] from {where}")
                 dest.unlink(missing_ok=True)
@@ -530,11 +537,13 @@ async def download_via_teleget(
 
     logger.info("DLMOD", f"Telegram ↓ {file_name}")
     file_size = message.document.size
+    handle = progress.begin(file_name, file_size)
 
     # Use teleget9527 if available (reuse the passed-in downloader instance)
     if downloader is not None:
         try:
             def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                handle.update(downloaded, total)
                 if total > 0:
                     mb_done  = downloaded // 1024 // 1024
                     mb_total = total      // 1024 // 1024
@@ -558,6 +567,7 @@ async def download_via_teleget(
 
         except Exception as e:
             logger.error("DLMOD", f"teleget9527 download failed [{guid}]: {e}")
+            handle.close()
             return False
 
     else:
@@ -567,10 +577,14 @@ async def download_via_teleget(
         try:
             await _retry_flood_wait(
                 client.download_media, message, file=str(dest), workers=4,
+                progress_callback=lambda cur, total: handle.update(cur, total),
                 context=f"downloading {file_name} [{guid}]")
         except Exception as e:
             logger.error("DLMOD", f"Telethon download failed [{guid}]: {e}")
+            handle.close()
             return False
+
+    handle.close()
 
     if not dest.exists() or dest.stat().st_size != message.document.size:
         logger.error("DLMOD", f"Download incomplete [{guid}]: {dest}")

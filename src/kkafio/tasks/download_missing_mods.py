@@ -40,8 +40,11 @@ import kkafio.services.mod_sources.telegram.config as tg_cfg
 from kkafio.cards.mods.shared_mods import game_card_dirs
 from kkafio.cards.mods.zipmods import build_mods_cache
 from kkafio.cards.mods.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
+from kkafio.core import progress
 from kkafio.core.config import GameType
+from kkafio.core.i18n import t
 from kkafio.core.logger import logger
+from kkafio.dialogs.progress_dialog import download_progress
 from kkafio.indices.kkc_mod import load_kkc_mod_index
 from kkafio.indices.modpack import load_modpack_index
 from kkafio.services.mod_sources.betterrepack import download_betterrepack, make_http_client
@@ -426,8 +429,27 @@ class DownloadMissingMods(BaseTask):
                 if from_betterrepack:
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
+                    async def _br_one(guid: str, rel: str):
+                        try:
+                            res = await download_betterrepack(
+                                br_client, guid, rel, downloaded_mods_dir, guid_str_map)
+                        except Exception as exc:
+                            res = exc
+                        # Tell the progress window as each mod finishes. A failure that is
+                        # about to be retried via Telegram is not final yet.
+                        if res is True:
+                            progress.count("ok")
+                            progress.item_done()
+                        elif res == "skipped":
+                            progress.count("skipped")
+                            progress.item_done()
+                        elif not use_telegram:
+                            progress.count("failed")
+                            progress.item_done()
+                        return res
+
                     results = await asyncio.gather(*[
-                        download_betterrepack(br_client, guid, rel, downloaded_mods_dir, guid_str_map)
+                        _br_one(guid, rel)
                         for guid, rel in from_betterrepack.items()
                     ], return_exceptions=True)
                     for guid, result in zip(from_betterrepack, results, strict=True):
@@ -481,6 +503,9 @@ class DownloadMissingMods(BaseTask):
                         fail += len(from_telegram)
                         failed_guids.update(from_telegram)
                         failed_guids.update(br_failed)
+                        for _ in telegram_queue:
+                            progress.count("failed")
+                            progress.item_done()
                     else:
                         # Ensure session file exists before starting downloads
                         authorised = await ensure_session(tg_data)
@@ -491,6 +516,9 @@ class DownloadMissingMods(BaseTask):
                             fail += len(from_telegram)
                             failed_guids.update(from_telegram)
                             failed_guids.update(br_failed)
+                            for _ in telegram_queue:
+                                progress.count("failed")
+                                progress.item_done()
                         else:
                             teleget_downloader = None
 
@@ -637,6 +665,7 @@ class DownloadMissingMods(BaseTask):
                                 for guid, rel_path in telegram_queue:
                                     found_source = False
                                     success: bool | str = False
+                                    progress.set_current(guid)
 
                                     if use_koikatsucards:
                                         tg_link = kkc_index.get(guid, "")
@@ -668,14 +697,17 @@ class DownloadMissingMods(BaseTask):
                                         found_source = found_source or chat_found
 
                                     if success == "skipped":
-                                        pass  # already existed — don't count or report
+                                        # already existed — don't count it as a download or report it
+                                        progress.count("skipped")
                                     elif success is True:
+                                        progress.count("ok")
                                         failed_guids.discard(guid)
                                         downloaded_tg.add(guid)
                                         if guid in br_failed:
                                             fail -= 1
                                         ok += 1
                                     elif found_source:
+                                        progress.count("failed")
                                         # A source was identified somewhere but the
                                         # download itself failed
                                         failed_guids.add(guid)
@@ -696,7 +728,10 @@ class DownloadMissingMods(BaseTask):
                                             fail -= 1
                                             failed_guids.discard(guid)
                                         unresolved.append(guid)
+                                        progress.count("failed")
+                                    progress.item_done()
                             finally:
+                                progress.set_current(None)
                                 if teleget_downloader is not None:
                                     try:
                                         await teleget_downloader.shutdown()
@@ -708,7 +743,19 @@ class DownloadMissingMods(BaseTask):
                                 except Exception as e:
                                     logger.debug("DLMOD", f"Telegram disconnect failed (ignored): {e}")
 
-        asyncio.run(_run_all())
+        async def _run_with_progress() -> None:
+            # The progress window is shown for the whole run; Cancel in it cancels this coroutine.
+            async with download_progress(t("dialog.progress.mods_title"), "mods", len(to_download)):
+                # Mods with no source at all are failures from the start.
+                for _ in unresolved:
+                    progress.count("failed")
+                    progress.item_done()
+                await _run_all()
+
+        try:
+            asyncio.run(_run_with_progress())
+        except asyncio.CancelledError:
+            logger.warning("DLMOD", "Cancelled from the progress window — stopping.")
 
         logger.line()
 

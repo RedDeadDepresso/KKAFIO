@@ -8,6 +8,7 @@ import asyncio
 import os
 from pathlib import Path
 
+from kkafio.core import progress
 from kkafio.core.logger import logger
 
 
@@ -68,14 +69,19 @@ async def download_betterrepack(
     # Download to "<name>.part" and rename only once the body is complete.
     part = dest.with_name(dest.name + ".part")
     completed = False
+    handle = None
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         async with client.stream("GET", url) as r:
             r.raise_for_status()
             import aiofiles
+            handle = progress.begin(dest.name, progress.content_length(r))
+            received = 0
             async with aiofiles.open(part, "wb") as f:
                 async for chunk in r.aiter_bytes(chunk_size=65536):
                     await f.write(chunk)
+                    received += len(chunk)
+                    handle.update(received)
         os.replace(part, dest)
         completed = True
         logger.success("DLMOD", f"Downloaded: {dest.name}")
@@ -85,6 +91,8 @@ async def download_betterrepack(
         logger.error("DLMOD", f"BetterRepack failed [{guid}]: {e}")
         return False
     finally:
+        if handle is not None:
+            handle.close()      # the task counts the outcome per mod
         if not completed:
             # Errors and cancellation (Stop / Ctrl+C) alike.
             try:

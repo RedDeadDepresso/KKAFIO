@@ -30,6 +30,7 @@ from html.parser import HTMLParser as _HTMLParser
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse
 
+from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.net import RETRY_ATTEMPTS, get_with_retry, is_transient, retry_delay, safe_filename
@@ -195,10 +196,12 @@ async def _download_gdrive_file(
     hkey = f"gdrive:{file_id}"
     if skip_downloaded and hkey in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[hkey]).name}")
+        progress.count("skipped")
         return hkey, None, True
 
     part = directory / f"drive-{file_id}.part"      # the name is only known once Drive answers
     for attempt in range(1, RETRY_ATTEMPTS + 1):
+        handle = None
         try:
             import aiofiles
             offset = part.stat().st_size if part.exists() else 0
@@ -253,11 +256,14 @@ async def _download_gdrive_file(
                         logger.info("DLOAD", f"Resuming: {dest.name} from {offset} bytes")
                     else:
                         logger.info("DLOAD", f"Downloading: {dest.name}")
+                    handle = progress.begin(dest.name, total)
                     written = offset
+                    handle.update(written)
                     async with aiofiles.open(part, "ab" if offset else "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=65536):
                             written += len(chunk)
                             await f.write(chunk)
+                            handle.update(written)
                     done = True
                     break
             if not done:
@@ -268,6 +274,7 @@ async def _download_gdrive_file(
                 raise _Incomplete(f"incomplete download ({written} of {total} bytes)")
             os.replace(part, dest)
             history[hkey] = str(dest)
+            handle.close(ok=True)
             return hkey, None, False
         except Exception as exc:
             if attempt < RETRY_ATTEMPTS and (is_transient(exc) or isinstance(exc, _Incomplete)):
@@ -276,7 +283,11 @@ async def _download_gdrive_file(
                     f"  {file_id} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
                 continue
+            progress.count("failed")
             return hkey, exc, False
+        finally:
+            if handle is not None:
+                handle.close()          # no-op after a success; drops the row on a retry / cancel
     return hkey, RuntimeError("retries exhausted"), False  # not reached
 
 

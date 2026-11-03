@@ -29,6 +29,7 @@ import time
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
 
+from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.core.paths import SESSIONS_DIR
 from kkafio.core.session_store import SessionStore
@@ -509,6 +510,7 @@ async def _download_gofile_file(
     """
     if skip_downloaded and link in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[link]).name}")
+        progress.count("skipped")
         return link, None, True
 
     mirrors = _gofile_mirrors(link, servers)
@@ -518,6 +520,7 @@ async def _download_gofile_file(
     attempt = 1
     while attempt <= RETRY_ATTEMPTS:
         url = mirrors[busy % len(mirrors)]
+        handle = None
         try:
             import aiofiles
             offset = part.stat().st_size if part.exists() else 0
@@ -551,23 +554,28 @@ async def _download_gofile_file(
                     logger.info("DLOAD", f"Resuming: {filename} from {offset} bytes")
                 else:
                     logger.info("DLOAD", f"Downloading: {filename}")
+                handle = progress.begin(filename, total)
                 written = offset
+                handle.update(written)
                 async with aiofiles.open(part, "ab" if offset else "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
                         written += len(chunk)
                         await f.write(chunk)
+                        handle.update(written)
             if total is not None and written != total:
                 if written > total:
                     part.unlink(missing_ok=True)    # more than the file holds: unusable
                 raise _GofileIncomplete(f"incomplete download ({written} of {total} bytes)")
             os.replace(part, dest)
             history[link] = str(dest)
+            handle.close(ok=True)
             return link, None, False
         except _GofileRestart:
             continue                                # the part is gone; this try was not used up
         except _GofileBusy:
             busy += 1
             if busy > GOFILE_BUSY_LIMIT:
+                progress.count("failed")
                 return link, RuntimeError(
                     "gofile's storage server kept answering with a web page instead of the file "
                     "(it is busy); try again later"), False
@@ -586,7 +594,11 @@ async def _download_gofile_file(
                 continue
             if getattr(getattr(exc, "response", None), "status_code", None) in (404, 410):
                 part.unlink(missing_ok=True)        # the file is gone: nothing to resume later
+            progress.count("failed")
             return link, exc, False
+        finally:
+            if handle is not None:
+                handle.close()          # no-op after a success; drops the row on a retry / cancel
     return link, RuntimeError("retries exhausted"), False  # not reached
 
 

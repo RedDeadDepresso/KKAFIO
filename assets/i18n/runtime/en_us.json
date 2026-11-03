@@ -187,5 +187,15 @@
   "dialog.password.pawchive_body": "Log in to pawchive.pw, then:\n1. Open your browser's DevTools (F12)\n2. Chrome/Edge: go to Application → Storage → Cookies → https://pawchive.pw\n    Firefox: go to Storage → Cookies → https://pawchive.pw\n3. Find 'session' and copy its Value\n\nPaste the value below (Cancel to continue without logging in; oversized temporary files on t1.pawchive.pw will not be downloaded):",
   "dialog.password.archive_title": "Enter Password",
   "dialog.password.archive_body": "There is an error with the archive {archive}. Maybe it requires a password?",
-  "dialog.password.archive_retry": "Wrong password or {archive} is corrupted. Please enter the password again or click Cancel."
+  "dialog.password.archive_retry": "Wrong password or {archive} is corrupted. Please enter the password again or click Cancel.",
+  "dialog.progress.mods_title": "KKAFIO — Downloading mods",
+  "dialog.progress.contents_title": "KKAFIO — Downloading contents",
+  "dialog.progress.waiting": "Waiting for the first download…",
+  "dialog.progress.working_on": "Working on: {name}",
+  "dialog.progress.items_mods": "{done} of {total} mods processed",
+  "dialog.progress.items_links": "{done} of {total} links processed",
+  "dialog.progress.counts": "Downloaded {ok} · Skipped {skipped} · Failed {failed}",
+  "dialog.progress.cancelling": "Cancelling…",
+  "dialog.progress.finished": "Finished",
+  "dialog.progress.finished_issues": "Finished — {failed} failed. The log and report list what went wrong."
 }
