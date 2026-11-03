@@ -39,6 +39,10 @@ from kkafio.dialogs.common import _center_on_screen, _get_host, format_size, new
 _REFRESH_SECONDS = 0.1
 _WIDTH = 560
 _NAME_MAX_CHARS = 64
+# CustomTkinter finishes its Windows window setup (title bar colour, icon) ~200 ms
+# after a window is created; setting the icon on a window that is already visible
+# makes Windows blank and redraw it. So the window stays hidden until that is done.
+_SHOW_DELAY_SECONDS = 0.4
 _RATE_SMOOTHING = 0.3          # weight of the newest speed sample
 
 
@@ -139,9 +143,8 @@ class _ProgressWindow:
         win.protocol("WM_DELETE_WINDOW", self._on_button)
 
         self._draw(self._tracker.snapshot())
-        _center_on_screen(win)
-        win.deiconify()
-        win.lift()
+        self._created = time.monotonic()
+        self._visible = False       # shown by refresh() once CustomTkinter's own setup is done
 
     # -- events ------------------------------------------------------------
 
@@ -186,6 +189,11 @@ class _ProgressWindow:
         try:
             self.win.update_idletasks()
             self.win.update()
+            if not self._visible and time.monotonic() - self._created >= _SHOW_DELAY_SECONDS:
+                self._visible = True
+                _center_on_screen(self.win)
+                self.win.deiconify()
+                self.win.lift()
         except tk.TclError as exc:
             logger.warning("PROGRESS", f"Progress window was lost during update: {exc}")
             self.alive = False
