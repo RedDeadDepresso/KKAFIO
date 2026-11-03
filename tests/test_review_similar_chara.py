@@ -420,3 +420,29 @@ def test_delete_cards_accepts_explicit_settings():
     own = DeleteCards(cfg, None, settings={"ContentPaths": ["mine.png"], "CheckSharedMods": False})
     assert own.content_paths == ["mine.png"] and own.check_shared_mods is False
     assert DeleteCards(cfg, None).content_paths == ["from-config.png"]
+
+
+# ---------------------------------------------------------------------------
+# GUI options: one "Delete Options" checkbox group, like Manage Library's
+# ---------------------------------------------------------------------------
+
+def test_delete_options_are_one_checkbox_group_in_interface_json():
+    import json
+    from kkafio.core.config import _build_task_config
+
+    root = Path(__file__).resolve().parent.parent
+    interface = json.loads((root / "interface.json").read_text(encoding="utf-8"))
+    task = next(t for t in interface["task"] if t["name"] == "ReviewSimilarChara")
+    opt = interface["option"]["ReviewSimilarCharaDeleteOptions"]
+    assert opt["type"] == "checkbox" and opt["default_case"] == ["CheckSharedMods", "IncludeCoordinates"]
+    assert [c["name"] for c in opt["cases"]] == ["CheckSharedMods", "IncludeCoordinates"]
+    assert "ReviewSimilarCharaDeleteOptions" in task["option"]
+    assert "CheckSharedMods" not in task["option"] and "IncludeCoordinates" not in task["option"]
+
+    defaults = _build_task_config("ReviewSimilarChara", True, {})
+    assert (defaults["CheckSharedMods"], defaults["IncludeCoordinates"]) == (True, True)
+    for names, expected in ((["CheckSharedMods", "IncludeCoordinates"], (True, True)),
+                            (["IncludeCoordinates"], (False, True)), ([], (False, False))):
+        cfg = _build_task_config("ReviewSimilarChara", True, {
+            "ReviewSimilarCharaDeleteOptions": {"type": "checkbox", "caseNames": names}})
+        assert (cfg["CheckSharedMods"], cfg["IncludeCoordinates"]) == expected

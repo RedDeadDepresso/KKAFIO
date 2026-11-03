@@ -1380,6 +1380,30 @@
         }
       ]
     },
+    "ReviewSimilarCharaDeleteOptions": {
+      "type": "checkbox",
+      "label": "$option.ReviewSimilarCharaDeleteOptions.label",
+      "description": "$option.ReviewSimilarCharaDeleteOptions.description",
+      "default_case": ["CheckSharedMods", "IncludeCoordinates"],
+      "cases": [
+        {
+          "name": "CheckSharedMods",
+          "label": "$option.CheckSharedMods.label",
+          "description": "$option.CheckSharedMods.description",
+          "pipeline_override": {
+            "CheckSharedMods": true
+          }
+        },
+        {
+          "name": "IncludeCoordinates",
+          "label": "$option.IncludeCoordinates.label",
+          "description": "$option.IncludeCoordinates.description",
+          "pipeline_override": {
+            "IncludeCoordinates": true
+          }
+        }
+      ]
+    },
     "ManageLibraryArchiveOutputPath": {
       "type": "folder",
       "name": "library_archive_output_path",
@@ -1772,8 +1796,7 @@
       "group": ["chara-management"],
       "option": [
         "SimilarityMode",
-        "CheckSharedMods",
-        "IncludeCoordinates",
+        "ReviewSimilarCharaDeleteOptions",
         "AutoResolve",
         "UseCache",
         "SceneDir",
