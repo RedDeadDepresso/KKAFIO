@@ -7,7 +7,7 @@ in all three lives here: which folders count, listing the folders that exist, bu
 `CharaItem`, ranking the suggestions, and the window's wording.
 """
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import fields
 from pathlib import Path
 
@@ -97,3 +97,19 @@ def dialog_text(prefix: str) -> DialogText:
     names = [f.name for f in fields(DialogText)]
     # tests/test_i18n.py knows this exact f-string: the prefix must be a literal at the call site
     return DialogText(**{name: t(f"{prefix}.{name}") for name in names})
+
+
+def chain_moves(moves: dict[str, str], renamed: Mapping[Path, Path]) -> None:
+    """Add a folder rename ({old path: new path}) to `moves` ({old path: new path} of the cards the
+    caches have to follow). A card that was moved earlier keeps its first path as the key."""
+    done = {str(old): str(new) for old, new in renamed.items()}
+    for first, last in moves.items():
+        if last in done:
+            moves[first] = done.pop(last)
+    moves.update(done)
+
+
+def rename_known(known: dict[str, str], old: str, new: str) -> None:
+    """Replace the folder `old` by `new` in `known` ({casefolded: name})."""
+    known.pop(old.casefold(), None)
+    known[new.casefold()] = new

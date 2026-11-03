@@ -12,7 +12,10 @@ from kkafio.cards.chara.outfits import build_coord_cache
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.library.model import COVER_RATIO, LibraryTab
-from kkafio.dialogs.library.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
+from kkafio.dialogs.library.common import (
+    Suggester, chain_moves, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, rename_known,
+    seed_known,
+)
 from kkafio.tasks.group_coordinates import TAG, move_unique, sorted_charas, update_coord_cache
 from kkafio.cards.mods.parsing import parse_coord_guids
 from kkafio.cards.mods.png_guids import collect_coord_guids_by_file
@@ -108,9 +111,13 @@ def coordinate_library_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
     suggest, assign = manual_callbacks(known, moves, extra=extra)
     logger.info(TAG, f"{len(items)} coordinate(s) and {len({**extra, **known})} suggested name(s) for the library")
 
+    def folder_renamed(old: str, new: str, paths) -> None:
+        rename_known(known, old, new)                     # the suggestions and the caches follow the folder
+        chain_moves(moves, paths)
+
     def finish() -> None:
         if use_cache and moves:
             update_coord_cache(coord_dir, moves)       # also when the dialog fails part-way
 
     return LibraryTab(label, items, suggest, assign, dialog_text("dialog.manual_coord"), COVER_RATIO, finish, "outfit", parse_coord_guids,
-                      lambda: collect_coord_guids_by_file([coord_dir], use_cache))
+                      lambda: collect_coord_guids_by_file([coord_dir], use_cache), folder_renamed)

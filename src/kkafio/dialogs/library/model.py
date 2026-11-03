@@ -164,6 +164,17 @@ class LibraryModel:
             item.trashed = False
             item.archived = False
 
+    def series_renamed(self, old: str, new: str, new_paths: Mapping[Path, Path]) -> None:
+        """The folder `old` was renamed to `new`: its cards (also the ones in the trash or the
+        archive queue) follow. `new_paths` maps each card's old path to its new one."""
+        k = old.casefold()
+        for item in self.items:
+            if (item.series or "").casefold() == k:
+                item.series = new
+                item.path = Path(new_paths.get(item.path, item.path))
+        if self.mode == VIEW_SERIES and self.series_filter.casefold() == k:
+            self.series_filter = new
+
     def renamed(self, item: CharaItem, new_path: Path) -> None:
         """`item`'s file was renamed to `new_path` (same folder); its shown name follows."""
         item.path = Path(new_path)
@@ -203,6 +214,40 @@ def rename_card(path: Path, stem: str) -> Path:
         raise FileExistsError(str(dest))
     path.rename(dest)
     return dest
+
+
+class FolderNameTaken(Exception):
+    """A folder with that name (in any case) already exists."""
+
+
+def rename_series_folders(roots: Iterable[Path], old: str, new: str) -> list[tuple[Path, Path]]:
+    """Rename the folder called `old` (in any case) directly inside each of `roots` to `new`;
+    returns the (old, new) path of each one renamed. Raises FolderNameTaken, with nothing
+    renamed, if a folder called `new` (in any case, even the old one's own name) exists in one
+    of the roots, and OSError, with the renames already done undone, if the file system refuses.
+    The caller has checked that `new` is a usable name."""
+    plan: list[tuple[Path, Path]] = []
+    for root in dict.fromkeys(Path(r) for r in roots):
+        try:
+            entries = [e for e in root.iterdir() if e.is_dir()]
+        except OSError:
+            continue
+        if any(e.name.casefold() == new.casefold() for e in entries):
+            raise FolderNameTaken(new)
+        plan.extend((e, e.with_name(new)) for e in entries if e.name.casefold() == old.casefold())
+    done: list[tuple[Path, Path]] = []
+    try:
+        for src, dest in plan:
+            src.rename(dest)
+            done.append((src, dest))
+    except OSError:
+        for src, dest in reversed(done):
+            try:
+                dest.rename(src)
+            except OSError:
+                pass
+        raise
+    return done
 
 
 @dataclass(frozen=True)
@@ -278,6 +323,8 @@ class LibraryTab:
                  "outfit"): stable, unlike the translated label
     guids        card file -> the GUIDs of the mods it uses (what the mod dependencies sidebar
                  lists); None: the tab has no such sidebar content
+    folder_renamed  (old name, new name, {old path: new path}) after a folder was renamed on disk:
+                 the tab brings its suggestions and caches along. Optional.
     guid_index   the GUIDs of every card of the tab at once ({str(path): GUIDs}), read through the
                  incremental on-disk per-file GUID cache (what the mods filter needs for all
                  cards); None: the filter falls back to `guids`, one card at a time
@@ -293,3 +340,4 @@ class LibraryTab:
     key: str = ""
     guids: Callable[[Path], Sequence[str]] | None = None
     guid_index: Callable[[], Mapping[str, Sequence[str]]] | None = None
+    folder_renamed: Callable[[str, str, Mapping[Path, Path]], None] | None = None

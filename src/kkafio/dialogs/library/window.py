@@ -56,6 +56,7 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
+from kkafio.dialogs.library.common import is_plain_dir
 from kkafio.dialogs.library.popup_menu import open_popup_menu
 from kkafio.dialogs.library.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
 from kkafio.dialogs.library.viewstate import LibraryViewState, TabView
@@ -67,7 +68,7 @@ from kkafio.dialogs.library.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
     MODS_ALL, MODS_COMPLETE, MODS_MISSING,
     VIEW_ALL, VIEW_ARCHIVE, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, LibraryModel,
-    LibraryTab, chara_dialog_text, clean_file_stem, rename_card,
+    FolderNameTaken, LibraryTab, chara_dialog_text, clean_file_stem, rename_card, rename_series_folders,
 )
 
 
@@ -168,6 +169,7 @@ class SideList(tk.Canvas if tk is not None else object):
         self._hover: int | None = None
         self._ysb_command = None
         self._redraw_job = None
+        self.on_scroll = None               # called when the rows scroll (an input laid over a row would be misplaced)
         self.bind("<Configure>", lambda _e: self._redraw())
         self.bind("<Motion>", self._on_motion)
         self.bind("<Leave>", lambda _e: self._set_hover(None))
@@ -222,6 +224,10 @@ class SideList(tk.Canvas if tk is not None else object):
         elif bottom > view_top + height:
             self.yview_moveto((bottom - height) / max(1, self._total_height()))
 
+    def row_box(self, index: int) -> tuple[int, int, int, int]:
+        """(x, y, width, height) of a row in the widget's own coordinates (as it is scrolled now)."""
+        return 0, int(index * self._step - self.canvasy(0)), self.winfo_width(), self._row_h
+
     # -- layout and drawing ----------------------------------------------------
 
     @property
@@ -239,6 +245,14 @@ class SideList(tk.Canvas if tk is not None else object):
         y = self.canvasy(event_y)
         i = int(y // self._step)
         return i if 0 <= i < len(self._rows) and y - i * self._step < self._row_h else None   # not in a gap
+
+    def row_index_at(self, event_y: int) -> int | None:
+        """The row under a pointer position (widget coordinates), None between or below the rows."""
+        return self._row_at(event_y)
+
+    def hovered_index(self) -> int | None:
+        """The row the pointer is on."""
+        return self._hover
 
     def _on_yview(self, first, last) -> None:
         if self._ysb_command is not None:
@@ -301,6 +315,8 @@ class SideList(tk.Canvas if tk is not None else object):
 
     def _on_wheel(self, event) -> str:
         if self._total_height() > self.winfo_height():
+            if self.on_scroll is not None:
+                self.on_scroll()
             num = getattr(event, "num", 0)
             step = -1 if num == 4 else 1 if num == 5 else (-1 if event.delta > 0 else 1)
             self.yview_scroll(step * 2, "units")
@@ -309,6 +325,8 @@ class SideList(tk.Canvas if tk is not None else object):
         return "break"
 
     def yview_scroll(self, number, what) -> None:          # the scrollbar and the wheel both come here
+        if self.on_scroll is not None:
+            self.on_scroll()
         if what == "units":
             self.yview_moveto((self.canvasy(0) + number * self._step) / max(1, self._total_height()))
         else:
@@ -1022,6 +1040,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     # -----------------------------------------------------------------------
     def refresh_sidebar() -> None:
         timers["sidebar"] = None
+        cancel_folder_edit()                                # the rows are about to change
         total, untagged = model.counts()
         all_btn.configure(text=f"{txt.all}   {total:,}")
         untagged_btn.configure(text=f"{txt.untagged}   {untagged:,}")
@@ -1119,6 +1138,123 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         sel = series_box.curselection()
         if sel and sel[0] < len(series_names):
             choose_view(VIEW_SERIES, series_names[sel[0]])
+
+    # -----------------------------------------------------------------------
+    # renaming a folder (right click on it in the sidebar, or the rename shortcut while the pointer is on it)
+    # -----------------------------------------------------------------------
+    folder_edit: dict = {"entry": None, "old": "", "after": None}
+
+    def cancel_folder_edit(_event=None) -> str:
+        if folder_edit["after"] is not None:
+            try:
+                root.after_cancel(folder_edit["after"])
+            except tk.TclError:
+                pass
+            folder_edit["after"] = None
+        entry = folder_edit["entry"]
+        folder_edit["entry"] = None
+        if entry is not None:
+            try:
+                entry.destroy()
+            except tk.TclError:
+                pass
+        return "break"
+
+    def start_folder_rename(name: str) -> None:
+        """Open the in-place input over the sidebar row of the folder `name`."""
+        if name not in series_names:
+            return
+        cancel_edit()
+        cancel_folder_edit()
+        index = series_names.index(name)
+        series_box.see(index)
+        _x, y, width, height = series_box.row_box(index)
+        entry = tk.Entry(series_box, font=f_side, bg=pal["input"], fg=pal["text"], insertbackground=pal["text"],
+                         relief="flat", highlightthickness=1, highlightbackground=pal["border"],
+                         highlightcolor=pal["accent"])
+        entry.insert(0, name)
+        entry.select_range(0, "end")
+        entry.place(x=0, y=y, width=width, height=height)
+        folder_edit.update(entry=entry, old=name)
+        entry.bind("<Return>", confirm_folder_rename)
+        entry.bind("<KP_Enter>", confirm_folder_rename)
+        entry.bind("<Escape>", lambda _e: (cancel_folder_edit(), canvas.focus_set(), "break")[2])
+        entry.bind("<FocusOut>", on_folder_entry_focus_out)
+        entry.focus_set()
+
+    def on_folder_entry_focus_out(_event=None) -> None:
+        # Clicking elsewhere in the window ends the edit; the window being deactivated (Alt+Tab) doesn't.
+        def check() -> None:
+            folder_edit["after"] = None
+            entry = folder_edit["entry"]
+            if entry is None:
+                return
+            try:
+                focused = root.focus_get()
+            except (KeyError, tk.TclError):
+                focused = None
+            if focused is not None and focused is not entry:
+                cancel_folder_edit()
+        if folder_edit["after"] is None:
+            folder_edit["after"] = root.after(120, check)
+
+    def confirm_folder_rename(_event=None) -> str:
+        entry, old = folder_edit["entry"], folder_edit["old"]
+        if entry is None:
+            return "break"
+        text = entry.get().strip()
+        cancel_folder_edit()
+        canvas.focus_set()
+        if not text or text == old:
+            return "break"                                  # blank / unchanged: nothing to do
+        new = clean_file_stem(text)
+        if not new or not is_plain_dir(new):                # (a leading "_" or "." would hide the folder)
+            status.configure(text=t("dialog.manual.folder_rename_invalid", new=text))
+            return "break"
+        roots = {item.root for item in model.items}
+        try:
+            renamed = rename_series_folders(roots, old, new)
+        except FolderNameTaken:
+            status.configure(text=t("dialog.manual.folder_rename_exists", new=new))
+            return "break"
+        except OSError as e:
+            logger.warning("LIBRARY", f"Could not rename the folder {old}: {e}")
+            status.configure(text=t("dialog.manual.folder_rename_failed", name=old))
+            return "break"
+        if not renamed:                                     # it vanished from the disk meanwhile
+            status.configure(text=t("dialog.manual.folder_rename_failed", name=old))
+            return "break"
+        logger.success("LIBRARY", f"Renamed the folder {old} -> {new}")
+        paths: dict[Path, Path] = {}
+        for item in model.items:
+            if (item.series or "").casefold() == old.casefold():
+                rest = item.path.relative_to(item.root).parts[1:]
+                paths[item.path] = item.root.joinpath(new, *rest)
+        for src, dest in paths.items():
+            if src in pil_cache:                            # the covers follow the files
+                pil_cache[dest] = pil_cache.pop(src)
+        model.series_renamed(old, new, paths)
+        if tab.folder_renamed is not None:
+            tab.folder_renamed(old, new, paths)             # suggestions and caches
+        refresh_sidebar()
+        relayout(keep_scroll=True)
+        status.configure(text=t("dialog.manual.folder_renamed", old=old, new=new))
+        return "break"
+
+    def on_series_context(event) -> None:
+        """Right click on a folder of the sidebar: Rename."""
+        index = series_box.row_index_at(event.y)
+        if index is None or index >= len(series_names):
+            return
+        name = series_names[index]
+        if context_menu["close"] is not None:
+            context_menu["close"]()
+        entries = [(t("dialog.library.menu_rename_folder"), shortcuts.combo(ACTION_RENAME),
+                    lambda: root.after(20, lambda: start_folder_rename(name)))]    # once the menu is gone
+        context_menu["close"] = open_popup_menu(
+            series_box, event.x_root, event.y_root, entries,
+            {key: pair(name_) for key, name_ in (("bg", "tile"), ("border", "border"), ("hover", "sel"),
+                                                 ("text", "text"), ("muted", "muted"))})
 
     # -----------------------------------------------------------------------
     # editing a card's series
@@ -1532,6 +1668,11 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         action = shortcuts.action_for(combo_from_event(event.keysym, event.state) or "")
         if action is None:
             return None
+        if action == ACTION_RENAME:                         # the pointer is on a folder of the sidebar: rename that
+            hovered = series_box.hovered_index()
+            if hovered is not None and hovered < len(series_names):
+                start_folder_rename(series_names[hovered])
+                return "break"
         shortcut_actions[action]()
         return "break"
 
@@ -1822,6 +1963,10 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
         root.bind(seq, on_wheel, add="+")          # every tab listens; only the one under the pointer acts
     series_box.bind("<<ListboxSelect>>", on_series_pick)
+    series_box.on_scroll = cancel_folder_edit
+    series_box.bind("<Button-3>", on_series_context)             # right click
+    if root.tk.call("tk", "windowingsystem") == "aqua":
+        series_box.bind("<Button-2>", on_series_context)         # macOS: the right button is Button-2
     series_filter_entry.bind("<KeyRelease>", on_series_filter_key)
 
     refresh_sidebar()

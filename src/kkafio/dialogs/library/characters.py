@@ -14,7 +14,7 @@ from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.library.model import COVER_RATIO, LibraryTab
 from kkafio.dialogs.library.common import (
-    Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known,
+    Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, rename_known, seed_known,
 )
 from kkafio.tasks.group_chara import move_card, read_card
 from kkafio.cards.mods.parsing import parse_chara_guids
@@ -144,15 +144,21 @@ def chara_library_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
             logger.info("GROUP", f"Key cache: {key_cache.summary()}")
             key_cache.save()
 
+    def folder_renamed(old: str, new: str, paths) -> None:
+        rename_known(known, old, new)                     # the suggestions follow the folder
+        for src, dest in paths.items():
+            key_cache.moved(src, dest)                    # so do the cached keys
+
+    known: dict[str, str] = {}
     try:
         # Always with subfolders: the library window shows the whole library, with each card's series
         # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
         items = scan_manual_items(folders, True, key_cache)
-        known = existing_folders(*folders)
+        known.update(existing_folders(*folders))
         seed_known(known, items)
         suggest, assign = manual_callbacks(known, key_cache, hint_lang)
     except BaseException:
         finish()
         raise
     return LibraryTab(label, items, suggest, assign, dialog_text("dialog.manual"), COVER_RATIO, finish, "chara", parse_chara_guids,
-                      lambda: collect_chara_guids_by_file(list(folders), use_cache))
+                      lambda: collect_chara_guids_by_file(list(folders), use_cache), folder_renamed)

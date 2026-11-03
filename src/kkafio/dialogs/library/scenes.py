@@ -13,7 +13,10 @@ from pathlib import Path
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.library.model import LibraryTab
-from kkafio.dialogs.library.common import Suggester, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, seed_known
+from kkafio.dialogs.library.common import (
+    Suggester, chain_moves, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, rename_known,
+    seed_known,
+)
 from kkafio.indices.author import canonical_name, load_authors, suggest_authors
 from kkafio.tasks.group_scenes import TAG, save_hash_cache, scan_scenes
 from kkafio.cards.mods.parsing import parse_scene_guids
@@ -112,6 +115,10 @@ def scene_library_tab(folder: Path, use_cache: bool, label: str = ""):
     suggest, assign = manual_callbacks(known, authors, moves)
     logger.info(TAG, f"{len(items)} scene(s) and {len(authors)} known author(s) for the library")
 
+    def folder_renamed(old: str, new: str, paths) -> None:
+        rename_known(known, old, new)                     # the suggestions and the cache follow the folder
+        chain_moves(moves, paths)
+
     def finish() -> None:
         if use_cache and moves:
             for old, new in moves.items():                      # a move keeps mtime/size: the hash stays valid
@@ -121,4 +128,4 @@ def scene_library_tab(folder: Path, use_cache: bool, label: str = ""):
             save_hash_cache(folder, cache, new_entries, set(moves))
 
     return LibraryTab(label, items, suggest, assign, dialog_text("dialog.manual_scene"), SCENE_COVER_RATIO, finish, "scene", parse_scene_guids,
-                      lambda: collect_scene_guids_by_file([folder], use_cache))
+                      lambda: collect_scene_guids_by_file([folder], use_cache), folder_renamed)
