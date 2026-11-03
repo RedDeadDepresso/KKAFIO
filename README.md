@@ -67,6 +67,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                                                  |
 | Filter Duplicate Contents  | `filter-duplicate-contents --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder> --overlays-dir <folder>` |
 | Download Missing Mods      | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --downloaded-mods-dir <folder>`                      |
+| Manage Library             | `manage-library --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --downloaded-mods-dir <folder>`                           |
 | Compress Card Textures    | `compress-card-textures --input <folder>`                                                                                             |
 | Install Contents           | `install-contents --input <folder>`                                                                                                    |
 | Uninstall Contents         | `uninstall-contents --input <folder>`                                                                                                  |
