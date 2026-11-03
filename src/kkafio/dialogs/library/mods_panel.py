@@ -19,6 +19,7 @@ Both classes are thread-safe: the window calls them from a worker thread.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import threading
@@ -55,8 +56,11 @@ def reveal_in_file_manager(path: Path) -> None:
     to select a file). Failures are logged, never raised: this is a convenience button."""
     try:
         if sys.platform == "win32":
-            # explorer wants one "/select,<path>" argument and returns 1 even on success
-            subprocess.Popen(["explorer", f"/select,{path}"])
+            # explorer wants ONE argument of the form  /select,"C:\a b\c.zipmod"  (quotes around
+            # the path only). As a list, Python would quote the whole argument whenever the path
+            # has a space, explorer wouldn't understand it and would open a default folder, so
+            # the command line is built by hand. (It also returns 1 even on success.)
+            subprocess.Popen(f'explorer /select,"{os.path.normpath(str(path))}"')
         elif sys.platform == "darwin":
             subprocess.Popen(["open", "-R", str(path)])
         else:
