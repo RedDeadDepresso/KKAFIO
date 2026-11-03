@@ -235,13 +235,9 @@ async def search_chat_links_and_download(
                     raw_chat_id = get_peer_id(entity)
 
                     def _on_progress(downloaded: int, total: int, pct: float,
-                                     _name: str = file_name, _handle=handle) -> None:
+                                     _handle=handle) -> None:
+                        # Shown in the progress window; the log only names the file (see above).
                         _handle.update(downloaded, total)
-                        if total > 0:
-                            mb_done  = downloaded // 1024 // 1024
-                            mb_total = total      // 1024 // 1024
-                            logger.info("DLMOD",
-                                f"    {_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
 
                     await downloader.download(
                         chat_id=raw_chat_id,
@@ -543,12 +539,8 @@ async def download_via_teleget(
     if downloader is not None:
         try:
             def _on_progress(downloaded: int, total: int, pct: float) -> None:
+                # Shown in the progress window; the log only names the file (see above).
                 handle.update(downloaded, total)
-                if total > 0:
-                    mb_done  = downloaded // 1024 // 1024
-                    mb_total = total      // 1024 // 1024
-                    logger.info("DLMOD",
-                        f"  {file_name}: {mb_done}/{mb_total} MB ({pct:.0f}%)")
 
             if raw_chat_id is None:
                 raise RuntimeError(f"cannot resolve chat {chat_identifier}")
