@@ -46,7 +46,7 @@ from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
 from kkafio.indices.kkc_mod import load_kkc_mod_index
-from kkafio.indices.modpack import load_modpack_index
+from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.services.mod_sources.betterrepack import download_betterrepack, make_http_client
 from kkafio.services.mod_sources.telegram.links import (
     parse_chat_links,
@@ -85,10 +85,10 @@ class DownloadMissingMods(BaseTask):
         scene_guids: set[str],
         coord_guids: set[str],
         local_guids: set[str],
-        modpack_index: dict[str, str],
+        modpack_index: dict[str, list[str]],
         to_download: set[str],
-        from_betterrepack: dict[str, str],
-        downloaded_br: set[str],
+        from_betterrepack: dict[str, list[str]],
+        downloaded_br: dict[str, str],
         from_telegram: list[str],
         downloaded_tg: set[str],
         unresolved: list[str],
@@ -152,13 +152,11 @@ class DownloadMissingMods(BaseTask):
             lines.append("")
 
         # Only list mods that were actually downloaded (not skipped/already present)
-        actually_downloaded_br = {guid: rel for guid, rel in from_betterrepack.items()
-                                   if guid in downloaded_br}
         actually_downloaded_tg = [guid for guid in from_telegram if guid in downloaded_tg]
 
-        if actually_downloaded_br:
+        if downloaded_br:
             lines.append("Downloaded from BetterRepack:")
-            for guid, rel in sorted(actually_downloaded_br.items()):
+            for guid, rel in sorted(downloaded_br.items()):
                 lines.append(f"  + {guid}")
                 lines.append(f"    {rel}")
             lines.append("")
@@ -180,7 +178,7 @@ class DownloadMissingMods(BaseTask):
                     "",
                 ]
                 for guid in sorted(modpack_missing):
-                    lines.append(f"  ~ {guid} ({modpack_index[guid]})")
+                    lines.append(f"  ~ {guid} ({url_to_rel_path(modpack_index[guid][0])})")
                 lines.append("")
 
         readme_path = downloaded_mods_dir / "kkafio_missing_mods_report.txt"
@@ -389,7 +387,7 @@ class DownloadMissingMods(BaseTask):
                 "No Telegram source is selected — "
                 "only BetterRepack mods will be downloaded.")
 
-        from_betterrepack: dict[str, str] = {}
+        from_betterrepack: dict[str, list[str]] = {}
         from_telegram    : list[str]      = []
         unresolved       : list[str]      = []
 
@@ -415,7 +413,7 @@ class DownloadMissingMods(BaseTask):
         # ── Step 6: download ──────────────────────────────────────────────
         ok = fail = 0
         failed_guids:  set[str]  = set()
-        downloaded_br:  set[str] = set()
+        downloaded_br:  dict[str, str] = {}    # guid -> path (below the mods dir) of the file saved
         downloaded_tg:  set[str] = set()
 
         async def _run_all() -> None:
@@ -424,15 +422,15 @@ class DownloadMissingMods(BaseTask):
 
                 # BetterRepack — concurrent
                 br_failed     = {}   # guid -> rel_path for failed BR downloads
-                downloaded_br = set()  # actually downloaded (not skipped)
+                downloaded_br = {}     # actually downloaded (not skipped)
 
                 if from_betterrepack:
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
-                    async def _br_one(guid: str, rel: str):
+                    async def _br_one(guid: str, urls: list[str]):
                         try:
                             res = await download_betterrepack(
-                                br_client, guid, rel, downloaded_mods_dir, guid_str_map)
+                                br_client, guid, urls, downloaded_mods_dir, guid_str_map)
                         except Exception as exc:
                             res = exc
                         # Tell the progress window as each mod finishes. A failure that is
@@ -449,13 +447,15 @@ class DownloadMissingMods(BaseTask):
                         return res
 
                     results = await asyncio.gather(*[
-                        _br_one(guid, rel)
-                        for guid, rel in from_betterrepack.items()
+                        _br_one(guid, urls)
+                        for guid, urls in from_betterrepack.items()
                     ], return_exceptions=True)
                     for guid, result in zip(from_betterrepack, results, strict=True):
                         if result is True:
                             ok += 1
-                            downloaded_br.add(guid)
+                            # The URL that worked may not be the first one.
+                            downloaded_br[guid] = Path(guid_str_map[guid]).relative_to(
+                                downloaded_mods_dir).as_posix()
                         elif result == "skipped":
                             pass  # already existed — don't count or report
                         else:
@@ -464,7 +464,8 @@ class DownloadMissingMods(BaseTask):
                                 logger.error("DLMOD", f"Exception [{guid}]: {result}")
                             # Queue for Telegram fallback if enabled
                             if use_telegram:
-                                br_failed[guid] = from_betterrepack[guid]
+                                # Telegram saves into the same modpack subfolder.
+                                br_failed[guid] = url_to_rel_path(from_betterrepack[guid][0])
                                 logger.info("DLMOD",
                                     f"  [{guid}] will be retried via Telegram")
                             else:

@@ -17,7 +17,7 @@ KKAFIO-dev/
 │
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
 │   ├── build_default_clothes.py     # Records a folder of default-clothes coordinates in assets/data/default_clothes.json (Group Coordinates leaves those coordinates alone)
-│   ├── build_modpack_index.py       # Regenerates assets/data/*_modpack_index.json
+│   ├── build_modpack_index.py       # Regenerates assets/data/*_modpack_index.json from the BetterRepack server's listings
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
 │   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
 │   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
@@ -100,7 +100,7 @@ KKAFIO-dev/
 │   │   ├── scene.py                 # pepper-scene-index: scene hash -> author / year (Group Scenes)
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
-│   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> path inside the modpack
+│   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> download URLs (the path inside the modpack is the URL's path)
 │   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for the Scene library (Manage Library)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources

@@ -11,6 +11,7 @@ import json
 import os
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 
@@ -19,13 +20,18 @@ import card_factory as cf
 # ---- where the code lives -----------------------------------------------------------
 from kkafio.cards import cache_io
 from kkafio.cards.mods import zipmods
-from kkafio.indices.modpack import load_modpack_index
+from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.cards.chara import outfits
 from kkafio.cards.mods import parsing
 from kkafio.cards.mods import png_guids
 # -------------------------------------------------------------------------------------
 
 G1, G2, G3 = "mod.one", "mod.two", "mod.three"
+
+
+def modpack_url(rel: str) -> str:
+    """The download URL of a modpack file, as the shipped index stores it."""
+    return "https://sideload.betterrepack.com/download/KKEC/" + quote(rel)
 
 
 def _card(tmp_path, name, data):
@@ -286,18 +292,22 @@ def test_scan_mods_local_fallback(tmp_path, use_cache):
 def _resolution_setup(tmp_path):
     root = _mods_tree(tmp_path / "mods")
     cf.zipmod(root / "Elsewhere" / "d.zipmod", "pack.d")        # in the index, but not at its indexed path
-    index = {"pack.c": "Sideloader Modpack - X/c.zipmod",
-             "pack.d": "Sideloader Modpack - X/d.zipmod",
-             "pack.gone": "Sideloader Modpack - X/gone.zipmod"}
+    cf.zipmod(root / "Sideloader Modpack - X" / "f.zipmod", "pack.f")   # only its second URL is on disk
+    index = {"pack.c": [modpack_url("Sideloader Modpack - X/c.zipmod")],
+             "pack.d": [modpack_url("Sideloader Modpack - X/d.zipmod")],
+             "pack.f": [modpack_url("Sideloader Modpack - X/old f.zipmod"),
+                        modpack_url("Sideloader Modpack - X/f.zipmod")],
+             "pack.gone": [modpack_url("Sideloader Modpack - X/gone.zipmod")]}
     return root, index
 
 
 def test_resolve_guids_falls_back_to_local_scan_when_indexed_path_is_missing(tmp_path):
     root, index = _resolution_setup(tmp_path)
     local = zipmods.local_mods_map(root, include_modpack=True, use_cache=False)
-    res = zipmods.resolve_guids({"local.a", "pack.c", "pack.d", "pack.gone", "absent"}, local, index, root, True)
-    assert set(res.found) == {"local.a", "pack.c", "pack.d"}
+    res = zipmods.resolve_guids({"local.a", "pack.c", "pack.d", "pack.f", "pack.gone", "absent"}, local, index, root, True)
+    assert set(res.found) == {"local.a", "pack.c", "pack.d", "pack.f"}
     assert res.found["pack.d"] == root / "Elsewhere" / "d.zipmod"
+    assert res.found["pack.f"] == root / "Sideloader Modpack - X" / "f.zipmod"      # a later URL of the GUID
     assert res.excluded == set() and res.missing == {"pack.gone", "absent"}
 
 
@@ -311,7 +321,7 @@ def test_resolve_guids_reports_modpack_guids_as_excluded_when_modpack_is_off(tmp
 
 def test_is_modpack_protected(tmp_path):
     md = tmp_path / "mods"
-    index = {"pack.c": "Sideloader Modpack/c.zipmod"}
+    index = {"pack.c": [modpack_url("Sideloader Modpack/c.zipmod")]}
     assert zipmods.is_modpack_protected("pack.c", None, md, index)                                    # by GUID
     assert zipmods.is_modpack_protected("x", md / "Sideloader Modpack" / "x.zipmod", md, index)       # by folder
     assert not zipmods.is_modpack_protected("x", md / "own" / "x.zipmod", md, index)
@@ -321,7 +331,24 @@ def test_is_modpack_protected(tmp_path):
 def test_load_modpack_index_reads_bundled_index():
     index = load_modpack_index("Koikatsu")
     assert isinstance(index, dict) and len(index) > 1000
-    assert all(isinstance(k, str) and isinstance(v, str) for k, v in list(index.items())[:50])
+    for guid, urls in list(index.items())[:50]:
+        assert isinstance(guid, str) and urls and all(url_to_rel_path(u) for u in urls)
+
+
+def test_url_to_rel_path():
+    assert url_to_rel_path(modpack_url("Sideloader Modpack/xiongben/[x] A v1.0.zipmod")) == \
+        "Sideloader Modpack/xiongben/[x] A v1.0.zipmod"
+    assert url_to_rel_path(modpack_url("Sideloader Modpack/Alvarna#0602/a+b.zipmod")) == \
+        "Sideloader Modpack/Alvarna#0602/a+b.zipmod"                                   # %23 is a '#', '+' stays
+    base = "https://sideload.betterrepack.com/download/KKEC/"
+    assert url_to_rel_path(base + "Sideloader%20Modpack/%E3%83%A2/a.zipmod") == "Sideloader Modpack/モ/a.zipmod"
+    for bad in ("http://sideload.betterrepack.com/download/KKEC/a/b.zipmod",       # not https
+                "https://evil.example/download/KKEC/a/b.zipmod",                    # another host
+                "https://sideload.betterrepack.com/other/a/b.zipmod",              # outside the base
+                base + "a.zipmod",                                                 # no folder
+                base + "a/../../b.zipmod", base + "a/%2E%2E/b.zipmod",             # leaves the mods folder
+                base + "a/b%5Cc.zipmod", base + "a//b.zipmod", base):
+        assert url_to_rel_path(bad) is None, bad
 
 
 def test_resolve_paths(tmp_path):

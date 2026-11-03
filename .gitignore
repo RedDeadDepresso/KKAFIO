@@ -164,4 +164,5 @@ traceback.log
 .vscode/
 KKAFIO.exe
 cache
+tools/modpack_index_cache.json
 /data

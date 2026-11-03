@@ -255,7 +255,7 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/data/kk_modpack_index.json` / `assets/data/kks_modpack_index.json` | Pre-built Sideloader Modpack GUID → file indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/indices/modpack.py`'s `load_modpack_index()`. |
+| `assets/data/kk_modpack_index.json` / `assets/data/kks_modpack_index.json` | Pre-built Sideloader Modpack GUID → download URLs indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/indices/modpack.py`'s `load_modpack_index()`. |
 | `assets/data/default_clothes.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_clothes.py`; see [Default Clothes](#default-clothes) below. Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
 | `assets/data/author_index.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Manage Library's Scene tab suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/services/scene_authors.py`. |
 | `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/classifier.py`. Never modified at runtime. |
@@ -297,32 +297,55 @@ KKAFIO ships with two pre-built modpack index files:
 | `assets/data/kk_modpack_index.json` | Koikatsu / Koikatsu Party |
 | `assets/data/kks_modpack_index.json` | Koikatsu Sunshine |
 
+Each maps a mod GUID to the URLs it can be downloaded from on the BetterRepack server, best first:
+
+```json
+{
+ "generated": "2026-11-03T12:00:00",
+ "game_type": "kk",
+ "count": 4300,
+ "guids": {"com.example.mod": ["https://sideload.betterrepack.com/download/KKEC/Sideloader%20Modpack/a/mod.zipmod"]}
+}
+```
+
+The path of a mod inside the mods folder is not stored: it is the URL's path below
+`/download/KKEC/`, percent-decoded (`Sideloader Modpack/a/mod.zipmod`).
+`kkafio.indices.modpack.url_to_rel_path()` does this and refuses URLs that are not on the
+BetterRepack server or that could leave the mods folder.
+
 Archive Cards, Delete Cards, and Download Missing Mods use the index for
 the configured game type to instantly identify which required mods are
 covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO
-falls back to scanning the local mods folder automatically.
+falls back to scanning the local mods folder automatically. A file that
+isn't in this format (for example one from an older release) is ignored with a
+warning in the log.
 
-To regenerate the index after updating the Sideloader Modpack, run:
-
-```
-# Koikatsu / Koikatsu Party
-python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/kk_modpack_index.json
-
-# Koikatsu Sunshine
-python tools/build_modpack_index.py "C:/KKS/mods" --game-type kks --output assets/data/kks_modpack_index.json
-```
-
-**Incremental updates** — if the index file already exists,
-`tools/build_modpack_index.py` reuses entries for zipmods whose path,
-size, and modification time are unchanged. Only new or changed zipmods
-are opened and scanned. Adding a handful of mods to a large Sideloader
-Modpack takes seconds rather than minutes.
-
-Use `--full` to force a complete rescan and ignore the previous index:
+To regenerate the indexes after the Sideloader Modpack is updated, run:
 
 ```
-python tools/build_modpack_index.py "C:/KK Party/mods" --game-type kk --output assets/data/kk_modpack_index.json --full
+python tools/build_modpack_index.py                  # both games
+python tools/build_modpack_index.py --game-type kks  # one game
 ```
+
+The script crawls the server's directory listings, then reads the GUID and version of each
+new or changed zipmod with HTTP Range requests (the end of the zip and `manifest.xml` only,
+never the whole file). Nothing needs to be downloaded or installed locally.
+
+- **Which mods:** the main `Sideloader Modpack` folder plus the game's own categories
+  (`KK_CATEGORIES` / `KKS_CATEGORIES` in the script). Bleeding Edge, Studio and EmotionCreators
+  are not part of the BetterRepack game release and are neither crawled nor indexed.
+- **URL order:** the main folder first, then the specialised categories; within those the
+  highest manifest version, then the newest file date. Identical copies in several folders (same
+  filename, date and size) are listed once, and at most `--max-urls` (default 4) are kept.
+- **Incremental updates:** the date and size shown in the listing are remembered per URL in
+  `tools/modpack_index_cache.json` (git-ignored, shared by both games). Unchanged files are not
+  probed again, and a file that only moved or was renamed keeps its GUID. A second run takes
+  seconds. Files that can't be indexed (ZIP64, no `manifest.xml`, ...) are remembered too.
+- **Options:** `--full` ignores the cache and probes everything; `--retry-failed` probes the
+  remembered failures again; `--output PATH` (with a single `--game-type`) writes elsewhere;
+  `--cache PATH` moves the cache; `--workers N` sets the parallel requests (default 8, max 16).
+- **Incomplete runs:** if a listing or some files could not be reached, the script still
+  writes the indexes, prints a warning and exits with status 2. Run it again before shipping.
 
 Copy the updated `.json` files next to `kkafio_cli.exe` or commit them to
 the repository to ship them with the next release.

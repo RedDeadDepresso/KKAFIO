@@ -5,6 +5,7 @@ enough; it is skipped where Tk can't open one)."""
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
+from urllib.parse import quote
 
 import pytest
 
@@ -14,6 +15,10 @@ from kkafio.dialogs.library import mods_panel as mp
 from kkafio.dialogs.library.mods_panel import CardMods, ModRow, ModsLookup
 from kkafio.dialogs.library.viewstate import LibraryViewState
 from kkafio.core.session_store import SessionStore
+
+
+def _url(rel: str) -> str:
+    return "https://sideload.betterrepack.com/download/KKEC/" + quote(rel)
 
 
 # ---------------------------------------------------------------------------
@@ -51,7 +56,7 @@ def test_lookup_finds_installed_mods_and_reports_the_rest(tmp_path):
 def test_a_modpack_mod_installed_outside_its_indexed_path_is_still_found(tmp_path):
     zipmod(tmp_path / "Elsewhere" / "x.zipmod", "com.pack")
     with mock.patch.object(mp, "load_modpack_index",
-                           return_value={"com.pack": "Sideloader Modpack/x.zipmod"}):
+                           return_value={"com.pack": [_url("Sideloader Modpack/x.zipmod")]}):
         lookup = ModsLookup(tmp_path, use_cache=False)
         assert lookup.find("com.pack") == tmp_path.resolve() / "Elsewhere" / "x.zipmod"
 
@@ -67,7 +72,8 @@ def test_rows_for_resolves_known_guids_without_a_card_file(tmp_path):
 def test_a_modpack_mod_is_checked_through_the_index_not_by_scanning(tmp_path):
     pack = zipmod(tmp_path / "Sideloader Modpack" / "x.zipmod", "com.pack")
     with mock.patch.object(mp, "load_modpack_index",
-                           return_value={"com.pack": "Sideloader Modpack/x.zipmod", "com.pack.gone": "Sideloader Modpack/y.zipmod"}):
+                           return_value={"com.pack": [_url("Sideloader Modpack/x.zipmod")],
+                                         "com.pack.gone": [_url("Sideloader Modpack/y.zipmod")]}):
         lookup = ModsLookup(tmp_path, use_cache=False)
         assert lookup.find("com.pack") == tmp_path.resolve() / "Sideloader Modpack" / "x.zipmod"
         assert lookup.find("com.pack.gone") is None                 # in the index, not on disk

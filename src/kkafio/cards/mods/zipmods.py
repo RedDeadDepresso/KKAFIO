@@ -15,7 +15,7 @@ from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import is_mod_archive
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
-from kkafio.indices.modpack import load_modpack_index
+from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 
 
 _SIDELOADER_MODPACK = "Sideloader Modpack"
@@ -203,7 +203,7 @@ def local_mods_map(mods_dir: Path, include_modpack: bool = False,
 
 
 def is_modpack_protected(guid: str, path: Path | None, mods_dir: Path | None,
-                         modpack_index: dict[str, str]) -> bool:
+                         modpack_index: dict[str, list[str]]) -> bool:
     """True if a mod belongs to the Sideloader Modpack and deletion tasks must leave it alone:
     its GUID is in the modpack index, or its file lives in a Sideloader Modpack folder."""
     if guid in modpack_index:
@@ -211,21 +211,23 @@ def is_modpack_protected(guid: str, path: Path | None, mods_dir: Path | None,
     return path is not None and mods_dir is not None and in_modpack_folder(path, mods_dir)
 
 
-def resolve_guid(guid: str, local_map: dict[str, Path], modpack_index: dict[str, str],
+def resolve_guid(guid: str, local_map: dict[str, Path], modpack_index: dict[str, list[str]],
                  mods_dir: Path, include_modpack: bool) -> Path | None:
     """The zipmod providing `guid`, or None.
 
-    A GUID in the Sideloader Modpack index is looked up at its indexed path first, which needs
-    no zipmod to be opened. With include_modpack off such a GUID is deliberately not resolved
-    (None). If the indexed file isn't on disk (moved or renamed modpack folder, or the mod is
-    installed elsewhere under mods_dir), it falls through to `local_map` like any other GUID.
+    A GUID in the Sideloader Modpack index is looked up at the path of each of its URLs first,
+    which needs no zipmod to be opened. With include_modpack off such a GUID is deliberately
+    not resolved (None). If none of those files is on disk (moved or renamed modpack folder,
+    or the mod is installed elsewhere under mods_dir), it falls through to `local_map` like
+    any other GUID.
     """
     if guid in modpack_index:
         if not include_modpack:
             return None
-        p = mods_dir / modpack_index[guid]
-        if p.exists():
-            return p
+        for url in modpack_index[guid]:
+            rel = url_to_rel_path(url)
+            if rel is not None and (mods_dir / rel).exists():
+                return mods_dir / rel
     p = local_map.get(guid)
     return p if p is not None and p.exists() else None
 
@@ -237,7 +239,7 @@ class ModResolution(NamedTuple):
 
 
 def resolve_guids(required: Iterable[str], local_map: dict[str, Path],
-                  modpack_index: dict[str, str], mods_dir: Path,
+                  modpack_index: dict[str, list[str]], mods_dir: Path,
                   include_modpack: bool) -> ModResolution:
     """resolve_guid() for many GUIDs, also telling the modpack GUIDs that were excluded on
     purpose (so they can be reported apart from the ones that are really missing)."""

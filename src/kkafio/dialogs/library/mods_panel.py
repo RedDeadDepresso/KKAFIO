@@ -107,7 +107,7 @@ class ModsLookup:
         self.use_cache = use_cache
         self._lock = threading.Lock()
         self._local: dict[Path, dict[str, Path]] | None = None   # per folder: GUIDs of the mods outside the modpack
-        self._modpack: dict[str, str] | None = None        # the bundled index: GUID -> relative path
+        self._modpack: dict[str, list[str]] | None = None  # the bundled index: GUID -> download URLs
 
     @property
     def available(self) -> bool:
