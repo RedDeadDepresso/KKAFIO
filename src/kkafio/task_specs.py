@@ -642,14 +642,14 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("resolve-locally", key="ResolveLocally",
                    help="Hint the LLM with only the matching character when the indexes name exactly one "
                         "for a card, or one of several with the card's birth month and day (needs "
-                        "--hints-language other than 'no'; default: off)",
+                        "--hints-language other than 'no'; default: on)",
                    off_help="Hint the LLM with every match"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),
             Value("--llm-website-url", key="LlmWebsiteUrl", ignore_blank=True, metavar="URL",
                   default=None,
-                  help="LLM website to open (default: https://chat.deepseek.com/)"),
+                  help="LLM website to open (default: https://claude.ai/)"),
         ),
     ),
 
@@ -699,14 +699,14 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("resolve-locally", key="ResolveLocally",
                    help="Assign the series without the LLM when the hints name exactly one character, or "
                         "one of several with the card's birth month and day (needs --hints-language other "
-                        "than 'no'; default: off)",
+                        "than 'no'; default: on)",
                    off_help="Send every card to the LLM"),
             Toggle("open-llm-website", key="OpenLlmWebsite",
                    help="Open the LLM website in your browser before the dialog appears (default: on)",
                    off_help="Don't open the LLM website"),
             Value("--llm-website-url", key="LlmWebsiteUrl", ignore_blank=True, metavar="URL",
                   default=None,
-                  help="LLM website to open (default: https://chat.deepseek.com/)"),
+                  help="LLM website to open (default: https://claude.ai/)"),
         ),
     ),
 

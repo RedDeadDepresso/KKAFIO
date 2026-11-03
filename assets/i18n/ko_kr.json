@@ -107,7 +107,7 @@
   "option.OpenLlmWebsite.case.Yes.label": "열기",
   "option.OpenLlmWebsite.case.No.label": "열지 않음",
   "option.LlmWebsiteUrl.label": "LLM 웹사이트 URL",
-  "option.LlmWebsiteUrl.description": "'LLM 웹사이트 열기'가 켜져 있을 때 열 LLM 웹사이트 (예: https://chat.deepseek.com/)",
+  "option.LlmWebsiteUrl.description": "'LLM 웹사이트 열기'가 켜져 있을 때 열 LLM 웹사이트 (예: https://claude.ai/)",
   "option.LlmWebsiteUrl.input.url.label": "URL",
   "option.RenameCharaResolveLocally.label": "로컬에서 해결",
   "option.RenameCharaResolveLocally.description": "힌트를 로컬에서 좁힙니다. 캐릭터 인덱스에서 카드와 일치하는 캐릭터가 하나뿐이거나, 여러 후보 중 카드의 생일(월·일)과 같은 후보가 있으면 이름이 같은 모든 후보 대신 그 캐릭터만 LLM에 힌트로 전달합니다. 이름은 여전히 LLM이 정합니다. 힌트 언어가 '힌트 없음'이 아닐 때만 작동합니다.",

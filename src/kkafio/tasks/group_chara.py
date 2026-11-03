@@ -412,7 +412,7 @@ class GroupChara(BaseTask):
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
         self.use_cache           : bool = cfg.get("UseCache", True)
         self.hints_language      : str  = cfg.get("HintsLanguage", hint_language.DETECT)
-        self.resolve_locally     : bool = cfg.get("ResolveLocally", False)
+        self.resolve_locally     : bool = cfg.get("ResolveLocally", True)
         self.open_llm_website : bool = cfg.get("OpenLlmWebsite", True)
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 

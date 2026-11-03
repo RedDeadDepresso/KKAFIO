@@ -4137,9 +4137,9 @@
       "chara_dir_str": "/cfg/chara",
       "hints_language": "detect",
       "include_subfolders": true,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -4169,9 +4169,9 @@
       "chara_dir_str": "/cfg/chara",
       "hints_language": "detect",
       "include_subfolders": true,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -4201,9 +4201,9 @@
       "chara_dir_str": "/cfg/chara",
       "hints_language": "detect",
       "include_subfolders": true,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -5169,10 +5169,10 @@
      "attrs": {
       "chara_dir_str": "/cfg/chara",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": false,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": false,
       "update_metadata": true,
       "use_cache": true
@@ -5203,10 +5203,10 @@
      "attrs": {
       "chara_dir_str": "/cfg/chara",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": false,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": false,
       "update_metadata": true,
       "use_cache": true
@@ -5237,10 +5237,10 @@
      "attrs": {
       "chara_dir_str": "/cfg/chara",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": false,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": false,
       "update_metadata": true,
       "use_cache": true
@@ -12730,9 +12730,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12762,9 +12762,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12794,9 +12794,9 @@
       "chara_dir_str": "S_chara_dir",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12826,9 +12826,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12858,9 +12858,9 @@
       "chara_dir_str": "",
       "hints_language": "en_us",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12890,9 +12890,9 @@
       "chara_dir_str": "",
       "hints_language": "ja_jp",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12922,9 +12922,9 @@
       "chara_dir_str": "",
       "hints_language": "ko_kr",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12954,9 +12954,9 @@
       "chara_dir_str": "",
       "hints_language": "no",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -12986,9 +12986,9 @@
       "chara_dir_str": "",
       "hints_language": "ru_ru",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13018,9 +13018,9 @@
       "chara_dir_str": "",
       "hints_language": "zh_cn",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13050,9 +13050,9 @@
       "chara_dir_str": "",
       "hints_language": "zh_tw",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13081,9 +13081,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": true,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13113,9 +13113,9 @@
       "chara_dir_str": "S_chara_dir",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13145,9 +13145,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13179,7 +13179,7 @@
       "include_subfolders": false,
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13208,9 +13208,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": false,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13239,7 +13239,7 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "resolve_locally": false,
       "use_cache": true
@@ -13270,9 +13270,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": false
      },
      "class": "GroupChara",
@@ -13301,9 +13301,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13332,7 +13332,7 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "resolve_locally": true,
       "use_cache": true
@@ -13363,9 +13363,9 @@
       "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -13395,9 +13395,9 @@
       "chara_dir_str": "S_chara_dir",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -16319,10 +16319,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16353,10 +16353,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16387,10 +16387,10 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16421,10 +16421,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16455,10 +16455,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "en_us",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16489,10 +16489,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "ja_jp",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16523,10 +16523,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "ko_kr",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16557,10 +16557,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "no",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16591,10 +16591,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "ru_ru",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16625,10 +16625,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "zh_cn",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16659,10 +16659,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "zh_tw",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16693,10 +16693,10 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16727,10 +16727,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16764,7 +16764,7 @@
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16794,10 +16794,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": false,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16827,10 +16827,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": false,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16860,7 +16860,7 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
       "resolve_locally": false,
@@ -16893,10 +16893,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": false,
       "update_metadata": false,
       "use_cache": true
@@ -16926,10 +16926,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -16959,10 +16959,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": false
@@ -16992,10 +16992,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -17025,10 +17025,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -17058,7 +17058,7 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
       "resolve_locally": true,
@@ -17091,10 +17091,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -17124,10 +17124,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": true,
       "use_cache": true
@@ -17157,10 +17157,10 @@
      "attrs": {
       "chara_dir_str": "",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -17191,10 +17191,10 @@
      "attrs": {
       "chara_dir_str": "S_chara_dir",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true

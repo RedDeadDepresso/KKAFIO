@@ -107,7 +107,7 @@
   "option.OpenLlmWebsite.case.Yes.label": "開く",
   "option.OpenLlmWebsite.case.No.label": "開かない",
   "option.LlmWebsiteUrl.label": "LLMサイトのURL",
-  "option.LlmWebsiteUrl.description": "「LLMサイトを開く」がオンのときに開くLLMサイト（例: https://chat.deepseek.com/）",
+  "option.LlmWebsiteUrl.description": "「LLMサイトを開く」がオンのときに開くLLMサイト（例: https://claude.ai/）",
   "option.LlmWebsiteUrl.input.url.label": "URL",
   "option.RenameCharaResolveLocally.label": "ローカルで解決",
   "option.RenameCharaResolveLocally.description": "ヒントをローカルで絞り込みます。キャラクターインデックスでカードに一致するキャラクターが1人だけの場合、または複数候補のうちカードの誕生月・誕生日と一致する1人がいる場合、同名の候補すべてではなくそのキャラクターだけを LLM にヒントとして渡します。名前の決定は引き続き LLM が行います。ヒント言語が「ヒントなし」以外のときのみ有効です。",

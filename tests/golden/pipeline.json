@@ -513,9 +513,9 @@
       "chara_dir_str": "<ROOT>/work",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",
@@ -586,10 +586,10 @@
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -817,10 +817,10 @@
      "attrs": {
       "chara_dir_str": "<ROOT>/work",
       "hints_language": "detect",
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
       "rename_files": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "skip_already_renamed": true,
       "update_metadata": false,
       "use_cache": true
@@ -894,9 +894,9 @@
       "chara_dir_str": "<ROOT>/work",
       "hints_language": "detect",
       "include_subfolders": false,
-      "llm_website_url": "https://chat.deepseek.com/",
+      "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
-      "resolve_locally": false,
+      "resolve_locally": true,
       "use_cache": true
      },
      "class": "GroupChara",

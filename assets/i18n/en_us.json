@@ -107,7 +107,7 @@
   "option.OpenLlmWebsite.case.Yes.label": "Open",
   "option.OpenLlmWebsite.case.No.label": "Don't Open",
   "option.LlmWebsiteUrl.label": "LLM Website URL",
-  "option.LlmWebsiteUrl.description": "The LLM website to open when Open LLM Website is on (e.g. https://chat.deepseek.com/)",
+  "option.LlmWebsiteUrl.description": "The LLM website to open when Open LLM Website is on (e.g. https://claude.ai/)",
   "option.LlmWebsiteUrl.input.url.label": "URL",
   "option.RenameCharaResolveLocally.label": "Resolve Locally",
   "option.RenameCharaResolveLocally.description": "Narrow the hints locally: when the character indexes name exactly one character for a card, or one of several with the card's own birth month and day, only that character is given to the LLM as the hint instead of every name match. The LLM still does the naming. Only works when Hints Language is not \"No hints\".",

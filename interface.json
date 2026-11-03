@@ -567,7 +567,7 @@
         {
           "name": "url",
           "label": "$option.LlmWebsiteUrl.input.url.label",
-          "default": "https://chat.deepseek.com/",
+          "default": "https://claude.ai/",
           "pipeline_type": "string"
         }
       ],
@@ -579,7 +579,7 @@
       "type": "switch",
       "label": "$option.RenameCharaResolveLocally.label",
       "description": "$option.RenameCharaResolveLocally.description",
-      "default_case": "No",
+      "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",
@@ -710,7 +710,7 @@
       "type": "switch",
       "label": "$option.GroupCharaResolveLocally.label",
       "description": "$option.GroupCharaResolveLocally.description",
-      "default_case": "No",
+      "default_case": "Yes",
       "cases": [
         {
           "name": "Yes",

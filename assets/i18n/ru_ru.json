@@ -107,7 +107,7 @@
   "option.OpenLlmWebsite.case.Yes.label": "Открывать",
   "option.OpenLlmWebsite.case.No.label": "Не открывать",
   "option.LlmWebsiteUrl.label": "URL сайта LLM",
-  "option.LlmWebsiteUrl.description": "Сайт LLM, который открывается, когда включено «Открывать сайт LLM» (например, https://chat.deepseek.com/)",
+  "option.LlmWebsiteUrl.description": "Сайт LLM, который открывается, когда включено «Открывать сайт LLM» (например, https://claude.ai/)",
   "option.LlmWebsiteUrl.input.url.label": "URL",
   "option.RenameCharaResolveLocally.label": "Определять локально",
   "option.RenameCharaResolveLocally.description": "Сужать подсказки локально: если индексы персонажей дают для карточки ровно одного персонажа или одного из нескольких с тем же месяцем и днём рождения, что у карточки, в LLM передаётся только он, а не все совпадения по имени. Имя по-прежнему определяет LLM. Работает, только если язык подсказок не «Без подсказок».",

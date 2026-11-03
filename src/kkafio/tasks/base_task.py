@@ -24,7 +24,7 @@ DEFAULT_DOWNLOADS_PATH = Path("C:/KKAFIO/Downloads")
 
 # Fallback for the "LlmWebsiteUrl" option (Group / Rename Characters) when it
 # is blank — must match the option's "default" in interface.json.
-DEFAULT_LLM_WEBSITE_URL = "https://chat.deepseek.com/"
+DEFAULT_LLM_WEBSITE_URL = "https://claude.ai/"
 
 
 def open_in_default_app(tag: str, path: Path) -> None:

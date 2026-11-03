@@ -107,7 +107,7 @@
   "option.OpenLlmWebsite.case.Yes.label": "開啟",
   "option.OpenLlmWebsite.case.No.label": "不開啟",
   "option.LlmWebsiteUrl.label": "LLM 網站網址",
-  "option.LlmWebsiteUrl.description": "開啟「開啟 LLM 網站」時要開啟的 LLM 網站（例如 https://chat.deepseek.com/）",
+  "option.LlmWebsiteUrl.description": "開啟「開啟 LLM 網站」時要開啟的 LLM 網站（例如 https://claude.ai/）",
   "option.LlmWebsiteUrl.input.url.label": "網址",
   "option.RenameCharaResolveLocally.label": "本地解析",
   "option.RenameCharaResolveLocally.description": "在本地縮小提示範圍:當角色索引中只有一個角色與卡片相符,或多個候選中有一個與卡片的出生月份和日期相同時,只把該角色作為提示交給 LLM,而不是所有同名相符項。命名仍由 LLM 完成。僅在提示語言不是「不使用提示」時有效。",
