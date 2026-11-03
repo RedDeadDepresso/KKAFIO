@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from kkafio.core.i18n import t
 from kkafio.dialogs.library.shortcuts import (
-    ACTION_ARCHIVE, ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ACTIONS, ShortcutSettings, combo_from_event)
+    ACTION_ARCHIVE, ACTION_DELETE, ACTION_EXPLORER, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ACTIONS, ShortcutSettings, combo_from_event)
 
 
 def action_labels() -> dict[str, str]:
@@ -18,7 +18,8 @@ def action_labels() -> dict[str, str]:
             ACTION_FOLDER: t("dialog.shortcuts.action_folder"),
             ACTION_DELETE: t("dialog.shortcuts.action_delete"),
             ACTION_ARCHIVE: t("dialog.shortcuts.action_archive"),
-            ACTION_RESTORE: t("dialog.shortcuts.action_restore")}
+            ACTION_RESTORE: t("dialog.shortcuts.action_restore"),
+            ACTION_EXPLORER: t("dialog.shortcuts.action_explorer")}
 
 
 def build_shortcuts_panel(dlg, panel, settings: ShortcutSettings):

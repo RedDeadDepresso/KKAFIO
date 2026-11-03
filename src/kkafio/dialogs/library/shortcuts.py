@@ -1,9 +1,9 @@
 """
 shortcuts.py — The keyboard shortcuts of the library window, and where they are saved.
 
-Five actions can be given a key by the user (Shortcuts tab of the window's Settings): rename the card,
-change its folder, delete it (move it to the trash), archive it (move it to the archive queue) and
-restore it (out of the trash or the archive queue). One `ShortcutSettings` is shared by every
+Six actions can be given a key by the user (Shortcuts tab of the window's Settings): rename the card,
+change its folder, delete it (move it to the trash), archive it (move it to the archive queue),
+restore it (out of the trash or the archive queue) and show it in the file explorer. One `ShortcutSettings` is shared by every
 tab of the window, so a change applies to all of them at once. It is saved in
 ``<CONFIG_DIR>/config/library-shortcuts.json`` (on Windows: %APPDATA%/KKAFIO/config), next to the
 GUI's own config, and read again the next time the library opens.
@@ -29,10 +29,11 @@ ACTION_FOLDER = "folder"
 ACTION_DELETE = "delete"
 ACTION_ARCHIVE = "archive"
 ACTION_RESTORE = "restore"
-ACTIONS = (ACTION_RENAME, ACTION_FOLDER, ACTION_DELETE, ACTION_ARCHIVE, ACTION_RESTORE)
+ACTION_EXPLORER = "explorer"
+ACTIONS = (ACTION_RENAME, ACTION_FOLDER, ACTION_DELETE, ACTION_ARCHIVE, ACTION_RESTORE, ACTION_EXPLORER)
 
 DEFAULTS = {ACTION_RENAME: "F12", ACTION_FOLDER: "Enter", ACTION_DELETE: "Delete", ACTION_ARCHIVE: "F11",
-            ACTION_RESTORE: "Insert"}
+            ACTION_RESTORE: "Insert", ACTION_EXPLORER: "F10"}
 
 # Keys the library already uses to move around and select (with any modifier held); they can't
 # be given to an action.

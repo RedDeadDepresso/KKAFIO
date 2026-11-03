@@ -60,7 +60,8 @@ from kkafio.dialogs.library.popup_menu import open_popup_menu
 from kkafio.dialogs.library.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
 from kkafio.dialogs.library.viewstate import LibraryViewState, TabView
 from kkafio.dialogs.library.shortcuts import (
-    ACTION_ARCHIVE, ACTION_DELETE, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings, combo_from_event,
+    ACTION_ARCHIVE, ACTION_DELETE, ACTION_EXPLORER, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings,
+    combo_from_event,
 )
 from kkafio.dialogs.library.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
@@ -1418,11 +1419,18 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         finish_assignment(first_idx)
         status.configure(text=t("dialog.library.restored", count=len(targets)))
 
+    def show_in_explorer(targets: list) -> None:
+        """Open the file manager with the (first) card of `targets` selected."""
+        if not targets:
+            return
+        from kkafio.dialogs.similar_chara import reveal_in_folder
+        reveal_in_folder(targets[0].path)
+
     context_menu: dict = {"close": None}                    # closes the right-click menu that is open
 
     def on_context_menu(event) -> None:
         """Right click on a card: Move to trash and Archive (just Restore in the trash and archive
-        queue views), for the selected cards when the card is one of them, else for that card alone."""
+        queue views), plus Show in Explorer, for the selected cards when the card is one of them, else for that card alone."""
         hit = locate(event.x, event.y)
         if edit["idx"] is not None:
             cancel_edit()
@@ -1436,14 +1444,18 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         suffix = f" ({len(targets)})" if len(targets) > 1 else ""
         if context_menu["close"] is not None:
             context_menu["close"]()                             # one menu at a time
+        explorer_entry = (t("dialog.library.menu_explorer"), shortcuts.combo(ACTION_EXPLORER),
+                          lambda: show_in_explorer(targets))
         if model.mode in HELD_VIEWS:
-            entries = [(t("dialog.library.menu_restore") + suffix, shortcuts.combo(ACTION_RESTORE),
+            entries = [explorer_entry,
+                       (t("dialog.library.menu_restore") + suffix, shortcuts.combo(ACTION_RESTORE),
                         lambda: restore_cards(targets))]
         else:
-            entries = [(t("dialog.library.menu_trash") + suffix, shortcuts.combo(ACTION_DELETE),
-                        lambda: trash_cards(targets)),
+            entries = [explorer_entry,
                        (t("dialog.library.menu_archive") + suffix, shortcuts.combo(ACTION_ARCHIVE),
-                        lambda: archive_cards(targets))]
+                        lambda: archive_cards(targets)),
+                       (t("dialog.library.menu_trash") + suffix, shortcuts.combo(ACTION_DELETE),
+                        lambda: trash_cards(targets))]
         context_menu["close"] = open_popup_menu(
             canvas, event.x_root, event.y_root, entries,
             {key: pair(name) for key, name in (("bg", "tile"), ("border", "border"), ("hover", "sel"),
@@ -1505,9 +1517,14 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         if targets:
             restore_cards(targets)
 
+    def explorer_shortcut() -> None:
+        """The "show in explorer" shortcut: the cursor card (or the first selected) in the file manager."""
+        targets = picked_in_order() or ([sel["item"]] if sel["item"] is not None else [])
+        show_in_explorer(targets)
+
     shortcut_actions = {ACTION_RENAME: rename_card_shortcut, ACTION_FOLDER: change_folder,
                         ACTION_DELETE: delete_shortcut, ACTION_ARCHIVE: archive_shortcut,
-                        ACTION_RESTORE: restore_shortcut}
+                        ACTION_RESTORE: restore_shortcut, ACTION_EXPLORER: explorer_shortcut}
 
     def on_key(event) -> str | None:
         """Any key the library has no binding of its own for: the user's shortcuts (the settings
