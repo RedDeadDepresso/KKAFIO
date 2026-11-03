@@ -1707,10 +1707,10 @@
       "description": "$task.ManageLibrary.description",
       "group": ["card-management"],
       "option": [
-        "ManageLibraryDeleteOptions",
         "ManageLibraryArchiveOutputPath",
         "ManageLibraryArchiveFormat",
         "ManageLibraryArchiveOptions",
+        "ManageLibraryDeleteOptions",
         "SceneDir",
         "CharaDir",
         "CoordDir",
