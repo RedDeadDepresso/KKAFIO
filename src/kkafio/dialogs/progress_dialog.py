@@ -15,8 +15,9 @@ open mid-run still work (they run their own nested loop on the same thread).
 * Cancel (or the window's close button) cancels the task that is inside the
   ``async with``; the ``.part`` files the downloaders leave behind are removed by
   their own cleanup. The caller sees an ``asyncio.CancelledError`` come out.
-* If something failed, the window stays open at the end (showing the totals)
-  until it is closed; otherwise it closes by itself.
+* The window closes by itself when the run ends, failures or not (the log and the
+  report list what failed). `hold_on_failure=True` keeps it open on the final totals
+  until the user closes it when something failed.
 * Where no window can be made (no display, tests, ``KKAFIO_PROGRESS_DIALOG=0``)
   the context manager does nothing and the downloads run as before.
 """
@@ -274,7 +275,7 @@ def _open_window(tracker: progress.ProgressTracker, title: str,
 @asynccontextmanager
 async def download_progress(
     title: str, unit: Literal["mods", "links"], total_items: int | None = None,
-    hold_on_failure: bool = True,
+    hold_on_failure: bool = False,
 ):
     """Show the progress window while the body runs (see the module docstring).
 
