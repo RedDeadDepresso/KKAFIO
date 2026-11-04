@@ -1673,11 +1673,11 @@
       "group": ["chara-management"],
       "option": [
         "GroupCharaIncludeSubfolders",
-        "HintsLanguage",
-        "GroupCharaResolveLocally",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "GroupCharaPrompt",
+        "HintsLanguage",
+        "GroupCharaResolveLocally",
         "UseCache",
         "CharaDir"
       ]
@@ -1737,13 +1737,13 @@
       "group": ["chara-management"],
       "option": [
         "SkipAlreadyRenamed",
-        "UpdateMetadata",
         "RenameFiles",
-        "HintsLanguage",
-        "RenameCharaResolveLocally",
+        "UpdateMetadata",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "RenameCharaPrompt",
+        "HintsLanguage",
+        "RenameCharaResolveLocally",
         "UseCache",
         "CharaDir"
       ]
