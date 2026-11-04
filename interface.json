@@ -597,6 +597,45 @@
         }
       ]
     },
+    "PromptLanguage": {
+      "type": "select",
+      "label": "$option.PromptLanguage.label",
+      "description": "$option.PromptLanguage.description",
+      "default_case": "en_us",
+      "cases": [
+        {
+          "name": "custom",
+          "label": "$option.PromptLanguage.case.custom.label"
+        },
+        {
+          "name": "en_us",
+          "label": "$option.PromptLanguage.case.en_us.label"
+        },
+        {
+          "name": "zh_cn",
+          "label": "$option.PromptLanguage.case.zh_cn.label"
+        },
+        {
+          "name": "zh_tw",
+          "label": "$option.PromptLanguage.case.zh_tw.label"
+        },
+        {
+          "name": "ja_jp",
+          "label": "$option.PromptLanguage.case.ja_jp.label"
+        },
+        {
+          "name": "ko_kr",
+          "label": "$option.PromptLanguage.case.ko_kr.label"
+        },
+        {
+          "name": "ru_ru",
+          "label": "$option.PromptLanguage.case.ru_ru.label"
+        }
+      ],
+      "pipeline_override": {
+        "PromptLanguage": "{case.name}"
+      }
+    },
     "RenameCharaPrompt": {
       "type": "textarea",
       "name": "prompt",
@@ -1675,6 +1714,7 @@
         "GroupCharaIncludeSubfolders",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
+        "PromptLanguage",
         "GroupCharaPrompt",
         "HintsLanguage",
         "GroupCharaResolveLocally",
@@ -1741,6 +1781,7 @@
         "UpdateMetadata",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
+        "PromptLanguage",
         "RenameCharaPrompt",
         "HintsLanguage",
         "RenameCharaResolveLocally",

@@ -4139,6 +4139,7 @@
       "include_subfolders": true,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -4171,6 +4172,7 @@
       "include_subfolders": true,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -4203,6 +4205,7 @@
       "include_subfolders": true,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -4227,6 +4230,8 @@
    "S_chara_dir",
    "--include-subfolders",
    "--use-cache",
+   "--prompt-language",
+   "custom",
    "--hints-language",
    "no",
    "--resolve-locally",
@@ -4243,6 +4248,7 @@
       "include_subfolders": true,
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
+      "prompt_language": "custom",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -4267,6 +4273,8 @@
    "S_chara_dir",
    "--include-subfolders",
    "--no-use-cache",
+   "--prompt-language",
+   "zh_tw",
    "--hints-language",
    "zh_tw",
    "--no-resolve-locally",
@@ -4283,6 +4291,7 @@
       "include_subfolders": true,
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": false,
+      "prompt_language": "zh_tw",
       "resolve_locally": false,
       "use_cache": false
      },
@@ -5171,6 +5180,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": false,
       "resolve_locally": true,
       "skip_already_renamed": false,
@@ -5205,6 +5215,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": false,
       "resolve_locally": true,
       "skip_already_renamed": false,
@@ -5239,6 +5250,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": false,
       "resolve_locally": true,
       "skip_already_renamed": false,
@@ -5268,6 +5280,8 @@
    "--update-metadata",
    "--rename-files",
    "--use-cache",
+   "--prompt-language",
+   "custom",
    "--hints-language",
    "no",
    "--resolve-locally",
@@ -5283,6 +5297,7 @@
       "hints_language": "no",
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
+      "prompt_language": "custom",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -5312,6 +5327,8 @@
    "--no-update-metadata",
    "--no-rename-files",
    "--no-use-cache",
+   "--prompt-language",
+   "zh_tw",
    "--hints-language",
    "zh_tw",
    "--no-resolve-locally",
@@ -5327,6 +5344,7 @@
       "hints_language": "zh_tw",
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": false,
+      "prompt_language": "zh_tw",
       "rename_files": false,
       "resolve_locally": false,
       "skip_already_renamed": false,
@@ -12732,6 +12750,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12764,6 +12783,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12796,6 +12816,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12828,6 +12849,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12860,6 +12882,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12892,6 +12915,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12924,6 +12948,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12956,6 +12981,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -12988,6 +13014,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13020,6 +13047,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13052,6 +13080,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13083,6 +13112,7 @@
       "include_subfolders": true,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13115,6 +13145,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13147,6 +13178,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13179,6 +13211,7 @@
       "include_subfolders": false,
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13210,6 +13243,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": false,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13241,6 +13275,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": false,
       "use_cache": true
      },
@@ -13272,6 +13307,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": false
      },
@@ -13303,6 +13339,238 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=custom": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "custom"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "custom",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=en_us": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "en_us"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "en_us",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=ja_jp": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "ja_jp"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "ja_jp",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=ko_kr": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "ko_kr"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "ko_kr",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=ru_ru": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "ru_ru"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "ru_ru",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=zh_cn": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "zh_cn"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "zh_cn",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --prompt-language=zh_tw": {
+  "argv": [
+   "group-chara",
+   "--prompt-language",
+   "zh_tw"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "zh_tw",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13334,6 +13602,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13365,6 +13634,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13397,6 +13667,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13421,6 +13692,8 @@
    "S_chara_dir",
    "--include-subfolders",
    "--use-cache",
+   "--prompt-language",
+   "custom",
    "--hints-language",
    "no",
    "--resolve-locally",
@@ -13437,6 +13710,7 @@
       "include_subfolders": true,
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
+      "prompt_language": "custom",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -13461,6 +13735,8 @@
    "S_chara_dir",
    "--include-subfolders",
    "--no-use-cache",
+   "--prompt-language",
+   "zh_tw",
    "--hints-language",
    "zh_tw",
    "--no-resolve-locally",
@@ -13477,6 +13753,7 @@
       "include_subfolders": true,
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": false,
+      "prompt_language": "zh_tw",
       "resolve_locally": false,
       "use_cache": false
      },
@@ -16321,6 +16598,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16355,6 +16633,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16389,6 +16668,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16423,6 +16703,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16457,6 +16738,7 @@
       "hints_language": "en_us",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16491,6 +16773,7 @@
       "hints_language": "ja_jp",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16525,6 +16808,7 @@
       "hints_language": "ko_kr",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16559,6 +16843,7 @@
       "hints_language": "no",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16593,6 +16878,7 @@
       "hints_language": "ru_ru",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16627,6 +16913,7 @@
       "hints_language": "zh_cn",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16661,6 +16948,7 @@
       "hints_language": "zh_tw",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16695,6 +16983,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16729,6 +17018,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16763,6 +17053,7 @@
       "hints_language": "detect",
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16796,6 +17087,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": false,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16829,6 +17121,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": false,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16862,6 +17155,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": false,
       "skip_already_renamed": true,
@@ -16895,6 +17189,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": false,
@@ -16928,6 +17223,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16961,6 +17257,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -16994,6 +17291,252 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=custom": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "custom"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "custom",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=en_us": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "en_us"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "en_us",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=ja_jp": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "ja_jp"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "ja_jp",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=ko_kr": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "ko_kr"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "ko_kr",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=ru_ru": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "ru_ru"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "ru_ru",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=zh_cn": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "zh_cn"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "zh_cn",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --prompt-language=zh_tw": {
+  "argv": [
+   "rename-chara",
+   "--prompt-language",
+   "zh_tw"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "zh_tw",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17027,6 +17570,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17060,6 +17604,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17093,6 +17638,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17126,6 +17672,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17159,6 +17706,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17193,6 +17741,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17222,6 +17771,8 @@
    "--update-metadata",
    "--rename-files",
    "--use-cache",
+   "--prompt-language",
+   "custom",
    "--hints-language",
    "no",
    "--resolve-locally",
@@ -17237,6 +17788,7 @@
       "hints_language": "no",
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": true,
+      "prompt_language": "custom",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -17266,6 +17818,8 @@
    "--no-update-metadata",
    "--no-rename-files",
    "--no-use-cache",
+   "--prompt-language",
+   "zh_tw",
    "--hints-language",
    "zh_tw",
    "--no-resolve-locally",
@@ -17281,6 +17835,7 @@
       "hints_language": "zh_tw",
       "llm_website_url": "S_llm_website_url",
       "open_llm_website": false,
+      "prompt_language": "zh_tw",
       "rename_files": false,
       "resolve_locally": false,
       "skip_already_renamed": false,

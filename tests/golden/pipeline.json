@@ -515,6 +515,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },
@@ -588,6 +589,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -819,6 +821,7 @@
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "rename_files": true,
       "resolve_locally": true,
       "skip_already_renamed": true,
@@ -896,6 +899,7 @@
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
+      "prompt_language": "en_us",
       "resolve_locally": true,
       "use_cache": true
      },

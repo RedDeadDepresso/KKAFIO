@@ -74,6 +74,19 @@ def _hint_language_choices() -> list[str]:
     return choices()
 
 
+def _prompt_language_choices() -> list[str]:
+    from kkafio.cards.chara.prompt_language import choices
+    return choices()
+
+
+_PROMPT_LANGUAGE_HELP = (
+    "Language of the LLM's answer: 'custom' = send the Prompt option's text, or one of \
+the languages (default: en_us) to send the built-in prompt for it, which asks for series titles / names in that \
+language (the Prompt option is then ignored). With --hints-language detect, the hints use this \
+language too"
+)
+
+
 _CONTEXT_MENU_HELP = (
     "Internal flag set by the context menu (via kkafio_setup.bat): coalesces multiple "
     "simultaneous Explorer-selection invocations (one per selected file) "
@@ -633,12 +646,14 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
                         "(default: on)",
                    off_help="Disable cache and read every card"),
+            Value("--prompt-language", key="PromptLanguage", metavar="LANG", default=None,
+                  choices=_prompt_language_choices(), help=_PROMPT_LANGUAGE_HELP),
             Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
                   choices=_hint_language_choices(),
                   help="Language of the hints from the gacha-game / anime, games, vtubers character indexes "
                        "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
-                       "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
-                       "language from the prompt (default), or one of the languages in assets/i18n"),
+                       "normalise series names): 'no' = don't use the indexes, 'detect' = use the prompt "
+                       "language, or read it from the prompt text when that is 'custom' (default), or one of the languages in assets/i18n"),
             Toggle("resolve-locally", key="ResolveLocally",
                    help="Hint the LLM with only the matching character when the indexes name exactly one "
                         "for a card, or one of several with the card's birth month and day (needs "
@@ -690,12 +705,14 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Reuse each card's cached identification key so unchanged cards aren't re-parsed "
                         "(default: on)",
                    off_help="Disable cache and read every card"),
+            Value("--prompt-language", key="PromptLanguage", metavar="LANG", default=None,
+                  choices=_prompt_language_choices(), help=_PROMPT_LANGUAGE_HELP),
             Value("--hints-language", key="HintsLanguage", metavar="LANG", default=None,
                   choices=_hint_language_choices(),
                   help="Language of the hints from the gacha-game / anime, games, vtubers character indexes "
                        "(they add up to 5 candidate characters, 'hints', to every card sent to the LLM and "
-                       "normalise series names): 'no' = don't use the indexes, 'detect' = read the "
-                       "language from the prompt (default), or one of the languages in assets/i18n"),
+                       "normalise series names): 'no' = don't use the indexes, 'detect' = use the prompt "
+                       "language, or read it from the prompt text when that is 'custom' (default), or one of the languages in assets/i18n"),
             Toggle("resolve-locally", key="ResolveLocally",
                    help="Assign the series without the LLM when the hints name exactly one character, or "
                         "one of several with the card's birth month and day (needs --hints-language other "

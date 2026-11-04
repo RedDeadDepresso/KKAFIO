@@ -4,7 +4,8 @@ hint_language.py — Which language the character-index hints (series / names) a
 Group Characters and Rename Characters let the user pick:
 
     "no"      no hints at all (the character indexes are not used)
-    "detect"  work it out from the prompt (see `detect`)
+    "detect"  the Prompt Language option's language, or — when that is "custom" — worked out
+              from the prompt text (see `detect`)
     <code>    one of the languages in assets/i18n/ (``en_us``, ``ja_jp`` ...)
 
 The indexes store each series title / character name per language; `localized` picks
@@ -115,11 +116,13 @@ def detect(prompt: str) -> str | None:
     return DEFAULT_LANGUAGE if score[DEFAULT_LANGUAGE] and DEFAULT_LANGUAGE in langs else None
 
 
-def resolve(setting: object, prompt: str, tag: str) -> str | None:
+def resolve(setting: object, prompt: str, tag: str, prompt_lang: str | None = None) -> str | None:
     """The language to use for hints, or None for no hints at all.
 
     `setting` is the option's value: ``no``, ``detect`` (the default, and what an empty or
-    unknown value falls back to) or a language code.
+    unknown value falls back to) or a language code. `prompt_lang` is the language chosen by the
+    Prompt Language option (None for ``custom``): ``detect`` uses it as is instead of reading
+    the prompt text.
     """
     value = _normalise(setting) or DETECT
     if value == NO:
@@ -130,6 +133,9 @@ def resolve(setting: object, prompt: str, tag: str) -> str | None:
             logger.info(tag, f"Hints language: {value}")
             return value
         logger.warning(tag, f"Unknown hints language '{setting}' — detecting it from the prompt instead.")
+    if prompt_lang and prompt_lang in available_languages():
+        logger.info(tag, f"Hints language: {prompt_lang} (the prompt language)")
+        return prompt_lang
     found = detect(prompt)
     if found is None:
         logger.info(tag, f"Hints language: {DEFAULT_LANGUAGE} (the prompt names no language)")

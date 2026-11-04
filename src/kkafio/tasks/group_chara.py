@@ -34,7 +34,7 @@ from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara.chara_key import birthday, make_key
 from kkafio.cards.chara.chara_key_cache import CharaKeyCache
 from kkafio.indices.agv import Candidate
-from kkafio.cards.chara import hint_language
+from kkafio.cards.chara import hint_language, prompt_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.i18n import t
@@ -44,32 +44,7 @@ from kkafio.core.logger import logger
 # Prompt template
 # ---------------------------------------------------------------------------
 
-PROMPT_TEMPLATE = """\
-You will receive a JSON object whose keys identify Koikatsu character card files.
-Each key has the format:  lastname | firstname | nickname | personality | hair_color
-
-Your task: for every key, write the English name of the anime/game series the character \
-is from.
-
-A value is either an empty string "" or an object {"series": "", "hints": [...]}. "hints" \
-lists up to 5 candidate characters from a character database, written \
-"Last, First (Series)", most popular first. They are only name matches and can be wrong: \
-use the one that fits the personality and hair colour, and ignore the list if none does.
-
-Rules:
-- Use the official title of the series.
-- If a character appears in multiple series, use the one they are most associated with.
-- Some characters may be VTubers (virtual YouTubers). Use "VTubers" as the series for them.
-- If you use a hint whose series is not in English, translate it into English.
-- Use the personality and hair colour as additional hints to identify the character.
-- If you do not recognise a character and can search the web, look it up online first.
-- If you are still not sure or the character is an original creation, leave the value as an empty string "".
-- Return ONLY a JSON object that maps every key to the series name as a plain string \
-(do not repeat "hints") — no explanation, no markdown code fences, no extra text \
-before or after.
-
-JSON to fill in:
-"""
+PROMPT_TEMPLATE = prompt_language.GROUP_DEFAULT_PROMPT
 
 def add_index_hints(json_str: str, lang: str,
                     narrowed: dict[str, list[Candidate]] | None = None) -> str:
@@ -410,6 +385,7 @@ class GroupChara(BaseTask):
         self.chara_dir_str      : str  = cfg.get("CharaDir", "")
         self.include_subfolders : bool = cfg.get("IncludeSubfolders", False)
         self.prompt              : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
+        self.prompt_language     : str  = cfg.get("PromptLanguage", prompt_language.DEFAULT_PROMPT_LANGUAGE)
         self.use_cache           : bool = cfg.get("UseCache", True)
         self.hints_language      : str  = cfg.get("HintsLanguage", hint_language.DETECT)
         self.resolve_locally     : bool = cfg.get("ResolveLocally", True)
@@ -422,12 +398,14 @@ class GroupChara(BaseTask):
         self.log_start("GROUP", ", ".join(str(f) for f in folders))
         logger.info("GROUP", f"Use cache: {self.use_cache}")
 
-        hint_lang = hint_language.resolve(self.hints_language, self.prompt, "GROUP")
-        self._run_llm(folders, hint_lang)
+        prompt, prompt_lang = prompt_language.resolve(
+            self.prompt_language, self.prompt, prompt_language.GROUP, "GROUP")
+        hint_lang = hint_language.resolve(self.hints_language, prompt, "GROUP", prompt_lang)
+        self._run_llm(folders, hint_lang, prompt)
 
-    def _run_llm(self, folders: list[Path], hint_lang: str | None) -> bool:
+    def _run_llm(self, folders: list[Path], hint_lang: str | None, prompt: str | None = None) -> bool:
         """The LLM workflow. False if there was nothing to do or the dialog was cancelled."""
-        prompt = self.prompt
+        prompt = self.prompt if prompt is None else prompt
         resolve = self.resolve_locally
         if resolve and not hint_lang:
             logger.info("GROUP", "Resolve Locally needs the character indexes (Hints Language is "

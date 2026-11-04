@@ -31,44 +31,14 @@ from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_ch
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara.chara_key import birthday, make_key
 from kkafio.cards.chara.chara_key_cache import CharaKeyCache
-from kkafio.cards.chara import hint_language
+from kkafio.cards.chara import hint_language, prompt_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 
 CACHE_FILENAME = "kkafio_rename_cache.json"
 
-PROMPT_TEMPLATE = """\
-You will receive a JSON object whose keys identify Koikatsu character card files.
-Each key has the format:  lastname | firstname | nickname | personality | hair_color
-
-Your task: for every key fill in "lastname", "firstname", and "nickname" with the
-character's English name.
-
-Rules:
-- Use the English name the character is commonly known by (the romanisation used
-  in official releases), not a literal reading of the card.
-- If you do not recognise the character or are not confident, search the web for
-  it if you can. If you still do not know, fall back to your best transliteration
-  of the name written on the card.
-- Always fill in all three fields; never leave them empty.
-- firstname = given name, lastname = family name, regardless of the order the
-  name is written in the source material.
-- "nickname" can be a common short form or the same as firstname.
-- Use the personality and hair colour as additional hints to identify the character.
-- An entry may have a "hints" list: up to 5 candidate characters from a character
-  database, written "Last, First (Series)", most popular first. They are only name
-  matches and can be wrong: use the one that fits the personality and hair colour (take
-  its name from it), and ignore the list if none does. Do not repeat "hints" in
-  your answer.
-- Some characters may be VTubers (virtual YouTubers); their hints are written with the series
-  "VTubers". Use the name from the hint.
-- If you use a hint whose name is not in English, translate it into English.
-- Return ONLY the completed JSON object — no explanation, no markdown fences,
-  no extra text before or after.
-
-JSON to fill in:
-"""
+PROMPT_TEMPLATE = prompt_language.RENAME_DEFAULT_PROMPT
 
 _EMPTY_NAME: dict[str, str] = {"lastname": "", "firstname": "", "nickname": ""}
 
@@ -556,6 +526,7 @@ class RenameChara(BaseTask):
         self.update_metadata      : bool = cfg.get("UpdateMetadata", False)
         self.rename_files         : bool = cfg.get("RenameFiles", True)
         self.prompt               : str  = cfg.get("Prompt", "") or PROMPT_TEMPLATE
+        self.prompt_language      : str  = cfg.get("PromptLanguage", prompt_language.DEFAULT_PROMPT_LANGUAGE)
         self.use_cache            : bool = cfg.get("UseCache", True)
         self.hints_language        : str  = cfg.get("HintsLanguage", hint_language.DETECT)
         self.resolve_locally       : bool = cfg.get("ResolveLocally", True)
@@ -568,8 +539,9 @@ class RenameChara(BaseTask):
         self.log_start("RENAME", ", ".join(str(f) for f in folders))
         logger.info("RENAME", f"Use cache: {self.use_cache}")
 
-        prompt = self.prompt
-        hint_lang = hint_language.resolve(self.hints_language, self.prompt, "RENAME")
+        prompt, prompt_lang = prompt_language.resolve(
+            self.prompt_language, self.prompt, prompt_language.RENAME, "RENAME")
+        hint_lang = hint_language.resolve(self.hints_language, prompt, "RENAME", prompt_lang)
         resolve = self.resolve_locally
         if resolve and not hint_lang:
             logger.info("RENAME", "Resolve Locally needs the character indexes (Hints Language is "

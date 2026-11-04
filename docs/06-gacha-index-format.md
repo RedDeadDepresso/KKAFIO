@@ -28,7 +28,7 @@ merged with is downloaded separately from agv-character-scraper, see `docs/05-co
 `title` and `name` are objects keyed by the language codes of `assets/i18n/` (`en_us`,
 `zh_cn`, `zh_tw`, `ja_jp`, `ko_kr`, `ru_ru`). Which one is used is the **Hints Language**
 option of Group / Rename Characters (`--hints-language`: `no`, `detect` or a code; `detect`
-reads the language from the prompt). A language an entry lacks falls back to `en_us`.
+uses the **Prompt Language** option's language, or reads it from the prompt text when that is `custom`). A language an entry lacks falls back to `en_us`.
 Every language's text and every alias is searchable whatever the hint language.
 
 - `series[].title` (in the hint language) is the folder name Group Characters will use; `aliases` are other
