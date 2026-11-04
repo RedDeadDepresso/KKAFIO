@@ -1,8 +1,8 @@
 """
-build_default_clothes.py — Record a folder of "default clothes" coordinate cards, so Group
+build_default_coordinate.py — Record a folder of default coordinate cards, so Group
 Coordinates leaves those coordinates alone.
 
-Default clothes (a costume pack's stock outfits, say) say nothing about whose outfit a
+Default coordinates (a costume pack's stock outfits, say) say nothing about whose outfit a
 coordinate is. Every coordinate card that is one of them is skipped by Group Coordinates: it is
 neither matched to a character nor moved.
 
@@ -10,19 +10,19 @@ Each PNG under the folder that is a coordinate card is identified by its outfit 
 same one Group Coordinates compares), so a default coordinate is still recognised after it was
 renamed, moved or copied, whatever its picture. Other PNGs in the folder are skipped.
 
-Output (assets/data/default_clothes.json):
+Output (assets/indices/default_coordinate.json):
   {
     "generated":   "2025-01-01T12:00:00",
-    "sources":     ["C:/KK/default clothes"],
+    "sources":     ["C:/KK/default coordinates"],
     "coordinates": 42,
     "digests":     {"1b877395e080604c4777991d82ccaabc": "Christmas_01.png", ...}
   }
   ("digests" maps each outfit digest to the first file it was read from, for reference.)
 
 Usage:
-  python tools/build_default_clothes.py <coordinates_folder> [--output PATH] [--merge]
-  python tools/build_default_clothes.py "C:/KK/default clothes"
-  python tools/build_default_clothes.py "C:/KK/more defaults" --merge
+  python tools/build_default_coordinate.py <coordinates_folder> [--output PATH] [--merge]
+  python tools/build_default_coordinate.py "C:/KK/default coordinates"
+  python tools/build_default_coordinate.py "C:/KK/more defaults" --merge
 
   --merge   Add to the existing file instead of replacing it.
 """
@@ -38,9 +38,9 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from kkafio.cards.chara.outfits import DEFAULT_CLOTHES_FILE, coord_digest  # noqa: E402
+from kkafio.cards.chara.outfits import DEFAULT_COORDINATE_FILE, coord_digest  # noqa: E402
 
-DEFAULT_OUTPUT = _REPO_ROOT / "assets" / "data" / DEFAULT_CLOTHES_FILE
+DEFAULT_OUTPUT = _REPO_ROOT / "assets" / "indices" / DEFAULT_COORDINATE_FILE
 
 
 def _load_existing(path: Path) -> dict:
@@ -110,7 +110,7 @@ def build(folder: Path, output: Path, merge: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("folder", type=Path, help="Folder of default-clothes coordinate cards (searched recursively)")
+    parser.add_argument("folder", type=Path, help="Folder of default-coordinates coordinate cards (searched recursively)")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT,
                         help=f"Data file to write (default: {DEFAULT_OUTPUT})")
     parser.add_argument("--merge", action="store_true", help="Add to the existing data file instead of replacing it")

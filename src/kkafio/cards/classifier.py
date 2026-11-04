@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from kkafio.core.paths import ASSETS_DATA_DIR
+from kkafio.core.paths import ASSETS_INDICES_DIR
 
 if TYPE_CHECKING:
     import numpy as np
@@ -151,7 +151,7 @@ PERSONALITIES = [
 # _rgb_to_lab) rather than pulling in scikit-image for a single function.
 
 
-_COLOR_DATA_FILE = "xkcd_colors.json"
+_COLOR_DATA_FILE = "xkcd_color.json"
 
 
 @lru_cache(maxsize=1)
@@ -165,7 +165,7 @@ def _get_color_matcher() -> tuple[list[str], "cKDTree"]:
     import numpy as np
     from scipy.spatial import cKDTree
 
-    color_data_path = ASSETS_DATA_DIR / _COLOR_DATA_FILE
+    color_data_path = ASSETS_INDICES_DIR / _COLOR_DATA_FILE
 
     with color_data_path.open("r", encoding="utf-8") as f:
         palette: dict[str, str] = json.load(f)

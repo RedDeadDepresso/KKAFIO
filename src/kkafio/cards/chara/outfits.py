@@ -15,7 +15,7 @@ from pathlib import Path
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.mods.parsing import _coord_kkex_bytes, _find_iend_end, _unpack_kkex, uar_resolve_infos
 from kkafio.core.logger import logger
-from kkafio.core.paths import ASSETS_DATA_DIR
+from kkafio.core.paths import ASSETS_INDICES_DIR
 
 
 COORD_CACHE_FILE = "kkafio_coord_cache.json"
@@ -60,20 +60,20 @@ COORD_CACHE_VERSION = 4
 # Default coordinates
 # ---------------------------------------------------------------------------
 #
-# Default clothes (a costume pack's stock outfits, say) say nothing about whose outfit it is, so
+# Default coordinates (a costume pack's stock outfits, say) say nothing about whose outfit it is, so
 # a coordinate card that is a default coordinate is left alone by Group Coordinates. They are
 # recognised by their outfit digest (see outfit_digest), so a renamed or copied file is still
-# one. The digests come from assets/data/default_clothes.json, written by
-# tools/build_default_clothes.py from a folder of default coordinates; without that file no
+# one. The digests come from assets/indices/default_coordinate.json, written by
+# tools/build_default_coordinate.py from a folder of default coordinates; without that file no
 # coordinate is a default one.
 
-DEFAULT_CLOTHES_FILE = "default_clothes.json"
+DEFAULT_COORDINATE_FILE = "default_coordinate.json"
 
 
 @functools.cache
 def default_coordinate_digests() -> frozenset[str]:
     """Outfit digests of the default coordinates; empty if there is no data file."""
-    path = ASSETS_DATA_DIR / DEFAULT_CLOTHES_FILE
+    path = ASSETS_INDICES_DIR / DEFAULT_COORDINATE_FILE
     try:
         digests = _json.loads(path.read_text(encoding="utf-8")).get("digests", {})
         return frozenset(map(str, digests))

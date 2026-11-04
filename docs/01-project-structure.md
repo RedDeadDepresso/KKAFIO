@@ -16,18 +16,19 @@ KKAFIO-dev/
 │   └── delete_config_and_task_folders.bat # Deletes %APPDATA%\KKAFIO and C:\KKAFIO (with confirmation)
 │
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
-│   ├── build_default_clothes.py     # Records a folder of default-clothes coordinates in assets/data/default_clothes.json (Group Coordinates leaves those coordinates alone)
-│   ├── build_modpack_index.py       # Regenerates assets/data/*_modpack_index.json from the BetterRepack server's listings
+│   ├── build_default_coordinate.py     # Records a folder of default coordinates in assets/indices/default_coordinate.json (Group Coordinates leaves those coordinates alone)
+│   ├── build_modpack_index.py       # Regenerates assets/indices/*_modpack.json from the BetterRepack server's listings
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
 │   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
 │   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
 │
 ├── assets/                          # Static data shipped with every release
 │   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
-│   ├── kk_modpack_index.json        # Pre-built Sideloader Modpack index for Koikatsu/Party
-│   ├── kks_modpack_index.json       # Pre-built Sideloader Modpack index for Koikatsu Sunshine
-│   ├── default_clothes.json  # Optional, written by tools/build_default_clothes.py: outfit digests of the default coordinates Group Coordinates skips
-│   ├── xkcd_colors.json             # Named colour list used by the coordinate colour-fingerprint matcher
+│   ├── indices/                     # Static indices and reference data
+│   │   ├── kk_modpack.json        # Pre-built Sideloader Modpack index for Koikatsu/Party
+│   │   ├── kks_modpack.json       # Pre-built Sideloader Modpack index for Koikatsu Sunshine
+│   │   ├── default_coordinate.json  # Optional, written by tools/build_default_coordinate.py: outfit digests of the default coordinates Group Coordinates skips
+│   │   └── xkcd_color.json             # Named colour list used by the coordinate colour-fingerprint matcher
 │   └── i18n/                        # GUI translation strings, one file per language (see doc 03)
 │       ├── runtime/                 # Same languages: text for Python's own dialogs, via core/i18n.py (see doc 03)
 │       ├── en_us.json
@@ -101,7 +102,7 @@ KKAFIO-dev/
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
 │   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> download URLs (the path inside the modpack is the URL's path)
-│   │   └── author.py                # Known scene authors and their aliases (assets/data/author_index.json), for the Scene library (Manage Library)
+│   │   └── author.py                # Known scene authors and their aliases (assets/indices/author.json), for the Scene library (Manage Library)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)

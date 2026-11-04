@@ -73,4 +73,4 @@ APP_DIR: Path = (
     Path(sys.executable).parent if getattr(sys, "frozen", False) else _REPO_ROOT
 )
 ASSETS_DIR: Path = APP_DIR / "assets"
-ASSETS_DATA_DIR: Path = ASSETS_DIR / "data"
+ASSETS_INDICES_DIR: Path = ASSETS_DIR / "indices"

@@ -1,7 +1,7 @@
 """Sideloader Modpack index: {mod GUID: [download URL, ...]}.
 
 Pre-built by tools/build_modpack_index.py from the BetterRepack server's listings and
-shipped in assets/data/ (one file per game type), so it never needs downloading. It lets
+shipped in assets/indices/ (one file per game type), so it never needs downloading. It lets
 Download Missing Mods, Archive Cards, Delete Unused Mods and the mods scan tell which GUIDs
 the Sideloader Modpack already provides without opening every zipmod in the modpack folders.
 
@@ -16,11 +16,11 @@ from urllib.parse import unquote, urlparse
 
 from kkafio.core.config import GameType
 from kkafio.core.logger import logger
-from kkafio.core.paths import ASSETS_DATA_DIR
+from kkafio.core.paths import ASSETS_INDICES_DIR
 
-MODPACK_INDEX_FILE_KK  = "kk_modpack_index.json"
+MODPACK_INDEX_FILE_KK  = "kk_modpack.json"
 
-MODPACK_INDEX_FILE_KKS = "kks_modpack_index.json"
+MODPACK_INDEX_FILE_KKS = "kks_modpack.json"
 
 MODPACK_HOST        = "sideload.betterrepack.com"
 MODPACK_PATH_PREFIX = "/download/KKEC/"
@@ -47,8 +47,8 @@ def url_to_rel_path(url: str) -> str | None:
 def load_modpack_index(game_type: str = GameType.KOIKATSU.value) -> dict[str, list[str]] | None:
     """Load the pre-built Sideloader Modpack index for the given game type.
 
-    Uses kks_modpack_index.json for KoikatsuSunshine,
-    and kk_modpack_index.json for all other variants.
+    Uses kks_modpack.json for KoikatsuSunshine,
+    and kk_modpack.json for all other variants.
 
     Looked up at assets/<index_file> next to the running exe / script (this
     is always where it's shipped with the release — see docs/01-project-
@@ -68,7 +68,7 @@ def load_modpack_index(game_type: str = GameType.KOIKATSU.value) -> dict[str, li
         else MODPACK_INDEX_FILE_KK
     )
 
-    index_path = ASSETS_DATA_DIR / index_file
+    index_path = ASSETS_INDICES_DIR / index_file
 
     if index_path.exists():
         try:

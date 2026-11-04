@@ -26,8 +26,8 @@ each wear as their own (two cards of one character, say) are grouped into
 the one who wears hers in far more of her outfits wins (see mod_matcher); otherwise it is left
 alone.
 
-Coordinates that are default coordinates (listed in assets/data/default_clothes.json,
-built with tools/build_default_clothes.py from a folder of them) are left alone by every pass:
+Coordinates that are default coordinates (listed in assets/indices/default_coordinate.json,
+built with tools/build_default_coordinate.py from a folder of them) are left alone by every pass:
 they are neither matched nor moved, and don't take part in grouping.
 
 By default a coordinate must be an exact copy of an outfit. With Ignore Accessories on, the

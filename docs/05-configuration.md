@@ -255,26 +255,26 @@ worst case, the next run does a full rescan and rebuilds them.
 | File | Purpose |
 |---|---|
 | `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/data/kk_modpack_index.json` / `assets/data/kks_modpack_index.json` | Pre-built Sideloader Modpack GUID → download URLs indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/indices/modpack.py`'s `load_modpack_index()`. |
-| `assets/data/default_clothes.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_clothes.py`; see [Default Clothes](#default-clothes) below. Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
-| `assets/data/author_index.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Manage Library's Scene tab suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/services/scene_authors.py`. |
-| `assets/data/xkcd_colors.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/classifier.py`. Never modified at runtime. |
+| `assets/indices/kk_modpack.json` / `assets/indices/kks_modpack.json` | Pre-built Sideloader Modpack GUID → download URLs indexes, one per game type. Regenerated with `tools/build_modpack_index.py`; see [Modpack Index](#modpack-index) below. Read by `src/kkafio/indices/modpack.py`'s `load_modpack_index()`. |
+| `assets/indices/default_coordinate.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_coordinate.py`; see [Default Coordinates](#default-coordinates) below. Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
+| `assets/indices/author.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Manage Library's Scene tab suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/services/scene_authors.py`. |
+| `assets/indices/xkcd_color.json` | Static named-colour reference list used by the coordinate colour-fingerprint matcher in `src/kkafio/cards/classifier.py`. Never modified at runtime. |
 
 ---
 
-## Default Clothes
+## Default Coordinates
 
-Default clothes say nothing about whose outfit a coordinate is, so Group Coordinates can skip
+Default coordinates say nothing about whose outfit a coordinate is, so Group Coordinates can skip
 them per file: a coordinate card that is one of your default coordinates is not matched to any
 character, not moved, and not counted when grouping by hair.
 
 Put the default coordinates in a folder (any depth; other PNGs are skipped) and run:
 
 ```
-python tools/build_default_clothes.py "C:/KK/default clothes"
+python tools/build_default_coordinate.py "C:/KK/default coordinates"
 ```
 
-This writes `assets/data/default_clothes.json` (replacing its previous content). Each
+This writes `assets/indices/default_coordinate.json` (replacing its previous content). Each
 default coordinate is recorded by its outfit digest, the same one Group Coordinates compares, so
 a copy that was renamed, moved to another folder or saved with a different picture is still
 recognised. Options:
@@ -294,8 +294,8 @@ KKAFIO ships with two pre-built modpack index files:
 
 | File | Game |
 |---|---|
-| `assets/data/kk_modpack_index.json` | Koikatsu / Koikatsu Party |
-| `assets/data/kks_modpack_index.json` | Koikatsu Sunshine |
+| `assets/indices/kk_modpack.json` | Koikatsu / Koikatsu Party |
+| `assets/indices/kks_modpack.json` | Koikatsu Sunshine |
 
 Each maps a mod GUID to the URLs it can be downloaded from on the BetterRepack server, best first:
 

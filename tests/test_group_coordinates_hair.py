@@ -474,11 +474,11 @@ def test_coordinates_with_a_shared_head_mod_move_to_the_shared_folder(tmp_path):
 
 def _use_defaults(tmp_path, monkeypatch, digests=()):
     """Point the default coordinates data at a temporary file holding these digests."""
-    data_dir = tmp_path / "data"
-    data_dir.mkdir(exist_ok=True)
-    (data_dir / outfits.DEFAULT_CLOTHES_FILE).write_text(
+    indices_dir = tmp_path / "indices"
+    indices_dir.mkdir(exist_ok=True)
+    (indices_dir / outfits.DEFAULT_COORDINATE_FILE).write_text(
         json.dumps({"digests": {d: "x.png" for d in digests}}), encoding="utf-8")
-    monkeypatch.setattr(outfits, "ASSETS_DATA_DIR", data_dir)
+    monkeypatch.setattr(outfits, "ASSETS_INDICES_DIR", indices_dir)
     outfits.default_coordinate_digests.cache_clear()
 
 
@@ -540,7 +540,7 @@ def test_default_coordinates_do_not_take_part_in_grouping_by_hair(tmp_path, monk
 def test_the_tool_collects_the_digests_of_a_folder_of_coordinates(tmp_path):
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-    import build_default_clothes as tool
+    import build_default_coordinate as tool
     folder = tmp_path / "defaults"
     one, two = _outfit(top="pack.stock:10"), _outfit(top=2)
     _write_coord(folder / "a.png", one)

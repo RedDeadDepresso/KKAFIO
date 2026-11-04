@@ -19,7 +19,7 @@ Not indexed: "Sideloader Modpack - Bleeding Edge" (not part of the BetterRepack 
 release) and the EmotionCreators categories. Edit KK_CATEGORIES / KKS_CATEGORIES below to
 change what a game's index contains.
 
-Output (assets/data/kk_modpack_index.json, assets/data/kks_modpack_index.json):
+Output (assets/indices/kk_modpack.json, assets/indices/kks_modpack.json):
   {
     "generated": "2025-01-01T12:00:00",
     "game_type": "kk",
@@ -505,7 +505,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="Which index to build (default: both)")
     ap.add_argument("--output", "-o", default=None, metavar="PATH",
                     help="Output JSON path; only with a single --game-type "
-                         "(default: assets/data/<game>_modpack_index.json)")
+                         "(default: assets/indices/<game>_modpack.json)")
     ap.add_argument("--cache", default=str(REPO_ROOT / "tools" / "modpack_index_cache.json"), metavar="PATH",
                     help="Incremental-update cache (default: tools/modpack_index_cache.json)")
     ap.add_argument("--base-url", default=DEFAULT_BASE_URL, help=argparse.SUPPRESS)
@@ -537,7 +537,7 @@ def main(argv: list[str] | None = None) -> int:
 
     for game in games:
         index = build_game_index(entries, GAME_CATEGORIES[game], base_url, args.max_urls)
-        out = Path(args.output) if args.output else REPO_ROOT / "assets" / "data" / f"{game}_modpack_index.json"
+        out = Path(args.output) if args.output else REPO_ROOT / "assets" / "indices" / f"{game}_modpack.json"
         write_index(out, game, index)
         print(f"{game}: {len(index)} GUIDs, {sum(len(v) for v in index.values())} URLs -> {out}")
 

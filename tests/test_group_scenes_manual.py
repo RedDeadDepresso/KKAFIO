@@ -9,7 +9,7 @@ from unittest import mock
 
 import card_factory as cf
 from kkafio.core.config import _build_task_config
-from kkafio.core.paths import ASSETS_DATA_DIR
+from kkafio.core.paths import ASSETS_INDICES_DIR
 from kkafio.dialogs.library import scenes as gal
 from kkafio.dialogs.library.common import dialog_text
 from kkafio.indices import author as sa
@@ -28,7 +28,7 @@ def test_the_shipped_authors_file_loads():
     by_name = {a.name: a for a in authors}
     assert by_name["0864"].aliases == ("864",) and by_name["123sir"].aliases == ()
     assert "Skull Prince" in by_name                                 # stray whitespace is stripped
-    assert (ASSETS_DATA_DIR / sa.AUTHORS_FILE).is_file()
+    assert (ASSETS_INDICES_DIR / sa.AUTHORS_FILE).is_file()
 
 
 def test_load_authors_is_forgiving(tmp_path):

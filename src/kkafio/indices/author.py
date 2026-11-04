@@ -1,4 +1,4 @@
-"""author.py — The known scene authors (assets/data/author_index.json), for Group Scenes' Manual mode.
+"""author.py — The known scene authors (assets/indices/author.json), for Group Scenes' Manual mode.
 
 The file is {"version": 1, "updated": "...", "authors": [{"name": "...", "alias": ["...", ...]}, ...]}:
 the name is the folder an author's scenes are grouped under, the aliases are other names the author
@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from kkafio.core.logger import logger
-from kkafio.core.paths import ASSETS_DATA_DIR
+from kkafio.core.paths import ASSETS_INDICES_DIR
 
-AUTHORS_FILE = "author_index.json"
+AUTHORS_FILE = "author.json"
 
 TAG = "AUTHORS"
 
@@ -28,7 +28,7 @@ class Author:
 def load_authors(path: Path | None = None) -> list[Author]:
     """The authors in the file, in file order; empty (after a warning) if it is missing or unreadable.
     Names and aliases are stripped; entries without a usable name are dropped."""
-    path = path or ASSETS_DATA_DIR / AUTHORS_FILE
+    path = path or ASSETS_INDICES_DIR / AUTHORS_FILE
     try:
         raw = json.loads(path.read_text(encoding="utf-8")).get("authors", [])
     except FileNotFoundError:
