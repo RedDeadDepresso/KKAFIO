@@ -168,10 +168,14 @@ def _fetch(url: str, headers: dict[str, str], timeout: float):
 def refresh(tag: str = "GACHA", timeout: float = 6.0) -> bool:
     """Bring the cached index up to date. Returns True if a usable index exists afterwards.
 
-    Uses a conditional request (ETag), so an unchanged index costs a 304 and no download.
+    The server is only asked if the cached copy was last checked an hour or more ago, with a
+    conditional request (ETag), so an unchanged index costs a 304 and no download.
     Any network problem just leaves the cached copy (if any) in use.
     """
     path = _path()
+    if available() and cache.is_fresh(path):
+        logger.info(tag, "Gacha index was checked recently (cached).")
+        return True
     headers = cache.conditional_headers(path) if available() else {}
 
     try:
@@ -182,6 +186,7 @@ def refresh(tag: str = "GACHA", timeout: float = 6.0) -> bool:
         return available()
 
     if r.status_code == 304:
+        cache.touch(path)
         logger.info(tag, "Gacha index is up to date (cached).")
         return available()
     if r.status_code != 200:

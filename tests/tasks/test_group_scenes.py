@@ -1,10 +1,12 @@
 """Group Scenes: scene index loading and per-author grouping."""
 
 import json
+from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
 import card_factory as cf
+from index_cache import age, read_meta
 from kkafio.indices import scene as si
 from kkafio.tasks import group_scenes as gs
 from kkafio.tasks.filter_duplicate_contents import PNG_CACHE_FILE, _get_png_payload, _xxh
@@ -42,18 +44,56 @@ def test_index_is_revalidated_with_etag(tmp_path):
     c = _Client('"e1"', index)
     assert si.load_scene_index(c, tmp_path) == {"aaaa": _e("Author One", 2025)}
     assert (tmp_path / "scene.json").exists()
-    assert (tmp_path / "scene.json.etag").read_text() == '"e1"'
+    assert read_meta(tmp_path / "scene.json")["etag"] == '"e1"'
 
+    age(tmp_path / "scene.json", 2)
     same = _Client('"e1"', {"BBBB": {"author": "Other", "year": None}})            # same ETag -> 304, cached copy
     assert si.load_scene_index(same, tmp_path) == {"aaaa": _e("Author One", 2025)}
+    assert same.urls == [si.SCENE_INDEX_URL]
 
+    age(tmp_path / "scene.json", 2)
     new = _Client('"e2"', {"BBBB": {"author": "Other", "year": None}})             # new ETag -> re-download
     assert si.load_scene_index(new, tmp_path) == {"bbbb": _e("Other")}
-    assert (tmp_path / "scene.json.etag").read_text() == '"e2"'
+    assert read_meta(tmp_path / "scene.json")["etag"] == '"e2"'
+
+
+def test_index_is_not_checked_again_within_an_hour(tmp_path):
+    si.load_scene_index(_Client('"e1"', {"AAAA": {"author": "A", "year": None}}), tmp_path)
+    meta = read_meta(tmp_path / "scene.json")
+    assert set(meta) == {"etag", "last_checked"} and datetime.fromisoformat(meta["last_checked"])
+
+    again = _Client('"e2"', {"BBBB": {"author": "B", "year": None}})
+    age(tmp_path / "scene.json", 0.5)
+    assert si.load_scene_index(again, tmp_path) == {"aaaa": _e("A")}               # under an hour: no request
+    assert again.urls == []
+
+    age(tmp_path / "scene.json", 1)
+    assert si.load_scene_index(again, tmp_path) == {"bbbb": _e("B")}               # an hour: asks again
+    assert len(again.urls) == 1
+
+
+def test_a_304_restarts_the_hour(tmp_path):
+    si.load_scene_index(_Client('"e1"', {"AAAA": {"author": "A", "year": None}}), tmp_path)
+    age(tmp_path / "scene.json", 3)
+    si.load_scene_index(_Client('"e1"', {}), tmp_path)                             # 304
+    other = _Client('"e2"', {"BBBB": {"author": "B", "year": None}})
+    assert si.load_scene_index(other, tmp_path) == {"aaaa": _e("A")} and other.urls == []
+
+
+def test_a_failed_check_does_not_restart_the_hour(tmp_path):
+    si.load_scene_index(_Client('"e1"', {"AAAA": {"author": "A", "year": None}}), tmp_path)
+    age(tmp_path / "scene.json", 3)
+    before = read_meta(tmp_path / "scene.json")["last_checked"]
+
+    class _Down:
+        def get(self, *a, **kw): raise OSError("offline")
+    assert si.load_scene_index(_Down(), tmp_path) == {"aaaa": _e("A")}
+    assert read_meta(tmp_path / "scene.json")["last_checked"] == before
 
 
 def test_offline_uses_cached_scene_index(tmp_path):
     si.load_scene_index(_Client('"e1"', {"AAAA": {"author": "A", "year": None}}), tmp_path)
+    age(tmp_path / "scene.json", 2)
 
     class _Down:
         def get(self, *a, **kw): raise OSError("offline")

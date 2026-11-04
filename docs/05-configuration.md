@@ -166,7 +166,8 @@ same `"kkafio"` base name.
 
 `%APPDATA%/KKAFIO/indices/` (under `CONFIG_DIR`, not inside `config/`) holds every index KKAFIO downloads.
 Each index is stored as `<name>.json`, named after the module in `src/kkafio/indices/` that downloads it,
-next to a `<name>.json.etag` file with the ETag of the copy on disk:
+next to a `<name>.meta.json` file, `{"etag": "...", "last_checked": "<ISO 8601 datetime>"}`, with the ETag of the
+copy on disk and when KKAFIO last confirmed it is current (e.g. `password.json` and `password.meta.json`):
 
 | File | Module | Source | Used by |
 |---|---|---|---|
@@ -178,11 +179,13 @@ next to a `<name>.json.etag` file with the ETag of the copy on disk:
 
 All of them are refreshed the same way (`src/kkafio/indices/cache.py`):
 
-1. The cached copy is requested again with a conditional request (`If-None-Match` with the saved ETag).
-2. A `304` means the cached copy is current and nothing is downloaded.
-3. Otherwise the new index is validated, then written to `<name>.json` and its ETag to `<name>.json.etag`.
-   A download that fails validation (e.g. an `agv.json` that isn't format version 1) leaves the cached copy alone.
-4. If the server can't be reached (offline, rate-limited), the cached index is used if one exists; without one
+1. If the cached copy was last checked less than 1 hour ago (`last_checked`), the server isn't asked at all.
+2. Otherwise the cached copy is requested again with a conditional request (`If-None-Match` with the saved ETag).
+3. A `304` means the cached copy is current: nothing is downloaded and `last_checked` is set to now.
+4. Otherwise the new index is validated, then written to `<name>.json`, with its ETag and the current time in
+   `<name>.meta.json`. A download that fails validation (e.g. an `agv.json` that isn't format version 1) leaves the
+   cached copy and its `last_checked` alone.
+5. If the server can't be reached (offline, rate-limited), the cached index is used if one exists; without one
    the task runs without that index.
 
 Formats:

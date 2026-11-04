@@ -2,8 +2,8 @@
 
 The index is published by https://github.com/RedDeadDepresso/kkc-mod-scraper and tells
 Download Missing Mods which Telegram message holds a given mod. A copy is kept in
-CONFIG_DIR/indices/kkc_mod.json and only re-downloaded when its ETag changes
-(see kkafio.indices.cache).
+CONFIG_DIR/indices/kkc_mod.json; the server is asked at most once an hour, and the copy is only
+re-downloaded when its ETag changes (see kkafio.indices.cache).
 """
 
 import json
@@ -34,18 +34,23 @@ def _load_cached_kkc_index(index_path: Path) -> dict[str, str] | None:
 async def load_kkc_mod_index(client, index_dir: Path | None = None) -> dict[str, str]:
     """Return the {guid: t.me link} index from kkc-mod-scraper.
 
-    Uses a conditional request (ETag) against the cached copy, so an unchanged index
-    costs a 304 and no download. If the download fails, the cached copy is used.
+    The server is only asked if the cached copy was last checked an hour or more ago, with a
+    conditional request (ETag), so an unchanged index costs a 304 and no download. If the
+    download fails, the cached copy is used.
 
     Returns an empty dict if the index is unavailable.
     """
     index_path = (index_dir or cache.default_dir()) / INDEX_FILENAME
     cached = _load_cached_kkc_index(index_path)
+    if cached is not None and cache.is_fresh(index_path):
+        logger.info("DLMOD", f"kkc mod index checked recently: {len(cached)} GUIDs (cached)")
+        return cached
     headers = cache.conditional_headers(index_path) if cached is not None else {}
 
     try:
         r = await client.get(KKC_INDEX_URL, headers=headers)
         if r.status_code == 304 and cached is not None:
+            cache.touch(index_path)
             logger.info("DLMOD", f"kkc mod index up to date: {len(cached)} GUIDs (cached)")
             return cached
         r.raise_for_status()

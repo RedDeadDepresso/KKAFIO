@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from index_cache import age, read_meta
 from kkafio.indices import chara, gacha, agv
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -141,7 +142,13 @@ def test_refresh_downloads_then_revalidates(tmp_path, monkeypatch):
     monkeypatch.setattr(gacha, "_fetch", fake)
     try:
         assert gacha.refresh("T") and gacha.available()
+        assert read_meta(p)["etag"] == '"v1"'
+        assert gacha.refresh("T")                       # checked a moment ago: no request
+        assert calls == [{}]
+        age(p, 2)
         assert gacha.refresh("T")
+        assert calls == [{}, {"If-None-Match": '"v1"'}]
+        assert gacha.refresh("T")                       # the 304 restarted the hour
         assert calls == [{}, {"If-None-Match": '"v1"'}]
     finally:
         gacha.set_index_path(None)

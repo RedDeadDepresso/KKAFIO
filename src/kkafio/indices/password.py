@@ -1,8 +1,8 @@
 """kk-password-scraper index: {archive filename: [passwords]}.
 
 The index is published by https://github.com/RedDeadDepresso/kk-password-scraper.
-A copy is kept in CONFIG_DIR/indices/password.json and only re-downloaded when its ETag
-changes (see kkafio.indices.cache).
+A copy is kept in CONFIG_DIR/indices/password.json; the server is asked at most once an hour,
+and the copy is only re-downloaded when its ETag changes (see kkafio.indices.cache).
 """
 
 import json
@@ -78,12 +78,17 @@ def normalize_index(raw: dict) -> dict[str, list[str]]:
 def load_password_index(client=None, index_dir: Path | None = None) -> PasswordIndex:
     """Return the password index.
 
-    Uses a conditional request (ETag) against the cached copy, so an unchanged index
-    costs a 304 and no download. If the download fails (e.g. offline), the cached copy
-    is used. Returns an empty index if none is available.
+    The server is only asked if the cached copy was last checked an hour or more ago, with a
+    conditional request (ETag), so an unchanged index costs a 304 and no download. If the
+    download fails (e.g. offline), the cached copy is used. Returns an empty index if none
+    is available.
     """
     index_path = (index_dir or cache.default_dir()) / INDEX_FILENAME
     cached = _load_cached_index(index_path)
+    if cached is not None and cache.is_fresh(index_path):
+        index = normalize_index(cached)
+        logger.info(TAG, f"Password index checked recently: {len(index)} archive(s) (cached)")
+        return PasswordIndex(index)
     headers = cache.conditional_headers(index_path) if cached is not None else {}
 
     own_client = client is None
@@ -94,6 +99,7 @@ def load_password_index(client=None, index_dir: Path | None = None) -> PasswordI
         try:
             r = client.get(PASSWORD_INDEX_URL, headers=headers)
             if r.status_code == 304 and cached is not None:
+                cache.touch(index_path)
                 index = normalize_index(cached)
                 logger.info(TAG, f"Password index up to date: {len(index)} archive(s) (cached)")
                 return PasswordIndex(index)

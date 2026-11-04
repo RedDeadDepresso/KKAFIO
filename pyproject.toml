@@ -49,5 +49,9 @@ testpaths = ["tests"]
 pythonpath = ["src", "tests/helpers"]
 addopts = "-v --tb=short"
 
+[tool.pyright]
+# Pylance/pyright don't read pytest's `pythonpath`, so the test helpers are listed here too.
+extraPaths = ["src", "tests/helpers"]
+
 [tool.uv.sources]
 teleget9527 = { git = "https://github.com/RedDeadDepresso/telebackup.git", rev = "main" }

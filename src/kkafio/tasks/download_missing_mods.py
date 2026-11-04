@@ -18,7 +18,7 @@ Strategy
      a) In modpack index → BetterRepack (httpx, no auth)
      b) Not in index, Telegram Sources includes KoikatsuCards → look up the
         GUID in kkc_mod.json (kkc-mod-scraper; cached in CONFIG_DIR/indices and
-        refreshed when its ETag changes), then download the
+        checked for updates at most once an hour), then download the
         linked t.me message directly from Telegram
      c) Not in index (or the KKC mod index had no link / the download
         failed), Telegram Sources includes ChatLinks → search each

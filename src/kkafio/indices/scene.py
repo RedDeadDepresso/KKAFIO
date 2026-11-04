@@ -1,8 +1,8 @@
 """pepper-scene-index: the {xxhash: {"author", "year"}} index of Studio scenes.
 
 The index is published by https://github.com/RedDeadDepresso/pepper-scene-hasher.
-A copy is kept in CONFIG_DIR/indices/scene.json and only re-downloaded when its ETag
-changes (see kkafio.indices.cache).
+A copy is kept in CONFIG_DIR/indices/scene.json; the server is asked at most once an hour,
+and the copy is only re-downloaded when its ETag changes (see kkafio.indices.cache).
 """
 
 import json
@@ -66,12 +66,17 @@ def normalize_index(raw: dict) -> dict[str, dict]:
 def load_scene_index(client=None, index_dir: Path | None = None) -> dict[str, dict]:
     """Return the {xxhash: {"author": str, "year": int | None}} scene index.
 
-    Uses a conditional request (ETag) against the cached copy, so an unchanged index
-    costs a 304 and no download. If the download fails (e.g. offline), the cached copy
-    is used. Returns {} if no index is available.
+    The server is only asked if the cached copy was last checked an hour or more ago, with a
+    conditional request (ETag), so an unchanged index costs a 304 and no download. If the
+    download fails (e.g. offline), the cached copy is used. Returns {} if no index is
+    available.
     """
     index_path = (index_dir or cache.default_dir()) / INDEX_FILENAME
     cached = _load_cached_index(index_path)
+    if cached is not None and cache.is_fresh(index_path):
+        index = normalize_index(cached)
+        logger.info(TAG, f"Scene index checked recently: {len(index)} scene(s) (cached)")
+        return index
     headers = cache.conditional_headers(index_path) if cached is not None else {}
 
     own_client = client is None
@@ -82,6 +87,7 @@ def load_scene_index(client=None, index_dir: Path | None = None) -> dict[str, di
         try:
             r = client.get(SCENE_INDEX_URL, headers=headers)
             if r.status_code == 304 and cached is not None:
+                cache.touch(index_path)
                 index = normalize_index(cached)
                 logger.info(TAG, f"Scene index up to date: {len(index)} scene(s) (cached)")
                 return index

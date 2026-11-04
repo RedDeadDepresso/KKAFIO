@@ -5,6 +5,7 @@ import json
 
 import pytest
 
+from index_cache import age, read_meta
 from kkafio.indices import agv
 from kkafio.indices.text import norm
 
@@ -142,11 +143,33 @@ def test_urls():
 def test_refresh_downloads_then_only_when_etag_changes(cache):
     c = _Client('"aaa"')
     assert agv.refresh("T", client=c) and agv.available()
-    assert cache.exists() and (cache.parent / "agv.json.etag").read_text() == '"aaa"'
+    assert cache.exists() and read_meta(cache)["etag"] == '"aaa"'
+    age(cache, 2)
     assert agv.refresh("T", client=c) and c.downloads == 1          # same ETag: 304, cached
     c.etag = '"bbb"'
+    age(cache, 2)
     assert agv.refresh("T", client=c) and c.downloads == 2          # new ETag: downloaded
-    assert (cache.parent / "agv.json.etag").read_text() == '"bbb"'
+    assert read_meta(cache)["etag"] == '"bbb"'
+
+
+def test_refresh_does_not_ask_again_within_an_hour(cache):
+    c = _Client('"aaa"')
+    agv.refresh("T", client=c)
+    c.etag = '"bbb"'
+    age(cache, 0.5)
+    assert agv.refresh("T", client=c) and c.downloads == 1          # checked 30 minutes ago: no request
+    assert read_meta(cache)["etag"] == '"aaa"'
+    age(cache, 1)
+    assert agv.refresh("T", client=c) and c.downloads == 2          # an hour: asks again
+
+
+def test_refresh_304_restarts_the_hour(cache):
+    c = _Client('"aaa"')
+    agv.refresh("T", client=c)
+    age(cache, 3)
+    agv.refresh("T", client=c)                                      # 304
+    c.etag = '"bbb"'
+    assert agv.refresh("T", client=c) and c.downloads == 1
 
 
 def test_refresh_redownloads_when_cache_file_is_gone(cache):
@@ -160,6 +183,7 @@ def test_refresh_redownloads_when_cache_file_is_gone(cache):
 def test_refresh_offline_uses_cache_or_degrades(cache):
     assert not agv.refresh("T", client=_Client(None))               # nothing cached yet
     agv.refresh("T", client=_Client('"aaa"'))
+    age(cache, 2)
     c = _Client(None)
     assert agv.refresh("T", client=c) and c.downloads == 0          # cached copy serves
     assert agv.lookup("Tohsaka | Rin |  | x | y")
@@ -167,8 +191,9 @@ def test_refresh_offline_uses_cache_or_degrades(cache):
 
 def test_refresh_rejects_bad_download_and_keeps_cache(cache):
     agv.refresh("T", client=_Client('"aaa"'))
+    age(cache, 2)
     assert agv.refresh("T", client=_Client('"bbb"', {"version": 99}))
-    assert (cache.parent / "agv.json.etag").read_text() == '"aaa"'  # will retry next time
+    assert read_meta(cache)["etag"] == '"aaa"'                      # will retry next time
     assert agv.lookup("Tohsaka | Rin |  | x | y")
 
 

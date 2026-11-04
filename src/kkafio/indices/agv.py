@@ -4,8 +4,8 @@ games, built from the Bangumi Archive by https://github.com/RedDeadDepresso/agv-
 and published on GitHub Pages).
 
 The index is downloaded on demand and cached as indices/agv.json in CONFIG_DIR (the
-per-user KKAFIO folder, e.g. %APPDATA%/KKAFIO). It is only downloaded again when its ETag
-changes (see kkafio.indices.cache).
+per-user KKAFIO folder, e.g. %APPDATA%/KKAFIO). The server is asked at most once an hour, and
+the index is only downloaded again when its ETag changes (see kkafio.indices.cache).
 
 Used by Group Characters and Rename Characters to (1) give the LLM up to MAX_HINTS
 candidate characters ("hints") for every card and (2) snap the LLM's series name to one
@@ -221,10 +221,14 @@ def suggest_series(query: str, lang: str | None = None, limit: int = 8) -> list[
 def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
     """Bring the cached index up to date. Returns True if a usable index exists afterwards.
 
-    Uses a conditional request (ETag), so an unchanged index costs a 304 and no download.
+    The server is only asked if the cached copy was last checked an hour or more ago, with a
+    conditional request (ETag), so an unchanged index costs a 304 and no download.
     Any network problem just leaves the cached copy (if any) in use. Never raises.
     """
     path = _path()
+    if available() and cache.is_fresh(path):
+        logger.info(tag, "Anime, games, vtubers character index was checked recently (cached).")
+        return True
     headers = cache.conditional_headers(path) if available() else {}
 
     own_client = client is None
@@ -236,6 +240,7 @@ def refresh(tag: str = "AGVIDX", timeout: float = 30.0, client=None) -> bool:
         try:
             r = client.get(INDEX_URL, headers=headers)
             if r.status_code == 304:
+                cache.touch(path)
                 logger.info(tag, "Anime, games, vtubers character index is up to date (cached).")
                 return available()
             r.raise_for_status()
