@@ -7,7 +7,7 @@ import pytest
 
 from kkafio.indices import chara, gacha, agv
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 DATA = {
     "version": 1,

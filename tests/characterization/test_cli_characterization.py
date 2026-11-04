@@ -2,7 +2,7 @@
 Replays the recordings in tests/golden/ against the current CLI.
 
 If one of these fails you changed what the CLI does. If that was the point,
-regenerate deliberately (`uv run python tests/generate_goldens.py`) and review
+regenerate deliberately (`uv run python tests/helpers/generate_goldens.py`) and review
 the golden diff; if not, you found a regression.
 """
 
@@ -13,7 +13,7 @@ import pytest
 
 import cli_harness as h
 
-GOLDEN = Path(__file__).parent / "golden"
+GOLDEN = Path(__file__).resolve().parents[1] / "golden"
 
 
 def _load(name):

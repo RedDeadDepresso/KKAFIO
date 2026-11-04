@@ -15,7 +15,7 @@ from urllib.parse import quote, unquote
 import pytest
 
 _SPEC = importlib.util.spec_from_file_location(
-    "build_modpack_index", Path(__file__).resolve().parent.parent / "tools" / "build_modpack_index.py")
+    "build_modpack_index", Path(__file__).resolve().parents[2] / "tools" / "build_modpack_index.py")
 builder = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(builder)
 

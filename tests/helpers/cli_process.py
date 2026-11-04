@@ -16,7 +16,7 @@ from pathlib import Path
 
 from cli_harness import World, _scrub, opt_folder
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 
 _STATUS_NOISE = ("INFO", "DEBUG", "SUCCESS")
 

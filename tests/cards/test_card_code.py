@@ -400,5 +400,5 @@ def test_outfit_digest_ignores_versions_and_equates_slot_spellings():
 
 
 def test_outfit_digest_values_are_stable():
-    golden = json.loads((Path(__file__).parent / "golden" / "pure_functions.json").read_text(encoding="utf-8"))
+    golden = json.loads((Path(__file__).resolve().parents[1] / "golden" / "pure_functions.json").read_text(encoding="utf-8"))
     assert _digest_cases() == golden["outfit_digests"]

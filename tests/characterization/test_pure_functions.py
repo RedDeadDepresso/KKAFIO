@@ -17,7 +17,7 @@ from kkafio.cards.scenes import msgpack_min
 from kkafio.services.mod_sources.telegram import links as telegram_links
 # -------------------------------------------------------------------------------------
 
-GOLDEN = json.loads((Path(__file__).parent / "golden" / "pure_functions.json").read_text(encoding="utf-8"))
+GOLDEN = json.loads((Path(__file__).resolve().parents[1] / "golden" / "pure_functions.json").read_text(encoding="utf-8"))
 
 
 def _corpus() -> dict[str, bytes]:

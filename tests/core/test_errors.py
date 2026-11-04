@@ -111,7 +111,7 @@ def test_no_library_code_exits_the_process():
     """Library code raises; only the CLI decides to exit (config.py used to call sys.exit)."""
     import ast
     from pathlib import Path
-    src = Path(__file__).resolve().parents[1] / "src" / "kkafio"
+    src = Path(__file__).resolve().parents[2] / "src" / "kkafio"
     offenders = []
     for f in src.rglob("*.py"):
         if f.name == "cli.py":

@@ -12,7 +12,7 @@ import pytest
 import cli_harness as h
 import cli_process as cp
 
-GOLDEN = json.loads((Path(__file__).parent / "golden" / "error_behavior.json").read_text(encoding="utf-8"))
+GOLDEN = json.loads((Path(__file__).resolve().parents[1] / "golden" / "error_behavior.json").read_text(encoding="utf-8"))
 
 _WINDOWS_FINDS_7ZIP_ANYWAY = {"7-Zip missing (backup)"}   # discovered via the registry / Program Files there
 

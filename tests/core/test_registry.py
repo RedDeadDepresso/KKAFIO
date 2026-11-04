@@ -12,7 +12,7 @@ from kkafio.core.config import _TASK_DEFAULTS, _TASK_KEY
 from kkafio.registry import Toggle, Value
 from kkafio.task_specs import TASK_SPECS, TASKS_BY_NAME
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_task_names_agree_everywhere():

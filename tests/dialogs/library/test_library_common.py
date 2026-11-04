@@ -12,7 +12,7 @@ import conftest  # noqa: F401  (sandbox env must be set before kkafio is importe
 from kkafio.dialogs.library import DialogText, chara_dialog_text
 from kkafio.dialogs.library import common
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 def _file(path: Path, data: bytes = b"png") -> Path:

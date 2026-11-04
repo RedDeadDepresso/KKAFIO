@@ -1,7 +1,7 @@
 """
 Regenerate tests/golden/*.json from the CURRENT code.
 
-    uv run python tests/generate_goldens.py
+    uv run python tests/helpers/generate_goldens.py
 
 Only do this deliberately: the goldens are the record of what the CLI does, so
 regenerating them after a change accepts that change as the new behaviour.
@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE))
 import conftest  # noqa: F401,E402  (sandbox env must be set before kkafio is imported)
 import cli_harness as h  # noqa: E402
 
-GOLDEN = HERE / "golden"
+GOLDEN = HERE.parent / "golden"
 
 
 def _dump(name: str, data) -> None:

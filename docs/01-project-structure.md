@@ -179,10 +179,10 @@ longer one of them:
    [03 — interface.json](03-interface-json.md)), then run
    `python tools/generate_config.py`.
 
-`tests/test_registry.py` fails if the task names in these places drift apart,
+`tests/core/test_registry.py` fails if the task names in these places drift apart,
 and the characterization tests in `tests/` fail if a new subcommand has no
 recorded behaviour — regenerate them deliberately with
-`uv run python tests/generate_goldens.py` and review the diff.
+`uv run python tests/helpers/generate_goldens.py` and review the diff.
 
 ### Raising errors
 

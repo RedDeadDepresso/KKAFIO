@@ -15,7 +15,7 @@ import conftest  # noqa: F401  (sandbox env must be set before kkafio is importe
 
 from kkafio.core import i18n
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 RUNTIME_DIR = REPO / "assets" / "i18n" / "runtime"
 SRC = REPO / "src" / "kkafio"
 
