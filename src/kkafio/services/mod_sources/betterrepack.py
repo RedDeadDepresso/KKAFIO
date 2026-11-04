@@ -1,7 +1,7 @@
 """BetterRepack: the Sideloader Modpack download server (plain HTTP).
 
 Also hosts the shared HTTP client Download Missing Mods uses for it and for the
-kkc mod index (see kkafio.indices.kkc_mod).
+mod index (see kkafio.indices.mod).
 """
 
 import asyncio
@@ -18,7 +18,7 @@ MAX_CONNECTIONS       = 4
 
 
 # ---------------------------------------------------------------------------
-# HTTP client (for BetterRepack + the kkc mod index)
+# HTTP client (for BetterRepack + the mod index)
 # ---------------------------------------------------------------------------
 
 def make_http_client(cookies: dict | None = None):

@@ -17,7 +17,7 @@ Strategy
 5. For each GUID to download:
      a) In modpack index → BetterRepack (httpx, no auth)
      b) Not in index, Telegram Sources includes KoikatsuCards → look up the
-        GUID in kkc_mod.json (kkc-mod-scraper; cached in CONFIG_DIR/indices and
+        GUID in mod.json (kk-mod-scraper; cached in CONFIG_DIR/indices and
         checked for updates at most once an hour), then download the
         linked t.me message directly from Telegram
      c) Not in index (or the KKC mod index had no link / the download
@@ -45,7 +45,7 @@ from kkafio.core.config import GameType
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
-from kkafio.indices.kkc_mod import load_kkc_mod_index
+from kkafio.indices.mod import load_mod_index
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.services.mod_sources.betterrepack import download_betterrepack, make_http_client
 from kkafio.services.mod_sources.telegram.links import (
@@ -480,9 +480,9 @@ class DownloadMissingMods(BaseTask):
 
                 # Telegram — sequential
                 if telegram_queue:
-                    kkc_index: dict[str, str] = {}
+                    mod_index: dict[str, str] = {}
                     if use_koikatsucards:
-                        kkc_index = await load_kkc_mod_index(br_client)
+                        mod_index = await load_mod_index(br_client)
 
                     # Load/prompt for credentials once before the loop
                     tg_data = tg_cfg.get_or_prompt()
@@ -669,7 +669,7 @@ class DownloadMissingMods(BaseTask):
                                     progress.set_current(guid)
 
                                     if use_koikatsucards:
-                                        tg_link = kkc_index.get(guid, "")
+                                        tg_link = mod_index.get(guid, "")
                                         if tg_link:
                                             found_source = True
                                             logger.info("DLMOD", f"  Link: {tg_link}")
@@ -683,7 +683,7 @@ class DownloadMissingMods(BaseTask):
                                             )
                                         else:
                                             logger.warning("DLMOD",
-                                                f"  {guid} — not in kkc mod index")
+                                                f"  {guid} — not in mod index")
 
                                     if success not in (True, "skipped") and use_chat_links and chat_links:
                                         if use_koikatsucards:

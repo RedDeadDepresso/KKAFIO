@@ -1,7 +1,7 @@
 """cache.py — Shared on-disk cache helpers for the downloaded indices.
 
 Every index lives in CONFIG_DIR/indices/<module name>.json (agv.json, gacha.json,
-kkc_mod.json, password.json, scene.json) next to a <module name>.meta.json file,
+mod.json, password.json, scene.json) next to a <module name>.meta.json file,
 {"etag": "...", "last_checked": "<ISO 8601 datetime>"}: the ETag of the copy on disk and when
 KKAFIO last confirmed it is current. The server is only asked again once CHECK_INTERVAL has
 passed since last_checked; the request is then conditional (If-None-Match), so an unchanged

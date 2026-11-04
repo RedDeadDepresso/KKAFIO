@@ -173,7 +173,7 @@ copy on disk and when KKAFIO last confirmed it is current (e.g. `password.json` 
 |---|---|---|---|
 | `agv.json` | `agv.py` | [agv-character-scraper](https://github.com/RedDeadDepresso/agv-character-scraper) | Group / Rename Characters hints |
 | `gacha.json` | `gacha.py` | [gacha-character-scraper](https://github.com/RedDeadDepresso/gacha-character-scraper) | Group / Rename Characters hints |
-| `kkc_mod.json` | `kkc_mod.py` | [kkc-mod-scraper](https://github.com/RedDeadDepresso/kkc-mod-scraper) | Download Missing Mods |
+| `mod.json` | `mod.py` | [kk-mod-scraper](https://github.com/RedDeadDepresso/kk-mod-scraper) | Download Missing Mods |
 | `password.json` | `password.py` | [kk-password-scraper](https://github.com/RedDeadDepresso/kk-password-scraper) | archive extraction |
 | `scene.json` | `scene.py` | [pepper-scene-hasher](https://github.com/RedDeadDepresso/pepper-scene-hasher) | Group Scenes |
 
@@ -190,7 +190,7 @@ All of them are refreshed the same way (`src/kkafio/indices/cache.py`):
 
 Formats:
 
-- `kkc_mod.json` maps mod GUIDs to Telegram message links, e.g.
+- `mod.json` maps mod GUIDs to Telegram message links, e.g.
   `{ "com.AgiShark.Casual_Moves_Part2": "https://t.me/KK_archive_modlibrary/25" }`. It is only read when at
   least one mod needs a Telegram download and the `KoikatsuCards` entry of Telegram Sources is checked.
 - `agv.json` is the character / series index (format version 1; anime and visual novel / JRPG games from the

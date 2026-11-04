@@ -97,8 +97,8 @@ KKAFIO-dev/
 │   │   ├── text.py                  # Text normalisation helpers for the two character indices
 │   │   ├── scene.py                 # pepper-scene-index: scene hash -> author / year (Group Scenes)
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
-│   │   ├── kkc_mod.py               # kkc-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
-│   │   ├── modpack.py               # Shipped Sideloader Modpack index: mod GUID -> download URLs (the path inside the modpack is the URL's path)
+│   │   ├── mod.py                   # kk-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
+│   │   ├── modpack.py               # kk-mod-scraper index: Sideloader Modpack: mod GUID -> download URLs (the path inside the modpack is the URL's path)
 │   │   └── author.py                # Known scene authors and their aliases (assets/indices/author.json), for the Scene library (Manage Library)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
@@ -226,7 +226,7 @@ in the subpackage that fits it:
 | `core/` | configuration, logging, paths, or generic file operations |
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
 | `services/` | tied to an external account, credential store or remote mod source (site sessions, Telegram, BetterRepack, the Download Contents sites) |
-| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, kkc mods), or a shipped one (scene authors, the Sideloader Modpack) |
+| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, mods, the Sideloader Modpack), or a shipped one (scene authors) |
 | `dialogs/` | a CustomTkinter window the user interacts with (prompts, libraries, review screens) |
 | `system/` | an OS-facing helper (job objects, subprocess quirks, MXU automation, context-menu batching) |
 

@@ -238,8 +238,8 @@ def test_suggest_series_without_an_index_is_empty(tmp_path):
 
 def test_all_indices_default_to_the_indices_folder():
     from kkafio.core.paths import CONFIG_DIR
-    from kkafio.indices import cache, gacha, kkc_mod, password, scene
+    from kkafio.indices import cache, gacha, mod, password, scene
     assert cache.default_dir() == CONFIG_DIR / "indices"
-    assert (agv.INDEX_FILE, gacha.INDEX_FILE, kkc_mod.INDEX_FILENAME,
+    assert (agv.INDEX_FILE, gacha.INDEX_FILE, mod.INDEX_FILENAME,
             password.INDEX_FILENAME, scene.INDEX_FILENAME) == (
-        "agv.json", "gacha.json", "kkc_mod.json", "password.json", "scene.json")
+        "agv.json", "gacha.json", "mod.json", "password.json", "scene.json")
