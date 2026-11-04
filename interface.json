@@ -1658,10 +1658,10 @@
       "description": "$task.GroupScenes.description",
       "group": ["scene-management"],
       "option": [
-        "SceneDir",
         "GroupScenesIncludeSubfolders",
         "GroupScenesSubgroupByYear",
-        "UseCache"
+        "UseCache",
+        "SceneDir"
       ]
     },
     {
@@ -1672,14 +1672,14 @@
       "description": "$task.GroupChara.description",
       "group": ["chara-management"],
       "option": [
-        "CharaDir",
         "GroupCharaIncludeSubfolders",
         "HintsLanguage",
         "GroupCharaResolveLocally",
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "GroupCharaPrompt",
-        "UseCache"
+        "UseCache",
+        "CharaDir"
       ]
     },
     {
@@ -1690,13 +1690,13 @@
       "description": "$task.GroupCoordinates.description",
       "group": ["coordinate-management"],
       "option": [
-        "CharaDir",
-        "CoordDir",
         "GroupCoordinatesIncludeSubfolders",
         "GroupCoordinatesClothesTolerance",
         "GroupCoordinatesIgnoreAccessories",
         "GroupCoordinatesGroupByHair",
-        "UseCache"
+        "UseCache",
+        "CharaDir",
+        "CoordDir"
       ]
     },
     {
@@ -1711,12 +1711,12 @@
         "ManageLibraryArchiveFormat",
         "ManageLibraryArchiveOptions",
         "ManageLibraryDeleteOptions",
+        "UseCache",
         "SceneDir",
         "CharaDir",
         "CoordDir",
         "InstalledModsDir",
-        "DownloadedModsDir",
-        "UseCache"
+        "DownloadedModsDir"
       ]
     },
     {
@@ -1736,7 +1736,6 @@
       "description": "$task.RenameChara.description",
       "group": ["chara-management"],
       "option": [
-        "CharaDir",
         "SkipAlreadyRenamed",
         "UpdateMetadata",
         "RenameFiles",
@@ -1745,7 +1744,8 @@
         "OpenLlmWebsite",
         "LlmWebsiteUrl",
         "RenameCharaPrompt",
-        "UseCache"
+        "UseCache",
+        "CharaDir"
       ]
     },
     {
