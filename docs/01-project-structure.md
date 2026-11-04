@@ -24,8 +24,7 @@ KKAFIO-dev/
 ├── assets/                          # Static data shipped with every release
 │   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
 │   ├── indices/                     # Static indices and reference data
-│   │   ├── default_coordinate.json  # Optional, written by tools/build_default_coordinate.py: outfit digests of the default coordinates Group Coordinates skips
-│   │   └── xkcd_color.json             # Named colour list used by the coordinate colour-fingerprint matcher
+│   │   └── default_coordinate.json  # Optional, written by tools/build_default_coordinate.py: outfit digests of the default coordinates Group Coordinates skips
 │   └── i18n/                        # GUI translation strings, one file per language (see doc 03)
 │       ├── runtime/                 # Same languages: text for Python's own dialogs, via core/i18n.py (see doc 03)
 │       ├── en_us.json
@@ -87,6 +86,8 @@ KKAFIO-dev/
 │   │       ├── chara_key.py         # "last | first | nick | personality | hair" key for LLM matching
 │   │       ├── chara_key_cache.py   # per-card key cache for Group / Rename Characters
 │   │       ├── hint_language.py     # Language of the character-index hints
+│   │       ├── prompt_language.py   # Built-in LLM prompts per language (Prompt Language option)
+│   │       ├── hair_color.py        # RGB -> hair colour name used in the character key
 │   │       ├── similarity.py        # pHash + leader clustering for cover comparison
 │   │       └── outfits.py           # Coordinate outfit digests + matching a chara's outfits to coordinates
 │   │

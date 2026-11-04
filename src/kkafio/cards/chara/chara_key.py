@@ -15,16 +15,19 @@ from __future__ import annotations
 
 from kkloader import KoikatuCharaData
 
-from kkafio.cards.classifier import PERSONALITIES, get_simple_color_description
+from kkafio.cards.chara.hair_color import hair_color_name
+from kkafio.cards.classifier import PERSONALITIES
 
 
 def unity_to_rgb(r: float, g: float, b: float) -> tuple[int, int, int]:
-    """Convert Unity's 0.0-1.0 float color channels to 0-255 ints."""
-    return (int(r * 255), int(g * 255), int(b * 255))
+    """Convert Unity's 0.0-1.0 float color channels to 0-255 ints (rounded, so 0.5 is 128 and a
+    float32 0.99999994 is 255, not 254)."""
+    return (round(r * 255), round(g * 255), round(b * 255))
 
 
-def hair_color(kc: KoikatuCharaData) -> tuple[int, int, int]:
-    """Best-effort base hair color for a loaded chara card, as 0-255 RGB."""
+def hair_color(kc: KoikatuCharaData) -> tuple[int, int, int] | None:
+    """Best-effort base hair color for a loaded chara card, as 0-255 RGB; None when the card has
+    no hair colour to read (it is not reported as black)."""
     parts = kc["Custom"]["hair"]["parts"]
     for i, part in enumerate(parts):
         if part.get("id", 0) == 0 and i != 1:
@@ -42,7 +45,7 @@ def hair_color(kc: KoikatuCharaData) -> tuple[int, int, int]:
             vals = list(base.values())
             if len(vals) >= 3:
                 return unity_to_rgb(vals[0], vals[1], vals[2])
-    return (0, 0, 0)
+    return None
 
 
 def _name_part(value) -> str:
@@ -77,5 +80,5 @@ def make_key(kc: KoikatuCharaData) -> str:
     personality_idx = param["personality"]
     personality     = (PERSONALITIES[personality_idx]
                         if personality_idx < len(PERSONALITIES) else str(personality_idx))
-    color           = get_simple_color_description(hair_color(kc))
+    color           = hair_color_name(hair_color(kc))
     return f"{lastname} | {firstname} | {nickname} | {personality} | {color} hair"

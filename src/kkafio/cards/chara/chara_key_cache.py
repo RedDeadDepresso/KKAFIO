@@ -37,7 +37,7 @@ CACHE_FILE = "kkafio_chara_key_cache.json"
 
 # Bump when make_key() changes what it returns for a card (or the entry layout
 # changes): caches written by an older version are then ignored, not trusted.
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 
 
 def _load(folder: Path) -> dict[str, dict]:
