@@ -20,6 +20,7 @@ import card_factory as cf
 # ---- where the code lives -----------------------------------------------------------
 from kkafio.cards import cache_io
 from kkafio.cards.mods import zipmods
+from kkafio.indices import modpack
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.cards.chara import outfits
 from kkafio.cards.mods import parsing
@@ -328,11 +329,74 @@ def test_is_modpack_protected(tmp_path):
     assert not zipmods.is_modpack_protected("x", None, None, index)
 
 
-def test_load_modpack_index_reads_bundled_index():
-    index = load_modpack_index("Koikatsu")
-    assert isinstance(index, dict) and len(index) > 1000
-    for guid, urls in list(index.items())[:50]:
-        assert isinstance(guid, str) and urls and all(url_to_rel_path(u) for u in urls)
+class _Resp:
+    def __init__(self, payload, status=200, etag=None):
+        self._p, self.status_code = payload, status
+        self.headers = {"etag": etag} if etag else {}
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self._p
+
+
+class _Client:
+    """Fake httpx client serving `index` with the given ETag; answers 304 to a matching If-None-Match."""
+    def __init__(self, etag, index):
+        self.etag, self.index, self.urls = etag, index, []
+
+    def get(self, url, headers=None, **kw):
+        self.urls.append(url)
+        if headers and headers.get("If-None-Match") == self.etag:
+            return _Resp(None, 304)
+        return _Resp(self.index, etag=self.etag)
+
+
+def _modpack_payload(n=3):
+    return {"guids": {f"pack.{i}": [modpack_url(f"Sideloader Modpack/{i}.zipmod")] for i in range(n)}}
+
+
+def test_load_modpack_index_downloads_and_revalidates(tmp_path):
+    from index_cache import age, read_meta
+    c = _Client('"e1"', _modpack_payload())
+    index = load_modpack_index("Koikatsu", c, tmp_path)
+    assert set(index) == {"pack.0", "pack.1", "pack.2"}
+    assert c.urls == [modpack.MODPACK_INDEX_URL_KK]
+    assert read_meta(tmp_path / "kk_modpack.json")["etag"] == '"e1"'
+
+    again = _Client('"e2"', _modpack_payload(1))
+    assert load_modpack_index("Koikatsu", again, tmp_path) == index          # under an hour: no request
+    assert again.urls == []
+
+    age(tmp_path / "kk_modpack.json", 2)
+    same = _Client('"e1"', _modpack_payload(1))                               # same ETag -> 304, cached copy
+    assert load_modpack_index("Koikatsu", same, tmp_path) == index
+
+    age(tmp_path / "kk_modpack.json", 2)
+    new = _Client('"e2"', _modpack_payload(1))                                # new ETag -> re-download
+    assert set(load_modpack_index("Koikatsu", new, tmp_path)) == {"pack.0"}
+
+
+def test_load_modpack_index_uses_one_file_per_game_type(tmp_path):
+    kks = _Client('"k"', _modpack_payload(2))
+    assert len(load_modpack_index("KoikatsuSunshine", kks, tmp_path)) == 2
+    assert kks.urls == [modpack.MODPACK_INDEX_URL_KKS]
+    assert (tmp_path / "kks_modpack.json").exists() and not (tmp_path / "kk_modpack.json").exists()
+
+
+def test_load_modpack_index_falls_back_to_cache_or_none(tmp_path):
+    from index_cache import age
+
+    class Down:
+        def get(self, *a, **k):
+            raise OSError("offline")
+
+    assert load_modpack_index("Koikatsu", Down(), tmp_path) is None            # nothing cached
+    load_modpack_index("Koikatsu", _Client('"e1"', _modpack_payload()), tmp_path)
+    age(tmp_path / "kk_modpack.json", 2)
+    assert len(load_modpack_index("Koikatsu", Down(), tmp_path)) == 3          # offline: cached copy
+    assert load_modpack_index("Koikatsu", _Client('"x"', {"guids": [1]}), tmp_path / "other") is None  # wrong format
 
 
 def test_url_to_rel_path():

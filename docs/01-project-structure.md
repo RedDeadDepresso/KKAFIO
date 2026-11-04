@@ -17,7 +17,6 @@ KKAFIO-dev/
 │
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
 │   ├── build_default_coordinate.py     # Records a folder of default coordinates in assets/indices/default_coordinate.json (Group Coordinates leaves those coordinates alone)
-│   ├── build_modpack_index.py       # Regenerates assets/indices/*_modpack.json from the BetterRepack server's listings
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
 │   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
 │   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
@@ -25,8 +24,6 @@ KKAFIO-dev/
 ├── assets/                          # Static data shipped with every release
 │   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
 │   ├── indices/                     # Static indices and reference data
-│   │   ├── kk_modpack.json        # Pre-built Sideloader Modpack index for Koikatsu/Party
-│   │   ├── kks_modpack.json       # Pre-built Sideloader Modpack index for Koikatsu Sunshine
 │   │   ├── default_coordinate.json  # Optional, written by tools/build_default_coordinate.py: outfit digests of the default coordinates Group Coordinates skips
 │   │   └── xkcd_color.json             # Named colour list used by the coordinate colour-fingerprint matcher
 │   └── i18n/                        # GUI translation strings, one file per language (see doc 03)
