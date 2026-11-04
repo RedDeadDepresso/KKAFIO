@@ -236,6 +236,12 @@ def test_incremental_rebuild_probes_only_new_changed_and_skips_moves(server, tmp
     assert len(set(server.range_hits)) == 3
 
 
+def test_studio_mods_are_in_both_games(server, tmp_path):
+    server.add("Sideloader Modpack - Studio/Author/studio.zipmod", make_zipmod("com.studio"))
+    out = run(server, tmp_path)
+    assert "com.studio" in out["kk"] and "com.studio" in out["kks"]
+
+
 def test_a_game_index_only_holds_its_categories(server, tmp_path):
     server.add(f"{KK_ONLY}/k.zipmod", make_zipmod("com.k"))
     server.add(f"{KKS_ONLY}/s.zipmod", make_zipmod("com.s"))

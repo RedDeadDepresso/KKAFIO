@@ -16,8 +16,8 @@ that only moved or was renamed (same filename, date and size) keeps it too. The 
 is shared by both games and is NOT shipped (default: tools/modpack_index_cache.json).
 
 Not indexed: "Sideloader Modpack - Bleeding Edge" (not part of the BetterRepack game
-release), Studio, and the EmotionCreators categories. Edit KK_CATEGORIES / KKS_CATEGORIES
-below to change what a game's index contains.
+release) and the EmotionCreators categories. Edit KK_CATEGORIES / KKS_CATEGORIES below to
+change what a game's index contains.
 
 Output (assets/data/kk_modpack_index.json, assets/data/kks_modpack_index.json):
   {
@@ -64,10 +64,11 @@ DEFAULT_BASE_URL = "https://sideload.betterrepack.com/download/KKEC/"
 USER_AGENT = "KKAFIO-modpack-index-builder/2.0"
 
 MAIN_CATEGORY = "Sideloader Modpack"
+STUDIO_CATEGORY = "Sideloader Modpack - Studio"
 
 # Server folders (first level under the base URL) that go into each game's index, in
 # ranking order: the main folder always first. Anything else on the server (Bleeding Edge,
-# Studio, EC_*) is neither crawled nor indexed.
+# EC_*) is neither crawled nor indexed.
 KK_CATEGORIES = [
     MAIN_CATEGORY,
     "Sideloader Modpack - Exclusive KK KKS",
@@ -77,6 +78,7 @@ KK_CATEGORIES = [
     "Sideloader Modpack - KK_MaterialEditor",
     "Sideloader Modpack - KK_UncensorSelector",
     "Sideloader Modpack - Maps",
+    STUDIO_CATEGORY,
 ]
 KKS_CATEGORIES = [
     MAIN_CATEGORY,
@@ -88,6 +90,7 @@ KKS_CATEGORIES = [
     "Sideloader Modpack - KKS_MaterialEditor",
     "Sideloader Modpack - KKS_UncensorSelector",
     "Sideloader Modpack - KKS_Maps",
+    STUDIO_CATEGORY,
 ]
 GAME_CATEGORIES = {"kk": KK_CATEGORIES, "kks": KKS_CATEGORIES}
 

@@ -332,8 +332,8 @@ new or changed zipmod with HTTP Range requests (the end of the zip and `manifest
 never the whole file). Nothing needs to be downloaded or installed locally.
 
 - **Which mods:** the main `Sideloader Modpack` folder plus the game's own categories
-  (`KK_CATEGORIES` / `KKS_CATEGORIES` in the script). Bleeding Edge, Studio and EmotionCreators
-  are not part of the BetterRepack game release and are neither crawled nor indexed.
+  (`KK_CATEGORIES` / `KKS_CATEGORIES` in the script), Studio included. Bleeding Edge and
+  EmotionCreators are not part of the BetterRepack game release and are neither crawled nor indexed.
 - **URL order:** the main folder first, then the specialised categories; within those the
   highest manifest version, then the newest file date. Identical copies in several folders (same
   filename, date and size) are listed once, and at most `--max-urls` (default 4) are kept.
