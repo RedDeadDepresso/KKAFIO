@@ -602,6 +602,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="When archiving a character card, also bundle its matching coordinate cards "
                         "and their mods (default: on)",
                    off_help="Only archive the character card itself, leave its coordinates out"),
+            Toggle("archive-open-folder", key="ArchiveOpenFolder",
+                   help="After archiving, open the archive output directory in the file manager (default: on)",
+                   off_help="Don't open the archive output directory afterwards"),
             Value("--chara-dir", key="CharaDir", ignore_blank=True, metavar="DIR", default=None,
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "pointing it at the game's chara folder also uses female/ and male/)"),

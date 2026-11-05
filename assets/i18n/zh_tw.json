@@ -272,6 +272,8 @@
   "option.ManageLibraryArchiveFormat.description": "關閉圖庫時封存佇列中卡片的封存方式：7-Zip 或 ZIP 壓縮檔，或直接把檔案複製到輸出目錄。",
   "option.ManageLibraryArchiveOptions.label": "封存選項",
   "option.ManageLibraryArchiveOptions.description": "關閉圖庫時封存佇列中的卡片如何封存：全部放進一個壓縮檔（否則每張卡片一個）、包含 Sideloader Modpack 的 zipmod，以及包含角色對應的服裝卡（及其 Mod）。",
+  "option.ArchiveOpenFolder.label": "開啟封存資料夾",
+  "option.ArchiveOpenFolder.description": "封存完成後，在檔案總管中開啟封存輸出目錄。",
   "option.BackupFolders.label": "要備份的資料夾",
   "option.BackupFolders.description": "選擇要包含在備份中的遊戲資料夾。模組：來自你模組資料夾的 zipmod。Sideloader 模組包資料夾一律排除，因為它們可重新下載，納入會使壓縮檔過於臃腫。",
   "option.BackupFolders.case.Mods.label": "模組",

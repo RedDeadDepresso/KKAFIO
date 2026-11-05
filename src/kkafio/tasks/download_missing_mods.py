@@ -65,7 +65,7 @@ from kkafio.services.mod_sources.telegram.mods import (
 from kkafio.tasks.base_task import BaseTask, handle_failed_downloads, parse_website_urls
 
 # Where to look manually for mods that couldn't be downloaded (OnFailedDownloads=OpenWebsites).
-DEFAULT_WEBSITE_URLS = "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
+DEFAULT_WEBSITE_URLS = "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
 
 
 class DownloadMissingMods(BaseTask):

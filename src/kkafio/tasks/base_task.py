@@ -39,7 +39,7 @@ def open_in_default_app(tag: str, path: Path) -> None:
         else:
             subprocess.Popen(["xdg-open", str(path)])
     except Exception as e:
-        logger.warning(tag, f"Could not open report: {e}")
+        logger.warning(tag, f"Could not open {path}: {e}")
 
 
 def copy_to_clipboard(tag: str, text: str) -> bool:

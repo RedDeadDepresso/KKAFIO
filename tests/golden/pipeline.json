@@ -439,7 +439,7 @@
        "ChatLinks"
       ],
       "use_cache": true,
-      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -556,6 +556,7 @@
       "archive_format": "7z",
       "archive_include_coords": true,
       "archive_include_modpack": false,
+      "archive_open_folder": true,
       "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
       "chara_dir_str": "",
       "check_shared_mods": true,
@@ -867,6 +868,7 @@
       "archive_format": "7z",
       "archive_include_coords": true,
       "archive_include_modpack": false,
+      "archive_open_folder": true,
       "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
       "chara_dir_str": "",
       "check_shared_mods": true,
@@ -1005,7 +1007,7 @@
        "ChatLinks"
       ],
       "use_cache": true,
-      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
      "enabled": true,

@@ -272,6 +272,8 @@
   "option.ManageLibraryArchiveFormat.description": "ライブラリを閉じたときにアーカイブキューのカードをアーカイブする形式：7-Zip または ZIP のアーカイブ、もしくは出力ディレクトリへのファイルの単純コピー。",
   "option.ManageLibraryArchiveOptions.label": "アーカイブオプション",
   "option.ManageLibraryArchiveOptions.description": "ライブラリを閉じたときにアーカイブキューのカードをどうアーカイブするか：1つのアーカイブにまとめる（オフの場合はカードごと）、Sideloader Modpack の zipmod を含める、キャラクターに対応するコーディネート（とその MOD）を含める。",
+  "option.ArchiveOpenFolder.label": "アーカイブフォルダを開く",
+  "option.ArchiveOpenFolder.description": "アーカイブ後に、アーカイブ出力ディレクトリをファイルマネージャーで開きます。",
   "option.BackupFolders.label": "バックアップ対象のフォルダ",
   "option.BackupFolders.description": "バックアップに含めるゲームフォルダを選択します。MOD：MODフォルダ内のzipmod。サイドローダーMODパックのフォルダは再ダウンロード可能なため、アーカイブの肥大化を防ぐため常に除外されます。",
   "option.BackupFolders.case.Mods.label": "MOD",

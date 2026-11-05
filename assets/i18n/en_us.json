@@ -272,6 +272,8 @@
   "option.ManageLibraryArchiveFormat.description": "How the cards in the Archive queue are archived when the library closes: a 7-Zip or ZIP archive, or a plain copy of the files into the output directory.",
   "option.ManageLibraryArchiveOptions.label": "Archive Options",
   "option.ManageLibraryArchiveOptions.description": "How the cards in the Archive queue are archived when the library closes: put them all in one archive (otherwise one per card), include the zipmods of the Sideloader Modpack, and include a character's matching coordinates (and their mods).",
+  "option.ArchiveOpenFolder.label": "Open Archive Folder",
+  "option.ArchiveOpenFolder.description": "After archiving, open the Archive Output Directory in the file manager.",
   "option.BackupFolders.label": "Folders to Back Up",
   "option.BackupFolders.description": "Select which game folders to include in the backup. Mods: zipmods from your mods folder. Sideloader Modpack folders are always excluded, since those are re-downloadable and would bloat the archive.",
   "option.BackupFolders.case.Mods.label": "Mods",

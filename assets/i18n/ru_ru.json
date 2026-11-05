@@ -272,6 +272,8 @@
   "option.ManageLibraryArchiveFormat.description": "Как архивируются карточки из очереди архивации при закрытии библиотеки: архив 7-Zip или ZIP либо простое копирование файлов в выходной каталог.",
   "option.ManageLibraryArchiveOptions.label": "Параметры архивации",
   "option.ManageLibraryArchiveOptions.description": "Как архивируются карточки из очереди архивации при закрытии библиотеки: собрать всё в один архив (иначе по одному на карточку), включить zipmod из Sideloader Modpack и включить подходящие наряды персонажа (и их моды).",
+  "option.ArchiveOpenFolder.label": "Открыть папку архива",
+  "option.ArchiveOpenFolder.description": "После архивации открыть выходную папку архива в файловом менеджере.",
   "option.BackupFolders.label": "Папки для резервного копирования",
   "option.BackupFolders.description": "Выберите, какие папки игры включить в резервную копию. Моды: zipmod из вашей папки модов. Папки модпака Sideloader всегда исключаются, так как их можно перезагрузить и они лишь увеличивают размер архива.",
   "option.BackupFolders.case.Mods.label": "Моды",

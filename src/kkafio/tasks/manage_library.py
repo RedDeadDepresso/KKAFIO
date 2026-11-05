@@ -44,7 +44,7 @@ from kkafio.dialogs.library.characters import chara_library_tab
 from kkafio.dialogs.library.coordinates import coordinate_library_tab
 from kkafio.dialogs.library.mods_panel import CardMods, ModsLookup, mods_dir_for
 from kkafio.dialogs.library.scenes import scene_library_tab
-from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
+from kkafio.tasks.base_task import BaseTask, open_in_default_app, resolve_chara_dirs
 
 TAG = "LIBRARY"
 
@@ -66,6 +66,7 @@ class ManageLibrary(BaseTask):
         self.archive_combined       : bool = cfg.get("ArchiveCombined", True)
         self.archive_include_modpack: bool = cfg.get("ArchiveIncludeModpack", False)
         self.archive_include_coords : bool = cfg.get("ArchiveIncludeCoordinates", True)
+        self.archive_open_folder    : bool = cfg.get("ArchiveOpenFolder", True)
         self._installed_mods_dir   : Path | None = None     # set by _card_mods(): where Archive Cards looks for mods
         self._downloaded_mods_dir  : Path | None = None     # set by _card_mods(): where Delete Cards looks for mods
 
@@ -219,6 +220,20 @@ class ManageLibrary(BaseTask):
         ArchiveCards(self.config, self.file_manager,
                      settings=self._archive_cards_settings(paths, coord_dir, installed_mods_dir,
                                                            downloaded_mods_dir)).run()
+        self._open_archive_folder()
+
+    def _open_archive_folder(self) -> None:
+        """Show the Archive Output Directory in the file manager (the Open Archive Folder option)."""
+        if not self.archive_open_folder:
+            return
+        folder = self._archive_output_dir()
+        if folder is None:
+            logger.info(TAG, "No Archive Output Directory is set - nothing to open")
+        elif not folder.is_dir():
+            logger.info(TAG, f"Archive folder does not exist (nothing was archived?): {folder}")
+        else:
+            logger.info(TAG, f"Opening the archive folder: {folder}")
+            open_in_default_app(TAG, folder)
 
     # ------------------------------------------------------------------
     # Run
