@@ -36,9 +36,10 @@ To run from source:
 Run `kkafio_setup.bat` (in the install root) any time for a few optional setup utilities:
 
 1. **Create default task folders** — creates `C:\KKAFIO\Backups`, `Downloads`, `Archived Cards`, and `Exported Mods` ahead of time (these are also created automatically on first use of a task left at its default path).
-2. **Register context menu** — see [Context Menu Integration](#context-menu-integration).
-3. **Unregister context menu** — removes it again.
-4. **Delete KKAFIO config and default task folders** — deletes `%APPDATA%\KKAFIO` (saved config, Telegram session, download history) and `C:\KKAFIO` (the four folders above). Asks for confirmation first; cannot be undone.
+2. **Enable clipboard history (Win+V)** — turns on Windows clipboard history for your user, so the failed links / mod GUIDs that Download Contents and Download Missing Mods copy to the clipboard stay in the Win+V list instead of being replaced by your next copy.
+3. **Register context menu** — see [Context Menu Integration](#context-menu-integration).
+4. **Unregister context menu** — removes it again.
+5. **Delete KKAFIO config and default task folders** — deletes `%APPDATA%\KKAFIO` (saved config, Telegram session, download history) and `C:\KKAFIO` (the four folders above). Asks for confirmation first; cannot be undone.
 
 ## Game Type
 

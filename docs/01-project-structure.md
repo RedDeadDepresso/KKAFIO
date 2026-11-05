@@ -6,10 +6,11 @@
 KKAFIO-dev/
 ├── kkafio_cli.py                    # Thin launcher (PyInstaller entry point; also `python kkafio_cli.py`)
 ├── interface.json                   # Schema describing every task/option for the GUI (see doc 03)
-├── kkafio_setup.bat                 # Menu launcher: create default folders / register / unregister context menu / delete config+folders
+├── kkafio_setup.bat                 # Menu launcher: create default folders / enable clipboard history / register / unregister context menu / delete config+folders
 │
 ├── scripts/                         # Scripts run by kkafio_setup.bat (also runnable standalone)
 │   ├── create_default_task_folders.bat  # Creates C:\KKAFIO\{Backups,Downloads,Archived Cards,Exported Mods}
+│   ├── enable_clipboard_history.bat     # Turns on Windows clipboard history (Win+V) for the current user
 │   ├── register_context_menu.bat        # Thin wrapper (bypasses PowerShell's execution policy) that runs register_context_menu.ps1
 │   ├── register_context_menu.ps1        # Adds right-click Explorer entries that call kkafio_cli (unregisters first, then prompts for language + task selection)
 │   ├── unregister_context_menu.bat      # Removes them without registering new ones
