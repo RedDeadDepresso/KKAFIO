@@ -1329,46 +1329,24 @@
         }
       ]
     },
-    "OpenReport": {
-      "type": "switch",
-      "label": "$option.OpenReport.label",
-      "description": "$option.OpenReport.description",
-      "default_case": "Yes",
+    "OnFailedDownloads": {
+      "type": "checkbox",
+      "label": "$option.OnFailedDownloads.label",
+      "description": "$option.OnFailedDownloads.description",
+      "default_case": ["OpenReport", "CopyToClipboard"],
       "cases": [
         {
-          "name": "Yes",
-          "label": "$option.OpenReport.case.Yes.label",
+          "name": "OpenReport",
+          "label": "$option.OnFailedDownloads.case.OpenReport.label",
           "pipeline_override": {
             "OpenReport": true
           }
         },
         {
-          "name": "No",
-          "label": "$option.OpenReport.case.No.label",
+          "name": "CopyToClipboard",
+          "label": "$option.OnFailedDownloads.case.CopyToClipboard.label",
           "pipeline_override": {
-            "OpenReport": false
-          }
-        }
-      ]
-    },
-    "DownloadContentsOpenReport": {
-      "type": "switch",
-      "label": "$option.DownloadContentsOpenReport.label",
-      "description": "$option.DownloadContentsOpenReport.description",
-      "default_case": "Yes",
-      "cases": [
-        {
-          "name": "Yes",
-          "label": "$option.DownloadContentsOpenReport.case.Yes.label",
-          "pipeline_override": {
-            "OpenReport": true
-          }
-        },
-        {
-          "name": "No",
-          "label": "$option.DownloadContentsOpenReport.case.No.label",
-          "pipeline_override": {
-            "OpenReport": false
+            "CopyReportToClipboard": true
           }
         }
       ]
@@ -1587,7 +1565,7 @@
       "default_check": false,
       "description": "$task.DownloadContents.description",
       "group": ["content-management"],
-      "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded", "DownloadContentsOpenReport"]
+      "option": ["DownloadOutputDir", "DownloadLinks", "SkipDownloaded", "OnFailedDownloads"]
     },
     {
       "name": "FilterConvertKKS",
@@ -1636,7 +1614,7 @@
         "SideloaderModpack",
         "TelegramSources",
         "TelegramChatLinks",
-        "OpenReport",
+        "OnFailedDownloads",
         "UseCache",
         "SceneDir",
         "CharaDir",

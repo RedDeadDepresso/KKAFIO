@@ -92,7 +92,7 @@ from kkafio.services.content_sources.pixiv import (
     is_pixiv_url,
 )
 from kkafio.services.content_sources.pawchive.session import USER_AGENT as PAWCHIVE_USER_AGENT
-from kkafio.tasks.base_task import BaseTask, open_in_default_app
+from kkafio.tasks.base_task import BaseTask, handle_failed_downloads
 
 if TYPE_CHECKING:
     import httpx
@@ -247,7 +247,7 @@ class DownloadContents(BaseTask):
         self.links           : str  = cfg.get("Links", "")
         self.output_dir_str  : str  = cfg.get("OutputDir", "")
         self.skip_downloaded : bool = cfg.get("SkipDownloaded", True)
-        self.open_report     : bool = cfg.get("OpenReport", True)
+        self.on_failed_downloads : list[str] = cfg.get("OnFailedDownloads", ["OpenReport", "CopyToClipboard"])
 
     def run(self) -> None:
         urls = self._parse_links()
@@ -296,10 +296,10 @@ class DownloadContents(BaseTask):
                       extra=f"{totals.failed} failed, "
                             f"{totals.ok + totals.skipped + totals.failed} total")
 
-        # Like Download Missing Mods: open the report only when something went wrong.
-        if self.open_report and report_path is not None and totals.failed:
-            logger.info("DLOAD", "Some downloads failed — opening the report")
-            open_in_default_app("DLOAD", report_path)
+        # Like Download Missing Mods: only when something went wrong.
+        if totals.failed:
+            failed_links = [_link_label(r.link) for r in results if r.failed or r.error]
+            handle_failed_downloads("DLOAD", report_path, self.on_failed_downloads, failed_links)
 
     # -- report --------------------------------------------------------------
 

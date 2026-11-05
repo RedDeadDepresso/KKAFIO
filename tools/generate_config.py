@@ -67,7 +67,8 @@ def _camel_to_snake(name: str) -> str:
 # keeps the raw ["Chara", "Scene", ...] list under "ContentTypes" rather
 # than three separate Scan* booleans. TelegramSources works the same way:
 # the task wants ["KoikatsuCards", "ChatLinks"], not two Use* booleans.
-CHECKBOX_AS_LIST = {"ContentTypes", "TelegramSources"}
+# OnFailedDownloads too: ["OpenReport", "CopyToClipboard"].
+CHECKBOX_AS_LIST = {"ContentTypes", "TelegramSources", "OnFailedDownloads"}
 
 # Manual (option_id -> config_key) overrides, for the rare option whose
 # pipeline_override can't be resolved to a single target key automatically.
@@ -78,6 +79,7 @@ CHECKBOX_AS_LIST = {"ContentTypes", "TelegramSources"}
 CONFIG_KEY_OVERRIDES: dict[str, str] = {
     "ContentTypes": "ContentTypes",
     "TelegramSources": "TelegramSources",
+    "OnFailedDownloads": "OnFailedDownloads",
 }
 
 

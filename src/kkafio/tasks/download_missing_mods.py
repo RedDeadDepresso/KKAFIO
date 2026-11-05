@@ -62,7 +62,7 @@ from kkafio.services.mod_sources.telegram.mods import (
     ensure_session,
     search_chat_links_and_download,
 )
-from kkafio.tasks.base_task import BaseTask, open_in_default_app
+from kkafio.tasks.base_task import BaseTask, handle_failed_downloads
 
 
 class DownloadMissingMods(BaseTask):
@@ -76,7 +76,7 @@ class DownloadMissingMods(BaseTask):
         self.coord_dir_str       : str  = cfg.get("CoordDir",             "")
         self.content_types       : list[str] = cfg.get("ContentTypes",    ["Chara", "Scene", "Coord"])
         self.use_cache           : bool = cfg.get("UseCache",             True)
-        self.open_report         : bool = cfg.get("OpenReport",           True)
+        self.on_failed_downloads : list[str] = cfg.get("OnFailedDownloads", ["OpenReport", "CopyToClipboard"])
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
         self.telegram_sources    : list[str] = cfg.get("TelegramSources", [])    # any of: KoikatsuCards, ChatLinks
         self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
@@ -193,11 +193,6 @@ class DownloadMissingMods(BaseTask):
         except Exception as e:
             logger.warning("DLMOD", f"Could not write report: {e}")
             return None
-
-    @staticmethod
-    def _open_file(path: Path) -> None:
-        """Open `path` with the system's default program (best effort)."""
-        open_in_default_app("DLMOD", path)
 
     def run(self) -> None:
         game_path = self.config.game_path
@@ -799,8 +794,8 @@ class DownloadMissingMods(BaseTask):
         logger.success("DLMOD",
             f"Done — downloaded: {ok}, failed: {fail + len(unresolved)}")
 
-        # Open the report when anything is still missing or a download failed
+        # Act on the report when anything is still missing or a download failed
         # (mods skipped on purpose via the Sideloader Modpack mode don't count).
-        if self.open_report and report_path is not None and (unresolved or failed_guids or fail):
-            logger.info("DLMOD", "Mods are still missing — opening the report")
-            self._open_file(report_path)
+        if unresolved or failed_guids or fail:
+            handle_failed_downloads("DLMOD", report_path, self.on_failed_downloads,
+                                    sorted(set(unresolved) | failed_guids))

@@ -355,7 +355,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -425,7 +428,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -987,7 +993,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -1053,7 +1062,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },

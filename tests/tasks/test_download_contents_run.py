@@ -8,6 +8,7 @@ sharing the pawchive state, counting results and checkpointing the history.
 import pytest
 
 from kkafio.services.content_sources import history as history_store
+from kkafio.tasks import base_task as bt
 from kkafio.tasks import download_contents as dc
 
 SITES = ("pawchive", "bepis", "koikatsu", "pixiv", "gofile", "mega", "gdrive")
@@ -43,12 +44,14 @@ def rig(monkeypatch, tmp_path):
     monkeypatch.setattr(kkd, "get_or_prompt", lambda: session["kkd"])
     monkeypatch.setattr(pxv, "get_or_prompt", lambda: None)
 
-    opened = []
-    monkeypatch.setattr(dc, "open_in_default_app", lambda tag, path: opened.append(path))
+    opened, copied = [], []
+    monkeypatch.setattr(bt, "open_in_default_app", lambda tag, path: opened.append(path))
+    monkeypatch.setattr(bt, "copy_to_clipboard", lambda tag, text: copied.append(text) or True)
 
     def run(links, **cfg):
         dc.DownloadContents(_Cfg(links, tmp_path, **cfg), None).run()
     run.opened = opened
+    run.copied = copied
     return run, calls, saves, session, tmp_path
 
 
@@ -114,7 +117,7 @@ def test_a_report_is_always_written_and_not_opened_when_all_went_well(rig):
     assert "Downloaded successfully : 2" in text and "Failed                  : 0" in text
     assert "Links completed (2):" in text and "Links with failures" not in text
     assert "+ https://gofile.io/d/x" in text
-    assert run.opened == []
+    assert run.opened == [] and run.copied == []
 
 
 def test_the_report_lists_failed_links_and_is_opened(rig):
@@ -132,11 +135,26 @@ def test_the_report_lists_failed_links_and_is_opened(rig):
     assert run.opened == [out / dc.REPORT_NAME]
 
 
-def test_open_report_off_still_writes_the_report(rig):
+def test_failed_downloads_copy_only_the_failed_links_to_the_clipboard(rig):
     run, calls, saves, session, out = rig
-    run("https://gofile.io/d/boom\n", OpenReport=False)
+    run("https://gofile.io/d/boom\nhttps://mega.nz/file/a#b\n")
+    assert run.copied == ["https://gofile.io/d/boom"]      # only the failed link, not the report
+
+
+def test_failed_downloads_actions_can_be_chosen_separately(rig):
+    run, calls, saves, session, out = rig
+    run("https://gofile.io/d/boom\n", OnFailedDownloads=["CopyToClipboard"])
+    assert run.opened == [] and len(run.copied) == 1
+    run.copied.clear()
+    run("https://gofile.io/d/boom\n", OnFailedDownloads=["OpenReport"])
+    assert run.opened == [out / dc.REPORT_NAME] and run.copied == []
+
+
+def test_no_failed_downloads_action_still_writes_the_report(rig):
+    run, calls, saves, session, out = rig
+    run("https://gofile.io/d/boom\n", OnFailedDownloads=[])
     assert (out / dc.REPORT_NAME).exists()
-    assert run.opened == []
+    assert run.opened == [] and run.copied == []
 
 
 def test_an_interrupted_run_lists_the_links_not_reached(rig, monkeypatch):

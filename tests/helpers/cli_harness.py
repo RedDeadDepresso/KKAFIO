@@ -404,7 +404,7 @@ def configured_tasks() -> list[dict]:
           OverlaysDir=f("/cfg/overlays"), UseCache=sw(False),
           KeepStrategy=opt_select("Newest"), DuplicateAction=opt_select("Delete")),
         t("DownloadMissingMods", ContentTypes=opt_checkbox("Chara"), SideloaderModpack=opt_select("All"),
-          TelegramSources=opt_checkbox("KoikatsuCards", "ChatLinks"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OpenReport=sw(False),
+          TelegramSources=opt_checkbox("KoikatsuCards", "ChatLinks"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OnFailedDownloads=opt_checkbox("CopyToClipboard"),
           InstalledModsDir=f("/cfg/in-mods"), DownloadedModsDir=f("/cfg/out-mods"), CharaDir=f("/cfg/chara"),
           SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coord")),
         t("CompressCardTextures", DownloadsInputPath=f("/cfg/in"), KoiCardTexToolPath=f("/cfg/tool"),

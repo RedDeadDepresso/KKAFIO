@@ -263,9 +263,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("skip-downloaded", key="SkipDownloaded",
                    help="Skip already-downloaded URLs (overrides config)",
                    off_help="Re-download even if previously downloaded (overrides config)"),
-            Toggle("open-report", key="OpenReport",
-                   help="Open the report (kkafio_download_contents_report.txt) when a download failed (default: on)",
-                   off_help="Never open the report automatically"),
+            Value("--on-failed-downloads", key="OnFailedDownloads", default=None, nargs="*",
+                  choices=["OpenReport", "CopyToClipboard"], metavar="ACTION",
+                  help="What to do with the report (kkafio_download_contents_report.txt) when a download "
+                       "failed; give any of: OpenReport=open it, CopyToClipboard=copy the failed links, one per line. "
+                       "Pass the flag with no actions to do neither. Default: the setting in the config "
+                       "(both)"),
         ),
     ),
 
@@ -297,9 +300,12 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Skip scanning coordinate cards for referenced mod GUIDs"),
             Toggle("use-cache", key="UseCache",
                    help="Use mods and chara cache to skip scanning (default: on)"),
-            Toggle("open-report", key="OpenReport",
-                   help="Open the report when mods are still missing or a download failed (default: on)",
-                   off_help="Never open the report automatically"),
+            Value("--on-failed-downloads", key="OnFailedDownloads", default=None, nargs="*",
+                  choices=["OpenReport", "CopyToClipboard"], metavar="ACTION",
+                  help="What to do with the report when mods are still missing or a download failed; "
+                       "give any of: OpenReport=open it, CopyToClipboard=copy the failed mod GUIDs, one per line. "
+                       "Pass the flag with no actions to do neither. Default: the setting in the config "
+                       "(both)"),
             Value("--modpack-mode", key="SideloaderModpack", ignore_blank=True, default=None,
                   choices=["Skip", "OnlyUsed", "All"],
                   help="How to handle Sideloader Modpack mods: "

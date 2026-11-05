@@ -2764,7 +2764,10 @@
     {
      "attrs": {
       "links": "cfg-link",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "/cfg/dl",
       "skip_downloaded": false
      },
@@ -2793,7 +2796,10 @@
     {
      "attrs": {
       "links": "cfg-link",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "/cfg/dl",
       "skip_downloaded": false
      },
@@ -2822,7 +2828,10 @@
     {
      "attrs": {
       "links": "cfg-link",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "",
       "skip_downloaded": false
      },
@@ -2848,14 +2857,17 @@
    "--output-dir",
    "S_output_dir",
    "--skip-downloaded",
-   "--open-report"
+   "--on-failed-downloads",
+   "OpenReport"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport"
+      ],
       "output_dir_str": "S_output_dir",
       "skip_downloaded": true
      },
@@ -2881,14 +2893,17 @@
    "--output-dir",
    "S_output_dir",
    "--no-skip-downloaded",
-   "--no-open-report"
+   "--on-failed-downloads",
+   "CopyToClipboard"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "output_dir_str": "S_output_dir",
       "skip_downloaded": false
      },
@@ -2922,7 +2937,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -2963,7 +2980,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3004,7 +3023,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3045,7 +3066,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3086,7 +3109,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3127,7 +3152,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3168,7 +3195,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
       "telegram_sources": [
@@ -3209,7 +3238,9 @@
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "",
       "telegram_sources": [
@@ -3251,7 +3282,8 @@
    "--no-scene",
    "--no-coord",
    "--use-cache",
-   "--open-report",
+   "--on-failed-downloads",
+   "OpenReport",
    "--modpack-mode",
    "Skip",
    "--telegram-sources",
@@ -3269,7 +3301,9 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "Skip",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport"
+      ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -3310,7 +3344,8 @@
    "--no-scene",
    "--no-coord",
    "--no-use-cache",
-   "--no-open-report",
+   "--on-failed-downloads",
+   "CopyToClipboard",
    "--modpack-mode",
    "All",
    "--telegram-sources",
@@ -3328,7 +3363,9 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -8096,7 +8133,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8141,7 +8181,10 @@
       "downloaded_mods_dir_str": "O",
       "installed_mods_dir_str": "M",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8186,7 +8229,10 @@
       "downloaded_mods_dir_str": "M",
       "installed_mods_dir_str": "I",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8229,7 +8275,10 @@
       "downloaded_mods_dir_str": "M",
       "installed_mods_dir_str": "M",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8270,7 +8319,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8310,7 +8362,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8351,7 +8406,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8394,7 +8452,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "",
       "telegram_sources": [
@@ -8438,7 +8499,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8480,7 +8544,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [],
@@ -8509,7 +8576,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -8538,7 +8608,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -8567,7 +8640,10 @@
     {
      "attrs": {
       "links": "https://example.com/a\nhttps://example.com/b\n",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -8596,35 +8672,10 @@
     {
      "attrs": {
       "links": "S_links",
-      "open_report": true,
-      "output_dir_str": "C:/KKAFIO/Downloads",
-      "skip_downloaded": true
-     },
-     "class": "DownloadContents",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadContents"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "download-contents --no-open-report": {
-  "argv": [
-   "download-contents",
-   "--no-open-report"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "links": "",
-      "open_report": false,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -8652,7 +8703,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": false
      },
@@ -8670,17 +8724,51 @@
   },
   "world": "default"
  },
- "download-contents --open-report": {
+ "download-contents --on-failed-downloads=CopyToClipboard": {
   "argv": [
    "download-contents",
-   "--open-report"
+   "--on-failed-downloads",
+   "CopyToClipboard"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
+      "output_dir_str": "C:/KKAFIO/Downloads",
+      "skip_downloaded": true
+     },
+     "class": "DownloadContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-contents --on-failed-downloads=OpenReport": {
+  "argv": [
+   "download-contents",
+   "--on-failed-downloads",
+   "OpenReport"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "links": "",
+      "on_failed_downloads": [
+       "OpenReport"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -8709,7 +8797,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "",
       "skip_downloaded": true
      },
@@ -8738,7 +8829,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "S_output_dir",
       "skip_downloaded": true
      },
@@ -8766,7 +8860,10 @@
     {
      "attrs": {
       "links": "",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "output_dir_str": "C:/KKAFIO/Downloads",
       "skip_downloaded": true
      },
@@ -8792,14 +8889,17 @@
    "--output-dir",
    "S_output_dir",
    "--skip-downloaded",
-   "--open-report"
+   "--on-failed-downloads",
+   "OpenReport"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport"
+      ],
       "output_dir_str": "S_output_dir",
       "skip_downloaded": true
      },
@@ -8825,14 +8925,17 @@
    "--output-dir",
    "S_output_dir",
    "--no-skip-downloaded",
-   "--no-open-report"
+   "--on-failed-downloads",
+   "CopyToClipboard"
   ],
   "result": {
    "events": [
     {
      "attrs": {
       "links": "S_links",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "output_dir_str": "S_output_dir",
       "skip_downloaded": false
      },
@@ -8868,7 +8971,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8911,7 +9017,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8954,7 +9063,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -8997,7 +9109,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9040,7 +9155,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9083,7 +9201,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9126,7 +9247,10 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9169,7 +9293,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9212,7 +9339,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9255,7 +9385,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "All",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9298,7 +9431,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9341,7 +9477,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "Skip",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9384,7 +9523,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9427,7 +9569,10 @@
       "downloaded_mods_dir_str": "S_mods_dir",
       "installed_mods_dir_str": "S_mods_dir",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9468,7 +9613,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9509,49 +9657,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
       ],
-      "use_cache": true
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "download-missing-mods --no-open-report": {
-  "argv": [
-   "download-missing-mods",
-   "--no-open-report"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "downloaded_mods_dir_str": "",
-      "installed_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "open_report": false,
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9592,7 +9701,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9634,7 +9746,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9657,10 +9772,11 @@
   },
   "world": "default"
  },
- "download-missing-mods --open-report": {
+ "download-missing-mods --on-failed-downloads=CopyToClipboard": {
   "argv": [
    "download-missing-mods",
-   "--open-report"
+   "--on-failed-downloads",
+   "CopyToClipboard"
   ],
   "result": {
    "events": [
@@ -9676,7 +9792,54 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --on-failed-downloads=OpenReport": {
+  "argv": [
+   "download-missing-mods",
+   "--on-failed-downloads",
+   "OpenReport"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9719,7 +9882,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9762,7 +9928,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9805,7 +9974,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "",
       "telegram_sources": [
@@ -9848,7 +10020,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -9891,7 +10066,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9933,7 +10111,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -9974,7 +10155,10 @@
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [
@@ -10016,7 +10200,8 @@
    "--no-scene",
    "--no-coord",
    "--use-cache",
-   "--open-report",
+   "--on-failed-downloads",
+   "OpenReport",
    "--modpack-mode",
    "Skip",
    "--telegram-sources",
@@ -10034,7 +10219,9 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "Skip",
-      "open_report": true,
+      "on_failed_downloads": [
+       "OpenReport"
+      ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
@@ -10075,7 +10262,8 @@
    "--no-scene",
    "--no-coord",
    "--no-use-cache",
-   "--no-open-report",
+   "--on-failed-downloads",
+   "CopyToClipboard",
    "--modpack-mode",
    "All",
    "--telegram-sources",
@@ -10093,7 +10281,9 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
-      "open_report": false,
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [

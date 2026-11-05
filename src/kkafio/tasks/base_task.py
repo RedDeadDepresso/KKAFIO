@@ -41,6 +41,64 @@ def open_in_default_app(tag: str, path: Path) -> None:
         logger.warning(tag, f"Could not open report: {e}")
 
 
+def copy_to_clipboard(tag: str, text: str) -> bool:
+    """Put `text` on the system clipboard (best effort; a failure is only logged
+    under `tag`). Returns whether it worked.
+
+    Uses the platform's own clipboard tool where there is one, because the text
+    then stays on the clipboard after this process exits (a Tk clipboard does not
+    on most platforms); Tk is the fallback."""
+    attempts: list[tuple[list[str], bytes]] = []
+    if sys.platform == "win32":
+        # clip.exe reads UTF-16 when it starts with a BOM, which the "utf-16" codec adds.
+        attempts.append((["clip"], text.encode("utf-16")))
+    elif sys.platform == "darwin":
+        attempts.append((["pbcopy"], text.encode("utf-8")))
+    else:
+        data = text.encode("utf-8")
+        attempts += [(["wl-copy"], data),
+                     (["xclip", "-selection", "clipboard"], data),
+                     (["xsel", "--clipboard", "--input"], data)]
+
+    for cmd, data in attempts:
+        try:
+            subprocess.run(cmd, input=data, check=True, timeout=10,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
+        except Exception:
+            continue
+
+    try:
+        import tkinter as tk
+        root = tk.Tk()
+        root.withdraw()
+        root.clipboard_clear()
+        root.clipboard_append(text)
+        root.update()                    # make Tk render the data before it goes away
+        root.destroy()
+        return True
+    except Exception as e:
+        logger.warning(tag, f"Could not copy to the clipboard: {e}")
+        return False
+
+
+def handle_failed_downloads(tag: str, report_path: Path | None, actions: list[str],
+                            failed_items: list[str]) -> None:
+    """The "If Downloads Fail" option: after a run with failures, do what `actions`
+    (any of "OpenReport", "CopyToClipboard") asks. "OpenReport" opens the report
+    at `report_path`; "CopyToClipboard" copies `failed_items` (the failed links or
+    mod GUIDs, one per line). Best effort — a problem is only logged."""
+    if "CopyToClipboard" in actions and failed_items:
+        if copy_to_clipboard(tag, "\n".join(failed_items)):
+            logger.info(tag, f"Copied {len(failed_items)} failed item(s) to the clipboard")
+    if "OpenReport" in actions:
+        if report_path is None:
+            logger.warning(tag, "The report could not be written — nothing to open")
+        else:
+            logger.info(tag, "Some downloads failed — opening the report")
+            open_in_default_app(tag, report_path)
+
+
 def validate_input_path(tag: str, folder_path: Path, default_path: Path | None = None) -> None:
     """Raise `InputError` (logged by the CLI under `tag`) if folder_path is unset
     or doesn't exist.
