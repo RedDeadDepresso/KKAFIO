@@ -706,7 +706,8 @@ def test_the_library_takes_its_wording_from_a_dialog_text(tmp_path, monkeypatch)
         assert button(root, text.untagged).cget("text") == f"{text.untagged}   5"
         assert label_text(root, text.series_header) == [text.series_header]
         assert label_text(root, "6 coordinates") == [text.status.format(total=6, untagged=5)]
-        assert label_text(root, "Select a card")[0] == text.hint
+        assert not label_text(root, "Select a card")                     # the how-to lives in the Info dialog
+        assert button(root, "\u24d8").winfo_exists()
         click(cv, min(texts(cv, text.unknown_series), key=lambda i: (cv.bbox(i)[1], cv.bbox(i)[0])))
         type_into(editor(cv), "Saber")
         editor(cv).event_generate("<Return>")

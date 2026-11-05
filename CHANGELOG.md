@@ -19,6 +19,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Changed
 
+- **Manage Library** — the grey how-to line under the cards is gone, and the **Close** button is replaced by an **Info** button that opens a dialog explaining how to use the library (selecting, moving cards into folders, renaming, searching and sorting, To Delete / To Archive, and your current shortcuts). **Esc** and the window's close button still close the library. The `dialog.manual.hint`, `dialog.manual_coord.hint` and `dialog.manual_scene.hint` translation keys are replaced by `dialog.info.*`.
 - **Manage Library** — the library's **Trash** is now **To Delete** and the **Archive queue** is now **To Archive**; the right-click entries are **Mark to delete** / **Mark to archive**. Internal names (views, model fields, translation keys) were renamed to match.
 - **Download Contents / Download Missing Mods** — the **Open Report** switch is replaced by an **If Downloads Fail** checkbox with two actions, both on by default: **Open the report** and **Copy failed links / mod GUIDs to clipboard** (CLI: `--on-failed-downloads [OpenReport] [CopyToClipboard]`, replacing `--open-report` / `--no-open-report`; pass the flag with no actions to do neither). **Breaking:** the `OpenReport` config key and the old option are not migrated; the report is still always written.
 - **Download Missing Mods** — mods from the Sideloader Modpack download in parallel (4 at a time); mods waiting for a free slot no longer risk timing out on big batches.

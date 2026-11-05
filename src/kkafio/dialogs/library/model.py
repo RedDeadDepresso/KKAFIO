@@ -296,7 +296,6 @@ class DialogText:
     filter_series: str          # sidebar: placeholder of the folder filter
     unknown_series: str         # under a cover that isn't in a folder yet
     no_cards: str
-    hint: str
     status: str
     status_filtered: str
     moved: str
@@ -317,7 +316,6 @@ def chara_dialog_text() -> DialogText:
         filter_series=t("dialog.manual.filter_series"),
         unknown_series=t("dialog.manual.unknown_series"),
         no_cards=t("dialog.manual.no_cards"),
-        hint=t("dialog.manual.hint"),
         status=t("dialog.manual.status"),
         status_filtered=t("dialog.manual.status_filtered"),
         moved=t("dialog.manual.moved"),

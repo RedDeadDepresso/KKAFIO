@@ -61,3 +61,17 @@ def test_a_damaged_file_falls_back_to_the_defaults(tmp_path):
     s = ShortcutSettings(SessionStore(path, "T"))
     assert s.keys == {ACTION_RENAME: "F12", ACTION_FOLDER: "F3", ACTION_DELETE: "Delete",
                       ACTION_ARCHIVE: "F11", ACTION_RESTORE: "Insert", ACTION_EXPLORER: "F10"}   # bad / duplicate ones reset
+
+
+def test_info_dialog_sections_show_the_current_shortcuts():
+    """The Info dialog explains the library with the shortcuts as they are set now."""
+    from kkafio.dialogs.library.info_dialog import SECTIONS, info_sections
+    from kkafio.dialogs.library.shortcuts import ACTION_DELETE, ShortcutSettings
+    settings = ShortcutSettings()
+    settings.set(ACTION_DELETE, "F9")
+    sections = info_sections(settings)
+    assert len(sections) == len(SECTIONS)
+    assert all(title and body and not title.startswith("dialog.info") and not body.startswith("dialog.info")
+               for title, body in sections)
+    assert not any("{" in body for _title, body in sections)           # every placeholder was filled
+    assert any("F9" in body for _title, body in sections)

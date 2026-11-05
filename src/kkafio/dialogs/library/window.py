@@ -31,7 +31,7 @@ window closes.
 
 The dialog doesn't know what a "series" is: a card's `series` is just the folder it sits in under
 `CharaItem.root`, and every sentence that names things (the sidebar buttons, the status line, the
-hint ...) comes from a `DialogText`. a tab without one gets the defaults (series folders of
+...) comes from a `DialogText`. a tab without one gets the defaults (series folders of
 characters); the others pass their own `DialogText` (see library/common.py).
 Moving and suggesting are callbacks, so a task only has to supply `items`, `suggest` and `assign`.
 
@@ -480,7 +480,7 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
             sidebar.show(item.path if item is not None else None, tabs[index].guids, tabs[index].guid_index)
 
     for i, tab in enumerate(tabs):
-        libraries.append(_build_library(root, stack, tab, texts[i], search_entry, on_close, active=(i == initial),
+        libraries.append(_build_library(root, stack, tab, texts[i], search_entry, active=(i == initial),
                                     shortcuts=shortcuts, suggestions=suggestions, view=view_state.view(keys[i]), mods=mods,
                                     on_cursor=lambda item, i=i: on_cursor(i, item)))
 
@@ -546,7 +546,7 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
     return [g.moved_count() for g in libraries]
 
 
-def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry, on_close, active: bool,
+def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry, active: bool,
                    shortcuts: ShortcutSettings | None = None, suggestions: SuggestionSettings | None = None,
                    view: TabView | None = None,
                    on_cursor: Callable[[CharaItem | None], None] | None = None, mods=None) -> _Library:
@@ -798,15 +798,17 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     scroll_sb = ctk.CTkScrollbar(main, command=canvas.yview)
     scroll_sb.grid(row=1, column=1, sticky="ns", padx=(4, 0))
 
-    hint = ctk.CTkLabel(host, text=txt.hint, anchor="w", justify="left", wraplength=1000,
-                        text_color=pair("muted"), font=ctk.CTkFont(size=11))
-    hint.grid(row=1, column=0, padx=14, pady=(8, 0), sticky="ew")
     foot = ctk.CTkFrame(host, fg_color="transparent")
-    foot.grid(row=2, column=0, padx=12, pady=10, sticky="ew")
+    foot.grid(row=1, column=0, padx=12, pady=10, sticky="ew")
     foot.grid_columnconfigure(0, weight=1)
     status = ctk.CTkLabel(foot, text="", anchor="w")
     status.grid(row=0, column=0, sticky="ew")
-    ctk.CTkButton(foot, text=t("dialog.close"), width=110, command=on_close).grid(row=0, column=1)
+
+    def open_info() -> None:
+        from kkafio.dialogs.library.info_dialog import open_info_dialog
+        open_info_dialog(root, shortcuts)
+
+    ctk.CTkButton(foot, text="\u24d8 " + t("dialog.info.button"), width=110, command=open_info).grid(row=0, column=1)
 
     # -----------------------------------------------------------------------
     # layout + drawing
@@ -1966,7 +1968,6 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         timers["sidebar"] = root.after(150, refresh_sidebar)
 
     def on_canvas_configure(_event=None) -> None:
-        hint.configure(wraplength=max(300, int(root.winfo_width() / scale) - 40))      # the hint follows the width
         schedule_layout(80, keep_scroll=True)
 
     def close_popups() -> None:
