@@ -2,8 +2,8 @@
 shortcuts.py — The keyboard shortcuts of the library window, and where they are saved.
 
 Six actions can be given a key by the user (Shortcuts tab of the window's Settings): rename the card,
-change its folder, delete it (move it to the trash), archive it (move it to the archive queue),
-restore it (out of the trash or the archive queue) and show it in the file explorer. One `ShortcutSettings` is shared by every
+change its folder, delete it (add it to To Delete), archive it (add it to To Archive),
+restore it (out of To Delete or To Archive) and show it in the file explorer. One `ShortcutSettings` is shared by every
 tab of the window, so a change applies to all of them at once. It is saved in
 ``<CONFIG_DIR>/config/library-shortcuts.json`` (on Windows: %APPDATA%/KKAFIO/config), next to the
 GUI's own config, and read again the next time the library opens.

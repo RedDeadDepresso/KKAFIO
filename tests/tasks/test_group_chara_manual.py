@@ -17,7 +17,7 @@ from kkafio.core.config import _build_task_config
 from kkafio.dialogs.library import characters as gal
 from kkafio.dialogs.library.common import existing_folders
 from kkafio.dialogs.library import (
-    SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_ALL, VIEW_SERIES, VIEW_TRASH, VIEW_UNTAGGED, CharaItem, LibraryModel, ellipsize)
+    SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_ALL, VIEW_SERIES, VIEW_TO_DELETE, VIEW_UNTAGGED, CharaItem, LibraryModel, ellipsize)
 from kkafio.tasks import group_chara
 
 from test_agv import _index
@@ -67,16 +67,16 @@ def test_model_views_counts_and_series_list():
 def test_trashed_cards_only_show_in_the_trash_view_and_come_back_on_restore():
     rin, saber, asuka = _item("Rin", "Fate"), _item("Saber", "Fate"), _item("Asuka")
     m = LibraryModel([rin, saber, asuka])
-    m.trash([rin, asuka])
-    assert m.trash_count() == 2 and m.counts() == (1, 0)            # not counted in All / untagged
+    m.mark_to_delete([rin, asuka])
+    assert m.to_delete_count() == 2 and m.counts() == (1, 0)            # not counted in All / untagged
     assert m.series_list() == [("Fate", 1)] and m.series_count("Fate") == 1
     for mode, series in ((VIEW_ALL, ""), (VIEW_UNTAGGED, ""), (VIEW_SERIES, "Fate")):
         m.set_view(mode, series)
         assert not {i.name for i in m.visible()} & {"Rin", "Asuka"}
-    m.set_view(VIEW_TRASH)
+    m.set_view(VIEW_TO_DELETE)
     assert {i.name for i in m.visible()} == {"Rin", "Asuka"}
     m.restore([rin])
-    assert m.trash_count() == 1 and rin.series == "Fate"          # back in the series it never left
+    assert m.to_delete_count() == 1 and rin.series == "Fate"          # back in the series it never left
     m.set_view(VIEW_ALL)
     assert {i.name for i in m.visible()} == {"Rin", "Saber"}
 

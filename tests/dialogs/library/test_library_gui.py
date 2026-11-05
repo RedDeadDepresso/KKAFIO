@@ -990,7 +990,7 @@ def test_the_settings_dialog_has_both_tabs_and_saves_the_folder_suggestions(tmp_
 
 def run_library(monkeypatch, items, script, **callbacks):
     """Like `run_dialog`, but through `library_dialog` so the close callbacks (`on_archive`,
-    `on_trash`) can be given."""
+    `on_delete`) can be given."""
     errors = []
 
     def fake_show(root, focus_widget=None, on_shown=None):

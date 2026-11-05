@@ -124,8 +124,8 @@ def _run(task, tmp_path, counts=(1, 1, 1), dialog=None, chara_error=None):
     log = []
     shown = {}
 
-    def fake_dialog(title, tabs, initial=0, mods=None, on_trash=None, on_archive=None):
-        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods, on_trash=on_trash,
+    def fake_dialog(title, tabs, initial=0, mods=None, on_delete=None, on_archive=None):
+        shown.update(title=title, labels=[t.label for t in tabs], initial=initial, mods=mods, on_delete=on_delete,
                      on_archive=on_archive)
         return [0] * len(tabs)
 
@@ -186,7 +186,7 @@ def test_trashed_cards_are_handed_to_delete_cards_with_the_downloaded_mods_dir(t
             seen["ran"] = True
 
     with mock.patch("kkafio.tasks.delete_cards.DeleteCards", FakeDelete):
-        shown["on_trash"]([tmp_path / "a.png", tmp_path / "b.png"])
+        shown["on_delete"]([tmp_path / "a.png", tmp_path / "b.png"])
     st = seen["settings"]
     assert seen["ran"] and st["ContentPaths"] == [str(tmp_path / "a.png"), str(tmp_path / "b.png")]
     assert st["ModsDir"] == str(out) and st["AutoResolve"] is False
@@ -197,7 +197,7 @@ def test_trashed_cards_are_handed_to_delete_cards_with_the_downloaded_mods_dir(t
     # no downloaded folder: Delete Cards gets no mods folder (and, not auto-resolving, leaves mods alone)
     shown, _ = _run(_task(tmp_path), tmp_path)
     with mock.patch("kkafio.tasks.delete_cards.DeleteCards", FakeDelete):
-        shown["on_trash"]([tmp_path / "a.png"])
+        shown["on_delete"]([tmp_path / "a.png"])
     assert seen["settings"]["ModsDir"] == ""
 
 

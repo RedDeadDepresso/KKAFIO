@@ -567,8 +567,8 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             "(outfits) into character folders — and a confirmed card is moved at once. The folders "
             "default to the game's (the Scene tab is left out when the game has no Studio and no "
             "--scene-dir is given). The same caches as the Group tasks are used and kept up to date. "
-            "Right-click a card (or press F11) to move it to the Archive queue, above the Trash in the "
-            "sidebar; when the window closes the queued cards are archived with Archive Cards "
+            "Right-click a card (or press F11) to mark it to archive (To Archive in the sidebar, above "
+            "To Delete); when the window closes the To Archive cards are archived with Archive Cards "
             "(--archive-* options)."
         ),
         target="kkafio.tasks.manage_library:ManageLibrary",
@@ -576,25 +576,25 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
         prepare=_manage_library_prepare,
         options=(
             Toggle("check-shared-mods", key="CheckSharedMods",
-                   help="When the library closes, cards moved to the trash are deleted with Delete Cards; "
+                   help="When the library closes, cards in To Delete are deleted with Delete Cards; "
                         "before it deletes a zipmod from the downloaded mods directory it verifies no other "
                         "installed character/scene/coordinate still uses it (default: on)",
                    off_help="Skip the shared-mod check — faster, but may delete mods other characters still need"),
             Toggle("include-coordinates", key="IncludeCoordinates",
-                   help="When deleting a trashed character card, also delete its matching coordinate "
+                   help="When deleting a To Delete character card, also delete its matching coordinate "
                         "cards and their mods (default: on)",
                    off_help="Only delete the character card itself, leave its coordinates alone"),
             Value("--archive-output-dir", key="ArchiveOutputPath", ignore_blank=True, metavar="DIR",
                   default=None,
-                  help="Where cards moved to the Archive queue are archived when the library closes "
+                  help="Where the To Archive cards are archived when the library closes "
                        "(default: ManageLibrary.ArchiveOutputPath from config)"),
             Value("--archive-format", key="ArchiveFormat", choices=["7z", "zip", "copy"], default=None,
-                  help="Archive format for the Archive queue, or 'copy' to copy the files flat into the "
+                  help="Archive format for the To Archive cards, or 'copy' to copy the files flat into the "
                        "output directory instead of archiving them (default: ManageLibrary.ArchiveFormat "
                        "from config)"),
             Toggle("archive-combined", key="ArchiveCombined",
-                   help="Put all queued cards in one archive (default: on)",
-                   off_help="One archive per queued card"),
+                   help="Put all To Archive cards in one archive (default: on)",
+                   off_help="One archive per To Archive card"),
             Toggle("archive-include-modpack", key="ArchiveIncludeModpack",
                    help="Include zipmods from Sideloader Modpack folders in the archives",
                    off_help="Exclude Sideloader Modpack zipmods from the archives (default)"),

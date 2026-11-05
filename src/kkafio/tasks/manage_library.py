@@ -18,13 +18,13 @@ uses, marking each installed or missing in the installed and downloaded mods fol
 Installed / Downloaded Mods Directory — a mod in either counts as installed):
 a missing one has a search icon that looks its GUID up on Google (see dialogs/library/mods_panel.py).
 
-Cards sent to a library's Archive queue (right-click > Archive, F11) are left alone until the
+Cards marked in a library's To Archive list (right-click > Mark to archive, F11) are left alone until the
 window closes; then they are handed to Archive Cards, which bundles them with their zipmods (and,
 for characters, their matching coordinates) into the Archive Output Directory, in the Archive
 Format and with the Archive Options (combined archive, Sideloader Modpack, coordinates). The
-originals stay where they are; Restore in the queue takes a card out of it again.
+originals stay where they are; Restore in the list takes a card out of it again.
 
-Cards sent to a library's trash are not sent to the Recycle Bin directly: when the window closes
+Cards marked in a library's To Delete list are not sent to the Recycle Bin directly: when the window closes
 they are handed to Delete Cards, which also deletes the character's matching coordinates (Include
 Coordinates) and the mods nothing else uses (Check Shared Mods), looking for mods in the downloaded
 mods directory.
@@ -136,12 +136,12 @@ class ManageLibrary(BaseTask):
         return CardMods(ModsLookup(installed_dir, game_type, self.use_cache, extra_dirs=(downloaded_dir,)))
 
     # ------------------------------------------------------------------
-    # Deleting the trashed cards
+    # Deleting the To Delete cards
     # ------------------------------------------------------------------
 
     def _delete_cards_settings(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
                                coord_dir: Path, downloaded_mods_dir: Path | None) -> dict:
-        """The Delete Cards options for the cards left in the library's trash. The mods folder is
+        """The Delete Cards options for the cards left in the library's To Delete list. The mods folder is
         the downloaded mods directory (explicit, so AutoResolve is off): that is where the downloaded
         mods live, and the only folder whose zipmods are deleted. The shared-mod check sees every
         folder the library shows plus the game's own, so a mod another card still uses is kept."""
@@ -165,17 +165,17 @@ class ManageLibrary(BaseTask):
             "CoordDir": str(coord_dir),
         }
 
-    def _delete_trashed(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
+    def _delete_marked(self, paths: list[Path], chara_dirs: list[Path], scene_dir: Path | None,
                         coord_dir: Path, downloaded_mods_dir: Path | None) -> None:
         from kkafio.tasks.delete_cards import DeleteCards
         logger.line()
-        logger.info(TAG, f"{len(paths)} trashed card(s) - handing them to Delete Cards")
+        logger.info(TAG, f"{len(paths)} card(s) in To Delete - handing them to Delete Cards")
         DeleteCards(self.config, self.file_manager,
                     settings=self._delete_cards_settings(paths, chara_dirs, scene_dir, coord_dir,
                                                          downloaded_mods_dir)).run()
 
     # ------------------------------------------------------------------
-    # Archiving the queued cards
+    # Archiving the To Archive cards
     # ------------------------------------------------------------------
 
     def _archive_output_dir(self) -> Path | None:
@@ -193,7 +193,7 @@ class ManageLibrary(BaseTask):
 
     def _archive_cards_settings(self, paths: list[Path], coord_dir: Path,
                                 installed_mods_dir: Path | None, downloaded_mods_dir: Path | None) -> dict:
-        """The Archive Cards options for the cards left in the library's archive queue. Mods and
+        """The Archive Cards options for the cards left in the library's To Archive list. Mods and
         coordinates come from the folders the library shows (explicit, so AutoResolve is off): the
         installed mods folder, else the downloaded one."""
         mods_dir = installed_mods_dir or downloaded_mods_dir
@@ -212,11 +212,11 @@ class ManageLibrary(BaseTask):
             "CoordDir": str(coord_dir),
         }
 
-    def _archive_queued(self, paths: list[Path], coord_dir: Path, installed_mods_dir: Path | None,
+    def _archive_marked(self, paths: list[Path], coord_dir: Path, installed_mods_dir: Path | None,
                         downloaded_mods_dir: Path | None) -> None:
         from kkafio.tasks.archive_cards import ArchiveCards
         logger.line()
-        logger.info(TAG, f"{len(paths)} queued card(s) - handing them to Archive Cards")
+        logger.info(TAG, f"{len(paths)} card(s) in To Archive - handing them to Archive Cards")
         ArchiveCards(self.config, self.file_manager,
                      settings=self._archive_cards_settings(paths, coord_dir, installed_mods_dir,
                                                            downloaded_mods_dir)).run()
@@ -291,7 +291,7 @@ class ManageLibrary(BaseTask):
         installed_mods_dir = self._installed_mods_dir
         moved = library_dialog(
             t("dialog.library.title"), tabs, initial, card_mods,
-            on_trash=lambda paths: self._delete_trashed(paths, chara_dirs, scene_dir, coord_dir, downloaded_mods_dir),
-            on_archive=lambda paths: self._archive_queued(paths, coord_dir, installed_mods_dir, downloaded_mods_dir))
+            on_delete=lambda paths: self._delete_marked(paths, chara_dirs, scene_dir, coord_dir, downloaded_mods_dir),
+            on_archive=lambda paths: self._archive_marked(paths, coord_dir, installed_mods_dir, downloaded_mods_dir))
         logger.line()
         logger.success(TAG, "Done — moved: " + ", ".join(f"{tab.label} {n}" for tab, n in zip(tabs, moved)))
