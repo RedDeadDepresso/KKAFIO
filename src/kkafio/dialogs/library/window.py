@@ -446,7 +446,7 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
 
     # search bar, with the tabs on its left and the Settings button on its right
     top = ctk.CTkFrame(root, fg_color="transparent")
-    top.grid(row=0, column=0, padx=12, pady=(12, 8), sticky="ew")
+    top.grid(row=0, column=0, columnspan=2, padx=12, pady=(12, 8), sticky="ew")
     top.grid_columnconfigure(1, weight=1)
     first_text = tabs[initial].text if tabs[initial].text is not None else chara_dialog_text()
     search_entry = ctk.CTkEntry(top, placeholder_text=first_text.search_placeholder, height=34)
