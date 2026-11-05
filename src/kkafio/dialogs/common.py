@@ -74,6 +74,43 @@ def new_window(title: str, topmost: bool = True):
     return win
 
 
+def sync_titlebar_theme(win) -> None:
+    """Make the title bar of a CTkToplevel follow the app's light/dark mode (Windows only).
+
+    CustomTkinter colours a Toplevel's title bar from a timer shortly after it is created, which
+    a dialog that is shown at once (and made transient) can lose, leaving a light frame in dark
+    mode. This sets the Windows dark-mode attribute directly, and repeats it a few times so it has
+    the last word."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    import customtkinter as ctk
+
+    dark = ctk.get_appearance_mode() == "Dark"
+
+    def apply() -> None:
+        try:
+            if not win.winfo_exists():
+                return
+            hwnd = ctypes.windll.user32.GetParent(win.winfo_id())
+            value = ctypes.c_int(1 if dark else 0)
+            for attribute in (20, 19):          # DWMWA_USE_IMMERSIVE_DARK_MODE (19 on older Windows 10)
+                if ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                        hwnd, attribute, ctypes.byref(value), ctypes.sizeof(value)) == 0:
+                    break
+            # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED: repaint the frame
+            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x37)
+        except Exception:
+            pass
+
+    apply()
+    for delay in (50, 250, 600):
+        try:
+            win.after(delay, apply)
+        except Exception:
+            break
+
+
 def _center_on_screen(root) -> None:
     """Size the window to its content and center it on the primary screen."""
     root.update_idletasks()

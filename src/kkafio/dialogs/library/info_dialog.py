@@ -29,6 +29,7 @@ def open_info_dialog(root, shortcuts: ShortcutSettings) -> None:
     """Show the guide over `root` (one at a time: a second call brings it forward)."""
     import tkinter as tk
     import customtkinter as ctk
+    from kkafio.dialogs.common import sync_titlebar_theme
 
     existing = getattr(root, "_kkafio_info_dialog", None)
     if existing is not None:
@@ -66,3 +67,4 @@ def open_info_dialog(root, shortcuts: ShortcutSettings) -> None:
     y = root.winfo_rooty() + max(0, (root.winfo_height() - h) // 3)
     dlg.wm_geometry(f"{w}x{h}+{x}+{y}")
     dlg.after(150, lambda: dlg.winfo_exists() and dlg.focus_force())
+    sync_titlebar_theme(dlg)
