@@ -47,7 +47,11 @@ from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
 from kkafio.indices.mod import load_mod_index
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
-from kkafio.services.mod_sources.betterrepack import download_betterrepack, make_http_client
+from kkafio.services.mod_sources.betterrepack import (
+    MAX_CONNECTIONS,
+    download_betterrepack,
+    make_http_client,
+)
 from kkafio.services.mod_sources.telegram.links import (
     parse_chat_links,
     telegram_sources_label,
@@ -420,17 +424,24 @@ class DownloadMissingMods(BaseTask):
             nonlocal ok, fail, failed_guids, downloaded_br, downloaded_tg
             async with make_http_client() as br_client:
 
-                # BetterRepack — concurrent
+                # BetterRepack — parallel (bounded by br_slots below)
                 br_failed     = {}   # guid -> rel_path for failed BR downloads
                 downloaded_br = {}     # actually downloaded (not skipped)
 
                 if from_betterrepack:
                     logger.info("DLMOD",
                         f"Downloading {len(from_betterrepack)} mod(s) from BetterRepack...")
+                    # Modpack mods download in parallel, MAX_CONNECTIONS at a time. The
+                    # semaphore (rather than letting every task queue on the HTTP
+                    # client's connection pool) keeps mods waiting for a free slot from
+                    # running into the client's pool timeout on big batches.
+                    br_slots = asyncio.Semaphore(MAX_CONNECTIONS)
+
                     async def _br_one(guid: str, urls: list[str]):
                         try:
-                            res = await download_betterrepack(
-                                br_client, guid, urls, downloaded_mods_dir, guid_str_map)
+                            async with br_slots:
+                                res = await download_betterrepack(
+                                    br_client, guid, urls, downloaded_mods_dir, guid_str_map)
                         except Exception as exc:
                             res = exc
                         # Tell the progress window as each mod finishes. A failure that is
