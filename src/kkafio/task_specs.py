@@ -301,9 +301,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("use-cache", key="UseCache",
                    help="Use mods and chara cache to skip scanning (default: on)"),
             Value("--on-failed-downloads", key="OnFailedDownloads", default=None, nargs="*",
-                  choices=["OpenReport", "CopyToClipboard"], metavar="ACTION",
+                  choices=["OpenReport", "CopyToClipboard", "OpenWebsites"], metavar="ACTION",
                   help="What to do with the report when mods are still missing or a download failed; "
-                       "give any of: OpenReport=open it, CopyToClipboard=copy the failed mod GUIDs, one per line. "
+                       "give any of: OpenReport=open it, CopyToClipboard=copy the failed mod GUIDs, one per line, "
+                       "OpenWebsites=open the --website-urls in the browser. "
                        "Pass the flag with no actions to do neither. Default: the setting in the config "
                        "(both)"),
             Value("--modpack-mode", key="SideloaderModpack", ignore_blank=True, default=None,
@@ -327,6 +328,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "forum topic; a trailing '# comment' is ignored). Only used when "
                        "--telegram-sources includes ChatLinks. Default: the two example "
                        "chats shipped in the config."),
+            Value("--website-urls", key="WebsiteUrls", default=None, metavar="URLS",
+                  help="Newline-separated websites to open in the browser when mods are still missing "
+                       "(one per line; blank lines and '# comment' lines are ignored). Only used when "
+                       "--on-failed-downloads includes OpenWebsites. Default: the setting in the config "
+                       "(web.telegram.org and kknow.cc)."),
         ),
     ),
 

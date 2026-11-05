@@ -10,6 +10,7 @@ Provides only what is genuinely shared across every task:
 import os
 import subprocess
 import sys
+import webbrowser
 from pathlib import Path
 
 from kkafio.core.errors import InputError
@@ -82,10 +83,37 @@ def copy_to_clipboard(tag: str, text: str) -> bool:
         return False
 
 
+def parse_website_urls(raw: str) -> list[str]:
+    """One URL per line; blank lines and '# comment' lines are ignored, and a bare
+    domain gets https://. Order is kept and duplicates dropped."""
+    urls: list[str] = []
+    for line in (raw or "").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "://" not in line:
+            line = "https://" + line
+        if line not in urls:
+            urls.append(line)
+    return urls
+
+
+def open_websites(tag: str, urls: list[str]) -> None:
+    """Open each URL in the default browser (best effort; failures are only logged)."""
+    for url in urls:
+        try:
+            if webbrowser.open_new_tab(url):
+                logger.info(tag, f"Opened in browser: {url}")
+            else:
+                logger.warning(tag, f"Could not open in browser: {url}")
+        except Exception as e:
+            logger.warning(tag, f"Could not open {url}: {e}")
+
+
 def handle_failed_downloads(tag: str, report_path: Path | None, actions: list[str],
-                            failed_items: list[str]) -> None:
+                            failed_items: list[str], website_urls: list[str] | None = None) -> None:
     """The "If Downloads Fail" option: after a run with failures, do what `actions`
-    (any of "OpenReport", "CopyToClipboard") asks. "OpenReport" opens the report
+    (any of "OpenReport", "CopyToClipboard", "OpenWebsites") asks. "OpenReport" opens the report
     at `report_path`; "CopyToClipboard" copies `failed_items` (the failed links or
     mod GUIDs, one per line). Best effort — a problem is only logged."""
     if "CopyToClipboard" in actions and failed_items:
@@ -97,6 +125,8 @@ def handle_failed_downloads(tag: str, report_path: Path | None, actions: list[st
         else:
             logger.info(tag, "Some downloads failed — opening the report")
             open_in_default_app(tag, report_path)
+    if "OpenWebsites" in actions and website_urls:
+        open_websites(tag, website_urls)
 
 
 def validate_input_path(tag: str, folder_path: Path, default_path: Path | None = None) -> None:

@@ -438,7 +438,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -1003,7 +1004,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,

@@ -2946,7 +2946,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -2989,7 +2990,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3032,7 +3034,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3075,7 +3078,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3118,7 +3122,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3161,7 +3166,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3204,7 +3210,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3247,7 +3254,52 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "cfg-site"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "configured"
+ },
+ "configured: download-missing-mods --website-urls=<blank>": {
+  "argv": [
+   "download-missing-mods",
+   "--website-urls",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "/cfg/chara",
+      "content_types": [
+       "Chara"
+      ],
+      "coord_dir_str": "/cfg/coord",
+      "downloaded_mods_dir_str": "/cfg/out-mods",
+      "installed_mods_dir_str": "/cfg/in-mods",
+      "modpack_mode": "All",
+      "on_failed_downloads": [
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "/cfg/scene",
+      "telegram_chat_links_raw": "cfg-chat",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": false,
+      "website_urls_raw": ""
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3289,7 +3341,9 @@
    "--telegram-sources",
    "KoikatsuCards",
    "--telegram-chat-links",
-   "S_telegram_chat_links"
+   "S_telegram_chat_links",
+   "--website-urls",
+   "S_website_urls"
   ],
   "result": {
    "events": [
@@ -3309,7 +3363,8 @@
       "telegram_sources": [
        "KoikatsuCards"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -3345,13 +3400,15 @@
    "--no-coord",
    "--no-use-cache",
    "--on-failed-downloads",
-   "CopyToClipboard",
+   "OpenWebsites",
    "--modpack-mode",
    "All",
    "--telegram-sources",
    "ChatLinks",
    "--telegram-chat-links",
-   "S_telegram_chat_links"
+   "S_telegram_chat_links",
+   "--website-urls",
+   "S_website_urls"
   ],
   "result": {
    "events": [
@@ -3364,14 +3421,15 @@
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
       "on_failed_downloads": [
-       "CopyToClipboard"
+       "OpenWebsites"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8143,7 +8201,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8191,7 +8250,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8239,7 +8299,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8285,7 +8346,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8329,7 +8391,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8372,7 +8435,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8416,7 +8480,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8462,7 +8527,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8509,7 +8575,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8551,7 +8618,8 @@
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
       "telegram_sources": [],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -8981,7 +9049,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9027,7 +9096,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9073,7 +9143,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9119,7 +9190,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9165,7 +9237,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9211,7 +9284,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9257,7 +9331,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9303,7 +9378,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9349,7 +9425,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9395,7 +9472,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9441,7 +9519,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9487,7 +9566,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9533,7 +9613,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9579,7 +9660,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9623,7 +9705,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9667,7 +9750,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9711,7 +9795,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9756,7 +9841,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9801,7 +9887,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9846,7 +9933,54 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --on-failed-downloads=OpenWebsites": {
+  "argv": [
+   "download-missing-mods",
+   "--on-failed-downloads",
+   "OpenWebsites"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenWebsites"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9892,7 +10026,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9938,7 +10073,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -9984,7 +10120,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -10030,7 +10167,8 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -10075,7 +10213,8 @@
       "telegram_sources": [
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -10120,7 +10259,8 @@
       "telegram_sources": [
        "KoikatsuCards"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -10165,7 +10305,102 @@
        "KoikatsuCards",
        "ChatLinks"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --website-urls=<blank>": {
+  "argv": [
+   "download-missing-mods",
+   "--website-urls",
+   ""
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true,
+      "website_urls_raw": ""
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --website-urls=S_website_urls": {
+  "argv": [
+   "download-missing-mods",
+   "--website-urls",
+   "S_website_urls"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true,
+      "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -10207,7 +10442,9 @@
    "--telegram-sources",
    "KoikatsuCards",
    "--telegram-chat-links",
-   "S_telegram_chat_links"
+   "S_telegram_chat_links",
+   "--website-urls",
+   "S_website_urls"
   ],
   "result": {
    "events": [
@@ -10227,7 +10464,8 @@
       "telegram_sources": [
        "KoikatsuCards"
       ],
-      "use_cache": true
+      "use_cache": true,
+      "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
      "enabled": true,
@@ -10263,13 +10501,15 @@
    "--no-coord",
    "--no-use-cache",
    "--on-failed-downloads",
-   "CopyToClipboard",
+   "OpenWebsites",
    "--modpack-mode",
    "All",
    "--telegram-sources",
    "ChatLinks",
    "--telegram-chat-links",
-   "S_telegram_chat_links"
+   "S_telegram_chat_links",
+   "--website-urls",
+   "S_website_urls"
   ],
   "result": {
    "events": [
@@ -10282,14 +10522,15 @@
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
       "on_failed_downloads": [
-       "CopyToClipboard"
+       "OpenWebsites"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
       "telegram_sources": [
        "ChatLinks"
       ],
-      "use_cache": false
+      "use_cache": false,
+      "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
      "enabled": true,

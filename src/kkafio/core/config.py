@@ -160,7 +160,7 @@ _TASK_DEFAULTS = {
     "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True, "OnFailedDownloads": ["OpenReport", "CopyToClipboard"]},
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Request"},
     "FilterDuplicateContents": {"Enable": False, "Scenes": True, "Chara": True, "Coords": True, "Mods": True, "Overlays": True, "Keep": "Oldest", "DuplicateAction": "Delete", "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
-    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OnFailedDownloads": ["OpenReport", "CopyToClipboard"], "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "InstalledModsDir": "", "DownloadedModsDir": ""},
+    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OnFailedDownloads": ["OpenReport", "CopyToClipboard"], "WebsiteUrls": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/", "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "InstalledModsDir": "", "DownloadedModsDir": ""},
     "CompressCardTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "Mode": "auto", "MaxSize": 1024, "DeleteOriginalCards": True},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Scenes": True, "Chara": True, "Coords": True, "Mods": True, "Overlays": True, "FileConflicts": "Rename", "ExtractArchive": True, "Password": "Request"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Scenes": True, "Chara": True, "Coords": True, "Mods": True, "Overlays": True, "CheckSharedMods": True, "UseCache": True},
@@ -237,7 +237,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("SideloaderModpack", "SideloaderModpack")
         _set("TelegramSources", "TelegramSources")
         _set("TelegramChatLinks", "TelegramChatLinks")
-        _set("OnFailedDownloads", "OnFailedDownloads")
+        _set("OnFailedDownloads", "OnFailedModDownloads")
+        _set("WebsiteUrls", "WebsiteUrls")
         _set("UseCache", "UseCache")
         _set("SceneDir", "SceneDir")
         _set("CharaDir", "CharaDir")

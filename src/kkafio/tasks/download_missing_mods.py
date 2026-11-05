@@ -62,7 +62,10 @@ from kkafio.services.mod_sources.telegram.mods import (
     ensure_session,
     search_chat_links_and_download,
 )
-from kkafio.tasks.base_task import BaseTask, handle_failed_downloads
+from kkafio.tasks.base_task import BaseTask, handle_failed_downloads, parse_website_urls
+
+# Where to look manually for mods that couldn't be downloaded (OnFailedDownloads=OpenWebsites).
+DEFAULT_WEBSITE_URLS = "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/"
 
 
 class DownloadMissingMods(BaseTask):
@@ -80,6 +83,7 @@ class DownloadMissingMods(BaseTask):
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
         self.telegram_sources    : list[str] = cfg.get("TelegramSources", [])    # any of: KoikatsuCards, ChatLinks
         self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
+        self.website_urls_raw    : str  = cfg.get("WebsiteUrls", DEFAULT_WEBSITE_URLS)
 
     @staticmethod
     def _write_readme(
@@ -798,4 +802,5 @@ class DownloadMissingMods(BaseTask):
         # (mods skipped on purpose via the Sideloader Modpack mode don't count).
         if unresolved or failed_guids or fail:
             handle_failed_downloads("DLMOD", report_path, self.on_failed_downloads,
-                                    sorted(set(unresolved) | failed_guids))
+                                    sorted(set(unresolved) | failed_guids),
+                                    parse_website_urls(self.website_urls_raw))

@@ -1351,6 +1351,46 @@
         }
       ]
     },
+    "OnFailedModDownloads": {
+      "type": "checkbox",
+      "label": "$option.OnFailedModDownloads.label",
+      "description": "$option.OnFailedModDownloads.description",
+      "default_case": ["OpenReport", "CopyToClipboard"],
+      "cases": [
+        {
+          "name": "OpenReport",
+          "label": "$option.OnFailedDownloads.case.OpenReport.label",
+          "pipeline_override": {
+            "OpenReport": true
+          }
+        },
+        {
+          "name": "CopyToClipboard",
+          "label": "$option.OnFailedDownloads.case.CopyToClipboard.label",
+          "pipeline_override": {
+            "CopyReportToClipboard": true
+          }
+        },
+        {
+          "name": "OpenWebsites",
+          "label": "$option.OnFailedDownloads.case.OpenWebsites.label",
+          "pipeline_override": {
+            "OpenWebsites": true
+          }
+        }
+      ]
+    },
+    "WebsiteUrls": {
+      "type": "textarea",
+      "name": "website_urls",
+      "label": "$option.WebsiteUrls.label",
+      "description": "$option.WebsiteUrls.description",
+      "placeholder": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/",
+      "default": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/",
+      "pipeline_override": {
+        "WebsiteUrls": "{website_urls}"
+      }
+    },
     "CheckSharedMods": {
       "type": "switch",
       "label": "$option.CheckSharedMods.label",
@@ -1614,7 +1654,8 @@
         "SideloaderModpack",
         "TelegramSources",
         "TelegramChatLinks",
-        "OnFailedDownloads",
+        "OnFailedModDownloads",
+        "WebsiteUrls",
         "UseCache",
         "SceneDir",
         "CharaDir",
