@@ -614,6 +614,8 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     f_name = tkfont.Font(root=root, family=family, size=12, weight="bold")
     f_small = tkfont.Font(root=root, family=family, size=11)
     f_italic = tkfont.Font(root=root, family=family, size=11, slant="italic")
+    f_series = tkfont.Font(root=root, family=family, size=11)                   # the folder (series) line of a card;
+    f_series_italic = tkfont.Font(root=root, family=family, size=11, slant="italic")   # sized like the sidebar below
     lh_name = f_name.metrics("linespace") + px(3)
     lh_small = f_small.metrics("linespace") + px(2)
     row_series = lh_small + px(6)                  # tall enough for the series input
@@ -737,6 +739,11 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     scaling = ctk.ScalingTracker.get_widget_scaling(all_btn)
     f_side = tkfont.Font(root=root, family=btn_font.cget("family"),
                          size=-max(1, round(abs(btn_font.cget("size")) * scaling)))
+    f_name.configure(size=f_side.cget("size"))      # the card titles use the sidebar's font size too
+    lh_name = f_name.metrics("linespace") + px(3)   # (and the tiles are as tall as their title line)
+    f_series.configure(size=f_side.cget("size"))    # same for the folder line under the title
+    f_series_italic.configure(size=f_side.cget("size"))
+    row_series = f_series.metrics("linespace") + px(8)   # tall enough for the folder input
     series_box = SideList(list_frame, bg=pal["side"], fg=pal["text"], sel_bg=pal["sel"], hover_bg=pal["hover"],
                           font=f_side, row_h=round(all_btn.cget("height") * scaling), gap=round(2 * scaling),
                           radius=round(all_btn.cget("corner_radius") * scaling), pad_x=round(12 * scaling))
@@ -912,10 +919,10 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
                                       text=ellipsize(f_name.measure, item.name, text_w)))
         y += lh_name
         if item.series:
-            ids.append(canvas.create_text(tx + pad, y + px(2), anchor="nw", fill=pal["accent"], font=f_small,
-                                          text=ellipsize(f_small.measure, item.series, text_w)))
+            ids.append(canvas.create_text(tx + pad, y + px(2), anchor="nw", fill=pal["accent"], font=f_series,
+                                          text=ellipsize(f_series.measure, item.series, text_w)))
         else:
-            ids.append(canvas.create_text(tx + pad, y + px(2), anchor="nw", fill=pal["muted"], font=f_italic,
+            ids.append(canvas.create_text(tx + pad, y + px(2), anchor="nw", fill=pal["muted"], font=f_series_italic,
                                           text=txt.unknown_series))
         y += row_series
         ids.append(canvas.create_text(tx + pad, y, anchor="nw", fill=pal["muted"], font=f_small,
@@ -1460,7 +1467,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         item = lay["items"][idx]
         tx, ty = tile_xy(idx)
         renaming = field == "name"
-        entry = tk.Entry(canvas, font=f_name if renaming else f_small, bg=pal["input"], fg=pal["text"],
+        entry = tk.Entry(canvas, font=f_name if renaming else f_series, bg=pal["input"], fg=pal["text"],
                          insertbackground=pal["text"], relief="flat", highlightthickness=1,
                          highlightbackground=pal["border"], highlightcolor=pal["accent"])
         entry.insert(0, item.path.stem if renaming else (item.series or ""))     # the extension stays as it is

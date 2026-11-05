@@ -78,6 +78,9 @@ class ModsSidebar:
         self._icon_zone = px(34)
 
         self.frame = ctk.CTkFrame(parent, fg_color="transparent")
+        # the mod GUIDs use the same font size as the buttons of the series sidebar (CustomTkinter's default)
+        scaling = ctk.ScalingTracker.get_widget_scaling(self.frame)
+        self._f_guid.configure(size=-max(1, round(abs(ctk.CTkFont().cget("size")) * scaling)))
         self.frame.grid_rowconfigure(0, weight=1)
 
         self._toggle = ctk.CTkButton(self.frame, text="", width=22, corner_radius=6, fg_color=pair("side"),
