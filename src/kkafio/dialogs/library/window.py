@@ -69,6 +69,7 @@ from kkafio.dialogs.library.model import (
     MODS_ALL, MODS_COMPLETE, MODS_MISSING,
     VIEW_ALL, VIEW_TO_ARCHIVE, VIEW_SERIES, VIEW_TO_DELETE, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, LibraryModel,
     FolderNameTaken, LibraryTab, chara_dialog_text, clean_file_stem, rename_card, rename_series_folders,
+    sidebar_entries, sidebar_step,
 )
 
 
@@ -630,7 +631,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     edit: dict = {"idx": None, "entry": None, "lb": None, "suggestions": [], "after": None,
                   "field": "series"}                 # field: "series" (move) or "name" (rename the file)
     timers: dict[str, str | None] = {"poll": None, "search": None, "layout": None,
-                                     "sidebar": None, "draw": None}
+                                     "sidebar": None, "draw": None, "sidenav": None}
 
     # ---- covers: decoded on worker threads, applied on the Tk thread --------
     pil_cache: OrderedDict[Path, object] = OrderedDict()     # Path -> PIL image, or False
@@ -719,10 +720,10 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         b.grid(row=row, column=0, padx=8, pady=(8 if row == 0 else 2, 0), sticky="ew")
         return b
 
-    all_btn = side_button(0, lambda: choose_view(VIEW_ALL))
-    untagged_btn = side_button(1, lambda: choose_view(VIEW_UNTAGGED))
-    to_archive_btn = side_button(2, lambda: choose_view(VIEW_TO_ARCHIVE))   # under the unknown-series entry,
-    to_delete_btn = side_button(3, lambda: choose_view(VIEW_TO_DELETE))       # just above To Delete
+    all_btn = side_button(0, lambda: pick_side_view(VIEW_ALL))
+    untagged_btn = side_button(1, lambda: pick_side_view(VIEW_UNTAGGED))
+    to_archive_btn = side_button(2, lambda: pick_side_view(VIEW_TO_ARCHIVE))   # under the unknown-series entry,
+    to_delete_btn = side_button(3, lambda: pick_side_view(VIEW_TO_DELETE))       # just above To Delete
     ctk.CTkLabel(side, text=txt.series_header, anchor="w", text_color=pair("muted"),
                  font=ctk.CTkFont(size=11, weight="bold")).grid(row=4, column=0, padx=14, pady=(14, 2), sticky="ew")
     series_filter_entry = ctk.CTkEntry(side, placeholder_text=txt.filter_series, height=30)
@@ -1128,6 +1129,10 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         status.configure(text=text)
 
     def choose_view(mode: str, series: str = "") -> None:
+        if timers["sidenav"] is not None:                  # a keyboard walk still waiting to switch: this wins
+            root.after_cancel(timers["sidenav"])
+            timers["sidenav"] = None
+        side_nav["target"] = None
         model.set_view(mode, series)
         if mode != VIEW_SERIES:
             series_box.selection_clear(0, "end")
@@ -1137,7 +1142,62 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     def on_series_pick(_event=None) -> None:
         sel = series_box.curselection()
         if sel and sel[0] < len(series_names):
+            series_box.focus_set()                         # clicking the sidebar gives it the arrow keys
             choose_view(VIEW_SERIES, series_names[sel[0]])
+
+    # -----------------------------------------------------------------------
+    # walking the sidebar with the keyboard: Up/Down or W/S while the sidebar has the focus
+    # (a click on one of its entries gives it the focus; Right / D / Tab or a click on the cards
+    # hand it back to the card grid, which uses the same keys to move between cards)
+    # -----------------------------------------------------------------------
+    side_nav: dict = {"target": None}                      # the entry a walk is heading for, while it is pending
+    side_view_buttons = {VIEW_ALL: all_btn, VIEW_UNTAGGED: untagged_btn,
+                         VIEW_TO_ARCHIVE: to_archive_btn, VIEW_TO_DELETE: to_delete_btn}
+
+    def pick_side_view(mode: str) -> None:
+        series_box.focus_set()
+        choose_view(mode)
+
+    def on_side_focus(has_focus: bool) -> None:
+        side.configure(border_width=2 if has_focus else 0, border_color=pair("accent"))
+
+    def paint_side(mode: str, series: str) -> None:
+        """Show `mode`/`series` as the selected entry at once (the cards follow a moment later)."""
+        for view, button in side_view_buttons.items():
+            button.configure(fg_color=pair("sel") if view == mode else "transparent")
+        index = next((i for i, name in enumerate(series_names)
+                      if mode == VIEW_SERIES and name.casefold() == series.casefold()), None)
+        if index is None:
+            series_box.selection_clear(0, "end")
+        else:
+            series_box.selection_set(index)
+            series_box.see(index)
+
+    def commit_side_nav() -> None:
+        timers["sidenav"] = None
+        target = side_nav["target"]
+        side_nav["target"] = None
+        if target is not None:
+            choose_view(*target)
+
+    def side_step(delta: int) -> str:
+        current = side_nav["target"] or (model.mode, model.series_filter if model.mode == VIEW_SERIES else "")
+        target = sidebar_step(sidebar_entries(series_names), current, delta)
+        if target != current:
+            side_nav["target"] = target
+            paint_side(*target)
+            if timers["sidenav"] is not None:               # a held key repeats fast: lay the cards out once it settles
+                root.after_cancel(timers["sidenav"])
+            timers["sidenav"] = root.after(120, commit_side_nav)
+        return "break"
+
+    def leave_sidebar(_event=None) -> str:
+        canvas.focus_set()
+        return "break"
+
+    def enter_sidebar(_event=None) -> str:
+        series_box.focus_set()
+        return "break"
 
     # -----------------------------------------------------------------------
     # renaming a folder (right click on it in the sidebar, or the rename shortcut while the pointer is on it)
@@ -1678,6 +1738,10 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
 
     def nav(dx: int, dy: int):
         def handler(event) -> str:
+            if dx < 0 and not event.state & 0x4:
+                cur = index_of(sel["item"])
+                if cur is not None and cur % max(1, lay["cols"]) == 0:           # Left / A past the first column:
+                    return enter_sidebar()                                       # on to the sidebar
             move_card_selection(dx, dy, keep_picked=bool(event.state & 0x4))     # Ctrl: cursor only
             return "break"
         return handler
@@ -1952,6 +2016,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
                          (("Up", "w", "W"), 0, -1), (("Down", "s", "S"), 0, 1)):
         for key in keys:
             canvas.bind(f"<{key}>", nav(dx, dy))
+    canvas.bind("<Tab>", enter_sidebar)              # Tab goes to the sidebar; Tab there comes back
     canvas.bind("<space>", on_space)
     canvas.bind("<Control-space>", on_space)
     canvas.bind("<Control-a>", on_select_all)
@@ -1963,6 +2028,14 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
         root.bind(seq, on_wheel, add="+")          # every tab listens; only the one under the pointer acts
     series_box.bind("<<ListboxSelect>>", on_series_pick)
+    for key in ("Up", "w", "W"):
+        series_box.bind(f"<{key}>", lambda _e: side_step(-1))
+    for key in ("Down", "s", "S"):
+        series_box.bind(f"<{key}>", lambda _e: side_step(1))
+    for key in ("Right", "d", "D", "Tab"):
+        series_box.bind(f"<{key}>", leave_sidebar)
+    series_box.bind("<FocusIn>", lambda _e: on_side_focus(True))
+    series_box.bind("<FocusOut>", lambda _e: on_side_focus(False))
     series_box.on_scroll = cancel_folder_edit
     series_box.bind("<Button-3>", on_series_context)             # right click
     if root.tk.call("tk", "windowingsystem") == "aqua":

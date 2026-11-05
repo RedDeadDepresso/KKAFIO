@@ -190,6 +190,33 @@ _RESERVED_NAMES = frozenset({"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in ra
                              *(f"LPT{i}" for i in range(1, 10))})
 
 
+# ---------------------------------------------------------------------------
+# Walking the sidebar with the keyboard
+# ---------------------------------------------------------------------------
+
+# The fixed entries at the top of the sidebar, in the order they are drawn; the folders follow.
+SIDEBAR_FIXED = (VIEW_ALL, VIEW_UNTAGGED, VIEW_TO_ARCHIVE, VIEW_TO_DELETE)
+
+
+def sidebar_entries(series_names: Iterable[str]) -> list[tuple[str, str]]:
+    """Every sidebar entry top to bottom as (view, series): All, Unknown series, To Archive, To
+    Delete, then the folders as they are listed (so a folder filter narrows the walk too)."""
+    return [(view, "") for view in SIDEBAR_FIXED] + [(VIEW_SERIES, name) for name in series_names]
+
+
+def sidebar_step(entries: list[tuple[str, str]], current: tuple[str, str], delta: int) -> tuple[str, str]:
+    """The entry `delta` rows from `current` (stops at the first and last entry, no wrap-around).
+    A folder that is not listed (filtered out) counts as standing just below To Delete, so Down
+    goes to the first listed folder and Up to To Delete."""
+    view, series = current
+    pos = len(SIDEBAR_FIXED) - 1
+    for i, (v, s) in enumerate(entries):
+        if v == view and (v != VIEW_SERIES or s.casefold() == series.casefold()):
+            pos = i
+            break
+    return entries[min(max(pos + delta, 0), len(entries) - 1)]
+
+
 def clean_file_stem(text: str, suffix: str = "") -> str:
     """The file name (without its extension) that `text` stands for, or "" if it can't be one.
     Typing the extension too is fine (`suffix` is cut off once); characters no file system

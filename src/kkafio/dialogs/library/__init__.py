@@ -26,7 +26,7 @@ patches a name (tests) has to patch it in the module that uses it.
 from kkafio.dialogs.library.model import (
     COVER_MAX, COVER_RATIO, SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED,
     VIEW_ALL, VIEW_TO_ARCHIVE, VIEW_SERIES, VIEW_TO_DELETE, VIEW_UNTAGGED, AssignFn, CharaItem, DialogText, LibraryModel, LibraryTab,
-    chara_dialog_text, clean_file_stem, rename_card,
+    chara_dialog_text, clean_file_stem, rename_card, sidebar_entries, sidebar_step,
 )
 from kkafio.dialogs.library.window import (
     ellipsize, library_dialog, load_cover, manual_dialog, round_corners, rounded_rect_points,
@@ -35,6 +35,6 @@ from kkafio.dialogs.library.window import (
 __all__ = [
     "COVER_MAX", "COVER_RATIO", "SORT_CREATED", "SORT_FILENAME", "SORT_NAME", "SORT_SIZE",
     "SORT_UPDATED", "VIEW_ALL", "VIEW_TO_ARCHIVE", "VIEW_SERIES", "VIEW_TO_DELETE", "VIEW_UNTAGGED", "AssignFn", "CharaItem", "DialogText",
-    "LibraryModel", "LibraryTab", "chara_dialog_text", "clean_file_stem", "rename_card",
+    "LibraryModel", "LibraryTab", "chara_dialog_text", "clean_file_stem", "rename_card", "sidebar_entries", "sidebar_step",
     "ellipsize", "library_dialog", "load_cover", "manual_dialog", "round_corners", "rounded_rect_points",
 ]

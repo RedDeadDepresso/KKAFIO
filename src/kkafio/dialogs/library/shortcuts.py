@@ -38,7 +38,7 @@ DEFAULTS = {ACTION_RENAME: "F12", ACTION_FOLDER: "Enter", ACTION_DELETE: "Delete
 # Keys the library already uses to move around and select (with any modifier held); they can't
 # be given to an action.
 RESERVED_KEYS = frozenset({"Escape", "Left", "Right", "Up", "Down", "W", "A", "S", "D", "Space",
-                           "PageUp", "PageDown", "Home", "End"})
+                           "PageUp", "PageDown", "Home", "End", "Tab"})
 
 _MODIFIERS = ("Ctrl", "Alt", "Shift")
 _MODIFIER_KEYSYMS = frozenset({
