@@ -8,6 +8,7 @@ from pathlib import Path
 
 import msgpack
 
+from kkafio.cards.chara.kkex_repair import repair_card
 from kkafio.core.logger import logger
 
 
@@ -83,6 +84,14 @@ def _unpack_kkex(kkex_bytes: bytes) -> dict:
     """Decode a raw KKEx block into {plugin id: plugin data}, or {}."""
     try:
         outer = msgpack.unpackb(kkex_bytes, raw=False, strict_map_key=False)
+    except UnicodeDecodeError:
+        repaired = repair_card(kkex_bytes)      # a card KoiCardTexTool damaged (see kkex_repair.py)
+        if repaired is None:
+            return {}
+        try:
+            outer = msgpack.unpackb(repaired, raw=False, strict_map_key=False)
+        except Exception:
+            return {}
     except Exception:
         return {}
     return outer if isinstance(outer, dict) else {}

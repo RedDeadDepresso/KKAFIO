@@ -43,6 +43,7 @@ All notable changes to KKAFIO are documented in this file.
 
 ### Fixed
 
+- **Cards compressed by KoiCardTexTool (`[zip]`)** — cards whose MaterialEditor texture dictionary is under 64 KB were written by KoiCardTexTool with the last two characters of the `TextureDictionary` key overwritten, so they failed with "'utf-8' codec can't decode byte ..." and their mods couldn't be read. KKAFIO now repairs that key in memory when reading them (Group / Rename / Archive / Delete Cards, the mod sidebar and the missing-mods check); the files themselves are not changed.
 - **Download Contents** — a mega.nz link that points at a subfolder (`https://mega.nz/folder/<id>#<key>/folder/<subfolder>`) downloads only that subfolder, into a folder of its own name; before, the `/folder/...` part was ignored and the whole shared folder was downloaded.
 - **Download Contents** — a `gofile.io/d/<id>` link that names a single file (not a folder) is downloaded; before, it was reported as "No files found" because only a folder's `children` were read.
 - **Download Contents** — pawchive.pw files no longer answer `403 Forbidden`: files are fetched from the public file host (`file.pawchive.pw/data/...?f=<name>`) first, with the storage node (`n<node>.pawchive.pw`) as a fallback when a host fails, instead of from the node host alone; pawchive requests now send a `Referer`, identify as `KKAFIO/<version>` rather than as a browser, and use HTTP/1.1.

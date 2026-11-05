@@ -30,6 +30,7 @@ from kkloader import KoikatuCharaData
 from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara.chara_key import birthday, make_key
+from kkafio.cards.chara.lenient_load import load_chara
 from kkafio.cards.chara.chara_key_cache import CharaKeyCache
 from kkafio.cards.chara import hint_language, prompt_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
@@ -244,7 +245,7 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True,
             if get_card_type(raw) not in CHARA_CARD_TYPES:
                 key_cache.put(png, fp, None)
                 return png, None, None
-            kc = KoikatuCharaData.load(str(png))
+            kc = load_chara(png, KoikatuCharaData)
             key, birth = make_key(kc), birthday(kc)
             key_cache.put(png, fp, key, birth)
             return png, key, birth
@@ -372,7 +373,7 @@ def _process_folder(folder_path: Path, response: dict,
                         key_cache.put(png, fp, None)
                         skipped += 1
                         continue
-                    kc  = KoikatuCharaData.load(str(png))
+                    kc  = load_chara(png, KoikatuCharaData)
                     key = make_key(kc)
                     key_cache.put(png, fp, key, birthday(kc))
                 elif key is None:
@@ -401,7 +402,7 @@ def _process_folder(folder_path: Path, response: dict,
                 if kc is None:
                     try:
                         orig_type = get_card_type(png.read_bytes())
-                        kc = KoikatuCharaData.load(str(png))
+                        kc = load_chara(png, KoikatuCharaData)
                     except Exception as e:
                         logger.warning("RENAME", f"Could not read {png.name}: {e}")
                         skipped += 1
@@ -417,7 +418,7 @@ def _process_folder(folder_path: Path, response: dict,
                     # now, to rewrite its metadata.
                     try:
                         orig_type = get_card_type(png.read_bytes())
-                        kc = KoikatuCharaData.load(str(png))
+                        kc = load_chara(png, KoikatuCharaData)
                     except Exception as e:
                         logger.warning("RENAME", f"Could not read {png.name}: {e}")
                         skipped += 1

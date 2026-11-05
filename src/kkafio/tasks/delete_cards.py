@@ -112,8 +112,9 @@ class DeleteCards(BaseTask):
                 logger.info("DELETE", "  IncludeCoordinates disabled — skipping coordinate matching")
             elif coord_dir and coord_dir.exists():
                 from kkloader import KoikatuCharaData
+                from kkafio.cards.chara.lenient_load import load_chara
                 try:
-                    kc = KoikatuCharaData.load(str(content_path))
+                    kc = load_chara(content_path, KoikatuCharaData)
                     coord_map = self._get_coord_map(coord_dir)
                     coord_paths = find_matching_coords(kc, coord_map)
                     logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")
