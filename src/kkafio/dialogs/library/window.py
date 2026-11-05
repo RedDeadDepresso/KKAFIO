@@ -760,7 +760,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     main.grid_rowconfigure(1, weight=1)
 
     bar = ctk.CTkFrame(main, fg_color="transparent")
-    bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
+    bar.grid(row=0, column=0, sticky="ew", pady=(0, 8))      # over the card grid only, not its scrollbar
     bar.grid_columnconfigure(3, weight=1)       # two equal gaps keep the mods filter centred between
     bar.grid_columnconfigure(6, weight=1)       # the sort order button and the size slider
     ctk.CTkLabel(bar, text=t("dialog.manual.sort_by"), text_color=pair("muted")).grid(row=0, column=0, padx=(0, 8))
