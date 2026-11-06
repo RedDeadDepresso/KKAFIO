@@ -302,6 +302,14 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     f_name = tkfont.Font(root=root, family=family, size=12, weight="bold")
     f_small = tkfont.Font(root=root, family=family, size=11)
     f_lock = tkfont.Font(root=root, family=family, size=15)
+    # The file name and the green group line use the font size of a card's file name in the Manage
+    # Library grid (a button's font size, scaled like the widgets are), so both windows read alike.
+    try:
+        grid_size = -max(1, round(abs(ctk.CTkFont().cget("size")) * ctk.ScalingTracker.get_widget_scaling(root)))
+        f_name.configure(size=grid_size)
+        f_group.configure(size=grid_size)
+    except Exception:
+        pass                                    # keep the fixed sizes above
     lh_group = f_group.metrics("linespace")
     lh_name = f_name.metrics("linespace") + px(2)
     lh_small = f_small.metrics("linespace") + px(1)
