@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO — автоматизация файлов Koikatsu",
-  "root.description": "Автоматическое управление карточками и модами для Koikatsu / Koikatsu Sunshine",
+  "root.description": "Универсальная утилита для Koikatsu / Koikatsu Sunshine: загрузка, установка, сортировка и архивирование карточек, сцен, нарядов и модов",
   "group.content-management.label": "Управление контентом",
   "group.card-management.label": "Управление карточками",
   "group.scene-management.label": "Управление сценами",

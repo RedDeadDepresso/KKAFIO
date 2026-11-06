@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - 心跳文件自動化工具",
-  "root.description": "適用於 Koikatsu / Koikatsu Sunshine 的卡片與模組自動化管理工具",
+  "root.description": "適用於 Koikatsu / Koikatsu Sunshine 的一站式工具：下載、安裝、整理與封存卡片、場景、服裝與模組",
   "group.content-management.label": "內容管理",
   "group.card-management.label": "卡片管理",
   "group.scene-management.label": "場景管理",

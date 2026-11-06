@@ -1,7 +1,7 @@
 [project]
 name = "kkafio"
 version = "2.1.0"
-description = "Koikatsu Auto File I/O. Automated card and mod management for Koikatsu / Koikatsu Sunshine."
+description = "Koikatsu Auto File I/O. All-in-one utility for Koikatsu / Koikatsu Sunshine: download, install, sort and archive cards, scenes, outfits and mods."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

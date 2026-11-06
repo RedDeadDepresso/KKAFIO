@@ -1,7 +1,7 @@
 {
   "root.label": "KKAFIO",
   "root.title": "KKAFIO - 코이카츠 자동 파일 입출력 도구",
-  "root.description": "Koikatsu / Koikatsu Sunshine용 카드 및 모드 자동 관리 도구",
+  "root.description": "Koikatsu / Koikatsu Sunshine용 올인원 유틸리티: 카드, 씬, 코디, 모드를 다운로드·설치·정리·보관",
   "group.content-management.label": "콘텐츠 관리",
   "group.card-management.label": "카드 관리",
   "group.scene-management.label": "씬 관리",
