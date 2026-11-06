@@ -301,10 +301,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("use-cache", key="UseCache",
                    help="Use mods and chara cache to skip scanning (default: on)"),
             Value("--on-failed-downloads", key="OnFailedDownloads", default=None, nargs="*",
-                  choices=["OpenReport", "CopyToClipboard", "OpenWebsites"], metavar="ACTION",
+                  choices=["OpenReport", "CopyToClipboard", "OpenWebsites", "ManageLibrary"], metavar="ACTION",
                   help="What to do with the report when mods are still missing or a download failed; "
                        "give any of: OpenReport=open it, CopyToClipboard=copy the failed mod GUIDs, one per line, "
-                       "OpenWebsites=open the --website-urls in the browser. "
+                       "OpenWebsites=open the --website-urls in the browser, "
+                       "ManageLibrary=open Manage Library on the same folders and cache setting. "
                        "Pass the flag with no actions to do neither. Default: the setting in the config "
                        "(both)"),
             Value("--modpack-mode", key="SideloaderModpack", ignore_blank=True, default=None,

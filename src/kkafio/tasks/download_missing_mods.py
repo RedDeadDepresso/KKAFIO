@@ -30,6 +30,7 @@ Strategy
    receives the report file).
 """
 
+import copy
 import asyncio
 from datetime import datetime
 from pathlib import Path
@@ -197,6 +198,28 @@ class DownloadMissingMods(BaseTask):
         except Exception as e:
             logger.warning("DLMOD", f"Could not write report: {e}")
             return None
+
+    def _open_manage_library(self, installed_mods_dir: Path, downloaded_mods_dir: Path) -> None:
+        """The "Open Manage Library" case of "If Mods Fail To Download": run Manage Library with this
+        run's folders (cards and both mods folders) and cache setting, so the cards that still miss
+        mods can be looked at, archived or deleted. Best effort — a problem is only logged."""
+        try:
+            from kkafio.tasks.manage_library import ManageLibrary
+            library_cfg = dict(self.config.manage_library)
+            library_cfg.update({
+                "CharaDir"         : self.chara_dir_str,
+                "SceneDir"         : self.scene_dir_str,
+                "CoordDir"         : self.coord_dir_str,
+                "InstalledModsDir" : str(installed_mods_dir),
+                "DownloadedModsDir": str(downloaded_mods_dir),
+                "UseCache"         : self.use_cache,
+            })
+            config = copy.copy(self.config)         # leaves the real Manage Library settings alone
+            config.manage_library = library_cfg
+            logger.info("DLMOD", "Opening Manage Library")
+            ManageLibrary(config, self.file_manager).run()
+        except Exception as e:
+            logger.warning("DLMOD", f"Could not open Manage Library: {e}")
 
     def run(self) -> None:
         game_path = self.config.game_path
@@ -804,3 +827,5 @@ class DownloadMissingMods(BaseTask):
             handle_failed_downloads("DLMOD", report_path, self.on_failed_downloads,
                                     sorted(set(unresolved) | failed_guids),
                                     parse_website_urls(self.website_urls_raw))
+            if "ManageLibrary" in self.on_failed_downloads:
+                self._open_manage_library(installed_mods_dir, downloaded_mods_dir)

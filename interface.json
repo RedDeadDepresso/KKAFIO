@@ -1377,6 +1377,13 @@
           "pipeline_override": {
             "OpenWebsites": true
           }
+        },
+        {
+          "name": "ManageLibrary",
+          "label": "$option.OnFailedDownloads.case.ManageLibrary.label",
+          "pipeline_override": {
+            "ManageLibrary": true
+          }
         }
       ]
     },
