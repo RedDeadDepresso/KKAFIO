@@ -2026,19 +2026,11 @@
       ]
     },
     {
-      "name": "AllTasks",
-      "label": "$preset.AllTasks.label",
-      "description": "$preset.AllTasks.description",
+      "name": "ContextMenuTasks",
+      "label": "$preset.ContextMenuTasks.label",
+      "description": "$preset.ContextMenuTasks.description",
       "use_in_context_menu": true,
       "task": [
-        {
-          "name": "CreateBackup",
-          "enabled": false
-        },
-        {
-          "name": "DownloadContents",
-          "enabled": false
-        },
         {
           "name": "FilterConvertKKS",
           "enabled": false
@@ -2056,6 +2048,10 @@
             "CoordDir": "C:/KKAFIO/Downloads",
             "DownloadedModsDir": "C:/KKAFIO/Downloads"
           }
+        },
+        {
+          "name": "ManageLibrary",
+          "enabled": false
         },
         {
           "name": "CompressCardTextures",
@@ -2078,6 +2074,10 @@
           "enabled": false
         },
         {
+          "name": "UngroupCards",
+          "enabled": false
+        },
+        {
           "name": "RenameChara",
           "enabled": false
         },
@@ -2086,31 +2086,11 @@
           "enabled": false
         },
         {
-          "name": "GroupCoordinates",
-          "enabled": false
-        },
-        {
-          "name": "ManageLibrary",
-          "enabled": false
-        },
-        {
-          "name": "UngroupCards",
-          "enabled": false
-        },
-        {
-          "name": "DeleteUnusedMods",
-          "enabled": false
-        },
-        {
-          "name": "DeleteCards",
-          "enabled": false
-        },
-        {
           "name": "ArchiveCards",
           "enabled": false
         },
         {
-          "name": "ExportMods",
+          "name": "DeleteCards",
           "enabled": false
         }
       ]

@@ -265,6 +265,6 @@ in `src/kkafio/core/config.py` picks the first match and assumes there's only on
 if several presets set it, only the last one MXU processes ends up marked —
 the others are silently overridden.
 
-In this project, `AllTasks` is the preset marked this way, so a first-time
+In this project, `ContextMenuTasks` is the preset marked this way, so a first-time
 user who registers the Explorer context menu (`kkafio_setup.bat`) gets sensible
 behavior out of the box without having to open MXU and mark a tab manually.

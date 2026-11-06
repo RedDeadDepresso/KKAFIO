@@ -324,6 +324,6 @@
   "preset.OrganizeInstalledContents.description": "Filter out duplicate content, group and rename installed characters, delete unwanted cards, and download any mods they're still missing",
   "preset.ExportInstalledContents.label": "📤 Export Installed Contents",
   "preset.ExportInstalledContents.description": "Archive cards with their mods bundled in and export additional mods by GUID, ready to share your installed content with other players",
-  "preset.AllTasks.label": "⚡ All Tasks",
-  "preset.AllTasks.description": "Contains all available tasks — useful for setting up the context menu"
+  "preset.ContextMenuTasks.label": "🖱️ Context Menu Tasks",
+  "preset.ContextMenuTasks.description": "Contains every task of the Explorer context menu — useful for setting it up"
 }

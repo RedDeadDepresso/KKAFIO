@@ -324,6 +324,6 @@
   "preset.OrganizeInstalledContents.description": "중복 콘텐츠를 제거하고, 설치된 캐릭터를 그룹화·이름 변경하고, 불필요한 카드를 삭제하며, 아직 누락된 모드를 다운로드합니다",
   "preset.ExportInstalledContents.label": "📤 설치된 콘텐츠 내보내기",
   "preset.ExportInstalledContents.description": "모드가 포함된 카드를 압축 보관하고, 추가 모드를 GUID로 내보내어 설치된 콘텐츠를 다른 사용자와 공유할 수 있도록 합니다",
-  "preset.AllTasks.label": "⚡ 모든 작업",
-  "preset.AllTasks.description": "사용 가능한 모든 작업을 포함합니다. 컨텍스트 메뉴를 설정할 때 유용합니다"
+  "preset.ContextMenuTasks.label": "🖱️ 컨텍스트 메뉴 작업",
+  "preset.ContextMenuTasks.description": "탐색기 컨텍스트 메뉴의 모든 작업을 포함합니다. 메뉴를 설정할 때 유용합니다"
 }

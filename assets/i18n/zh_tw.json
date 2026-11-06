@@ -324,6 +324,6 @@
   "preset.OrganizeInstalledContents.description": "篩除重複內容，將已安裝的角色分組、重新命名，刪除不需要的卡片，並下載它們仍缺少的模組",
   "preset.ExportInstalledContents.label": "📤 匯出已安裝內容",
   "preset.ExportInstalledContents.description": "將卡片與其內建的模組一起封裝成壓縮檔，並依 GUID 匯出其他模組，方便將已安裝內容分享給其他玩家",
-  "preset.AllTasks.label": "⚡ 全部任務",
-  "preset.AllTasks.description": "包含所有可用任務，便於設定右鍵選單"
+  "preset.ContextMenuTasks.label": "🖱️ 右鍵選單任務",
+  "preset.ContextMenuTasks.description": "包含右鍵選單中的所有任務，便於設定右鍵選單"
 }

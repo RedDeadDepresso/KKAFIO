@@ -324,6 +324,6 @@
   "preset.OrganizeInstalledContents.description": "重複コンテンツを除外し、インストール済みキャラクターのグループ化・リネームを行い、不要なカードを削除し、不足しているMODをダウンロードする",
   "preset.ExportInstalledContents.label": "📤 インストール済みコンテンツをエクスポート",
   "preset.ExportInstalledContents.description": "MODを同梱してカードをアーカイブし、さらに追加のMODをGUIDでエクスポートして、インストール済みコンテンツを他のユーザーと共有できるようにする",
-  "preset.AllTasks.label": "⚡ すべてのタスク",
-  "preset.AllTasks.description": "利用可能なすべてのタスクを含みます。コンテキストメニューの設定に便利です"
+  "preset.ContextMenuTasks.label": "🖱️ コンテキストメニューのタスク",
+  "preset.ContextMenuTasks.description": "エクスプローラーのコンテキストメニューにあるすべてのタスクを含みます。メニューの設定に便利です"
 }
