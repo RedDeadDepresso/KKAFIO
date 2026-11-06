@@ -133,7 +133,7 @@
   "option.UpdateMetadata.case.Yes.label": "更新",
   "option.UpdateMetadata.case.No.label": "スキップ",
   "option.RenameFiles.label": "PNGファイルの名前を変更",
-  "option.RenameFiles.description": "ディスク上のPNGファイルも翻訳された名前に変更する（例: Tohsaka_Rin.png）",
+  "option.RenameFiles.description": "ディスク上のPNGファイルを翻訳された名前に変更する（例: Tohsaka_Rin.png）",
   "option.RenameFiles.case.Yes.label": "名前を変更",
   "option.RenameFiles.case.No.label": "そのまま",
   "option.GroupCharaPrompt.label": "カスタムプロンプト",

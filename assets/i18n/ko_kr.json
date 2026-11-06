@@ -133,7 +133,7 @@
   "option.UpdateMetadata.case.Yes.label": "업데이트",
   "option.UpdateMetadata.case.No.label": "건너뛰기",
   "option.RenameFiles.label": "PNG 파일 이름 변경",
-  "option.RenameFiles.description": "디스크의 PNG 파일도 번역된 이름으로 변경합니다(예: Tohsaka_Rin.png)",
+  "option.RenameFiles.description": "디스크의 PNG 파일을 번역된 이름으로 변경합니다(예: Tohsaka_Rin.png)",
   "option.RenameFiles.case.Yes.label": "이름 변경",
   "option.RenameFiles.case.No.label": "유지",
   "option.GroupCharaPrompt.label": "사용자 지정 프롬프트",

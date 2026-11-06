@@ -133,7 +133,7 @@
   "option.UpdateMetadata.case.Yes.label": "Обновить",
   "option.UpdateMetadata.case.No.label": "Пропустить",
   "option.RenameFiles.label": "Переименовать PNG-файлы",
-  "option.RenameFiles.description": "Также переименовать PNG-файл на диске в соответствии с переведённым именем (например, Tohsaka_Rin.png)",
+  "option.RenameFiles.description": "Переименовать PNG-файл на диске в соответствии с переведённым именем (например, Tohsaka_Rin.png)",
   "option.RenameFiles.case.Yes.label": "Переименовать",
   "option.RenameFiles.case.No.label": "Оставить",
   "option.GroupCharaPrompt.label": "Свой промпт",

@@ -133,7 +133,7 @@
   "option.UpdateMetadata.case.Yes.label": "更新",
   "option.UpdateMetadata.case.No.label": "跳過",
   "option.RenameFiles.label": "重新命名 PNG 檔案",
-  "option.RenameFiles.description": "同時將磁碟上的 PNG 檔案重新命名為翻譯後的名稱（例如 Tohsaka_Rin.png）",
+  "option.RenameFiles.description": "將磁碟上的 PNG 檔案重新命名為翻譯後的名稱（例如 Tohsaka_Rin.png）",
   "option.RenameFiles.case.Yes.label": "重新命名",
   "option.RenameFiles.case.No.label": "保留",
   "option.GroupCharaPrompt.label": "自訂提示詞",

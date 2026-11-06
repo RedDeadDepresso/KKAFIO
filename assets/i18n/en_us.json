@@ -133,7 +133,7 @@
   "option.UpdateMetadata.case.Yes.label": "Update",
   "option.UpdateMetadata.case.No.label": "Skip",
   "option.RenameFiles.label": "Rename PNG Files",
-  "option.RenameFiles.description": "Also rename the PNG file on disk to match the translated name (e.g. Tohsaka_Rin.png)",
+  "option.RenameFiles.description": "Rename the PNG file on disk to match the translated name (e.g. Tohsaka_Rin.png)",
   "option.RenameFiles.case.Yes.label": "Rename",
   "option.RenameFiles.case.No.label": "Keep",
   "option.GroupCharaPrompt.label": "Custom Prompt",
