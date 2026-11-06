@@ -44,7 +44,7 @@ from pathlib import Path
 
 from kkafio.core.errors import TaskFailedError
 from kkafio.core.i18n import t
-from kkafio.dialogs.common import format_size, new_window, show_and_wait
+from kkafio.dialogs.common import format_size, maximize, new_window, show_and_wait
 
 
 # ---------------------------------------------------------------------------
@@ -898,5 +898,5 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     update_counts()
     rebuild()
     timers["poll"] = root.after(60, poll_thumbs)
-    show_and_wait(root)
+    show_and_wait(root, on_shown=lambda: maximize(root))      # always full screen
     return result
