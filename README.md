@@ -59,7 +59,7 @@ The game type also determines which executable is launched by the **Run Game** b
 
 Run `kkafio_setup.bat` (in the KKAFIO install root) and choose **Register context menu** to add a **KKAFIO** submenu to the Windows Explorer right-click menu. Under the hood this runs `scripts\register_context_menu.bat`, a thin wrapper around `scripts\register_context_menu.ps1` — using the `.bat` avoids Windows' default PowerShell execution policy, which otherwise blocks `.ps1` scripts from running at all. It uses the selected file/folder as an argument; remaining settings are taken from the configuration tab you marked in the GUI (see below), or from the first tab if none is marked.
 
-It first removes any existing KKAFIO menu entries, then asks you to pick a language (used for the menu labels and the script's own prompts) and which folder tasks to include and in what order (enter the numbers shown, e.g. `3 1 4 6`; leave blank for all tasks in the default order). "Run GUI" and the PNG entries below are always included. Re-run it any time to change your language or task selection — no need to run an "unregister" step first.
+It first removes any existing KKAFIO menu entries, then asks you to pick a language (used for the menu labels and the script's own prompts) and which folder tasks to include and in what order (enter the numbers shown, e.g. `3 1 4 6`; leave blank for all tasks in the default order). "Manage Library (Game Folders)", "Run GUI" and the PNG entries below are always included. Re-run it any time to change your language or task selection — no need to run an "unregister" step first.
 
 **On folders and folder backgrounds:**
 
@@ -68,7 +68,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Filter & Convert KKS Cards | `filter-convert-kks --input <folder>`                                                                                                  |
 | Filter Duplicate Contents  | `filter-duplicate-contents --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --mods-dir <folder> --overlays-dir <folder>` |
 | Download Missing Mods      | `download-missing-mods --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --downloaded-mods-dir <folder>`                      |
-| Manage Library             | `manage-library --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --downloaded-mods-dir <folder>`                           |
+| Manage Library (This Folder) | `manage-library --chara-dir <folder> --scene-dir <folder> --coord-dir <folder> --downloaded-mods-dir <folder>`                         |
 | Compress Card Textures    | `compress-card-textures --input <folder>`                                                                                             |
 | Install Contents           | `install-contents --input <folder>`                                                                                                    |
 | Uninstall Contents         | `uninstall-contents --input <folder>`                                                                                                  |
@@ -77,6 +77,7 @@ It first removes any existing KKAFIO menu entries, then asks you to pick a langu
 | Ungroup Cards              | `ungroup-cards --input <folder>`                                                                                                       |
 | Rename Characters          | `rename-chara --chara-dir <folder>`                                                                                                    |
 | Review Similar Characters  | `review-similar-chara --chara-dir <folder>`                                                                                            |
+| Manage Library (Game Folders) | `manage-library` (no folders: uses the game's own folders)                                                                            |
 | Run GUI                    | Opens GUI                                                                                                                              |
 
 **On PNG files (single or multi-select):**
