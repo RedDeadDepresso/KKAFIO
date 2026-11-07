@@ -74,7 +74,7 @@ async def download_pawchive(
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed).
 
-    `externals` maps "gofile" / "mega" / "gdrive" to the clients used for the
+    `externals` maps "gofile" / "catbox" / "mega" / "gdrive" to the clients used for the
     links found in post content. `auth` and `throttle` are shared by all
     pawchive links of a run: the session cookie is asked for at most once, and
     one 429 slows every request down, not just the one that was refused. For the two listings the page directive

@@ -649,7 +649,7 @@ class Config:
         self.group_scenes              = self.config_data["GroupScenes"]
         self.group_chara               = self.config_data["GroupChara"]
         self.group_coordinates         = self.config_data["GroupCoordinates"]
-        self.organize_library            = self.config_data["OrganizeLibrary"]
+        self.organize_library          = self.config_data["OrganizeLibrary"]
         self.ungroup_cards             = self.config_data["UngroupCards"]
         self.rename_chara              = self.config_data["RenameChara"]
         self.archive_cards             = self.config_data["ArchiveCards"]

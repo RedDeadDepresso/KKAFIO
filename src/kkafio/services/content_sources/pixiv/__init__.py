@@ -20,6 +20,7 @@ from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources import transfer
 from kkafio.services.content_sources.card_size import kk_size_matches
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
+from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
 from kkafio.services.content_sources.net import get_with_retry
@@ -191,7 +192,7 @@ def pixiv_description_links(content) -> tuple[list[str], list[str]]:
     """The references found in an artwork's description (HTML or plain text).
 
     Returns (artwork_ids, external_links): the ids of other pixiv artworks, and
-    the mega / gofile / Google Drive links -- each in order of appearance,
+    the mega / gofile / catbox / Google Drive links -- each in order of appearance,
     without duplicates.
     """
     if not isinstance(content, str) or not content:
@@ -220,9 +221,11 @@ async def _download_external_link(
     link: str, externals: dict | None, directory: Path, history: dict, skip: bool,
 ) -> tuple[int, int, int]:
     """Hand a link found in a description to the downloader for its host.
-    `externals` maps "gofile" / "mega" / "gdrive" to their HTTP clients."""
+    `externals` maps "gofile" / "catbox" / "mega" / "gdrive" to their HTTP clients."""
     if is_gofile_url(link):
         kind, fn = "gofile", download_gofile
+    elif is_catbox_url(link):
+        kind, fn = "catbox", download_catbox
     elif is_mega_url(link):
         kind, fn = "mega", download_mega
     elif is_gdrive_url(link):
@@ -253,7 +256,7 @@ async def _read_pixiv_descriptions(
     client, artwork_ids: list[str], directory: Path, history: dict, skip: bool,
     externals: dict | None, state: PixivFollowState, follow_artworks: bool,
 ) -> tuple[int, int, int]:
-    """Read the description of each artwork and download the mega / gofile /
+    """Read the description of each artwork and download the mega / gofile / catbox /
     Google Drive links in it. With `follow_artworks`, the other pixiv artworks
     it mentions are downloaded too (their images), and their descriptions are
     read in turn. `artwork_ids` themselves are NOT downloaded here -- the
@@ -503,11 +506,11 @@ async def download_pixiv(
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed).
 
-    The description of every artwork is searched for mega / gofile / Google
+    The description of every artwork is searched for mega / gofile / catbox / Google
     Drive links, which are always downloaded too. With ``follow_illustrations`` the
     other pixiv artworks it mentions are downloaded as well, and their
     descriptions are searched the same way.
-    `externals` holds the gofile / mega / gdrive clients and `follow_state` the
+    `externals` holds the gofile / catbox / mega / gdrive clients and `follow_state` the
     already-visited artworks (share one per run).
 
     For a user gallery the page directive (``| N``, ``| N | M``, ``| all``) or,

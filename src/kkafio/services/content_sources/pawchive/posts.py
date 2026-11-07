@@ -6,6 +6,7 @@ import asyncio
 from pathlib import Path
 
 from kkafio.core.logger import logger
+from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
@@ -17,9 +18,11 @@ async def _download_pawchive_link(
     link: str, externals: dict, directory: Path, history: dict, skip: bool,
 ) -> tuple[int, int, int]:
     """Hand a link found in a post to the downloader for its host. `externals`
-    maps "gofile" / "mega" / "gdrive" to their HTTP clients."""
+    maps "gofile" / "catbox" / "mega" / "gdrive" to their HTTP clients."""
     if is_gofile_url(link):
         kind, fn = "gofile", download_gofile
+    elif is_catbox_url(link):
+        kind, fn = "catbox", download_catbox
     elif is_mega_url(link):
         kind, fn = "mega", download_mega
     elif is_gdrive_url(link):
@@ -103,7 +106,7 @@ async def _pawchive_resolve_deferred(
 async def pawchive_process_posts(
     client, posts: list[dict], directory: Path, history: dict, skip: bool, run: PawchiveRun,
 ) -> None:
-    """Download the files and the linked mega/gofile/gdrive content of posts."""
+    """Download the files and the linked mega/gofile/catbox/gdrive content of posts."""
     jobs: list[tuple[dict, str]] = []
     links: list[str] = []
     taken: set[str] = set()

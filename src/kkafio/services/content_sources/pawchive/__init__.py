@@ -27,7 +27,7 @@ as one object. Every post is processed the same way:
     storage) have no path: their signed t1.pawchive.pw links are read from the
     post's web page, and downloading them needs a logged-in account, so the
     `session` cookie is asked for -- only then -- like pixiv's PHPSESSID;
-  * its "content" is searched for mega.nz, gofile.io and Google Drive links,
+  * its "content" is searched for mega.nz, gofile.io, catbox.moe and Google Drive links,
     which are handed to the matching downloader with the link unchanged
     (query parameters such as ?password= are kept).
 """

@@ -1422,6 +1422,15 @@ def test_pawchive_content_links():
     assert pw_parsing.pawchive_content_links("") == []
     assert pw_parsing.pawchive_content_links(None) == []
     assert pw_parsing.pawchive_content_links("<p></p>") == []
+    # catbox: files, litterbox files and albums; the bare site, other pages and look-alike hosts are not links
+    text = ("<a href=\"https://files.catbox.moe/abc123.png\">f</a> litter.catbox.moe/q1w2e3.zip. "
+            "https://catbox.moe/c/alb123 https://catbox.moe/ https://catbox.moe/user/api.php "
+            "https://notcatbox.moe/c/x https://catbox.moe.evil.com/c/x")
+    assert pw_parsing.pawchive_content_links(text) == [
+        "https://files.catbox.moe/abc123.png",
+        "https://litter.catbox.moe/q1w2e3.zip",          # scheme added, sentence dot removed
+        "https://catbox.moe/c/alb123",
+    ]
     # the same link twice is one link; legacy mega and uc links are recognised
     text = "https://mega.nz/#!AbCdEfGh!key https://mega.nz/#!AbCdEfGh!key https://drive.google.com/uc?id=1AbCdEfGhIjKlMnOp&export=download"
     assert pw_parsing.pawchive_content_links(text) == [
@@ -1644,13 +1653,14 @@ def _patch_externals(monkeypatch):
         return fake
 
     monkeypatch.setattr(pw_posts, "download_gofile", make("gofile"))
+    monkeypatch.setattr(pw_posts, "download_catbox", make("catbox"))
     monkeypatch.setattr(pw_posts, "download_mega", make("mega"))
     monkeypatch.setattr(pw_posts, "download_gdrive", make("gdrive"))
     monkeypatch.setattr(history_store, "save_history", lambda h: None)
     return calls
 
 
-EXTERNALS = {"gofile": "gofile", "mega": "mega", "gdrive": "gdrive"}
+EXTERNALS = {"gofile": "gofile", "catbox": "catbox", "mega": "mega", "gdrive": "gdrive"}
 
 
 def test_pawchive_listing_pages_until_empty(tmp_path, monkeypatch):
@@ -1659,7 +1669,7 @@ def test_pawchive_listing_pages_until_empty(tmp_path, monkeypatch):
         0: [{"id": "3", "title": "a", "file": {"name": "a.rar", "path": "/00/00/a.rar"},
              "content": '<a href="https://mega.nz/file/AbCdEfGh#KEY1">x</a>'}],
         50: [{"id": "2", "title": "b", "attachments": [{"name": "b.zip", "path": "/00/00/b.zip"}],
-              "content": "https://gofile.io/d/Xy12Zz?password=pw https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing"}],
+              "content": "https://gofile.io/d/Xy12Zz?password=pw https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing https://catbox.moe/c/abc123"}],
         # offset 100 is empty -> end
     }
     client = _PawClient(pages=pages, blobs={_data("/00/00/a.rar"): b"a", _data("/00/00/b.zip"): b"b"})
@@ -1672,11 +1682,12 @@ def test_pawchive_listing_pages_until_empty(tmp_path, monkeypatch):
         "https://pawchive.pw/api/v1/posts?q=chara&o=50",
         "https://pawchive.pw/api/v1/posts?q=chara&o=100",
     ]
-    assert res == (5, 0, 0)       # 2 files + 3 links
+    assert res == (6, 0, 0)       # 2 files + 4 links
     assert sorted(calls) == sorted([
         ("mega", "https://mega.nz/file/AbCdEfGh#KEY1"),
         ("gofile", "https://gofile.io/d/Xy12Zz?password=pw"),                           # query kept
         ("gdrive", "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=sharing"),
+        ("catbox", "https://catbox.moe/c/abc123"),
     ])
     assert sorted(p.name for p in Path(tmp_path).iterdir()) == ["a.rar", "b.zip"]
 
@@ -2454,7 +2465,8 @@ def test_pixiv_description_links():
         'https://www.pixiv.net/en/artworks/222, also '
         '<a href="/jump.php?https%3A%2F%2Fmega.nz%2Ffile%2FABCDEFGH%23KEYKEYKEY">mega</a> '
         'and <a href="/jump.php?url=https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1AbCdEfGhIjKlMnOpQrStUvWxYz%2Fview">gd</a> '
-        'https://gofile.io/d/AbC123 https://www.pixiv.net/en/artworks/111'
+        'https://gofile.io/d/AbC123 https://www.pixiv.net/en/artworks/111 '
+        '<a href="/jump.php?https%3A%2F%2Fcatbox.moe%2Fc%2Falb123">catbox</a>'
     )
     ids, links = pixiv.pixiv_description_links(desc)
     assert ids == ["111", "222"]
@@ -2462,6 +2474,7 @@ def test_pixiv_description_links():
         "https://mega.nz/file/ABCDEFGH#KEYKEYKEY",
         "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view",
         "https://gofile.io/d/AbC123",
+        "https://catbox.moe/c/alb123",
     ]
     assert pixiv.pixiv_description_links("") == ([], [])
     assert pixiv.pixiv_description_links(None) == ([], [])
