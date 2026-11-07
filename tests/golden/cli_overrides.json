@@ -2371,6 +2371,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "a.png",
    "b.png"
   ],
@@ -2423,6 +2424,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "a.png",
    "b.png"
   ],
@@ -2688,7 +2690,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -2728,7 +2731,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -3330,6 +3334,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "--no-chara",
    "--no-scene",
    "--no-coord",
@@ -3395,6 +3400,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "--no-chara",
    "--no-scene",
    "--no-coord",
@@ -3603,7 +3609,8 @@
    "--rename-to-guid",
    "--use-cache",
    "--mods-dir",
-   "S_mods_dir"
+   "S_mods_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -3639,7 +3646,8 @@
    "--no-rename-to-guid",
    "--no-use-cache",
    "--mods-dir",
-   "S_mods_dir"
+   "S_mods_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -4125,6 +4133,7 @@
    "S_mods_dir",
    "--overlays-dir",
    "S_overlays_dir",
+   "--game-folders",
    "--keep",
    "None",
    "--action",
@@ -4183,6 +4192,7 @@
    "S_mods_dir",
    "--overlays-dir",
    "S_overlays_dir",
+   "--game-folders",
    "--keep",
    "First alphabetically",
    "--action",
@@ -4323,6 +4333,7 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--include-subfolders",
    "--use-cache",
    "--prompt-language",
@@ -4366,6 +4377,7 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--include-subfolders",
    "--no-use-cache",
    "--prompt-language",
@@ -4525,7 +4537,8 @@
    "--chara-dir",
    "S_chara_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [],
@@ -4548,7 +4561,8 @@
    "--chara-dir",
    "S_chara_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [],
@@ -4620,6 +4634,7 @@
    "group-scenes",
    "--scene-dir",
    "S_scene_dir",
+   "--game-folders",
    "--use-cache",
    "--include-subfolders",
    "--subgroup-by-year"
@@ -4652,6 +4667,7 @@
    "group-scenes",
    "--scene-dir",
    "S_scene_dir",
+   "--game-folders",
    "--no-use-cache",
    "--include-subfolders",
    "--no-subgroup-by-year"
@@ -5176,6 +5192,7 @@
    "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
+   "--game-folders",
    "--use-cache"
   ],
   "result": {
@@ -5238,6 +5255,7 @@
    "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
+   "--game-folders",
    "--no-use-cache"
   ],
   "result": {
@@ -5383,6 +5401,7 @@
    "rename-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--skip-already-renamed",
    "--update-metadata",
    "--rename-files",
@@ -5430,6 +5449,7 @@
    "rename-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--no-skip-already-renamed",
    "--no-update-metadata",
    "--no-rename-files",
@@ -5691,7 +5711,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -5744,7 +5765,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -7112,6 +7134,42 @@
   },
   "world": "default"
  },
+ "delete-cards --game-folders": {
+  "argv": [
+   "delete-cards",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_local_coord_maps": {},
+      "_local_mods_maps": {},
+      "auto_resolve": true,
+      "chara_dir_str": "",
+      "chara_dirs_override": null,
+      "check_shared_mods": true,
+      "content_paths": [],
+      "coord_dir_str": "",
+      "include_coordinates": true,
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteCards",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteCards"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
  "delete-cards --include-coordinates": {
   "argv": [
    "delete-cards",
@@ -7569,6 +7627,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "a.png",
    "b.png"
   ],
@@ -7621,6 +7680,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "a.png",
    "b.png"
   ],
@@ -7919,6 +7979,36 @@
   },
   "world": "default"
  },
+ "delete-unused-mods --game-folders": {
+  "argv": [
+   "delete-unused-mods",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "exception_list_raw": "BetterPenetration/\nClo/\ncom.joan6694.dynamic_bone_collider",
+      "mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "DeleteUnusedMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DeleteUnusedMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
  "delete-unused-mods --mods-dir=<blank>": {
   "argv": [
    "delete-unused-mods",
@@ -8116,7 +8206,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -8156,7 +8247,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -9360,6 +9452,52 @@
   },
   "world": "default"
  },
+ "download-missing-mods --game-folders": {
+  "argv": [
+   "download-missing-mods",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "telegram_sources": [
+       "KoikatsuCards",
+       "ChatLinks"
+      ],
+      "use_cache": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
  "download-missing-mods --installed-mods-dir=<blank>": {
   "argv": [
    "download-missing-mods",
@@ -10489,6 +10627,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "--no-chara",
    "--no-scene",
    "--no-coord",
@@ -10554,6 +10693,7 @@
    "S_scene_dir",
    "--coord-dir",
    "S_coord_dir",
+   "--game-folders",
    "--no-chara",
    "--no-scene",
    "--no-coord",
@@ -10607,6 +10747,35 @@
  "export-mods": {
   "argv": [
    "export-mods"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "guids_raw": "",
+      "mods_dir_str": "",
+      "output_path_str": "C:/KKAFIO/Exported Mods",
+      "rename_to_guid": true,
+      "use_cache": true
+     },
+     "class": "ExportMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ExportMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "export-mods --game-folders": {
+  "argv": [
+   "export-mods",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -11073,7 +11242,8 @@
    "--rename-to-guid",
    "--use-cache",
    "--mods-dir",
-   "S_mods_dir"
+   "S_mods_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -11109,7 +11279,8 @@
    "--no-rename-to-guid",
    "--no-use-cache",
    "--mods-dir",
-   "S_mods_dir"
+   "S_mods_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -12208,6 +12379,43 @@
   },
   "world": "default"
  },
+ "filter-duplicate-contents --game-folders": {
+  "argv": [
+   "filter-duplicate-contents",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "coord_dir_str": "",
+      "do_chara": true,
+      "do_coords": true,
+      "do_mods": true,
+      "do_overlays": true,
+      "do_scenes": true,
+      "duplicate_action": "Delete",
+      "keep": "Oldest",
+      "mods_dir_str": "",
+      "overlays_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "FilterDuplicateContents",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "FilterDuplicateContents"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
  "filter-duplicate-contents --input=<blank>": {
   "argv": [
    "filter-duplicate-contents",
@@ -13130,6 +13338,7 @@
    "S_mods_dir",
    "--overlays-dir",
    "S_overlays_dir",
+   "--game-folders",
    "--keep",
    "None",
    "--action",
@@ -13188,6 +13397,7 @@
    "S_mods_dir",
    "--overlays-dir",
    "S_overlays_dir",
+   "--game-folders",
    "--keep",
    "First alphabetically",
    "--action",
@@ -13301,6 +13511,38 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "hints_language": "detect",
+      "include_subfolders": false,
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "en_us",
+      "resolve_locally": true,
+      "use_cache": true
+     },
+     "class": "GroupChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-chara --game-folders": {
+  "argv": [
+   "group-chara",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
       "hints_language": "detect",
       "include_subfolders": false,
       "llm_website_url": "https://claude.ai/",
@@ -14179,6 +14421,7 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--include-subfolders",
    "--use-cache",
    "--prompt-language",
@@ -14222,6 +14465,7 @@
    "group-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--include-subfolders",
    "--no-use-cache",
    "--prompt-language",
@@ -14429,6 +14673,37 @@
       "chara_dir_str": "",
       "clothes_tolerance_raw": 1,
       "coord_dir_str": "S_coord_dir",
+      "group_by_hair": true,
+      "ignore_accessories": true,
+      "include_subfolders": false,
+      "use_cache": true
+     },
+     "class": "GroupCoordinates",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupCoordinates"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-coordinates --game-folders": {
+  "argv": [
+   "group-coordinates",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "clothes_tolerance_raw": 1,
+      "coord_dir_str": "",
       "group_by_hair": true,
       "ignore_accessories": true,
       "include_subfolders": false,
@@ -14741,7 +15016,8 @@
    "--chara-dir",
    "S_chara_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [],
@@ -14764,7 +15040,8 @@
    "--chara-dir",
    "S_chara_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [],
@@ -14778,6 +15055,34 @@
  "group-scenes": {
   "argv": [
    "group-scenes"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "include_subfolders": false,
+      "scene_dir_str": "",
+      "subgroup_by_year": true,
+      "use_cache": true
+     },
+     "class": "GroupScenes",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "GroupScenes"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "group-scenes --game-folders": {
+  "argv": [
+   "group-scenes",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -15063,6 +15368,7 @@
    "group-scenes",
    "--scene-dir",
    "S_scene_dir",
+   "--game-folders",
    "--use-cache",
    "--include-subfolders",
    "--subgroup-by-year"
@@ -15095,6 +15401,7 @@
    "group-scenes",
    "--scene-dir",
    "S_scene_dir",
+   "--game-folders",
    "--no-use-cache",
    "--include-subfolders",
    "--no-subgroup-by-year"
@@ -16459,6 +16766,46 @@
   },
   "world": "default"
  },
+ "organize-library --game-folders": {
+  "argv": [
+   "organize-library",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_downloaded_mods_dir": null,
+      "_installed_mods_dir": null,
+      "archive_combined": true,
+      "archive_format": "7z",
+      "archive_include_coords": true,
+      "archive_include_modpack": false,
+      "archive_open_folder": true,
+      "archive_output_dir_str": "C:/KKAFIO/Archived Cards",
+      "chara_dir_str": "",
+      "check_shared_mods": true,
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "include_coordinates": true,
+      "installed_mods_dir_str": "",
+      "scene_dir_str": "",
+      "use_cache": true
+     },
+     "class": "OrganizeLibrary",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "OrganizeLibrary"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
  "organize-library --include-coordinates": {
   "argv": [
    "organize-library",
@@ -17090,6 +17437,7 @@
    "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
+   "--game-folders",
    "--use-cache"
   ],
   "result": {
@@ -17152,6 +17500,7 @@
    "S_downloaded_mods_dir",
    "--mods-dir",
    "S_mods_dir",
+   "--game-folders",
    "--no-use-cache"
   ],
   "result": {
@@ -17268,6 +17617,40 @@
     {
      "attrs": {
       "chara_dir_str": "S_chara_dir",
+      "hints_language": "detect",
+      "llm_website_url": "https://claude.ai/",
+      "open_llm_website": true,
+      "prompt_language": "en_us",
+      "rename_files": true,
+      "resolve_locally": true,
+      "skip_already_renamed": true,
+      "update_metadata": false,
+      "use_cache": true
+     },
+     "class": "RenameChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "RenameChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "rename-chara --game-folders": {
+  "argv": [
+   "rename-chara",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
       "hints_language": "detect",
       "llm_website_url": "https://claude.ai/",
       "open_llm_website": true,
@@ -18370,6 +18753,7 @@
    "rename-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--skip-already-renamed",
    "--update-metadata",
    "--rename-files",
@@ -18417,6 +18801,7 @@
    "rename-chara",
    "--chara-dir",
    "S_chara_dir",
+   "--game-folders",
    "--no-skip-already-renamed",
    "--no-update-metadata",
    "--no-rename-files",
@@ -18717,6 +19102,46 @@
        "CharaDir": "",
        "CheckSharedMods": true,
        "CoordDir": "S_coord_dir",
+       "Enable": true,
+       "IncludeCoordinates": true,
+       "Mode": "Similar cover",
+       "ModsDir": "",
+       "SceneDir": "",
+       "UseCache": true
+      },
+      "chara_dir_str": "",
+      "mode": "Similar cover",
+      "use_cache": true
+     },
+     "class": "ReviewSimilarChara",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "ReviewSimilarChara"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "review-similar-chara --game-folders": {
+  "argv": [
+   "review-similar-chara",
+   "--game-folders"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "_scan_folders": [],
+      "cfg": {
+       "AutoResolve": true,
+       "CharaDir": "",
+       "CheckSharedMods": true,
+       "CoordDir": "",
        "Enable": true,
        "IncludeCoordinates": true,
        "Mode": "Similar cover",
@@ -19285,7 +19710,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [
@@ -19338,7 +19764,8 @@
    "--scene-dir",
    "S_scene_dir",
    "--coord-dir",
-   "S_coord_dir"
+   "S_coord_dir",
+   "--game-folders"
   ],
   "result": {
    "events": [

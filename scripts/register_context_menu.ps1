@@ -59,8 +59,8 @@ $FolderTasks = @(
 # Always registered, not part of the numbered picker: GUI shortcut, plus the
 # two PNG-file-association commands (different registry root/context).
 $RunGuiTask   = [ordered]@{ Id = 'RunGUI' }
-# Organize Library on the game's own folders (no folder arguments); always registered, right above Run GUI.
-$GameLibraryTask = [ordered]@{ Id = 'OrganizeLibraryGame'; Cli = 'organize-library'; ArgsTemplate = '' }
+# Organize Library on the game's own folders (--game-folders: whatever the config has saved is ignored); always registered, right above Run GUI.
+$GameLibraryTask = [ordered]@{ Id = 'OrganizeLibraryGame'; Cli = 'organize-library'; ArgsTemplate = '--game-folders' }
 $PngTasks = @(
     [ordered]@{ Id = 'ArchiveCards'; Cli = 'archive-cards'; ArgsTemplate = '"{P}" --context-menu' }
     [ordered]@{ Id = 'DeleteCards';  Cli = 'delete-cards';  ArgsTemplate = '"{P}" --context-menu' }

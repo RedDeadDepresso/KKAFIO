@@ -23,6 +23,12 @@ How CLI overrides work
 A CLI option that is given replaces the matching value in the task's config
 section *before* the task is constructed, so the task sees it exactly as if the
 GUI had configured it. Options that are not given change nothing.
+
+``--game-folders`` (`GameFolders`) is the one option that works the other way
+round: it blanks the folder settings that were not given on the command line, and
+a blank folder means "the game's own folder" to every task that has one. It is
+applied last (`TaskSpec.finish_overrides`), after the ``prepare`` hook, so a folder
+named by any other flag -- including the ``--input`` shorthand -- always wins.
 """
 
 from __future__ import annotations
@@ -56,6 +62,10 @@ class Option:
     def overrides(self, args: argparse.Namespace) -> dict[str, Any]:
         """{config key: value} for this option — empty if it wasn't given."""
         return {}
+
+    def finish(self, args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+        """Last say over the collected `overrides`, after the spec's ``prepare`` hook.
+        Most options have none."""
 
 
 @dataclass(frozen=True, init=False)
@@ -156,6 +166,45 @@ class Custom(Option):
         return self.overrides_fn(args) if self.overrides_fn else {}
 
 
+# The folder keys `GameFolders` can blank, and how the help names each one.
+_FOLDER_LABELS = {
+    "CharaDir": "chara", "SceneDir": "scene", "CoordDir": "coordinate",
+    "ModsDir": "mods", "InstalledModsDir": "mods", "DownloadedModsDir": "mods",
+    "OverlaysDir": "overlays",
+}
+
+
+@dataclass(frozen=True)
+class GameFolders(Option):
+    """``--game-folders``: use the game's own folders, not the ones saved in the config.
+
+    ``keys`` are the config keys of the task's folder settings that fall back to the
+    game's folder when blank. With the flag, every one of them that no other option
+    set is blanked, so the saved folder is ignored for this run (nothing is written
+    to the config). A folder given on the command line, directly or through a
+    ``prepare`` hook such as ``--input``, keeps priority. A blank ``--chara-dir ""``
+    can't do this job: shells drop empty arguments, and the folder options treat a
+    blank value as "not given".
+    """
+
+    keys: tuple[str, ...]
+
+    def _help(self) -> str:
+        labels = list(dict.fromkeys(_FOLDER_LABELS[k] for k in self.keys))
+        names = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+        return (f"Use the game's own {names} folder(s) instead of the ones saved in the config "
+                "for this run; a folder given by another option still takes priority")
+
+    def add(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("--game-folders", dest="game_folders", action="store_true",
+                            default=False, help=self._help())
+
+    def finish(self, args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+        if getattr(args, "game_folders", False):
+            for key in self.keys:
+                overrides.setdefault(key, "")
+
+
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
@@ -193,6 +242,11 @@ class TaskSpec:
         for option in self.options:
             collected.update(option.overrides(args))
         return collected
+
+    def finish_overrides(self, args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+        """Let every option have its last say; call after ``prepare``."""
+        for option in self.options:
+            option.finish(args, overrides)
 
     def load_class(self) -> type:
         module_name, _, class_name = self.target.partition(":")

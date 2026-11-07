@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from kkafio.registry import Custom, TaskSpec, Toggle, Value
+from kkafio.registry import Custom, GameFolders, TaskSpec, Toggle, Value
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +292,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Override the Studio scene directory to scan (default: game scene dir from config, if Studio is installed)"),
             Value("--coord-dir", key="CoordDir", ignore_blank=True, default=None, metavar="DIR",
                   help="Override the coordinate directory to scan (default: game coordinate dir from config)"),
+            GameFolders(("CharaDir", "SceneDir", "CoordDir", "InstalledModsDir", "DownloadedModsDir")),
             Value("--no-chara", action="store_true", default=False,
                   help="Skip scanning character cards for referenced mod GUIDs"),
             Value("--no-scene", action="store_true", default=False,
@@ -352,6 +353,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                    help="Use the mods cache to skip re-scanning unchanged zipmods (default: on)"),
             Value("--mods-dir", key="ModsDir", default=None, metavar="DIR",
                   help="Override the mods directory to search (default: game mods dir from config)"),
+            GameFolders(("ModsDir",)),
         ),
     ),
 
@@ -372,6 +374,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom scene directory (default: game's Studio scene folder)"),
             Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",
                   help="Custom coordinate directory (default: game's coordinate folder)"),
+            GameFolders(("ModsDir", "CharaDir", "SceneDir", "CoordDir")),
         ),
     ),
 
@@ -432,6 +435,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",
                   help="Coordinate directory (used for coordinate matching when --no-auto-resolve, "
                        "and for the shared-mod check; default: game's coordinate folder)"),
+            GameFolders(("CharaDir", "SceneDir", "CoordDir")),
             Value("--context-menu", action="store_true", default=False, help=_CONTEXT_MENU_HELP + "."),
         ),
     ),
@@ -479,6 +483,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--coord-dir", key="CoordDir", default=None, metavar="DIR",
                   help="Coordinate directory (used for coordinate matching when --no-auto-resolve, "
                        "and for the shared-mod check; default: game's coordinate folder)"),
+            GameFolders(("CharaDir", "SceneDir", "CoordDir")),
         ),
     ),
 
@@ -554,6 +559,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   default=None,
                   help="Custom coordinate directory (default: the game's coordinate folder; "
                        "--input is an alias)"),
+            GameFolders(("CharaDir", "CoordDir")),
         ),
     ),
 
@@ -622,6 +628,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "(default: the game's mods folder)"),
             Value("--mods-dir", default=None, metavar="DIR",
                   help="Legacy shorthand: use DIR as both --installed-mods-dir and --downloaded-mods-dir"),
+            GameFolders(("CharaDir", "SceneDir", "CoordDir", "InstalledModsDir", "DownloadedModsDir")),
             Toggle("use-cache", key="UseCache",
                    help="Reuse the cached scene hashes, character keys and coordinate digests for "
                         "unchanged cards (default: on)",
@@ -653,6 +660,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   default=None,
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "--input is an alias)"),
+            GameFolders(("CharaDir",)),
             Toggle("skip-already-renamed", key="SkipAlreadyRenamed"),
             Toggle("update-metadata", key="UpdateMetadata",
                    help="Write translated names into card metadata (default: on)"),
@@ -693,6 +701,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   default=None,
                   help="Custom scene directory (default: the game's Studio scene folder; "
                        "--input is an alias)"),
+            GameFolders(("SceneDir",)),
             Toggle("use-cache", key="UseCache",
                    help="Reuse the shared PNG hash cache to skip re-hashing unchanged scenes (default: on)",
                    off_help="Disable cache and hash every scene"),
@@ -715,6 +724,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom chara directory (default: the game's female and male chara folders; "
                        "pointing it at the game's chara folder also uses female/ and male/; "
                        "--input is an alias)"),
+            GameFolders(("CharaDir",)),
             Value("--include-subfolders", key="IncludeSubfolders", action="store_true", default=None,
                   help="Include character cards from subfolders when scanning (overrides config)"),
             Toggle("use-cache", key="UseCache",
@@ -771,6 +781,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                   help="Custom mods directory (default: the game's mods folder)"),
             Value("--overlays-dir", key="OverlaysDir", ignore_blank=True, default=None, metavar="DIR",
                   help="Custom overlays directory (default: the game's Overlays folder)"),
+            GameFolders(("CharaDir", "SceneDir", "CoordDir", "ModsDir", "OverlaysDir")),
             Value("--keep", key="Keep", metavar="STRATEGY", default=None,
                   choices=['None', 'Newest', 'Oldest', 'Last alphabetically', 'First alphabetically'],
                   help="Which copy to keep as the original (overrides config)"),

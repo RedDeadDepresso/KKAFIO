@@ -265,6 +265,7 @@ def _run_task_command(spec, args):
         overrides = spec.overrides_from(args)
         if spec.prepare is not None and spec.prepare(args, overrides) is False:
             return  # e.g. a sibling context-menu invocation is handling the whole batch
+        spec.finish_overrides(args, overrides)      # --game-folders: after everything that names a folder
         run_task(spec, config, file_manager, overrides)
         if spec.after_run is not None:
             spec.after_run(args)

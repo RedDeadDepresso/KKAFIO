@@ -211,6 +211,13 @@ stands). A few options need a small hook for logic that spans several flags —
 e.g. `download-missing-mods --mods-dir` setting both of its directories, or
 the context-menu batching of `delete-cards` / `archive-cards`.
 
+`GameFolders` (`--game-folders`) is the one option that acts last instead of
+first: after the hook has run, `TaskSpec.finish_overrides` blanks every folder
+setting the task lists in it that no other flag (nor the hook) set, and a
+blank folder means "the game's own folder" to the task. Add it to a task only
+if that is true of every key you list; it is why `archive-cards`, whose
+overrides mean "none" when blank, doesn't have it.
+
 Task classes are imported only when they run (the specs refer to them by
 string), so `--help` and every parse stay cheap. That also means PyInstaller
 can't discover them by scanning imports; the build uses
