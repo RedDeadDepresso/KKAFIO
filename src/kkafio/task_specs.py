@@ -116,7 +116,7 @@ def _download_missing_mods_prepare(args: argparse.Namespace, overrides: dict[str
         ]
 
 
-def _manage_library_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
+def _organize_library_prepare(args: argparse.Namespace, overrides: dict[str, Any]) -> None:
     # Same as Download Missing Mods: --mods-dir is the legacy single-directory flag and sets
     # both directories unless the specific flag is also given.
     installed_dir = args.installed_mods_dir or args.mods_dir or None
@@ -301,11 +301,11 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Toggle("use-cache", key="UseCache",
                    help="Use mods and chara cache to skip scanning (default: on)"),
             Value("--on-failed-downloads", key="OnFailedDownloads", default=None, nargs="*",
-                  choices=["OpenReport", "CopyToClipboard", "OpenWebsites", "ManageLibrary"], metavar="ACTION",
+                  choices=["OpenReport", "CopyToClipboard", "OpenWebsites", "OrganizeLibrary"], metavar="ACTION",
                   help="What to do with the report when mods are still missing or a download failed; "
                        "give any of: OpenReport=open it, CopyToClipboard=copy the failed mod GUIDs, one per line, "
                        "OpenWebsites=open the --website-urls in the browser, "
-                       "ManageLibrary=open Manage Library on the same folders and cache setting. "
+                       "OrganizeLibrary=open Organize Library on the same folders and cache setting. "
                        "Pass the flag with no actions to do neither. Default: the setting in the config "
                        "(both)"),
             Value("--modpack-mode", key="SideloaderModpack", ignore_blank=True, default=None,
@@ -558,7 +558,7 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
     ),
 
     TaskSpec(
-        name="ManageLibrary", command="manage-library",
+        name="OrganizeLibrary", command="organize-library",
         help="Open one library window to sort scenes, characters and coordinates into folders by hand, "
              "as tabs (Scene, Character, Outfit)",
         description=(
@@ -572,9 +572,9 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             "To Delete); when the window closes the To Archive cards are archived with Archive Cards "
             "(--archive-* options)."
         ),
-        target="kkafio.tasks.manage_library:ManageLibrary",
+        target="kkafio.tasks.organize_library:OrganizeLibrary",
         # InstalledModsDir / DownloadedModsDir are combined from several flags in the hook.
-        prepare=_manage_library_prepare,
+        prepare=_organize_library_prepare,
         options=(
             Toggle("check-shared-mods", key="CheckSharedMods",
                    help="When the library closes, cards in To Delete are deleted with Delete Cards; "
@@ -588,10 +588,10 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
             Value("--archive-output-dir", key="ArchiveOutputPath", ignore_blank=True, metavar="DIR",
                   default=None,
                   help="Where the To Archive cards are archived when the library closes "
-                       "(default: ManageLibrary.ArchiveOutputPath from config)"),
+                       "(default: OrganizeLibrary.ArchiveOutputPath from config)"),
             Value("--archive-format", key="ArchiveFormat", choices=["7z", "zip", "copy"], default=None,
                   help="Archive format for the To Archive cards, or 'copy' to copy the files flat into the "
-                       "output directory instead of archiving them (default: ManageLibrary.ArchiveFormat "
+                       "output directory instead of archiving them (default: OrganizeLibrary.ArchiveFormat "
                        "from config)"),
             Toggle("archive-combined", key="ArchiveCombined",
                    help="Put all To Archive cards in one archive (default: on)",

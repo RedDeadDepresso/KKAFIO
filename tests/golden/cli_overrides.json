@@ -3400,7 +3400,7 @@
    "--no-coord",
    "--no-use-cache",
    "--on-failed-downloads",
-   "ManageLibrary",
+   "OrganizeLibrary",
    "--modpack-mode",
    "All",
    "--telegram-sources",
@@ -3421,7 +3421,7 @@
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
       "on_failed_downloads": [
-       "ManageLibrary"
+       "OrganizeLibrary"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
@@ -4825,9 +4825,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library": {
+ "configured: organize-library": {
   "argv": [
-   "manage-library"
+   "organize-library"
   ],
   "result": {
    "events": [
@@ -4850,11 +4850,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -4864,9 +4864,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --archive-output-dir=<blank>": {
+ "configured: organize-library --archive-output-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-output-dir",
    ""
   ],
@@ -4891,11 +4891,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -4905,9 +4905,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --chara-dir=<blank>": {
+ "configured: organize-library --chara-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--chara-dir",
    ""
   ],
@@ -4932,11 +4932,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -4946,9 +4946,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --coord-dir=<blank>": {
+ "configured: organize-library --coord-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--coord-dir",
    ""
   ],
@@ -4973,11 +4973,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -4987,9 +4987,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --downloaded-mods-dir=<blank>": {
+ "configured: organize-library --downloaded-mods-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--downloaded-mods-dir",
    ""
   ],
@@ -5014,11 +5014,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -5028,9 +5028,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --installed-mods-dir=<blank>": {
+ "configured: organize-library --installed-mods-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--installed-mods-dir",
    ""
   ],
@@ -5055,11 +5055,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -5069,9 +5069,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --mods-dir=<blank>": {
+ "configured: organize-library --mods-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--mods-dir",
    ""
   ],
@@ -5096,11 +5096,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -5110,9 +5110,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library --scene-dir=<blank>": {
+ "configured: organize-library --scene-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--scene-dir",
    ""
   ],
@@ -5137,11 +5137,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -5151,9 +5151,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library [all-first]": {
+ "configured: organize-library [all-first]": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--check-shared-mods",
    "--include-coordinates",
    "--archive-output-dir",
@@ -5199,11 +5199,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -5213,9 +5213,9 @@
   },
   "world": "configured"
  },
- "configured: manage-library [all-last]": {
+ "configured: organize-library [all-last]": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-check-shared-mods",
    "--no-include-coordinates",
    "--archive-output-dir",
@@ -5261,11 +5261,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -9916,11 +9916,11 @@
   },
   "world": "default"
  },
- "download-missing-mods --on-failed-downloads=ManageLibrary": {
+ "download-missing-mods --on-failed-downloads=OrganizeLibrary": {
   "argv": [
    "download-missing-mods",
    "--on-failed-downloads",
-   "ManageLibrary"
+   "OrganizeLibrary"
   ],
   "result": {
    "events": [
@@ -9937,7 +9937,7 @@
       "installed_mods_dir_str": "",
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
-       "ManageLibrary"
+       "OrganizeLibrary"
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
@@ -10559,7 +10559,7 @@
    "--no-coord",
    "--no-use-cache",
    "--on-failed-downloads",
-   "ManageLibrary",
+   "OrganizeLibrary",
    "--modpack-mode",
    "All",
    "--telegram-sources",
@@ -10580,7 +10580,7 @@
       "installed_mods_dir_str": "S_installed_mods_dir",
       "modpack_mode": "All",
       "on_failed_downloads": [
-       "ManageLibrary"
+       "OrganizeLibrary"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
@@ -15769,9 +15769,9 @@
   },
   "world": "default"
  },
- "manage-library": {
+ "organize-library": {
   "argv": [
-   "manage-library"
+   "organize-library"
   ],
   "result": {
    "events": [
@@ -15794,11 +15794,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -15808,9 +15808,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-combined": {
+ "organize-library --archive-combined": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-combined"
   ],
   "result": {
@@ -15834,11 +15834,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -15848,9 +15848,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-format=7z": {
+ "organize-library --archive-format=7z": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-format",
    "7z"
   ],
@@ -15875,11 +15875,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -15889,9 +15889,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-format=copy": {
+ "organize-library --archive-format=copy": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-format",
    "copy"
   ],
@@ -15916,11 +15916,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -15930,9 +15930,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-format=zip": {
+ "organize-library --archive-format=zip": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-format",
    "zip"
   ],
@@ -15957,11 +15957,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -15971,9 +15971,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-include-coordinates": {
+ "organize-library --archive-include-coordinates": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-include-coordinates"
   ],
   "result": {
@@ -15997,11 +15997,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16011,9 +16011,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-include-modpack": {
+ "organize-library --archive-include-modpack": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-include-modpack"
   ],
   "result": {
@@ -16037,11 +16037,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16051,9 +16051,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-open-folder": {
+ "organize-library --archive-open-folder": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-open-folder"
   ],
   "result": {
@@ -16077,11 +16077,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16091,9 +16091,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-output-dir=<blank>": {
+ "organize-library --archive-output-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-output-dir",
    ""
   ],
@@ -16118,11 +16118,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16132,9 +16132,9 @@
   },
   "world": "default"
  },
- "manage-library --archive-output-dir=S_archive_output_dir": {
+ "organize-library --archive-output-dir=S_archive_output_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--archive-output-dir",
    "S_archive_output_dir"
   ],
@@ -16159,11 +16159,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16173,9 +16173,9 @@
   },
   "world": "default"
  },
- "manage-library --chara-dir=<blank>": {
+ "organize-library --chara-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--chara-dir",
    ""
   ],
@@ -16200,11 +16200,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16214,9 +16214,9 @@
   },
   "world": "default"
  },
- "manage-library --chara-dir=S_chara_dir": {
+ "organize-library --chara-dir=S_chara_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--chara-dir",
    "S_chara_dir"
   ],
@@ -16241,11 +16241,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16255,9 +16255,9 @@
   },
   "world": "default"
  },
- "manage-library --check-shared-mods": {
+ "organize-library --check-shared-mods": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--check-shared-mods"
   ],
   "result": {
@@ -16281,11 +16281,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16295,9 +16295,9 @@
   },
   "world": "default"
  },
- "manage-library --coord-dir=<blank>": {
+ "organize-library --coord-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--coord-dir",
    ""
   ],
@@ -16322,11 +16322,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16336,9 +16336,9 @@
   },
   "world": "default"
  },
- "manage-library --coord-dir=S_coord_dir": {
+ "organize-library --coord-dir=S_coord_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--coord-dir",
    "S_coord_dir"
   ],
@@ -16363,11 +16363,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16377,9 +16377,9 @@
   },
   "world": "default"
  },
- "manage-library --downloaded-mods-dir=<blank>": {
+ "organize-library --downloaded-mods-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--downloaded-mods-dir",
    ""
   ],
@@ -16404,11 +16404,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16418,9 +16418,9 @@
   },
   "world": "default"
  },
- "manage-library --downloaded-mods-dir=S_downloaded_mods_dir": {
+ "organize-library --downloaded-mods-dir=S_downloaded_mods_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--downloaded-mods-dir",
    "S_downloaded_mods_dir"
   ],
@@ -16445,11 +16445,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16459,9 +16459,9 @@
   },
   "world": "default"
  },
- "manage-library --include-coordinates": {
+ "organize-library --include-coordinates": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--include-coordinates"
   ],
   "result": {
@@ -16485,11 +16485,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16499,9 +16499,9 @@
   },
   "world": "default"
  },
- "manage-library --installed-mods-dir=<blank>": {
+ "organize-library --installed-mods-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--installed-mods-dir",
    ""
   ],
@@ -16526,11 +16526,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16540,9 +16540,9 @@
   },
   "world": "default"
  },
- "manage-library --installed-mods-dir=S_installed_mods_dir": {
+ "organize-library --installed-mods-dir=S_installed_mods_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--installed-mods-dir",
    "S_installed_mods_dir"
   ],
@@ -16567,11 +16567,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16581,9 +16581,9 @@
   },
   "world": "default"
  },
- "manage-library --mods-dir=<blank>": {
+ "organize-library --mods-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--mods-dir",
    ""
   ],
@@ -16608,11 +16608,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16622,9 +16622,9 @@
   },
   "world": "default"
  },
- "manage-library --mods-dir=S_mods_dir": {
+ "organize-library --mods-dir=S_mods_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--mods-dir",
    "S_mods_dir"
   ],
@@ -16649,11 +16649,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16663,9 +16663,9 @@
   },
   "world": "default"
  },
- "manage-library --no-archive-combined": {
+ "organize-library --no-archive-combined": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-archive-combined"
   ],
   "result": {
@@ -16689,11 +16689,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16703,9 +16703,9 @@
   },
   "world": "default"
  },
- "manage-library --no-archive-include-coordinates": {
+ "organize-library --no-archive-include-coordinates": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-archive-include-coordinates"
   ],
   "result": {
@@ -16729,11 +16729,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16743,9 +16743,9 @@
   },
   "world": "default"
  },
- "manage-library --no-archive-include-modpack": {
+ "organize-library --no-archive-include-modpack": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-archive-include-modpack"
   ],
   "result": {
@@ -16769,11 +16769,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16783,9 +16783,9 @@
   },
   "world": "default"
  },
- "manage-library --no-archive-open-folder": {
+ "organize-library --no-archive-open-folder": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-archive-open-folder"
   ],
   "result": {
@@ -16809,11 +16809,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16823,9 +16823,9 @@
   },
   "world": "default"
  },
- "manage-library --no-check-shared-mods": {
+ "organize-library --no-check-shared-mods": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-check-shared-mods"
   ],
   "result": {
@@ -16849,11 +16849,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16863,9 +16863,9 @@
   },
   "world": "default"
  },
- "manage-library --no-include-coordinates": {
+ "organize-library --no-include-coordinates": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-include-coordinates"
   ],
   "result": {
@@ -16889,11 +16889,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16903,9 +16903,9 @@
   },
   "world": "default"
  },
- "manage-library --no-use-cache": {
+ "organize-library --no-use-cache": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-use-cache"
   ],
   "result": {
@@ -16929,11 +16929,11 @@
       "scene_dir_str": "",
       "use_cache": false
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16943,9 +16943,9 @@
   },
   "world": "default"
  },
- "manage-library --scene-dir=<blank>": {
+ "organize-library --scene-dir=<blank>": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--scene-dir",
    ""
   ],
@@ -16970,11 +16970,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -16984,9 +16984,9 @@
   },
   "world": "default"
  },
- "manage-library --scene-dir=S_scene_dir": {
+ "organize-library --scene-dir=S_scene_dir": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--scene-dir",
    "S_scene_dir"
   ],
@@ -17011,11 +17011,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -17025,9 +17025,9 @@
   },
   "world": "default"
  },
- "manage-library --use-cache": {
+ "organize-library --use-cache": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--use-cache"
   ],
   "result": {
@@ -17051,11 +17051,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -17065,9 +17065,9 @@
   },
   "world": "default"
  },
- "manage-library [all-first]": {
+ "organize-library [all-first]": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--check-shared-mods",
    "--include-coordinates",
    "--archive-output-dir",
@@ -17113,11 +17113,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {
@@ -17127,9 +17127,9 @@
   },
   "world": "default"
  },
- "manage-library [all-last]": {
+ "organize-library [all-last]": {
   "argv": [
-   "manage-library",
+   "organize-library",
    "--no-check-shared-mods",
    "--no-include-coordinates",
    "--archive-output-dir",
@@ -17175,11 +17175,11 @@
       "scene_dir_str": "S_scene_dir",
       "use_cache": false
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     }
    ],
    "outcome": {

@@ -45,7 +45,7 @@ $FolderTasks = @(
     [ordered]@{ Id = 'FilterConvertKKS';       Cli = 'filter-convert-kks';       ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'FilterDuplicateContents'; Cli = 'filter-duplicate-contents'; ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --mods-dir "{P}" --overlays-dir "{P}"' }
     [ordered]@{ Id = 'DownloadMissingMods';     Cli = 'download-missing-mods';     ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --downloaded-mods-dir "{P}"' }
-    [ordered]@{ Id = 'ManageLibrary';          Cli = 'manage-library';           ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --downloaded-mods-dir "{P}"' }
+    [ordered]@{ Id = 'OrganizeLibrary';        Cli = 'organize-library';         ArgsTemplate = '--chara-dir "{P}" --scene-dir "{P}" --coord-dir "{P}" --downloaded-mods-dir "{P}"' }
     [ordered]@{ Id = 'CompressCardTextures';   Cli = 'compress-card-textures';   ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'InstallContents';         Cli = 'install-contents';          ArgsTemplate = '--input "{P}"' }
     [ordered]@{ Id = 'UninstallContents';       Cli = 'uninstall-contents';        ArgsTemplate = '--input "{P}"' }
@@ -59,8 +59,8 @@ $FolderTasks = @(
 # Always registered, not part of the numbered picker: GUI shortcut, plus the
 # two PNG-file-association commands (different registry root/context).
 $RunGuiTask   = [ordered]@{ Id = 'RunGUI' }
-# Manage Library on the game's own folders (no folder arguments); always registered, right above Run GUI.
-$GameLibraryTask = [ordered]@{ Id = 'ManageLibraryGame'; Cli = 'manage-library'; ArgsTemplate = '' }
+# Organize Library on the game's own folders (no folder arguments); always registered, right above Run GUI.
+$GameLibraryTask = [ordered]@{ Id = 'OrganizeLibraryGame'; Cli = 'organize-library'; ArgsTemplate = '' }
 $PngTasks = @(
     [ordered]@{ Id = 'ArchiveCards'; Cli = 'archive-cards'; ArgsTemplate = '"{P}" --context-menu' }
     [ordered]@{ Id = 'DeleteCards';  Cli = 'delete-cards';  ArgsTemplate = '"{P}" --context-menu' }
@@ -76,7 +76,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 Filter & Convert KKS Cards"
         FilterDuplicateContents = "🧹 Filter Duplicate Contents"
         DownloadMissingMods     = "📥 Download Missing Mods"
-        ManageLibrary           = "🖼️ Manage Library (This Folder)"
+        OrganizeLibrary         = "🖼️ Organize Library (This Folder)"
         CompressCardTextures   = "🗜️ Compress Card Textures"
         InstallContents         = "📦 Install Contents"
         UninstallContents       = "↩️ Uninstall Contents"
@@ -85,7 +85,7 @@ $Labels = @{
         UngroupCards            = "📂 Ungroup Cards"
         RenameChara             = "✏️ Rename Characters"
         ReviewSimilarChara      = "🔎 Review Similar Characters"
-        ManageLibraryGame       = "🖼️ Manage Library (Game Folders)"
+        OrganizeLibraryGame     = "🖼️ Organize Library (Game Folders)"
         RunGUI                  = "▶️ Run GUI"
         ArchiveCards            = "🎁 Archive Cards"
         DeleteCards             = "🗑️ Delete Cards"
@@ -94,7 +94,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 过滤并转换 KKS 卡片"
         FilterDuplicateContents = "🧹 过滤重复内容"
         DownloadMissingMods     = "📥 下载缺失模组"
-        ManageLibrary           = "🖼️ 管理图库（此文件夹）"
+        OrganizeLibrary         = "🖼️ 整理图库（此文件夹）"
         CompressCardTextures   = "🗜️ 压缩卡片纹理"
         InstallContents         = "📦 安装内容"
         UninstallContents       = "↩️ 卸载内容"
@@ -103,7 +103,7 @@ $Labels = @{
         UngroupCards            = "📂 取消分组卡片"
         RenameChara             = "✏️ 重命名角色"
         ReviewSimilarChara      = "🔎 审查相似角色"
-        ManageLibraryGame       = "🖼️ 管理图库（游戏文件夹）"
+        OrganizeLibraryGame     = "🖼️ 整理图库（游戏文件夹）"
         RunGUI                  = "▶️ 启动图形界面"
         ArchiveCards            = "🎁 归档卡片"
         DeleteCards             = "🗑️ 删除卡片"
@@ -112,7 +112,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 過濾並轉換 KKS 卡片"
         FilterDuplicateContents = "🧹 過濾重複內容"
         DownloadMissingMods     = "📥 下載遺失模組"
-        ManageLibrary           = "🖼️ 管理圖庫（此資料夾）"
+        OrganizeLibrary         = "🖼️ 整理圖庫（此資料夾）"
         CompressCardTextures   = "🗜️ 壓縮卡片紋理"
         InstallContents         = "📦 安裝內容"
         UninstallContents       = "↩️ 解除安裝內容"
@@ -121,7 +121,7 @@ $Labels = @{
         UngroupCards            = "📂 取消分組卡片"
         RenameChara             = "✏️ 重新命名角色"
         ReviewSimilarChara      = "🔎 檢視相似角色"
-        ManageLibraryGame       = "🖼️ 管理圖庫（遊戲資料夾）"
+        OrganizeLibraryGame     = "🖼️ 整理圖庫（遊戲資料夾）"
         RunGUI                  = "▶️ 啟動圖形介面"
         ArchiveCards            = "🎁 歸檔卡片"
         DeleteCards             = "🗑️ 刪除卡片"
@@ -130,7 +130,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 KKSカードのフィルタと変換"
         FilterDuplicateContents = "🧹 重複コンテンツをフィルタ"
         DownloadMissingMods     = "📥 不足しているMODをダウンロード"
-        ManageLibrary           = "🖼️ ライブラリを管理（このフォルダー）"
+        OrganizeLibrary         = "🖼️ ライブラリを整理（このフォルダー）"
         CompressCardTextures   = "🗜️ カードテクスチャを圧縮"
         InstallContents         = "📦 コンテンツをインストール"
         UninstallContents       = "↩️ コンテンツをアンインストール"
@@ -139,7 +139,7 @@ $Labels = @{
         UngroupCards            = "📂 カードのグループ化を解除"
         RenameChara             = "✏️ キャラをリネーム"
         ReviewSimilarChara      = "🔎 類似キャラを確認"
-        ManageLibraryGame       = "🖼️ ライブラリを管理（ゲームのフォルダー）"
+        OrganizeLibraryGame     = "🖼️ ライブラリを整理（ゲームのフォルダー）"
         RunGUI                  = "▶️ GUIを起動"
         ArchiveCards            = "🎁 カードをアーカイブ"
         DeleteCards             = "🗑️ カードを削除"
@@ -148,7 +148,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 KKS 카드 필터 및 변환"
         FilterDuplicateContents = "🧹 중복 콘텐츠 필터"
         DownloadMissingMods     = "📥 누락된 모드 다운로드"
-        ManageLibrary           = "🖼️ 라이브러리 관리(이 폴더)"
+        OrganizeLibrary         = "🖼️ 라이브러리 정리(이 폴더)"
         CompressCardTextures   = "🗜️ 카드 텍스처 압축"
         InstallContents         = "📦 콘텐츠 설치"
         UninstallContents       = "↩️ 콘텐츠 제거"
@@ -157,7 +157,7 @@ $Labels = @{
         UngroupCards            = "📂 카드 그룹 해제"
         RenameChara             = "✏️ 캐릭터 이름 변경"
         ReviewSimilarChara      = "🔎 비슷한 캐릭터 검토"
-        ManageLibraryGame       = "🖼️ 라이브러리 관리(게임 폴더)"
+        OrganizeLibraryGame     = "🖼️ 라이브러리 정리(게임 폴더)"
         RunGUI                  = "▶️ GUI 실행"
         ArchiveCards            = "🎁 카드 보관"
         DeleteCards             = "🗑️ 카드 삭제"
@@ -166,7 +166,7 @@ $Labels = @{
         FilterConvertKKS        = "🔧 Фильтр и конвертация карточек KKS"
         FilterDuplicateContents = "🧹 Фильтр дублирующегося содержимого"
         DownloadMissingMods     = "📥 Загрузить недостающие моды"
-        ManageLibrary           = "🖼️ Управление библиотекой (эта папка)"
+        OrganizeLibrary         = "🖼️ Упорядочить библиотеку (эта папка)"
         CompressCardTextures   = "🗜️ Сжать текстуры карточек"
         InstallContents         = "📦 Установить содержимое"
         UninstallContents       = "↩️ Удалить содержимое"
@@ -175,7 +175,7 @@ $Labels = @{
         UngroupCards            = "📂 Разгруппировать карточки"
         RenameChara             = "✏️ Переименовать персонажей"
         ReviewSimilarChara      = "🔎 Проверить похожих персонажей"
-        ManageLibraryGame       = "🖼️ Управление библиотекой (папки игры)"
+        OrganizeLibraryGame     = "🖼️ Упорядочить библиотеку (папки игры)"
         RunGUI                  = "▶️ Запустить графический интерфейс"
         ArchiveCards            = "🎁 Архивировать карточки"
         DeleteCards             = "🗑️ Удалить карточки"
@@ -395,7 +395,7 @@ foreach ($n in $SelectedTasks) {
     $index++
 }
 
-# "Manage Library (Game Folders)" always goes right above "Run GUI".
+# "Organize Library (Game Folders)" always goes right above "Run GUI".
 $gameKeyName = "{0:D2}{1}" -f $index, $GameLibraryTask.Id
 $gameLabel = $L[$GameLibraryTask.Id]
 New-MenuItem -ShellPath (Join-Path $FolderRoot 'shell') -KeyName $gameKeyName -Label $gameLabel `

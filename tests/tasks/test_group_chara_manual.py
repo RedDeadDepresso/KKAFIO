@@ -1,4 +1,4 @@
-"""Group Characters' manual library (opened from Manage Library): the library's data (scan, series folder
+"""Group Characters' manual library (opened from Organize Library): the library's data (scan, series folder
 names, suggestions, moving) and the library model. Group Characters itself always runs the LLM
 workflow. The window itself is in test_library_gui.py."""
 

@@ -46,7 +46,7 @@ TASK_CLASSES: dict[str, tuple[str, str]] = {
     "GroupScenes":              ("kkafio.tasks.group_scenes", "GroupScenes"),
     "GroupChara":              ("kkafio.tasks.group_chara", "GroupChara"),
     "GroupCoordinates":        ("kkafio.tasks.group_coordinates", "GroupCoordinates"),
-    "ManageLibrary":              ("kkafio.tasks.manage_library", "ManageLibrary"),
+    "OrganizeLibrary":              ("kkafio.tasks.organize_library", "OrganizeLibrary"),
     "UngroupCards":            ("kkafio.tasks.ungroup_cards", "UngroupCards"),
     "RenameChara":             ("kkafio.tasks.rename_chara", "RenameChara"),
     "ArchiveCards":            ("kkafio.tasks.archive_cards", "ArchiveCards"),

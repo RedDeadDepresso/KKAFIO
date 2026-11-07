@@ -3,7 +3,7 @@ folder_names.py — Turning a name into a folder name that is safe to create.
 
 Used wherever a name that isn't ours becomes a folder: the series an LLM or the user typed (Group
 Characters), a character's filename (Group Coordinates) and a scene author (Group Scenes), in the
-automatic tasks and in the Manage Library tabs.
+automatic tasks and in the Organize Library tabs.
 """
 
 # Windows reserved device names — illegal as a folder name with or without

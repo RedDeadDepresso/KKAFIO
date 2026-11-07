@@ -1,4 +1,4 @@
-"""The tabbed library window (Manage Library). Needs a display (xvfb-run); skipped without one."""
+"""The tabbed library window (Organize Library). Needs a display (xvfb-run); skipped without one."""
 
 import pytest
 

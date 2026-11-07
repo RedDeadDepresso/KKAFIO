@@ -1,11 +1,11 @@
 """
-window — The library window of Manage Library (scenes, characters, outfits).
+window — The library window of Organize Library (scenes, characters, outfits).
 
 This module is the window: it draws the tabs and knows nothing about characters, coordinates or
 scenes. The submodules are the tabs' data and callbacks: characters.py (series folders),
 coordinates.py (character folders), scenes.py (author folders) and common.py (what the three
 share). Each scans its cards, suggests folder names, moves a card when a name is confirmed and
-returns a `LibraryTab` for `library_dialog()`. Imports run one way: tasks/manage_library.py ->
+returns a `LibraryTab` for `library_dialog()`. Imports run one way: tasks/organize_library.py ->
 dialogs/library/<tab> -> tasks/group_*; the Group tasks never import this package.
 
 A browser-style window: a search bar on top, a sidebar (All characters, Unknown series and the series
@@ -35,7 +35,7 @@ The dialog doesn't know what a "series" is: a card's `series` is just the folder
 characters); the others pass their own `DialogText` (see library/common.py).
 Moving and suggesting are callbacks, so a task only has to supply `items`, `suggest` and `assign`.
 
-`library_dialog()` puts several of these libraries in one window (Manage Library: scenes, characters,
+`library_dialog()` puts several of these libraries in one window (Organize Library: scenes, characters,
 outfits): a tab bar on the left of the search input switches between them, each tab keeping its own
 sidebar, search text, sort, selection and scroll position. `manual_dialog()` is the one-library case.
 """
@@ -373,11 +373,11 @@ def library_dialog(title: str, tabs: Sequence[LibraryTab], initial: int = 0,
     listing the mods of the card under the cursor; None leaves it out.
 
     `on_delete` receives the paths of the cards left in the libraries' To Delete lists when the window closes
-    normally, and deletes them itself (Manage Library hands them to Delete Cards); None sends them to
+    normally, and deletes them itself (Organize Library hands them to Delete Cards); None sends them to
     the Recycle Bin.
 
     `on_archive` receives the paths of the cards left in the libraries' To Archive lists when the
-    window closes normally (Manage Library hands them to Archive Cards); None leaves the list
+    window closes normally (Organize Library hands them to Archive Cards); None leaves the list
     alone, nothing is archived."""
     if not tabs:
         raise ValueError("library_dialog needs at least one tab")

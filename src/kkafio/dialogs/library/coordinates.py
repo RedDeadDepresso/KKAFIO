@@ -1,5 +1,5 @@
 """
-coordinates.py — The Outfit tab of Manage Library: coordinate cards sorted into character folders by hand.
+coordinates.py — The Outfit tab of Organize Library: coordinate cards sorted into character folders by hand.
 
 The user names a character for a coordinate and the card is moved into <coordinate folder>/<name>/
 at once. The suggestions are the folders that exist plus the filenames of the character cards.

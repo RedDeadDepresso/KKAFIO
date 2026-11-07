@@ -1,5 +1,5 @@
 """
-manage_library.py — One library window for the three kinds of card: scenes, characters, outfits.
+organize_library.py — One library window for the three kinds of card: scenes, characters, outfits.
 
 It is where scenes, characters and outfits are sorted by hand (Group Scenes, Group Characters and
 Group Coordinates only run automatically / with the LLM), side by side in a single dialog. Tabs on
@@ -49,10 +49,10 @@ from kkafio.tasks.base_task import BaseTask, open_in_default_app, resolve_chara_
 TAG = "LIBRARY"
 
 
-class ManageLibrary(BaseTask):
+class OrganizeLibrary(BaseTask):
     def __init__(self, config, file_manager):
         super().__init__(config, file_manager)
-        cfg = self.config.manage_library
+        cfg = self.config.organize_library
         self.chara_dir_str : str  = cfg.get("CharaDir", "")
         self.scene_dir_str : str  = cfg.get("SceneDir", "")
         self.coord_dir_str : str  = cfg.get("CoordDir", "")

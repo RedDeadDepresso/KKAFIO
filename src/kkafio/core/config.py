@@ -145,7 +145,7 @@ _TASK_KEY = {
     "GroupScenes": "GroupScenes",
     "GroupChara": "GroupChara",
     "GroupCoordinates": "GroupCoordinates",
-    "ManageLibrary": "ManageLibrary",
+    "OrganizeLibrary": "OrganizeLibrary",
     "UngroupCards": "UngroupCards",
     "RenameChara": "RenameChara",
     "ArchiveCards": "ArchiveCards",
@@ -167,7 +167,7 @@ _TASK_DEFAULTS = {
     "GroupScenes": {"Enable": False, "IncludeSubfolders": False, "SubgroupByYear": True, "UseCache": True, "SceneDir": ""},
     "GroupChara": {"Enable": False, "IncludeSubfolders": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://claude.ai/", "PromptLanguage": "en_us", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from.\n\nA value is either an empty string \"\" or an object {\"series\": \"\", \"hints\": [...]}. \"hints\" lists up to 5 candidate characters from a character database, written \"Last, First (Series)\", most popular first. They are only name matches and can be wrong: use the one that fits the personality and hair colour, and ignore the list if none does.\n\nRules:\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Some characters may be VTubers (virtual YouTubers). Use \"VTubers\" as the series for them.\n- If you use a hint whose series is not in English, translate it into English.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you do not recognise a character and can search the web, look it up online first.\n- If you are still not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY a JSON object that maps every key to the series name as a plain string (do not repeat \"hints\") — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n", "HintsLanguage": "detect", "ResolveLocally": True, "UseCache": True, "CharaDir": ""},
     "GroupCoordinates": {"Enable": False, "IncludeSubfolders": False, "ClothesTolerance": 1, "IgnoreAccessories": True, "GroupByHair": True, "UseCache": True, "CharaDir": "", "CoordDir": ""},
-    "ManageLibrary": {"Enable": False, "ArchiveOutputPath": "C:/KKAFIO/Archived Cards", "ArchiveFormat": "7z", "ArchiveCombined": True, "ArchiveIncludeModpack": False, "ArchiveIncludeCoordinates": True, "ArchiveOpenFolder": True, "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "InstalledModsDir": "", "DownloadedModsDir": ""},
+    "OrganizeLibrary": {"Enable": False, "ArchiveOutputPath": "C:/KKAFIO/Archived Cards", "ArchiveFormat": "7z", "ArchiveCombined": True, "ArchiveIncludeModpack": False, "ArchiveIncludeCoordinates": True, "ArchiveOpenFolder": True, "CheckSharedMods": True, "IncludeCoordinates": True, "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "InstalledModsDir": "", "DownloadedModsDir": ""},
     "UngroupCards": {"Enable": False, "InputPath": "", "Chara": True, "Scenes": True, "Coords": True, "DeleteEmptyFolders": True},
     "RenameChara": {"Enable": False, "SkipAlreadyRenamed": True, "RenameFiles": True, "UpdateMetadata": False, "OpenLlmWebsite": True, "LlmWebsiteUrl": "https://claude.ai/", "PromptLanguage": "en_us", "Prompt": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's English name.\n\nRules:\n- Use the name the character is commonly known by, not a literal reading of the card.\n- If you do not recognise the character or are not confident, search the web for\n  it if you can. If you still do not know, fall back to your best transliteration\n  of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the\n  name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- An entry may have a \"hints\" list: up to 5 candidate characters from a character\n  database, written \"Last, First (Series)\", most popular first. They are only name\n  matches and can be wrong: use the one that fits the personality and hair colour (take\n  its name from it), and ignore the list if none does. Do not repeat \"hints\" in\n  your answer.\n- Some characters may be VTubers (virtual YouTubers); their hints are written with the series\n  \"VTubers\". Use the name from the hint.\n- If you use a hint whose name is not in English, translate it into English.\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n", "HintsLanguage": "detect", "ResolveLocally": True, "UseCache": True, "CharaDir": ""},
     "ArchiveCards": {"Enable": False, "OutputPath": "C:/KKAFIO/Archived Cards", "ContentPaths": [], "CombinedArchive": True, "Format": "7z", "IncludeModpack": False, "IncludeCoordinates": True, "AutoResolve": True, "UseCache": True, "CoordDir": "", "ModsDir": ""},
@@ -304,16 +304,16 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
         _set("CharaDir", "CharaDir")
         _set("CoordDir", "CoordDir")
 
-    elif task_name == "ManageLibrary":
-        _set("ArchiveOutputPath", "ManageLibraryArchiveOutputPath")
-        _set("ArchiveFormat", "ManageLibraryArchiveFormat")
-        selected = _extract_opt(opt_values, "ManageLibraryArchiveOptions")
+    elif task_name == "OrganizeLibrary":
+        _set("ArchiveOutputPath", "OrganizeLibraryArchiveOutputPath")
+        _set("ArchiveFormat", "OrganizeLibraryArchiveFormat")
+        selected = _extract_opt(opt_values, "OrganizeLibraryArchiveOptions")
         if selected is not None:
             cfg["ArchiveCombined"] = "ArchiveCombined" in selected
             cfg["ArchiveIncludeModpack"] = "ArchiveIncludeModpack" in selected
             cfg["ArchiveIncludeCoordinates"] = "ArchiveIncludeCoordinates" in selected
             cfg["ArchiveOpenFolder"] = "ArchiveOpenFolder" in selected
-        selected = _extract_opt(opt_values, "ManageLibraryDeleteOptions")
+        selected = _extract_opt(opt_values, "OrganizeLibraryDeleteOptions")
         if selected is not None:
             cfg["CheckSharedMods"] = "CheckSharedMods" in selected
             cfg["IncludeCoordinates"] = "IncludeCoordinates" in selected
@@ -649,7 +649,7 @@ class Config:
         self.group_scenes              = self.config_data["GroupScenes"]
         self.group_chara               = self.config_data["GroupChara"]
         self.group_coordinates         = self.config_data["GroupCoordinates"]
-        self.manage_library            = self.config_data["ManageLibrary"]
+        self.organize_library            = self.config_data["OrganizeLibrary"]
         self.ungroup_cards             = self.config_data["UngroupCards"]
         self.rename_chara              = self.config_data["RenameChara"]
         self.archive_cards             = self.config_data["ArchiveCards"]

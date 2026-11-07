@@ -110,7 +110,7 @@ def test_importing_the_library_modules_does_not_import_customtkinter():
     code = (
         "import sys\n"
         "import kkafio.dialogs.library.common, kkafio.dialogs.library.characters, kkafio.dialogs.library.coordinates, kkafio.dialogs.library.scenes\n"
-        "import kkafio.tasks.manage_library\n"
+        "import kkafio.tasks.organize_library\n"
         "bad = sorted(m for m in sys.modules if m == 'customtkinter')\n"
         "assert not bad, bad\n"
     )

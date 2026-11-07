@@ -1,5 +1,5 @@
 """
-scenes.py — The Scene tab of Manage Library: Studio scenes sorted into author folders by hand.
+scenes.py — The Scene tab of Organize Library: Studio scenes sorted into author folders by hand.
 
 The user names an author for a scene and the card is moved into <scene folder>/<author>/ at once.
 The suggestions are the known authors (indices/author.py) and the folders that exist. The scenes

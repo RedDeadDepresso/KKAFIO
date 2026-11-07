@@ -567,11 +567,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     },
     {
      "attrs": {
@@ -879,11 +879,11 @@
       "scene_dir_str": "",
       "use_cache": true
      },
-     "class": "ManageLibrary",
+     "class": "OrganizeLibrary",
      "enabled": true,
      "kind": "task",
      "run_kwargs": {},
-     "task": "ManageLibrary"
+     "task": "OrganizeLibrary"
     },
     {
      "attrs": {

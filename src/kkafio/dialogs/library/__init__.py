@@ -1,5 +1,5 @@
 """
-library — The Manage Library window and what each of its tabs does.
+library — The Organize Library window and what each of its tabs does.
 
     model.py        what the window shows and is told, no GUI: CharaItem, LibraryModel, DialogText,
                     LibraryTab and the file helpers behind renaming a card
@@ -17,7 +17,7 @@ library — The Manage Library window and what each of its tabs does.
     mods_panel.py   the mod dependencies sidebar's data: a card's mods and which are installed
     mods_sidebar.py the collapsible sidebar on the right that lists them (imported by window.py on use)
 
-Imports run one way: tasks/manage_library.py -> the tabs -> model.py, and the tabs -> tasks/group_*.
+Imports run one way: tasks/organize_library.py -> the tabs -> model.py, and the tabs -> tasks/group_*.
 window.py only imports model.py; the Group tasks never import this package. The names below are
 re-exported so callers can write `from kkafio.dialogs.library import library_dialog`; code that
 patches a name (tests) has to patch it in the module that uses it.

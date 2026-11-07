@@ -1379,10 +1379,10 @@
           }
         },
         {
-          "name": "ManageLibrary",
-          "label": "$option.OnFailedDownloads.case.ManageLibrary.label",
+          "name": "OrganizeLibrary",
+          "label": "$option.OnFailedDownloads.case.OrganizeLibrary.label",
           "pipeline_override": {
-            "ManageLibrary": true
+            "OrganizeLibrary": true
           }
         }
       ]
@@ -1420,10 +1420,10 @@
         }
       ]
     },
-    "ManageLibraryDeleteOptions": {
+    "OrganizeLibraryDeleteOptions": {
       "type": "checkbox",
-      "label": "$option.ManageLibraryDeleteOptions.label",
-      "description": "$option.ManageLibraryDeleteOptions.description",
+      "label": "$option.OrganizeLibraryDeleteOptions.label",
+      "description": "$option.OrganizeLibraryDeleteOptions.description",
       "default_case": ["CheckSharedMods", "IncludeCoordinates"],
       "cases": [
         {
@@ -1468,20 +1468,20 @@
         }
       ]
     },
-    "ManageLibraryArchiveOutputPath": {
+    "OrganizeLibraryArchiveOutputPath": {
       "type": "folder",
       "name": "library_archive_output_path",
-      "label": "$option.ManageLibraryArchiveOutputPath.label",
-      "description": "$option.ManageLibraryArchiveOutputPath.description",
+      "label": "$option.OrganizeLibraryArchiveOutputPath.label",
+      "description": "$option.OrganizeLibraryArchiveOutputPath.description",
       "default": "C:/KKAFIO/Archived Cards",
       "pipeline_override": {
         "ArchiveOutputPath": "{library_archive_output_path}"
       }
     },
-    "ManageLibraryArchiveFormat": {
+    "OrganizeLibraryArchiveFormat": {
       "type": "select",
-      "label": "$option.ManageLibraryArchiveFormat.label",
-      "description": "$option.ManageLibraryArchiveFormat.description",
+      "label": "$option.OrganizeLibraryArchiveFormat.label",
+      "description": "$option.OrganizeLibraryArchiveFormat.description",
       "default_case": "7z",
       "cases": [
         {
@@ -1501,10 +1501,10 @@
         "ArchiveFormat": "{case.name}"
       }
     },
-    "ManageLibraryArchiveOptions": {
+    "OrganizeLibraryArchiveOptions": {
       "type": "checkbox",
-      "label": "$option.ManageLibraryArchiveOptions.label",
-      "description": "$option.ManageLibraryArchiveOptions.description",
+      "label": "$option.OrganizeLibraryArchiveOptions.label",
+      "description": "$option.OrganizeLibraryArchiveOptions.description",
       "default_case": ["ArchiveCombined", "ArchiveIncludeCoordinates", "ArchiveOpenFolder"],
       "cases": [
         {
@@ -1774,17 +1774,17 @@
       ]
     },
     {
-      "name": "ManageLibrary",
-      "label": "$task.ManageLibrary.label",
-      "entry": "ManageLibrary",
+      "name": "OrganizeLibrary",
+      "label": "$task.OrganizeLibrary.label",
+      "entry": "OrganizeLibrary",
       "default_check": false,
-      "description": "$task.ManageLibrary.description",
+      "description": "$task.OrganizeLibrary.description",
       "group": ["card-management"],
       "option": [
-        "ManageLibraryArchiveOutputPath",
-        "ManageLibraryArchiveFormat",
-        "ManageLibraryArchiveOptions",
-        "ManageLibraryDeleteOptions",
+        "OrganizeLibraryArchiveOutputPath",
+        "OrganizeLibraryArchiveFormat",
+        "OrganizeLibraryArchiveOptions",
+        "OrganizeLibraryDeleteOptions",
         "UseCache",
         "SceneDir",
         "CharaDir",
@@ -1946,7 +1946,7 @@
           }
         },
         {
-          "name": "ManageLibrary",
+          "name": "OrganizeLibrary",
           "enabled": false,
           "option": {
             "SceneDir": "C:/KKAFIO/Downloads",
@@ -2005,7 +2005,7 @@
           "enabled": false
         },
         {
-          "name": "ManageLibrary",
+          "name": "OrganizeLibrary",
           "enabled": false
         }
       ]
@@ -2050,7 +2050,7 @@
           }
         },
         {
-          "name": "ManageLibrary",
+          "name": "OrganizeLibrary",
           "enabled": false
         },
         {

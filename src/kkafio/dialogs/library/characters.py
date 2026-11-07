@@ -1,5 +1,5 @@
 """
-characters.py — The Character tab of Manage Library: character cards sorted into series folders by hand.
+characters.py — The Character tab of Organize Library: character cards sorted into series folders by hand.
 
 The user types a series for a character and the card is moved into <chara folder>/<series>/ at
 once. The scan reads the cards with the same key cache the LLM workflow uses (group_chara.py), and

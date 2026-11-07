@@ -10,7 +10,7 @@ aren't hashed again); scenes found in the index are moved to
 null), or just <scene folder>/<author>/ when "subgroup by year" is off.
 
 Grouping by hand (typing an author for each scene in a library dialog) is not part of this task;
-it lives in the Manage Library task (see manage_library.py and dialogs/library/).
+it lives in the Organize Library task (see organize_library.py and dialogs/library/).
 """
 
 import os

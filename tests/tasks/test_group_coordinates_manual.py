@@ -1,4 +1,4 @@
-"""Group Coordinates' manual library (opened from Manage Library): the library's data (scan, folder names,
+"""Group Coordinates' manual library (opened from Organize Library): the library's data (scan, folder names,
 suggestions, moving) and the coordinate wording. Group Coordinates itself always groups automatically.
 The library itself is shared with Group Characters (test_library_gui.py)."""
 

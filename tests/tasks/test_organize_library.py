@@ -1,4 +1,4 @@
-"""Manage Library: config, registration, folder resolution and how the task assembles the tabs."""
+"""Organize Library: config, registration, folder resolution and how the task assembles the tabs."""
 
 import json
 from pathlib import Path
@@ -11,7 +11,7 @@ import conftest  # noqa: F401  (sandbox env must be set before kkafio is importe
 from kkafio.core.config import _build_task_config
 from kkafio.core.errors import InputError
 from kkafio.dialogs.library import CharaItem, LibraryTab
-from kkafio.tasks import manage_library as rg
+from kkafio.tasks import organize_library as rg
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -19,12 +19,12 @@ ROOT = Path(__file__).resolve().parents[2]
 def _task(tmp_path, game=None, **cfg):
     game_path = {"charaFemale": tmp_path / "f", "charaMale": tmp_path / "m", "coordinate": tmp_path / "c"}
     game_path.update(game or {})
-    config = SimpleNamespace(manage_library=cfg, game_path=game_path)
-    return rg.ManageLibrary(config, None)
+    config = SimpleNamespace(organize_library=cfg, game_path=game_path)
+    return rg.OrganizeLibrary(config, None)
 
 
 def test_options_to_config():
-    cfg = _build_task_config("ManageLibrary", True, {
+    cfg = _build_task_config("OrganizeLibrary", True, {
         "CharaDir": {"type": "folder", "path": "X"},
         "SceneDir": {"type": "folder", "path": "Y"},
         "CoordDir": {"type": "folder", "path": "Z"},
@@ -33,37 +33,37 @@ def test_options_to_config():
         "UseCache": {"type": "switch", "caseName": "No", "value": False}})
     assert (cfg["CharaDir"], cfg["SceneDir"], cfg["CoordDir"], cfg["InstalledModsDir"], cfg["DownloadedModsDir"]) \
         == ("X", "Y", "Z", "M", "O")
-    assert _build_task_config("ManageLibrary", True, {})["UseCache"] is True
-    assert _build_task_config("ManageLibrary", True, {})["CheckSharedMods"] is True
-    assert _build_task_config("ManageLibrary", True, {})["IncludeCoordinates"] is True
-    both = _build_task_config("ManageLibrary", True, {
-        "ManageLibraryDeleteOptions": {"type": "checkbox", "caseNames": ["CheckSharedMods", "IncludeCoordinates"]}})
+    assert _build_task_config("OrganizeLibrary", True, {})["UseCache"] is True
+    assert _build_task_config("OrganizeLibrary", True, {})["CheckSharedMods"] is True
+    assert _build_task_config("OrganizeLibrary", True, {})["IncludeCoordinates"] is True
+    both = _build_task_config("OrganizeLibrary", True, {
+        "OrganizeLibraryDeleteOptions": {"type": "checkbox", "caseNames": ["CheckSharedMods", "IncludeCoordinates"]}})
     assert (both["CheckSharedMods"], both["IncludeCoordinates"]) == (True, True)
-    one = _build_task_config("ManageLibrary", True, {
-        "ManageLibraryDeleteOptions": {"type": "checkbox", "caseNames": ["IncludeCoordinates"]}})
+    one = _build_task_config("OrganizeLibrary", True, {
+        "OrganizeLibraryDeleteOptions": {"type": "checkbox", "caseNames": ["IncludeCoordinates"]}})
     assert (one["CheckSharedMods"], one["IncludeCoordinates"]) == (False, True)
-    none = _build_task_config("ManageLibrary", True, {
-        "ManageLibraryDeleteOptions": {"type": "checkbox", "caseNames": []}})
+    none = _build_task_config("OrganizeLibrary", True, {
+        "OrganizeLibraryDeleteOptions": {"type": "checkbox", "caseNames": []}})
     assert (none["CheckSharedMods"], none["IncludeCoordinates"]) == (False, False)
 
 
 def test_interface_json_declares_the_task():
     interface = json.loads((ROOT / "interface.json").read_text(encoding="utf-8"))
-    task = next(t for t in interface["task"] if t["name"] == "ManageLibrary")
-    opt = interface["option"]["ManageLibraryDeleteOptions"]
+    task = next(t for t in interface["task"] if t["name"] == "OrganizeLibrary")
+    opt = interface["option"]["OrganizeLibraryDeleteOptions"]
     assert opt["type"] == "checkbox" and opt["default_case"] == ["CheckSharedMods", "IncludeCoordinates"]
     assert [c["name"] for c in opt["cases"]] == ["CheckSharedMods", "IncludeCoordinates"]
     for c in opt["cases"]:                       # labels and descriptions are the Delete Cards ones
         assert c["label"] == f"$option.{c['name']}.label" and c["description"] == f"$option.{c['name']}.description"
-    assert task["option"] == ["ManageLibraryDeleteOptions", "ManageLibraryArchiveOutputPath",
-                              "ManageLibraryArchiveFormat", "ManageLibraryArchiveOptions", "CharaDir", "SceneDir",
+    assert task["option"] == ["OrganizeLibraryDeleteOptions", "OrganizeLibraryArchiveOutputPath",
+                              "OrganizeLibraryArchiveFormat", "OrganizeLibraryArchiveOptions", "CharaDir", "SceneDir",
                               "CoordDir", "InstalledModsDir", "DownloadedModsDir", "UseCache"]
-    out = interface["option"]["ManageLibraryArchiveOutputPath"]
+    out = interface["option"]["OrganizeLibraryArchiveOutputPath"]
     assert out["type"] == "folder" and out["default"] == "C:/KKAFIO/Archived Cards"
-    fmt = interface["option"]["ManageLibraryArchiveFormat"]
+    fmt = interface["option"]["OrganizeLibraryArchiveFormat"]
     assert fmt["type"] == "select" and fmt["default_case"] == "7z"
     assert [c["name"] for c in fmt["cases"]] == ["7z", "zip", "copy"]
-    arch = interface["option"]["ManageLibraryArchiveOptions"]
+    arch = interface["option"]["OrganizeLibraryArchiveOptions"]
     assert arch["type"] == "checkbox" and arch["default_case"] == ["ArchiveCombined", "ArchiveIncludeCoordinates"]
     assert [c["name"] for c in arch["cases"]] == ["ArchiveCombined", "ArchiveIncludeModpack", "ArchiveIncludeCoordinates"]
 
@@ -202,14 +202,14 @@ def test_trashed_cards_are_handed_to_delete_cards_with_the_downloaded_mods_dir(t
 
 
 def test_archive_options_to_config():
-    default = _build_task_config("ManageLibrary", True, {})
+    default = _build_task_config("OrganizeLibrary", True, {})
     assert default["ArchiveOutputPath"] == "C:/KKAFIO/Archived Cards" and default["ArchiveFormat"] == "7z"
     assert (default["ArchiveCombined"], default["ArchiveIncludeModpack"], default["ArchiveIncludeCoordinates"]) \
         == (True, False, True)
-    cfg = _build_task_config("ManageLibrary", True, {
-        "ManageLibraryArchiveOutputPath": {"type": "folder", "path": "A"},
-        "ManageLibraryArchiveFormat": {"type": "select", "caseName": "zip"},
-        "ManageLibraryArchiveOptions": {"type": "checkbox", "caseNames": ["ArchiveIncludeModpack"]}})
+    cfg = _build_task_config("OrganizeLibrary", True, {
+        "OrganizeLibraryArchiveOutputPath": {"type": "folder", "path": "A"},
+        "OrganizeLibraryArchiveFormat": {"type": "select", "caseName": "zip"},
+        "OrganizeLibraryArchiveOptions": {"type": "checkbox", "caseNames": ["ArchiveIncludeModpack"]}})
     assert (cfg["ArchiveOutputPath"], cfg["ArchiveFormat"]) == ("A", "zip")
     assert (cfg["ArchiveCombined"], cfg["ArchiveIncludeModpack"], cfg["ArchiveIncludeCoordinates"]) \
         == (False, True, False)

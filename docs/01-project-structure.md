@@ -57,9 +57,9 @@ KKAFIO-dev/
 │   │   ├── group_coordinates.py
 │   │   ├── group_scenes.py
 │   │   ├── install_contents.py
+│   │   ├── organize_library.py
 │   │   ├── rename_chara.py
 │   │   ├── review_similar_chara.py
-│   │   ├── manage_library.py
 │   │   ├── ungroup_cards.py
 │   │   └── uninstall_contents.py
 │   │
@@ -101,7 +101,7 @@ KKAFIO-dev/
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── mod.py                   # kk-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
 │   │   ├── modpack.py               # kk-mod-scraper index: Sideloader Modpack: mod GUID -> download URLs (the path inside the modpack is the URL's path)
-│   │   └── author.py                # Known scene authors and their aliases (assets/indices/author.json), for the Scene library (Manage Library)
+│   │   └── author.py                # Known scene authors and their aliases (assets/indices/author.json), for the Scene library (Organize Library)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
@@ -123,7 +123,7 @@ KKAFIO-dev/
 │   │   ├── common.py                # Shared window behaviour: always-on-top, foreground, centering, show-and-wait · format_size
 │   │   ├── password_dialog.py       # Input dialog (archive passwords, session cookies)
 │   │   ├── llm.py                   # Copy/Paste dialog (Group Chara / Rename Chara)
-│   │   ├── library/                 # The Manage Library window and its tabs; imports run one way: manage_library -> dialogs/library/<tab> -> model.py, and <tab> -> tasks/group_*
+│   │   ├── library/                 # The Organize Library window and its tabs; imports run one way: organize_library -> dialogs/library/<tab> -> model.py, and <tab> -> tasks/group_*
 │   │   │   ├── __init__.py          # Re-exports the public names (library_dialog, LibraryTab, CharaItem, ...)
 │   │   │   ├── model.py             # What the window shows and is told, no GUI: CharaItem, LibraryModel, DialogText, LibraryTab, file-rename helpers · the trash and Archive queue views (cards queued with right-click > Archive / F11 are handed to Archive Cards when the window closes)
 │   │   │   ├── window.py            # The window: draws the tabs, knows nothing about characters / coordinates / scenes; library_dialog() hosts them

@@ -423,7 +423,7 @@ def test_delete_cards_accepts_explicit_settings():
 
 
 # ---------------------------------------------------------------------------
-# GUI options: one "Delete Options" checkbox group, like Manage Library's
+# GUI options: one "Delete Options" checkbox group, like Organize Library's
 # ---------------------------------------------------------------------------
 
 def test_delete_options_are_one_checkbox_group_in_interface_json():

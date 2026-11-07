@@ -1,4 +1,4 @@
-"""Group Scenes' manual library (opened from Manage Library): the authors file and the library's data (folder
+"""Group Scenes' manual library (opened from Organize Library): the authors file and the library's data (folder
 names, suggestions, moving). Group Scenes itself always groups automatically. The library itself is shared
 with Group Characters."""
 

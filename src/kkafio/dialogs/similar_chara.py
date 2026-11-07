@@ -17,7 +17,7 @@ How the lock works (one lock per group, in the group's header):
     that are still unlocked, so choices you made by hand since then are kept.
   * Keys: Left / Right (A / D) scroll a page, Up / Down (W / S) scroll a little.
 
-The list is drawn like the Manage Library grid: one plain Tk canvas, only the rows in view exist
+The list is drawn like the Organize Library grid: one plain Tk canvas, only the rows in view exist
 (a group's header, one row per card), and thumbnails are decoded on worker threads. So any
 number of groups can be shown in one scrolling list without lag; there are no pages.
 
