@@ -26,12 +26,17 @@ def msgpack_corpus() -> dict[str, bytes]:
     return out
 
 
-# Selections of the TelegramSources checkbox, by name, for telegram_sources_label().
-SOURCE_SELECTIONS: dict[str, list[str]] = {
-    "none": [],
-    "koikatsucards": ["KoikatsuCards"],
-    "chatlinks": ["ChatLinks"],
-    "both": ["KoikatsuCards", "ChatLinks"],
-    "both, reversed": ["ChatLinks", "KoikatsuCards"],
-    "unknown name": ["anything else"],
+# (selection of the Mod Sources option, "Use Telegram Chat Links" on?), by name, for mod_sources_label().
+SOURCE_SELECTIONS: dict[str, tuple[list[str], bool]] = {
+    "none": ([], False),
+    "none, chat links on": ([], True),
+    "drive": (["Drive"], False),
+    "telegram": (["Telegram"], False),
+    "telegram + chat links": (["Telegram"], True),
+    "drive + chat links (ignored)": (["Drive"], True),
+    "default order": (["Drive", "Mega", "Telegram"], False),
+    "reordered": (["Telegram", "Mega", "Drive"], False),
+    "reordered + chat links": (["Mega", "Telegram", "Drive"], True),
+    "lowercase keys, repeated": (["telegram", "drive", "Telegram"], False),
+    "unknown name": (["anything else"], False),
 }

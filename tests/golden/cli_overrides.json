@@ -2940,17 +2940,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -2984,17 +2985,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3028,17 +3030,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3072,17 +3075,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3116,17 +3120,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3160,17 +3165,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3204,17 +3210,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3248,17 +3255,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "cfg-site"
      },
      "class": "DownloadMissingMods",
@@ -3292,17 +3300,18 @@
       "coord_dir_str": "/cfg/coord",
       "downloaded_mods_dir_str": "/cfg/out-mods",
       "installed_mods_dir_str": "/cfg/in-mods",
+      "mod_sources": [
+       "Telegram",
+       "Mega"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "/cfg/scene",
       "telegram_chat_links_raw": "cfg-chat",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": ""
      },
      "class": "DownloadMissingMods",
@@ -3343,8 +3352,9 @@
    "OpenReport",
    "--modpack-mode",
    "Skip",
-   "--telegram-sources",
-   "KoikatsuCards",
+   "--mod-sources",
+   "Drive",
+   "--use-telegram-chat-links",
    "--telegram-chat-links",
    "S_telegram_chat_links",
    "--website-urls",
@@ -3359,16 +3369,17 @@
       "coord_dir_str": "S_coord_dir",
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
+      "mod_sources": [
+       "Drive"
+      ],
       "modpack_mode": "Skip",
       "on_failed_downloads": [
        "OpenReport"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
-      "telegram_sources": [
-       "KoikatsuCards"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
@@ -3409,8 +3420,9 @@
    "OrganizeLibrary",
    "--modpack-mode",
    "All",
-   "--telegram-sources",
-   "ChatLinks",
+   "--mod-sources",
+   "Telegram",
+   "--no-use-telegram-chat-links",
    "--telegram-chat-links",
    "S_telegram_chat_links",
    "--website-urls",
@@ -3425,16 +3437,17 @@
       "coord_dir_str": "S_coord_dir",
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
+      "mod_sources": [
+       "Telegram"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "OrganizeLibrary"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
-      "telegram_sources": [
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
@@ -8294,6 +8307,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8301,11 +8319,200 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "dmm --mod-sources + --no-use-telegram-chat-links": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Telegram",
+   "--no-use-telegram-chat-links"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Telegram"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": false,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "dmm --mod-sources=<all, reordered>": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Mega",
+   "Telegram",
+   "Drive"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Mega",
+       "Telegram",
+       "Drive"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "dmm --mod-sources=<none>": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "dmm --mod-sources=<two, reordered>": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Telegram",
+   "Drive"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Telegram",
+       "Drive"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8343,6 +8550,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "O",
       "installed_mods_dir_str": "M",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8350,11 +8562,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8392,6 +8601,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "M",
       "installed_mods_dir_str": "I",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8399,11 +8613,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8439,6 +8650,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "M",
       "installed_mods_dir_str": "M",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8446,11 +8662,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8484,6 +8697,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8491,11 +8709,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8528,6 +8743,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8535,11 +8755,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8573,6 +8790,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8580,11 +8802,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -8620,6 +8839,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -8627,102 +8851,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
-      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "dmm --telegram-sources=<both>": {
-  "argv": [
-   "download-missing-mods",
-   "--telegram-sources",
-   "KoikatsuCards",
-   "ChatLinks"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "downloaded_mods_dir_str": "",
-      "installed_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "on_failed_downloads": [
-       "OpenReport",
-       "CopyToClipboard"
-      ],
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
-      "use_cache": true,
-      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "dmm --telegram-sources=<none>": {
-  "argv": [
-   "download-missing-mods",
-   "--telegram-sources"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "downloaded_mods_dir_str": "",
-      "installed_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "on_failed_downloads": [
-       "OpenReport",
-       "CopyToClipboard"
-      ],
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [],
-      "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9142,6 +9272,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9149,11 +9284,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9189,6 +9321,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9196,11 +9333,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9236,6 +9370,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9243,11 +9382,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9283,6 +9419,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9290,11 +9431,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9330,6 +9468,11 @@
       "coord_dir_str": "S_coord_dir",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9337,11 +9480,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9377,6 +9517,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9384,11 +9529,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9424,6 +9566,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9431,11 +9578,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9470,6 +9614,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9477,11 +9626,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9517,6 +9663,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9524,11 +9675,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9564,6 +9712,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "S_installed_mods_dir",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9571,11 +9724,149 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --mod-sources=Drive": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Drive"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --mod-sources=Mega": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Mega"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Mega"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --mod-sources=Telegram": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Telegram"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Telegram"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9611,6 +9902,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "OpenReport",
@@ -9618,11 +9914,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9658,6 +9951,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9665,11 +9963,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9705,6 +10000,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "Skip",
       "on_failed_downloads": [
        "OpenReport",
@@ -9712,11 +10012,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9752,6 +10049,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9759,11 +10061,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9799,6 +10098,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "S_mods_dir",
       "installed_mods_dir_str": "S_mods_dir",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9806,11 +10110,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9844,6 +10145,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9851,11 +10157,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9889,6 +10192,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9896,11 +10204,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9934,6 +10239,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9941,11 +10251,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -9980,6 +10287,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -9987,11 +10299,56 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --no-use-telegram-chat-links": {
+  "argv": [
+   "download-missing-mods",
+   "--no-use-telegram-chat-links"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10027,17 +10384,19 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "CopyToClipboard"
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10073,17 +10432,19 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport"
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10119,17 +10480,19 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenWebsites"
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10165,17 +10528,19 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OrganizeLibrary"
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10211,6 +10576,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10218,11 +10588,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10258,6 +10625,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10265,11 +10637,8 @@
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10305,6 +10674,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10312,11 +10686,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10352,6 +10723,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10359,103 +10735,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "S_telegram_chat_links",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
-      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "download-missing-mods --telegram-sources=ChatLinks": {
-  "argv": [
-   "download-missing-mods",
-   "--telegram-sources",
-   "ChatLinks"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "downloaded_mods_dir_str": "",
-      "installed_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "on_failed_downloads": [
-       "OpenReport",
-       "CopyToClipboard"
-      ],
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "ChatLinks"
-      ],
-      "use_cache": true,
-      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
-     },
-     "class": "DownloadMissingMods",
-     "enabled": true,
-     "kind": "task",
-     "run_kwargs": {},
-     "task": "DownloadMissingMods"
-    }
-   ],
-   "outcome": {
-    "error": null,
-    "exit": null
-   }
-  },
-  "world": "default"
- },
- "download-missing-mods --telegram-sources=KoikatsuCards": {
-  "argv": [
-   "download-missing-mods",
-   "--telegram-sources",
-   "KoikatsuCards"
-  ],
-  "result": {
-   "events": [
-    {
-     "attrs": {
-      "chara_dir_str": "",
-      "content_types": [
-       "Chara",
-       "Scene",
-       "Coord"
-      ],
-      "coord_dir_str": "",
-      "downloaded_mods_dir_str": "",
-      "installed_mods_dir_str": "",
-      "modpack_mode": "OnlyUsed",
-      "on_failed_downloads": [
-       "OpenReport",
-       "CopyToClipboard"
-      ],
-      "scene_dir_str": "",
-      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards"
-      ],
-      "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10490,6 +10771,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10497,11 +10783,56 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --use-telegram-chat-links": {
+  "argv": [
+   "download-missing-mods",
+   "--use-telegram-chat-links"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
      },
      "class": "DownloadMissingMods",
@@ -10537,6 +10868,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10544,11 +10880,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": ""
      },
      "class": "DownloadMissingMods",
@@ -10584,6 +10917,11 @@
       "coord_dir_str": "",
       "downloaded_mods_dir_str": "",
       "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Drive",
+       "Mega",
+       "Telegram"
+      ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
        "OpenReport",
@@ -10591,11 +10929,8 @@
       ],
       "scene_dir_str": "",
       "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
-      "telegram_sources": [
-       "KoikatsuCards",
-       "ChatLinks"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
@@ -10636,8 +10971,9 @@
    "OpenReport",
    "--modpack-mode",
    "Skip",
-   "--telegram-sources",
-   "KoikatsuCards",
+   "--mod-sources",
+   "Drive",
+   "--use-telegram-chat-links",
    "--telegram-chat-links",
    "S_telegram_chat_links",
    "--website-urls",
@@ -10652,16 +10988,17 @@
       "coord_dir_str": "S_coord_dir",
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
+      "mod_sources": [
+       "Drive"
+      ],
       "modpack_mode": "Skip",
       "on_failed_downloads": [
        "OpenReport"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
-      "telegram_sources": [
-       "KoikatsuCards"
-      ],
       "use_cache": true,
+      "use_telegram_chat_links": true,
       "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",
@@ -10702,8 +11039,9 @@
    "OrganizeLibrary",
    "--modpack-mode",
    "All",
-   "--telegram-sources",
-   "ChatLinks",
+   "--mod-sources",
+   "Telegram",
+   "--no-use-telegram-chat-links",
    "--telegram-chat-links",
    "S_telegram_chat_links",
    "--website-urls",
@@ -10718,16 +11056,17 @@
       "coord_dir_str": "S_coord_dir",
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
+      "mod_sources": [
+       "Telegram"
+      ],
       "modpack_mode": "All",
       "on_failed_downloads": [
        "OrganizeLibrary"
       ],
       "scene_dir_str": "S_scene_dir",
       "telegram_chat_links_raw": "S_telegram_chat_links",
-      "telegram_sources": [
-       "ChatLinks"
-      ],
       "use_cache": false,
+      "use_telegram_chat_links": false,
       "website_urls_raw": "S_website_urls"
      },
      "class": "DownloadMissingMods",

@@ -15,12 +15,14 @@ from kkafio.indices import cache
 
 SOURCES = ("mega", "drive", "telegram")         # the keys of an entry of the index
 
-# The order Download Missing Mods tries the sources of a mod in, best first:
+# The default order to try the sources of a mod in. Download Missing Mods itself uses the order
+# (and the selection) of its "Mod Sources" option, which is the user's to change; the trade-offs:
 #   telegram  fastest (parallel MTProto download through the user's own account) and the most
-#             reliable: files stay in the archive channel and there is no per-IP quota.
+#             reliable: files stay in the archive channel and there is no per-IP quota. It needs a
+#             Telegram account, the other two don't.
 #   drive     fast and needs no account, but popular files hit Drive's download quota
 #             ("too many users have viewed or downloaded this file").
-#   mega      last: transfers are metered per IP address and stop when the quota is used up, the
+#   mega      transfers are metered per IP address and stop when the quota is used up, the
 #             data is decrypted on the fly (slower), and its links die more often.
 SOURCE_ORDER = ("telegram", "drive", "mega")
 
@@ -52,12 +54,26 @@ def _normalize_index(raw) -> ModIndex:
     return index
 
 
-def ordered_links(entry: dict[str, list[str]] | None) -> list[tuple[str, str]]:
-    """[(source, link), ...] of one mod's entry in the order to try them: by SOURCE_ORDER, and
-    in the order of the index within a source."""
+def normalize_sources(names) -> tuple[str, ...]:
+    """The sources named by `names` (the case names of the "Mod Sources" option, e.g.
+    ["Drive", "Telegram"]), as the keys of the index, in the order given. Case does not matter;
+    unknown names and repeats are dropped."""
+    out: list[str] = []
+    for name in names or ():
+        key = str(name).strip().lower()
+        if key in SOURCES and key not in out:
+            out.append(key)
+    return tuple(out)
+
+
+def ordered_links(entry: dict[str, list[str]] | None,
+                  sources: tuple[str, ...] = SOURCE_ORDER) -> list[tuple[str, str]]:
+    """[(source, link), ...] of one mod's entry in the order to try them: by `sources` (the only
+    sources used, best first; SOURCE_ORDER by default), and in the order of the index within a
+    source."""
     if not entry:
         return []
-    return [(source, url) for source in SOURCE_ORDER for url in entry.get(source, [])]
+    return [(source, url) for source in sources for url in entry.get(source, [])]
 
 
 def _load_cached_mod_index(index_path: Path) -> ModIndex | None:

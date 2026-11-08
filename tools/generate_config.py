@@ -28,6 +28,12 @@ authoritative and any option pipeline_override can't resolve is reported as
 a warning rather than guessed at. The accessor property names are derived
 by converting each task's PascalCase name to snake_case.
 
+Option type `ordered_checkbox` ({"type": "ordered_checkbox", "order": [...],
+"checked": [...]} in the saved MXU JSON) is always kept as a raw list under one
+config key: the checked case names, sorted by the user's `order`. The key is the
+option's CONFIG_KEY_OVERRIDES entry if any, else the option's own ID. Its default
+is `default_case` (a list of case names), in `cases` order.
+
 Everything else in src/kkafio/core/config.py (docstring, imports, GameType enum,
 _extract_opt, _extract_special_task_params, the Config class itself, and
 list_instances()) is genuine hand-written logic with no interface.json
@@ -65,20 +71,18 @@ def _camel_to_snake(name: str) -> str:
 # where pipeline_override's case data ("ScanChara", "ScanScene", ...)
 # doesn't match what the Python side actually stores — DownloadMissingMods
 # keeps the raw ["Chara", "Scene", ...] list under "ContentTypes" rather
-# than three separate Scan* booleans. TelegramSources works the same way:
-# the task wants ["KoikatsuCards", "ChatLinks"], not two Use* booleans.
-# OnFailedDownloads too: ["OpenReport", "CopyToClipboard"].
-CHECKBOX_AS_LIST = {"ContentTypes", "TelegramSources", "OnFailedDownloads", "OnFailedModDownloads"}
+# than three separate Scan* booleans. OnFailedDownloads works the same
+# way: ["OpenReport", "CopyToClipboard"]. (`ordered_checkbox` options need no
+# entry here: they are always kept as a list.)
+CHECKBOX_AS_LIST = {"ContentTypes", "OnFailedDownloads", "OnFailedModDownloads"}
 
 # Manual (option_id -> config_key) overrides, for the rare option whose
 # pipeline_override can't be resolved to a single target key automatically.
-# ContentTypes and TelegramSources are here because they're in
-# CHECKBOX_AS_LIST above: their pipeline_override describes separate
-# booleans (ScanChara, UseChatLinks, ...) but the real config key is the
-# option's own ID, holding the raw list.
+# ContentTypes is here because it's in CHECKBOX_AS_LIST above: its
+# pipeline_override describes separate booleans (ScanChara, ...) but the
+# real config key is the option's own ID, holding the raw list.
 CONFIG_KEY_OVERRIDES: dict[str, str] = {
     "ContentTypes": "ContentTypes",
-    "TelegramSources": "TelegramSources",
     "OnFailedDownloads": "OnFailedDownloads",
     # Download Missing Mods' own copy of the option (adds OpenWebsites); same config key.
     "OnFailedModDownloads": "OnFailedDownloads",
@@ -155,6 +159,11 @@ def _default_for(option: dict):
         return option.get("default_case") == "Yes"
     if t in ("select", "checkbox"):
         return option.get("default_case")
+    if t == "ordered_checkbox":
+        # Default order is the declared `cases` order; default_case only
+        # says which of them start out checked.
+        checked = set(option.get("default_case") or [])
+        return [c["name"] for c in option.get("cases", []) if c["name"] in checked]
     # folder / textarea / file_list
     return option.get("default", "")
 
@@ -196,6 +205,14 @@ def resolve_option(option_id: str, option: dict) -> ResolvedOption:
             lines.append(f'    cfg["{key}"] = {_pyrepr(name)} in selected')
             defaults.append((key, name in default_selected))
         return ResolvedOption("checkbox_bools", list(case_targets.values()), lines, defaults)
+
+    if t == "ordered_checkbox":
+        # Always a single list (checked names, in the user's order) — the
+        # order is the whole point, so it's never expanded into booleans.
+        config_key = CONFIG_KEY_OVERRIDES.get(option_id, option_id)
+        lines = [f'_set("{config_key}", "{option_id}")']
+        return ResolvedOption("scalar", [config_key], lines,
+                              [(config_key, _default_for(option))])
 
     # Every other type (including ContentTypes-style "keep the raw list"
     # checkboxes) is a single scalar/list value under one config key.
@@ -394,6 +411,13 @@ def _extract_opt(opt_values: dict, key: str):
         return v.get("value", False)
     if t == "checkbox":
         return v.get("caseNames", [])
+    if t == "ordered_checkbox":
+        # Checked case names, sorted by the saved `order`; names missing
+        # from `order` keep their saved relative position at the end.
+        order = v.get("order", [])
+        checked = v.get("checked", [])
+        rank = {name: i for i, name in enumerate(order)}
+        return sorted(checked, key=lambda n: rank.get(n, len(order)))
     if t == "select":
         return v.get("caseName", "")
     if t == "input":

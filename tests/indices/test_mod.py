@@ -10,7 +10,7 @@ import pytest
 
 from kkafio.core import progress
 from kkafio.indices import mod
-from kkafio.indices.mod import SOURCE_ORDER, load_mod_index, ordered_links
+from kkafio.indices.mod import SOURCE_ORDER, load_mod_index, normalize_sources, ordered_links
 from kkafio.services.mod_sources import filehosts
 
 from index_cache import age, read_meta
@@ -32,6 +32,21 @@ def test_ordered_links_keeps_the_order_of_the_index_within_a_source():
                                     ("drive", "d2"), ("mega", "m1")]
     assert ordered_links({"mega": ["m"]}) == [("mega", "m")]
     assert ordered_links({}) == [] and ordered_links(None) == []
+
+
+def test_ordered_links_follows_the_given_sources_and_only_uses_them():
+    assert [s for s, _ in ordered_links(ENTRY, ("drive", "mega", "telegram"))] == ["drive", "mega", "telegram"]
+    assert [s for s, _ in ordered_links(ENTRY, ("mega", "drive"))] == ["mega", "drive"]
+    assert ordered_links(ENTRY, ("telegram",)) == [("telegram", "https://t.me/KK_archive_modlibrary/25")]
+    assert ordered_links(ENTRY, ()) == []
+    assert ordered_links({"drive": ["d"]}, ("mega", "telegram")) == []
+
+
+def test_normalize_sources_keeps_the_order_and_drops_unknown_names_and_repeats():
+    assert normalize_sources(["Drive", "Mega", "Telegram"]) == ("drive", "mega", "telegram")
+    assert normalize_sources(["Telegram", "Drive"]) == ("telegram", "drive")
+    assert normalize_sources(["telegram", " MEGA ", "Telegram", "Dropbox", None]) == ("telegram", "mega")
+    assert normalize_sources([]) == () and normalize_sources(None) == ()
 
 
 def test_normalize_drops_whatever_is_not_a_list_of_links():

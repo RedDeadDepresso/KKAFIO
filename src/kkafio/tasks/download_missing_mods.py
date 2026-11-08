@@ -11,22 +11,22 @@ Strategy
 3. missing_local = referenced_guids - installed_mods_guids - downloaded_mods_guids
 4. Sideloader Modpack mode:
      Skip     — ignore modpack GUIDs entirely (only download local-only mods)
-     OnlyUsed — download missing GUIDs that are in the modpack index or on
-                the KKC mod index / Telegram Chat Links
+     OnlyUsed — download missing GUIDs that are in the modpack index or at
+                one of the Mod Sources
      All      — also download every GUID in the modpack index not installed
 5. For each GUID to download:
      a) In modpack index → BetterRepack (httpx, no auth)
-     b) Not in index, Telegram Sources includes KoikatsuCards → look up the
-        GUID in mod.json (kk-mod-scraper; cached in CONFIG_DIR/indices and
-        checked for updates at most once an hour). It lists links on
-        Telegram, Google Drive and Mega; they are tried in that order
-        (fastest and most reliable first, see indices/mod.py SOURCE_ORDER)
-        until one downloads the mod
-     c) Not in index (or the KKC mod index had no link / the download
-        failed), Telegram Sources includes ChatLinks → search each
-        configured Telegram Chat Links entry (channel, group, or forum
-        topic) via Telegram's server-side document search, and download
-        the first result whose filename ends in .zipmod or .zip
+     b) Not in index → look the GUID up in mod.json (kk-mod-scraper; cached in
+        CONFIG_DIR/indices and checked for updates at most once an hour). It lists links
+        on Google Drive, Mega and Telegram; the ones of the sources checked in "Mod
+        Sources" are tried in the order of that option until one downloads the mod.
+        Telegram is the only one that needs an account.
+     c) Telegram is checked and "Use Telegram Chat Links" is on → right after the
+        index's Telegram link (so in the Telegram slot of the order), search each
+        configured Telegram Chat Links entry (channel, group, or forum topic) via
+        Telegram's server-side document search, and download the first result
+        whose filename ends in .zipmod or .zip. Also used for mods the index has
+        no link for. Never used without Telegram in "Mod Sources".
      d) Otherwise → log as unresolved
 6. Everything is downloaded into the DOWNLOADED mods directory (which also
    receives the report file).
@@ -34,6 +34,7 @@ Strategy
 
 import copy
 import asyncio
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -47,7 +48,7 @@ from kkafio.core import progress
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
-from kkafio.indices.mod import load_mod_index, ordered_links
+from kkafio.indices.mod import load_mod_index, normalize_sources, ordered_links
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.services.mod_sources.betterrepack import (
     MAX_CONNECTIONS,
@@ -57,7 +58,8 @@ from kkafio.services.mod_sources.betterrepack import (
 from kkafio.services.mod_sources.filehosts import download_via_host
 from kkafio.services.mod_sources.telegram.links import (
     parse_chat_links,
-    telegram_sources_label,
+    mod_sources_label,
+    MOD_SOURCE_LABELS,
     DEFAULT_TELEGRAM_CHAT_LINKS,
 )
 from kkafio.services.mod_sources.telegram.mods import (
@@ -69,6 +71,176 @@ from kkafio.tasks.base_task import BaseTask, handle_failed_downloads, parse_webs
 
 # Where to look manually for mods that couldn't be downloaded (OnFailedDownloads=OpenWebsites).
 DEFAULT_WEBSITE_URLS = "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+
+
+# The "attempt" standing for the Telegram Chat Links search among the links of the mod index.
+CHAT_SEARCH = "chat_links"
+
+
+@asynccontextmanager
+async def _telegram_session(enabled: bool):
+    """Connect to Telegram for this run. Yields (tg_data, client, downloader), or None when
+    `enabled` is false or Telegram can't be used (no credentials, sign-in failed): the other
+    sources keep working without it.
+
+    One TelegramClient is connected once and shared by everything that talks to Telegram in the
+    run; it (and the teleget9527 downloader, if installed) is closed when the block ends.
+    """
+    if not enabled:
+        yield None
+        return
+
+    tg_data = tg_cfg.get_or_prompt()
+    if tg_data is None:
+        logger.error("DLMOD", "Telegram credentials not provided — skipping Telegram.")
+        yield None
+        return
+    # Ensure session file exists before starting downloads
+    if not await ensure_session(tg_data):
+        logger.error("DLMOD", "Telegram sign-in failed — skipping Telegram.")
+        yield None
+        return
+
+    teleget_downloader = None
+
+    # One TelegramClient, connected once and reused for
+    # every GUID in this batch (both the KKC-index
+    # metadata/fallback-download path and the Telegram
+    # Chat Links search/download path below) — this used
+    # to open and close a brand new connection per GUID
+    # per path, which for a batch of N missing mods meant
+    # up to ~2N-3N separate MTProto connect/auth round
+    # trips to Telegram for what only ever needed one.
+    from telethon import TelegramClient as _TelegramClient
+    from kkafio.core.paths import TELEGRAM_SESSION_DIR as _TG_SESSION_DIR
+    _tg_session_dir = _TG_SESSION_DIR
+    tg_client = _TelegramClient(
+        str(_tg_session_dir / "kkafio"),
+        tg_data["api_id"], tg_data["api_hash"],
+    )
+    await tg_client.connect()
+
+    # [FIX-2026-09-13-ENTITY-CACHE-WARMUP] Resolve the
+    # KK_archive_modlibrary channel by username *once*,
+    # using the primary session, before the daemon
+    # subprocess is started below.
+    #
+    # Why this is needed: every download further down
+    # this pipeline (both the per-GUID metadata lookup
+    # in download_via_teleget, and teleget9527's own
+    # daemon-side get_messages(request.chat_id, ...)
+    # call) references the channel via the raw numeric
+    # KK_ARCHIVE_CHAT_ID constant, not its username.
+    # Telethon can only turn a bare numeric peer ID
+    # into a usable InputPeer if it already has that
+    # entity's access_hash cached in the session file
+    # (populated by an earlier get_entity/get_dialogs
+    # call, or by the account having already interacted
+    # with the chat via the Telegram app itself). On a
+    # brand-new session that has never touched this
+    # channel, resolving the raw ID directly raises:
+    #   ValueError: Could not find the input entity
+    #   for PeerUser(user_id=...)
+    #
+    # The daemon's own session is a one-time copy of
+    # this primary session, taken when
+    # teleget_downloader.start() launches it just
+    # below — so if the cache isn't warmed *before*
+    # that copy happens, the daemon inherits a cold
+    # cache and hits the exact same error internally,
+    # just deeper in the pipeline and harder to
+    # diagnose. Resolving by username here (which
+    # Telethon can do via a fresh API call even with
+    # no prior cache) warms the primary session's
+    # cache first, so the copy the daemon receives is
+    # already warm, and every later raw-numeric-ID
+    # lookup — in this file and inside teleget9527 —
+    # succeeds on the very first attempt.
+    try:
+        # Warm the *shared* client's entity cache — it
+        # stays connected for the rest of this batch,
+        # so this also directly benefits every
+        # Telegram metadata lookup below, not
+        # just the daemon's copied session.
+        await tg_client.get_entity("KK_archive_modlibrary")
+        logger.info("DLMOD",
+            "Warmed entity cache for KK_archive_modlibrary")
+    except Exception as warm_err:
+        logger.warning("DLMOD",
+            f"Could not pre-warm channel entity cache "
+            f"(non-fatal, downloads may still fail on a "
+            f"cold cache): {warm_err}")
+
+    # Create TGDownloader once and reuse across all downloads,
+    # for both the KKC-index path and the Telegram Chat
+    # Links path.
+    from kkafio.core.paths import TELEGRAM_SESSION_DIR as _CFG_TG_DIR
+    _session_dir = _CFG_TG_DIR
+    try:
+        from tg_downloader import TGDownloader
+
+        # [FIX-2026-09-14-SUPPRESS-TELEGET-CONSOLE-LOGS]
+        # The download daemon runs as a separate
+        # multiprocessing child process, re-executing
+        # this frozen app fresh — kkafio_cli.py's own
+        # __main__ logic (including the console-log
+        # suppression it applies to *this* process,
+        # see suppress_teleget_console_logs()) never
+        # runs there at all, since
+        # multiprocessing.freeze_support() intercepts
+        # before reaching it. daemon_console_log_level
+        # is a separate teleget9527 config key
+        # (added specifically to support this) that
+        # controls only the daemon's console handler,
+        # independent of its file handler — unlike
+        # daemon_log_level, which controls both
+        # together. Setting it to CRITICAL effectively
+        # silences the daemon's console output
+        # entirely (nothing below CRITICAL is ever
+        # emitted there) while its log file keeps
+        # full INFO/DEBUG detail for troubleshooting.
+        # Errors from this task are already reported
+        # to the user through KKAFIO's own error
+        # handling, which points them at the log
+        # file, so there's no need to also mirror
+        # teleget's own console output for
+        # visibility. Only applied in frozen/packaged
+        # builds — keep full console detail for
+        # developers running from source.
+        _teleget_config = (
+            {
+                "daemon_log_level": "INFO",
+                "daemon_console_log_level": "CRITICAL",
+            }
+            if getattr(sys, "frozen", False)
+            else None
+        )
+
+        teleget_downloader = TGDownloader(
+            api_id=tg_data["api_id"],
+            api_hash=tg_data["api_hash"],
+            session_dir=str(_session_dir.resolve()),
+            config=_teleget_config,
+        )
+        await teleget_downloader.start("kkafio")
+        logger.info("DLMOD", "teleget9527 downloader started")
+    except ImportError:
+        logger.info("DLMOD",
+            "teleget9527 not installed, using Telethon fallback "
+            "(install with: pip install teleget9527[fast])")
+    try:
+        yield tg_data, tg_client, teleget_downloader
+    finally:
+        if teleget_downloader is not None:
+            try:
+                await teleget_downloader.shutdown()
+            except Exception as e:
+                # teleget9527's ShutdownRequest bug — harmless, downloads are done
+                logger.debug("DLMOD", f"teleget9527 shutdown error (ignored): {e}")
+        try:
+            await tg_client.disconnect()
+        except Exception as e:
+            logger.debug("DLMOD", f"Telegram disconnect failed (ignored): {e}")
 
 
 class DownloadMissingMods(BaseTask):
@@ -84,7 +256,9 @@ class DownloadMissingMods(BaseTask):
         self.use_cache           : bool = cfg.get("UseCache",             True)
         self.on_failed_downloads : list[str] = cfg.get("OnFailedDownloads", ["OpenReport", "CopyToClipboard"])
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
-        self.telegram_sources    : list[str] = cfg.get("TelegramSources", [])    # any of: KoikatsuCards, ChatLinks
+        # Where to look for mods outside the modpack, in the order to try them: any of Drive, Mega, Telegram.
+        self.mod_sources         : list[str] = cfg.get("ModSources", ["Drive", "Mega", "Telegram"])
+        self.use_telegram_chat_links : bool = cfg.get("UseTelegramChatLinks", True)   # only with Telegram in mod_sources
         self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
         self.website_urls_raw    : str  = cfg.get("WebsiteUrls", DEFAULT_WEBSITE_URLS)
 
@@ -100,14 +274,14 @@ class DownloadMissingMods(BaseTask):
         to_download: set[str],
         from_betterrepack: dict[str, list[str]],
         downloaded_br: dict[str, str],
-        from_telegram: list[str],
-        downloaded_tg: set[str],
+        from_other: list[str],
+        downloaded_other: dict[str, str],
         unresolved: list[str],
         failed_guids: set[str],
         ok: int,
         fail: int,
         modpack_mode: str,
-        telegram_sources: str,
+        mod_sources: str,
         generated: str,
     ) -> Path | None:
         """Write a report to downloaded_mods_dir summarising the download run.
@@ -128,7 +302,7 @@ class DownloadMissingMods(BaseTask):
             f"Installed mods dir  : {installed_mods_dir}",
             f"Downloaded mods dir : {downloaded_mods_dir}",
             f"Sideloader mode  : {modpack_mode}",
-            f"Telegram sources : {telegram_sources}",
+            f"Mod sources     : {mod_sources}",
             "",
             "=" * 60,
             "",
@@ -139,14 +313,14 @@ class DownloadMissingMods(BaseTask):
             f"Missing total                 : {len(missing_all)}",
             f"Queued for download           : {len(to_download)}",
             f"  — from BetterRepack         : {len(from_betterrepack)}",
-            f"  — from Telegram             : {len(from_telegram)}",
+            f"  — from other sources        : {len(from_other)}",
             "",
             f"Downloaded successfully : {ok}",
             f"Failed                  : {fail + len(unresolved)}",
             "",
         ]
 
-        # Mods with no source found (not in the modpack index, no Telegram
+        # Mods with no source found (not in the modpack index, no other
         # source) and mods whose download failed are reported together.
         all_failed = set(unresolved) | set(failed_guids)
         if all_failed:
@@ -163,8 +337,6 @@ class DownloadMissingMods(BaseTask):
             lines.append("")
 
         # Only list mods that were actually downloaded (not skipped/already present)
-        actually_downloaded_tg = [guid for guid in from_telegram if guid in downloaded_tg]
-
         if downloaded_br:
             lines.append("Downloaded from BetterRepack:")
             for guid, rel in sorted(downloaded_br.items()):
@@ -172,10 +344,10 @@ class DownloadMissingMods(BaseTask):
                 lines.append(f"    {rel}")
             lines.append("")
 
-        if actually_downloaded_tg:
-            lines.append("Downloaded via Telegram:")
-            for guid in sorted(actually_downloaded_tg):
-                lines.append(f"  + {guid}")
+        if downloaded_other:
+            lines.append("Downloaded from other sources:")
+            for guid, source in sorted(downloaded_other.items()):
+                lines.append(f"  + {guid} ({source})")
             lines.append("")
 
         if modpack_mode == "Skip":
@@ -406,29 +578,37 @@ class DownloadMissingMods(BaseTask):
             return
 
         # ── Step 5: partition ─────────────────────────────────────────────
-        use_koikatsucards = "KoikatsuCards" in self.telegram_sources
-        use_chat_links    = "ChatLinks" in self.telegram_sources
-        use_telegram      = use_koikatsucards or use_chat_links
-        if not use_telegram:
+        source_keys       = normalize_sources(self.mod_sources)   # ("drive", "telegram", ...) in order
+        use_telegram      = "telegram" in source_keys
+        use_chat_links    = use_telegram and self.use_telegram_chat_links
+        use_other_sources = bool(source_keys)
+        sources_label     = mod_sources_label(source_keys, use_chat_links)
+        if not use_other_sources:
             logger.info("DLMOD",
-                "No Telegram source is selected — "
+                "No Mod Source is selected — "
                 "only BetterRepack mods will be downloaded.")
+        else:
+            logger.info("DLMOD", f"Mod sources: {sources_label}")
+            if self.use_telegram_chat_links and not use_telegram:
+                logger.info("DLMOD",
+                    "Telegram is not one of the Mod Sources — "
+                    "Telegram Chat Links will not be used.")
 
         from_betterrepack: dict[str, list[str]] = {}
-        from_telegram    : list[str]      = []
+        from_other       : list[str]      = []
         unresolved       : list[str]      = []
 
         for guid in sorted(to_download):
             if guid in modpack_index:
                 from_betterrepack[guid] = modpack_index[guid]
-            elif use_telegram:
-                from_telegram.append(guid)
+            elif use_other_sources:
+                from_other.append(guid)
             else:
                 unresolved.append(guid)
 
         logger.info("DLMOD",
             f"  BetterRepack: {len(from_betterrepack)} | "
-            f"Telegram: {len(from_telegram)} | "
+            f"Other sources: {len(from_other)} | "
             f"Unresolved: {len(unresolved)}")
 
         if unresolved:
@@ -441,10 +621,10 @@ class DownloadMissingMods(BaseTask):
         ok = fail = 0
         failed_guids:  set[str]  = set()
         downloaded_br:  dict[str, str] = {}    # guid -> path (below the mods dir) of the file saved
-        downloaded_tg:  set[str] = set()
+        downloaded_other: dict[str, str] = {}   # guid -> the source it came from (Google Drive, Mega, ...)
 
         async def _run_all() -> None:
-            nonlocal ok, fail, failed_guids, downloaded_br, downloaded_tg
+            nonlocal ok, fail, failed_guids, downloaded_br, downloaded_other
             async with make_http_client() as br_client:
 
                 # BetterRepack — parallel (bounded by br_slots below)
@@ -468,14 +648,14 @@ class DownloadMissingMods(BaseTask):
                         except Exception as exc:
                             res = exc
                         # Tell the progress window as each mod finishes. A failure that is
-                        # about to be retried via Telegram is not final yet.
+                        # about to be retried via the other sources is not final yet.
                         if res is True:
                             progress.count("ok")
                             progress.item_done()
                         elif res == "skipped":
                             progress.count("skipped")
                             progress.item_done()
-                        elif not use_telegram:
+                        elif not use_other_sources:
                             progress.count("failed")
                             progress.item_done()
                         return res
@@ -496,248 +676,73 @@ class DownloadMissingMods(BaseTask):
                             fail += 1
                             if isinstance(result, Exception):
                                 logger.error("DLMOD", f"Exception [{guid}]: {result}")
-                            # Queue for Telegram fallback if enabled
-                            if use_telegram:
-                                # Telegram saves into the same modpack subfolder.
+                            # Queue for the other sources if any is selected
+                            if use_other_sources:
+                                # They save into the same modpack subfolder.
                                 br_failed[guid] = url_to_rel_path(from_betterrepack[guid][0])
                                 logger.info("DLMOD",
-                                    f"  [{guid}] will be retried via Telegram")
+                                    f"  [{guid}] will be retried via the other sources")
                             else:
                                 failed_guids.add(guid)
 
-                # Merge BetterRepack failures into Telegram queue
-                telegram_queue: list[tuple[str, str | None]] = [
-                    (guid, None) for guid in from_telegram
+                # Merge BetterRepack failures into the queue of the other sources
+                other_queue: list[tuple[str, str | None]] = [
+                    (guid, None) for guid in from_other
                 ] + [
                     (guid, rel) for guid, rel in br_failed.items()
                 ]
 
-                # Telegram — sequential
-                if telegram_queue:
-                    mod_index: dict[str, dict[str, list[str]]] = {}
-                    if use_koikatsucards:
-                        mod_index = await load_mod_index(br_client)
+                # Sequential. Links are tried in the order of the Mod Sources option.
+                if other_queue:
+                    # The index lists, per mod, its links on Google Drive, Mega and Telegram.
+                    mod_index = await load_mod_index(br_client)
 
-                    # Load/prompt for credentials once before the loop
-                    tg_data = tg_cfg.get_or_prompt()
-                    if tg_data is None:
-                        logger.error("DLMOD",
-                            "Telegram credentials not provided — "
-                            f"skipping {len(telegram_queue)} mod(s).")
-                        # br_failed's `fail += 1` already happened in the
-                        # BetterRepack loop above (this used to double-count
-                        # it here on top of that). from_telegram was never
-                        # counted anywhere yet, so it still needs it. Both
-                        # groups are added to failed_guids here too — the
-                        # BetterRepack loop deliberately leaves a br_failed
-                        # guid out of failed_guids while Telegram is still
-                        # queued to retry it, and neither group was ever
-                        # added to the itemized failure list otherwise, so
-                        # without this the final "failed" count and the
-                        # per-GUID list shown in the report would disagree.
-                        fail += len(from_telegram)
-                        failed_guids.update(from_telegram)
-                        failed_guids.update(br_failed)
-                        for _ in telegram_queue:
-                            progress.count("failed")
-                            progress.item_done()
-                    else:
-                        # Ensure session file exists before starting downloads
-                        authorised = await ensure_session(tg_data)
-                        if not authorised:
-                            logger.error("DLMOD",
-                                "Telegram sign-in failed — "
-                                f"skipping {len(telegram_queue)} mod(s).")
-                            fail += len(from_telegram)
-                            failed_guids.update(from_telegram)
-                            failed_guids.update(br_failed)
-                            for _ in telegram_queue:
-                                progress.count("failed")
-                                progress.item_done()
-                        else:
-                            teleget_downloader = None
+                    chat_links: list[tuple[str | int, int | None]] = []
+                    if use_chat_links:
+                        chat_links = parse_chat_links(self.telegram_chat_links_raw)
+                        if not chat_links:
+                            logger.warning("DLMOD",
+                                "Use Telegram Chat Links is on but no valid "
+                                "chat links are configured — nothing to search.")
 
-                            # One TelegramClient, connected once and reused for
-                            # every GUID in this batch (both the KKC-index
-                            # metadata/fallback-download path and the Telegram
-                            # Chat Links search/download path below) — this used
-                            # to open and close a brand new connection per GUID
-                            # per path, which for a batch of N missing mods meant
-                            # up to ~2N-3N separate MTProto connect/auth round
-                            # trips to Telegram for what only ever needed one.
-                            from telethon import TelegramClient as _TelegramClient
-                            from kkafio.core.paths import TELEGRAM_SESSION_DIR as _TG_SESSION_DIR
-                            _tg_session_dir = _TG_SESSION_DIR
-                            tg_client = _TelegramClient(
-                                str(_tg_session_dir / "kkafio"),
-                                tg_data["api_id"], tg_data["api_hash"],
-                            )
-                            await tg_client.connect()
+                    logger.info("DLMOD",
+                        f"Processing {len(other_queue)} mod(s) via {sources_label}...")
 
-                            if use_koikatsucards:
-                                # [FIX-2026-09-13-ENTITY-CACHE-WARMUP] Resolve the
-                                # KK_archive_modlibrary channel by username *once*,
-                                # using the primary session, before the daemon
-                                # subprocess is started below.
-                                #
-                                # Why this is needed: every download further down
-                                # this pipeline (both the per-GUID metadata lookup
-                                # in download_via_teleget, and teleget9527's own
-                                # daemon-side get_messages(request.chat_id, ...)
-                                # call) references the channel via the raw numeric
-                                # KK_ARCHIVE_CHAT_ID constant, not its username.
-                                # Telethon can only turn a bare numeric peer ID
-                                # into a usable InputPeer if it already has that
-                                # entity's access_hash cached in the session file
-                                # (populated by an earlier get_entity/get_dialogs
-                                # call, or by the account having already interacted
-                                # with the chat via the Telegram app itself). On a
-                                # brand-new session that has never touched this
-                                # channel, resolving the raw ID directly raises:
-                                #   ValueError: Could not find the input entity
-                                #   for PeerUser(user_id=...)
-                                #
-                                # The daemon's own session is a one-time copy of
-                                # this primary session, taken when
-                                # teleget_downloader.start() launches it just
-                                # below — so if the cache isn't warmed *before*
-                                # that copy happens, the daemon inherits a cold
-                                # cache and hits the exact same error internally,
-                                # just deeper in the pipeline and harder to
-                                # diagnose. Resolving by username here (which
-                                # Telethon can do via a fresh API call even with
-                                # no prior cache) warms the primary session's
-                                # cache first, so the copy the daemon receives is
-                                # already warm, and every later raw-numeric-ID
-                                # lookup — in this file and inside teleget9527 —
-                                # succeeds on the very first attempt.
-                                try:
-                                    # Warm the *shared* client's entity cache — it
-                                    # stays connected for the rest of this batch,
-                                    # so this also directly benefits every
-                                    # Telegram metadata lookup below, not
-                                    # just the daemon's copied session.
-                                    await tg_client.get_entity("KK_archive_modlibrary")
-                                    logger.info("DLMOD",
-                                        "Warmed entity cache for KK_archive_modlibrary")
-                                except Exception as warm_err:
+                    async with _telegram_session(use_telegram) as telegram:
+                        tg_data = tg_client = teleget_downloader = None
+                        if telegram is not None:
+                            tg_data, tg_client, teleget_downloader = telegram
+
+                        try:
+                            for guid, rel_path in other_queue:
+                                found_source = False
+                                success: bool | str = False
+                                via = ""
+                                progress.set_current(guid)
+
+                                # What to try, in order: the links of the index of every selected
+                                # source (in the order of the index within a source). The Telegram
+                                # Chat Links search comes right after the Telegram links, and is
+                                # also what is left for a mod the index has no link for. Telegram
+                                # (links and chats) is skipped when it couldn't be connected.
+                                entry = mod_index.get(guid)
+                                attempts: list[tuple[str, str]] = []
+                                for source in source_keys:
+                                    if source == "telegram" and telegram is None:
+                                        continue
+                                    attempts += ordered_links(entry, (source,))
+                                    if source == "telegram" and chat_links:
+                                        attempts.append((CHAT_SEARCH, ""))
+
+                                if not any(source != CHAT_SEARCH for source, _ in attempts):
                                     logger.warning("DLMOD",
-                                        f"Could not pre-warm channel entity cache "
-                                        f"(non-fatal, downloads may still fail on a "
-                                        f"cold cache): {warm_err}")
+                                        f"  {guid} — no link in the mod index "
+                                        f"for the selected sources")
 
-                            # Create TGDownloader once and reuse across all downloads,
-                            # for both the KKC-index path and the Telegram Chat
-                            # Links path.
-                            from kkafio.core.paths import TELEGRAM_SESSION_DIR as _CFG_TG_DIR
-                            _session_dir = _CFG_TG_DIR
-                            try:
-                                from tg_downloader import TGDownloader
-
-                                # [FIX-2026-09-14-SUPPRESS-TELEGET-CONSOLE-LOGS]
-                                # The download daemon runs as a separate
-                                # multiprocessing child process, re-executing
-                                # this frozen app fresh — kkafio_cli.py's own
-                                # __main__ logic (including the console-log
-                                # suppression it applies to *this* process,
-                                # see suppress_teleget_console_logs()) never
-                                # runs there at all, since
-                                # multiprocessing.freeze_support() intercepts
-                                # before reaching it. daemon_console_log_level
-                                # is a separate teleget9527 config key
-                                # (added specifically to support this) that
-                                # controls only the daemon's console handler,
-                                # independent of its file handler — unlike
-                                # daemon_log_level, which controls both
-                                # together. Setting it to CRITICAL effectively
-                                # silences the daemon's console output
-                                # entirely (nothing below CRITICAL is ever
-                                # emitted there) while its log file keeps
-                                # full INFO/DEBUG detail for troubleshooting.
-                                # Errors from this task are already reported
-                                # to the user through KKAFIO's own error
-                                # handling, which points them at the log
-                                # file, so there's no need to also mirror
-                                # teleget's own console output for
-                                # visibility. Only applied in frozen/packaged
-                                # builds — keep full console detail for
-                                # developers running from source.
-                                _teleget_config = (
-                                    {
-                                        "daemon_log_level": "INFO",
-                                        "daemon_console_log_level": "CRITICAL",
-                                    }
-                                    if getattr(sys, "frozen", False)
-                                    else None
-                                )
-
-                                teleget_downloader = TGDownloader(
-                                    api_id=tg_data["api_id"],
-                                    api_hash=tg_data["api_hash"],
-                                    session_dir=str(_session_dir.resolve()),
-                                    config=_teleget_config,
-                                )
-                                await teleget_downloader.start("kkafio")
-                                logger.info("DLMOD", "teleget9527 downloader started")
-                            except ImportError:
-                                logger.info("DLMOD",
-                                    "teleget9527 not installed, using Telethon fallback "
-                                    "(install with: pip install teleget9527[fast])")
-
-                            chat_links: list[tuple[str | int, int | None]] = []
-                            if use_chat_links:
-                                chat_links = parse_chat_links(self.telegram_chat_links_raw)
-                                if not chat_links:
-                                    logger.warning("DLMOD",
-                                        "Telegram Chat Links is enabled but no valid "
-                                        "chat links are configured — nothing to search.")
-
-                            source_label = telegram_sources_label(self.telegram_sources)
-                            logger.info("DLMOD",
-                                f"Processing {len(telegram_queue)} mod(s) via {source_label}...")
-
-                            try:
-                                for guid, rel_path in telegram_queue:
-                                    found_source = False
-                                    success: bool | str = False
-                                    progress.set_current(guid)
-
-                                    if use_koikatsucards:
-                                        # Links of the mod index in the order of speed
-                                        # and reliability (Telegram, Drive, Mega): the
-                                        # first one that downloads the mod wins.
-                                        links = ordered_links(mod_index.get(guid))
-                                        if links:
-                                            found_source = True
-                                            for n, (source, link) in enumerate(links, 1):
-                                                logger.info("DLMOD", f"  Link ({source}): {link}")
-                                                # Pass rel_path so the file is saved to the
-                                                # same subfolder as the modpack index
-                                                if source == "telegram":
-                                                    success = await download_via_teleget(
-                                                        guid, link, downloaded_mods_dir, tg_data,
-                                                        guid_str_map, tg_client,
-                                                        downloader=teleget_downloader,
-                                                        rel_path=rel_path,
-                                                    )
-                                                else:
-                                                    success = await download_via_host(
-                                                        source, link, guid, downloaded_mods_dir,
-                                                        br_client, rel_path=rel_path,
-                                                    )
-                                                if success in (True, "skipped"):
-                                                    break
-                                                if n < len(links):
-                                                    logger.warning("DLMOD",
-                                                        f"  {source} link failed — trying the next one")
-                                        else:
-                                            logger.warning("DLMOD",
-                                                f"  {guid} — not in mod index")
-
-                                    if success not in (True, "skipped") and use_chat_links and chat_links:
-                                        if use_koikatsucards:
-                                            logger.info("DLMOD",
-                                                f"  Trying Telegram Chat Links for {guid}...")
+                                for n, (source, link) in enumerate(attempts, 1):
+                                    if source == CHAT_SEARCH:
+                                        logger.info("DLMOD",
+                                            f"  Trying Telegram Chat Links for {guid}...")
                                         chat_found, success = await search_chat_links_and_download(
                                             guid, chat_links, downloaded_mods_dir, tg_data,
                                             guid_str_map, tg_client,
@@ -745,53 +750,67 @@ class DownloadMissingMods(BaseTask):
                                             rel_path=rel_path,
                                         )
                                         found_source = found_source or chat_found
-
-                                    if success == "skipped":
-                                        # already existed — don't count it as a download or report it
-                                        progress.count("skipped")
-                                    elif success is True:
-                                        progress.count("ok")
-                                        failed_guids.discard(guid)
-                                        downloaded_tg.add(guid)
-                                        if guid in br_failed:
-                                            fail -= 1
-                                        ok += 1
-                                    elif found_source:
-                                        progress.count("failed")
-                                        # A source was identified somewhere but the
-                                        # download itself failed
-                                        failed_guids.add(guid)
-                                        if guid not in br_failed:
-                                            fail += 1
+                                        via = "Telegram Chat Links"
                                     else:
-                                        # No source found anywhere that was tried.
-                                        # A br_failed guid was already counted
-                                        # into `fail` back in the BetterRepack
-                                        # loop (deferred there pending this
-                                        # Telegram retry) — since it's ending up
-                                        # here as unresolved rather than a
-                                        # confirmed failure, undo that count so
-                                        # the final "failed: N, unresolved: M"
-                                        # summary doesn't count the same guid
-                                        # in both buckets.
-                                        if guid in br_failed:
-                                            fail -= 1
-                                            failed_guids.discard(guid)
-                                        unresolved.append(guid)
-                                        progress.count("failed")
-                                    progress.item_done()
-                            finally:
-                                progress.set_current(None)
-                                if teleget_downloader is not None:
-                                    try:
-                                        await teleget_downloader.shutdown()
-                                    except Exception as e:
-                                        # teleget9527's ShutdownRequest bug — harmless, downloads are done
-                                        logger.debug("DLMOD", f"teleget9527 shutdown error (ignored): {e}")
-                                try:
-                                    await tg_client.disconnect()
-                                except Exception as e:
-                                    logger.debug("DLMOD", f"Telegram disconnect failed (ignored): {e}")
+                                        found_source = True
+                                        logger.info("DLMOD", f"  Link ({source}): {link}")
+                                        # Pass rel_path so the file is saved to the
+                                        # same subfolder as the modpack index
+                                        if source == "telegram":
+                                            success = await download_via_teleget(
+                                                guid, link, downloaded_mods_dir, tg_data,
+                                                guid_str_map, tg_client,
+                                                downloader=teleget_downloader,
+                                                rel_path=rel_path,
+                                            )
+                                        else:
+                                            success = await download_via_host(
+                                                source, link, guid, downloaded_mods_dir,
+                                                br_client, rel_path=rel_path,
+                                            )
+                                        via = MOD_SOURCE_LABELS.get(source, source)
+                                    if success in (True, "skipped"):
+                                        break
+                                    if n < len(attempts):
+                                        logger.warning("DLMOD",
+                                            f"  {via} failed — trying the next one")
+
+                                if success == "skipped":
+                                    # already existed — don't count it as a download or report it
+                                    progress.count("skipped")
+                                elif success is True:
+                                    progress.count("ok")
+                                    failed_guids.discard(guid)
+                                    downloaded_other[guid] = via
+                                    if guid in br_failed:
+                                        fail -= 1
+                                    ok += 1
+                                elif found_source:
+                                    progress.count("failed")
+                                    # A source was identified somewhere but the
+                                    # download itself failed
+                                    failed_guids.add(guid)
+                                    if guid not in br_failed:
+                                        fail += 1
+                                else:
+                                    # No source found anywhere that was tried.
+                                    # A br_failed guid was already counted
+                                    # into `fail` back in the BetterRepack
+                                    # loop (deferred there pending this
+                                    # retry) — since it's ending up
+                                    # here as unresolved rather than a
+                                    # confirmed failure, undo that count so
+                                    # the final "failed: N, unresolved: M"
+                                    # summary doesn't count the same guid
+                                    # in both buckets.
+                                    if guid in br_failed:
+                                        fail -= 1
+                                        failed_guids.discard(guid)
+                                    unresolved.append(guid)
+                                    progress.count("failed")
+                                progress.item_done()
+                        finally:
+                            progress.set_current(None)
 
         async def _run_with_progress() -> None:
             # The progress window is shown for the whole run; Cancel in it cancels this coroutine.
@@ -823,14 +842,14 @@ class DownloadMissingMods(BaseTask):
             to_download       = to_download,
             from_betterrepack = from_betterrepack,
             downloaded_br     = downloaded_br,
-            from_telegram     = from_telegram,
-            downloaded_tg     = downloaded_tg,
+            from_other        = from_other,
+            downloaded_other  = downloaded_other,
             unresolved        = unresolved,
             failed_guids      = failed_guids,
             ok                = ok,
             fail              = fail,
             modpack_mode      = self.modpack_mode,
-            telegram_sources  = telegram_sources_label(self.telegram_sources),
+            mod_sources       = sources_label,
             generated         = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 

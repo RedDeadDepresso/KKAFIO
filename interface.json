@@ -1082,24 +1082,44 @@
         }
       ]
     },
-    "TelegramSources": {
-      "type": "checkbox",
-      "label": "$option.TelegramSources.label",
-      "description": "$option.TelegramSources.description",
-      "default_case": ["KoikatsuCards", "ChatLinks"],
+    "ModSources": {
+      "type": "ordered_checkbox",
+      "label": "$option.ModSources.label",
+      "description": "$option.ModSources.description",
+      "default_case": ["Drive", "Mega", "Telegram"],
       "cases": [
         {
-          "name": "KoikatsuCards",
-          "label": "$option.TelegramSources.case.KoikatsuCards.label",
+          "name": "Drive",
+          "label": "$option.ModSources.case.Drive.label"
+        },
+        {
+          "name": "Mega",
+          "label": "$option.ModSources.case.Mega.label"
+        },
+        {
+          "name": "Telegram",
+          "label": "$option.ModSources.case.Telegram.label"
+        }
+      ]
+    },
+    "UseTelegramChatLinks": {
+      "type": "switch",
+      "label": "$option.UseTelegramChatLinks.label",
+      "description": "$option.UseTelegramChatLinks.description",
+      "default_case": "Yes",
+      "cases": [
+        {
+          "name": "Yes",
+          "label": "$option.UseTelegramChatLinks.case.Yes.label",
           "pipeline_override": {
-            "UseKoikatsuCards": true
+            "UseTelegramChatLinks": true
           }
         },
         {
-          "name": "ChatLinks",
-          "label": "$option.TelegramSources.case.ChatLinks.label",
+          "name": "No",
+          "label": "$option.UseTelegramChatLinks.case.No.label",
           "pipeline_override": {
-            "UseChatLinks": true
+            "UseTelegramChatLinks": false
           }
         }
       ]
@@ -1667,7 +1687,8 @@
       "option": [
         "ContentTypes",
         "SideloaderModpack",
-        "TelegramSources",
+        "ModSources",
+        "UseTelegramChatLinks",
         "TelegramChatLinks",
         "OnFailedModDownloads",
         "WebsiteUrls",

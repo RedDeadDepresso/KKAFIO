@@ -142,7 +142,7 @@ The cookie is scoped to `.pawchive.pw` and never sent to other hosts.
 ```
 
 Written/read by `src/kkafio/services/mod_sources/telegram/config.py`. Used by **Download Missing
-Mods** when a Telegram source is enabled. Only `api_id`/`api_hash` are
+Mods** when `Telegram` is checked in Mod Sources. Only `api_id`/`api_hash` are
 ever actually written by `save()` in current usage — the module's docstring
 also mentions a `"session"` key as part of the intended shape, but nothing
 in the codebase currently populates it there; the real Telegram session
@@ -192,11 +192,15 @@ Formats:
 
 - `mod.json` maps mod GUIDs to the links the mod can be downloaded from, per host, e.g.
   `{ "com.AgiShark.Casual_Moves_Part2": { "mega": [], "drive": ["https://drive.google.com/file/d/…/view"], "telegram": ["https://t.me/KK_archive_modlibrary/25"] } }`.
-  Each list may hold several links or none. The links of a mod are tried in the order Telegram, Google Drive,
-  Mega (fastest and most reliable first; `SOURCE_ORDER` in `src/kkafio/indices/mod.py`) until one downloads the
-  mod; a download is only kept if its `manifest.xml` has the GUID that was asked for. It is only read when at
-  least one mod needs a download from outside the modpack and the `KoikatsuCards` entry of Telegram Sources is
-  checked. Telegram is needed for the whole step (the account is signed in before any link is tried).
+  Each list may hold several links or none. The links of a mod are tried in the order of the **Mod Sources**
+  option (`ModSources`: an `ordered_checkbox` of `Drive`, `Mega`, `Telegram`, in the user's order; unchecked
+  sources are not used) until one downloads the mod; a download is only kept if its `manifest.xml` has the GUID
+  that was asked for. `SOURCE_ORDER` in `src/kkafio/indices/mod.py` is only the default for `ordered_links()`.
+  The index is only read when at least one mod needs a download from outside the modpack and at least one source
+  is checked. Telegram is only connected to (the account is signed in once, before the first link is tried) when
+  `Telegram` is checked; if that fails, the Drive and Mega links still work. With `Telegram` checked and
+  `UseTelegramChatLinks` on, a search of the configured chats (`TelegramChatLinks`) follows the Telegram link in
+  that order, and is also what is left for a mod the index has no link for.
 - `agv.json` is the character / series index (format version 1; anime and visual novel / JRPG games from the
   Bangumi Archive) used for the `hints` that **Group Characters** and **Rename Characters** send to the LLM. It is
   refreshed when those tasks run with *Hints Language* set to anything but `no`. An entry of `chars` is

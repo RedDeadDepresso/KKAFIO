@@ -102,6 +102,11 @@ def opt_checkbox(*names: str) -> dict:
     return {"type": "checkbox", "caseNames": list(names)}
 
 
+def opt_ordered_checkbox(order: list[str], checked: list[str]) -> dict:
+    """An `ordered_checkbox` as MXU saves it: every case in the user's order, and the checked ones."""
+    return {"type": "ordered_checkbox", "order": list(order), "checked": list(checked)}
+
+
 def opt_text(text: str) -> dict:
     return {"type": "textarea", "text": text}
 
@@ -342,8 +347,10 @@ def handwritten_cases(world: World) -> dict[str, list[str]]:
         "dmm --no-chara --no-scene --no-coord": ["download-missing-mods", "--no-chara", "--no-scene", "--no-coord"],
         "dmm --chara-dir=<blank>": ["download-missing-mods", "--chara-dir", ""],
         "dmm --telegram-chat-links=<blank>": ["download-missing-mods", "--telegram-chat-links", ""],
-        "dmm --telegram-sources=<both>": ["download-missing-mods", "--telegram-sources", "KoikatsuCards", "ChatLinks"],
-        "dmm --telegram-sources=<none>": ["download-missing-mods", "--telegram-sources"],
+        "dmm --mod-sources=<two, reordered>": ["download-missing-mods", "--mod-sources", "Telegram", "Drive"],
+        "dmm --mod-sources=<all, reordered>": ["download-missing-mods", "--mod-sources", "Mega", "Telegram", "Drive"],
+        "dmm --mod-sources=<none>": ["download-missing-mods", "--mod-sources"],
+        "dmm --mod-sources + --no-use-telegram-chat-links": ["download-missing-mods", "--mod-sources", "Telegram", "--no-use-telegram-chat-links"],
         "create-backup --mods --no-mods": ["create-backup", "--mods", "--no-mods"],
         "create-backup --mods --userdata --bepinex": ["create-backup", "--mods", "--userdata", "--bepinex"],
         "create-backup --no-mods --no-userdata --no-bepinex": ["create-backup", "--no-mods", "--no-userdata", "--no-bepinex"],
@@ -404,7 +411,8 @@ def configured_tasks() -> list[dict]:
           OverlaysDir=f("/cfg/overlays"), UseCache=sw(False),
           KeepStrategy=opt_select("Newest"), DuplicateAction=opt_select("Delete")),
         t("DownloadMissingMods", ContentTypes=opt_checkbox("Chara"), SideloaderModpack=opt_select("All"),
-          TelegramSources=opt_checkbox("KoikatsuCards", "ChatLinks"), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OnFailedModDownloads=opt_checkbox("CopyToClipboard"),
+          ModSources=opt_ordered_checkbox(["Telegram", "Mega", "Drive"], ["Mega", "Telegram"]),
+          UseTelegramChatLinks=sw(False), TelegramChatLinks=opt_text("cfg-chat"), UseCache=sw(False), OnFailedModDownloads=opt_checkbox("CopyToClipboard"),
           WebsiteUrls=opt_text("cfg-site"),
           InstalledModsDir=f("/cfg/in-mods"), DownloadedModsDir=f("/cfg/out-mods"), CharaDir=f("/cfg/chara"),
           SceneDir=f("/cfg/scene"), CoordDir=f("/cfg/coord")),

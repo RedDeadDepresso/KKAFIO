@@ -70,6 +70,13 @@ def _extract_opt(opt_values: dict, key: str):
         return v.get("value", False)
     if t == "checkbox":
         return v.get("caseNames", [])
+    if t == "ordered_checkbox":
+        # Checked case names, sorted by the saved `order`; names missing
+        # from `order` keep their saved relative position at the end.
+        order = v.get("order", [])
+        checked = v.get("checked", [])
+        rank = {name: i for i, name in enumerate(order)}
+        return sorted(checked, key=lambda n: rank.get(n, len(order)))
     if t == "select":
         return v.get("caseName", "")
     if t == "input":
@@ -161,7 +168,7 @@ _TASK_DEFAULTS = {
     "DownloadContents": {"Enable": False, "OutputDir": "C:/KKAFIO/Downloads", "Links": "", "SkipDownloaded": True, "OnFailedDownloads": ["OpenReport", "CopyToClipboard"]},
     "FilterConvertKKS": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Convert": False, "KKAction": "Keep", "KKSAction": "Keep", "ExtractArchive": True, "Password": "Request"},
     "FilterDuplicateContents": {"Enable": False, "Scenes": True, "Chara": True, "Coords": True, "Mods": True, "Overlays": True, "Keep": "Oldest", "DuplicateAction": "Delete", "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "ModsDir": "", "OverlaysDir": ""},
-    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "TelegramSources": ["KoikatsuCards", "ChatLinks"], "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OnFailedDownloads": ["OpenReport", "CopyToClipboard"], "WebsiteUrls": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659", "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "InstalledModsDir": "", "DownloadedModsDir": ""},
+    "DownloadMissingMods": {"Enable": False, "ContentTypes": ["Chara", "Scene", "Coord"], "SideloaderModpack": "OnlyUsed", "ModSources": ["Drive", "Mega", "Telegram"], "UseTelegramChatLinks": True, "TelegramChatLinks": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc", "OnFailedDownloads": ["OpenReport", "CopyToClipboard"], "WebsiteUrls": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659", "UseCache": True, "SceneDir": "", "CharaDir": "", "CoordDir": "", "InstalledModsDir": "", "DownloadedModsDir": ""},
     "CompressCardTextures": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "KoiCardTexToolPath": "C:/KoiCardTexTool", "Mode": "auto", "MaxSize": 1024, "DeleteOriginalCards": True},
     "InstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Scenes": True, "Chara": True, "Coords": True, "Mods": True, "Overlays": True, "FileConflicts": "Rename", "ExtractArchive": True, "Password": "Request"},
     "UninstallContents": {"Enable": False, "InputPath": "C:/KKAFIO/Downloads", "Scenes": True, "Chara": True, "Coords": True, "Mods": True, "Overlays": True, "CheckSharedMods": True, "UseCache": True},
@@ -236,7 +243,8 @@ def _build_task_config(task_name: str, enabled: bool, opt_values: dict) -> dict:
     elif task_name == "DownloadMissingMods":
         _set("ContentTypes", "ContentTypes")
         _set("SideloaderModpack", "SideloaderModpack")
-        _set("TelegramSources", "TelegramSources")
+        _set("ModSources", "ModSources")
+        _set("UseTelegramChatLinks", "UseTelegramChatLinks")
         _set("TelegramChatLinks", "TelegramChatLinks")
         _set("OnFailedDownloads", "OnFailedModDownloads")
         _set("WebsiteUrls", "WebsiteUrls")

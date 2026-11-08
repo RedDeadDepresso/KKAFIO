@@ -315,21 +315,26 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "Skip=ignore modpack entirely, "
                        "OnlyUsed=download missing mods used by chara (default), "
                        "All=download all missing modpack mods"),
-            Value("--telegram-sources", key="TelegramSources", default=None, nargs="*",
-                  choices=["KoikatsuCards", "ChatLinks"], metavar="SOURCE",
-                  help="Where to look for mods not covered by BetterRepack; give any of: "
-                       "KoikatsuCards=look up each GUID on koikatsucards.com, "
-                       "ChatLinks=search the chats in --telegram-chat-links directly. "
-                       "With both, koikatsucards.com is tried first, then ChatLinks for "
-                       "anything it couldn't find. Pass the flag with no sources to "
-                       "disable Telegram entirely. Default: the setting in the config "
-                       "(both sources)"),
+            Value("--mod-sources", key="ModSources", default=None, nargs="*",
+                  choices=["Drive", "Mega", "Telegram"], metavar="SOURCE",
+                  help="Where to look for mods not covered by BetterRepack, in the order to try "
+                       "them; give any of: Drive=Google Drive, Mega=Mega, Telegram=the Telegram "
+                       "message (needs a Telegram account; also enables --use-telegram-chat-links). "
+                       "The links come from the kk-mod-scraper index. The first source that "
+                       "downloads a mod wins. Pass the flag with no sources to only use "
+                       "BetterRepack. Default: the setting in the config "
+                       "(Drive Mega Telegram)"),
+            Toggle("use-telegram-chat-links", key="UseTelegramChatLinks",
+                   help="Also search the chats in --telegram-chat-links for a mod right after its "
+                        "Telegram link; only used when Telegram is one of the --mod-sources "
+                        "(default: on)",
+                   off_help="Do not search the Telegram Chat Links"),
             Value("--telegram-chat-links", key="TelegramChatLinks", default=None, metavar="LINKS",
                   help="Newline-separated Telegram chat/channel/group links to search "
                        "(one per line; add a topic ID like .../299 to search only that "
                        "forum topic; a trailing '# comment' is ignored). Only used when "
-                       "--telegram-sources includes ChatLinks. Default: the two example "
-                       "chats shipped in the config."),
+                       "--mod-sources includes Telegram and --use-telegram-chat-links is on. "
+                       "Default: the example chats shipped in the config."),
             Value("--website-urls", key="WebsiteUrls", default=None, metavar="URLS",
                   help="Newline-separated websites to open in the browser when mods are still missing "
                        "(one per line; blank lines and '# comment' lines are ignored). Only used when "

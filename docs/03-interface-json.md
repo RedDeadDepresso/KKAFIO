@@ -74,6 +74,7 @@ reused by most tasks rather than each task declaring its own copy).
 | `textarea` | `{type: "textarea", text: string}` | Multi-line text box (prompts, links) |
 | `switch` | `{type: "switch", value: boolean}` | Single on/off toggle |
 | `checkbox` | `{type: "checkbox", caseNames: string[]}` | Row of multi-select tabs/chips — e.g. `BackupFolders` |
+| `ordered_checkbox` | `{type: "ordered_checkbox", order: string[], checked: string[]}` | Reorderable multi-select; `order` lists every case in the user's chosen order, `checked` the enabled ones. Config value is the checked names sorted by `order` |
 | `select` | `{type: "select", caseName: string}` | Single-choice dropdown |
 | `input` | `{type: "input", values: {[key]: string}}` | Free-text field(s) |
 

@@ -42,25 +42,34 @@ DEFAULT_TELEGRAM_CHAT_LINKS = (
     "https://t.me/kknowcc"
 )
 
-# Display labels for the TelegramSources checkbox, in the order they are tried
-# (koikatsucards.com first, then the chat links).
-TELEGRAM_SOURCE_LABELS = {
-    "KoikatsuCards": "koikatsucards.com",
-    "ChatLinks":     "Telegram Chat Links",
+# Display labels for the cases of the "Mod Sources" option.
+MOD_SOURCE_LABELS = {
+    "drive":    "Google Drive",
+    "mega":     "Mega",
+    "telegram": "Telegram",
 }
 
 
-def telegram_sources_label(sources: Iterable[str]) -> str:
-    """Human-readable summary of the selected sources, e.g.
-    ``"koikatsucards.com + Telegram Chat Links"``; ``"No"`` if none are selected.
+def mod_sources_label(sources: Iterable[str], chat_links: bool = False) -> str:
+    """Human-readable summary of the selected mod sources, in the order they are tried, e.g.
+    ``"Google Drive > Mega > Telegram + Chat Links"``; ``"None"`` if none is selected.
 
-    Always uses the canonical order, whatever order the selection came in.
+    `sources` are the case names of the option (case does not matter); unknown names are shown
+    as-is rather than silently dropped. `chat_links` says the Telegram Chat Links search is on:
+    it is only part of the summary when Telegram is among the sources.
     """
-    selected = set(sources)
-    labels = [label for name, label in TELEGRAM_SOURCE_LABELS.items() if name in selected]
-    # Unknown names are shown as-is rather than silently dropped.
-    labels += sorted(selected - TELEGRAM_SOURCE_LABELS.keys())
-    return " + ".join(labels) if labels else "No"
+    labels: list[str] = []
+    for name in sources:
+        key = str(name).strip().lower()
+        label = MOD_SOURCE_LABELS.get(key, str(name))
+        if label not in labels:
+            labels.append(label)
+    if not labels:
+        return "None"
+    text = " > ".join(labels)
+    if chat_links and MOD_SOURCE_LABELS["telegram"] in labels:
+        text += " + Chat Links"
+    return text
 
 
 # A chat/channel/group link, optionally pointing at a specific forum topic:
