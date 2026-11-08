@@ -11,9 +11,8 @@ from pathlib import Path
 from kkafio.core.logger import logger
 from kkafio.indices import cache
 
-PASSWORD_INDEX_URL = "https://reddeaddepresso.github.io/kk-password-scraper/kk_password_index.json"
-
 INDEX_FILENAME = "password.json"
+PASSWORD_INDEX_URL = f"https://reddeaddepresso.github.io/kk-password-scraper/indices/{INDEX_FILENAME}"
 
 TAG = "PWDIDX"
 

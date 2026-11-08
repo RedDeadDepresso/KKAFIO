@@ -137,7 +137,7 @@ def cache(tmp_path):
 
 
 def test_urls():
-    assert agv.INDEX_URL == "https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json"
+    assert agv.INDEX_URL == "https://reddeaddepresso.github.io/agv-character-scraper/indices/agv.json"
 
 
 def test_refresh_downloads_then_only_when_etag_changes(cache):

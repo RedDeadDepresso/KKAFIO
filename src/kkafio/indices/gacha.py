@@ -24,8 +24,8 @@ from kkafio.indices.agv import MAX_HINTS, Candidate, optional_int, split_key
 from kkafio.indices.text import name_parts, norm
 from kkafio.core.logger import logger
 
-INDEX_URL = "https://reddeaddepresso.github.io/gacha-character-scraper/gacha_character_index.json"
 INDEX_FILE = "gacha.json"
+INDEX_URL = f"https://reddeaddepresso.github.io/gacha-character-scraper/indices/{INDEX_FILE}"
 INDEX_VERSION = 1
 SOURCE = "gacha"
 

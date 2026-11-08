@@ -11,9 +11,8 @@ from pathlib import Path
 from kkafio.core.logger import logger
 from kkafio.indices import cache
 
-SCENE_INDEX_URL = "https://reddeaddepresso.github.io/pepper-scene-hasher/pepper-scene-index.json"
-
 INDEX_FILENAME = "scene.json"
+SCENE_INDEX_URL = f"https://reddeaddepresso.github.io/pepper-scene-hasher/indices/{INDEX_FILENAME}"
 
 TAG = "SCENEIDX"
 

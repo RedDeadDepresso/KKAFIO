@@ -12,9 +12,8 @@ from pathlib import Path
 from kkafio.core.logger import logger
 from kkafio.indices import cache
 
-MOD_INDEX_URL = "https://reddeaddepresso.github.io/kk-mod-scraper/indices/mod.json"
-
 INDEX_FILENAME = "mod.json"
+MOD_INDEX_URL = f"https://reddeaddepresso.github.io/kk-mod-scraper/indices/{INDEX_FILENAME}"
 
 
 def _load_cached_mod_index(index_path: Path) -> dict[str, str] | None:

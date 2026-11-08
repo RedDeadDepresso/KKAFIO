@@ -1,9 +1,9 @@
 # Gacha index format
 
-`gacha_character_index.json` is built by the separate
+`gacha.json` is built by the separate
 [gacha-character-scraper](https://github.com/RedDeadDepresso/gacha-character-scraper) repo (it scrapes popular gacha
 characters' wiki pages) and published on GitHub Pages at
-`https://reddeaddepresso.github.io/gacha-character-scraper/gacha_character_index.json`
+`https://reddeaddepresso.github.io/gacha-character-scraper/indices/gacha.json`
 (`INDEX_URL` in `src/kkafio/indices/gacha.py`).
 
 KKAFIO downloads it when **Group Characters** / **Rename Characters** run with

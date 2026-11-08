@@ -26,8 +26,8 @@ from kkafio.indices import cache
 from kkafio.indices.text import name_parts, norm
 from kkafio.core.logger import logger
 
-INDEX_URL = "https://reddeaddepresso.github.io/agv-character-scraper/agv_character_index.json"
 INDEX_FILE = "agv.json"
+INDEX_URL = f"https://reddeaddepresso.github.io/agv-character-scraper/indices/{INDEX_FILE}"
 INDEX_VERSION = 1
 
 MAX_HINTS = 5          # candidates handed to the LLM per card
