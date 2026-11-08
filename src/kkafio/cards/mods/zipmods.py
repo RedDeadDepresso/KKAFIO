@@ -13,7 +13,6 @@ from typing import NamedTuple
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import is_mod_archive
-from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 
@@ -260,8 +259,7 @@ def resolve_guids(required: Iterable[str], local_map: dict[str, Path],
 
 def scan_mods(mods_dir: Path, required: set[str],
               include_modpack: bool = False,
-              use_cache: bool = False,
-              game_type: str = GameType.KOIKATSU.value) -> dict[str, Path]:
+              use_cache: bool = False) -> dict[str, Path]:
     """Scan mods_dir for zipmods providing the required GUIDs.
 
     GUIDs the bundled modpack index can answer are resolved without any file I/O; the folder
@@ -270,7 +268,7 @@ def scan_mods(mods_dir: Path, required: set[str],
     if not mods_dir.exists():
         return {}
 
-    modpack_index = load_modpack_index(game_type=game_type) or {}
+    modpack_index = load_modpack_index() or {}
     res = resolve_guids(required, {}, modpack_index, mods_dir, include_modpack)
     found = dict(res.found)
     if res.missing:

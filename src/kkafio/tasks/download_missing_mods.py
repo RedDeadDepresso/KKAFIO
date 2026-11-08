@@ -42,7 +42,6 @@ from kkafio.cards.mods.shared_mods import game_card_dirs
 from kkafio.cards.mods.zipmods import build_mods_cache
 from kkafio.cards.mods.png_guids import collect_chara_guids, collect_coord_guids, collect_scene_guids
 from kkafio.core import progress
-from kkafio.core.config import GameType
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
@@ -353,8 +352,7 @@ class DownloadMissingMods(BaseTask):
         all_local_guids: set[str] = installed_guids | downloaded_guids
 
         # ── Step 2: modpack index ─────────────────────────────────────────
-        game_type     = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
-        modpack_index = load_modpack_index(game_type=game_type) or {}
+        modpack_index = load_modpack_index() or {}
         if modpack_index:
             logger.info("DLMOD", f"Modpack index loaded: {len(modpack_index)} GUIDs")
         else:

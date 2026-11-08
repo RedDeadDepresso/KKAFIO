@@ -15,7 +15,6 @@ from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.cards.mods.shared_mods import find_guids_in_use, keep_unshared, path_key
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
-from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.indices.modpack import load_modpack_index
 
@@ -156,10 +155,8 @@ class DeleteCards(BaseTask):
             f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
 
         local_map = self._get_local_mods_map(mods_dir)
-        game_type = self.config.config_data.get("Core", {}).get(
-            "GameType", GameType.KOIKATSU.value)
         # include_modpack is intentionally non-configurable here — never touch modpack mods
-        modpack_index = load_modpack_index(game_type=game_type) or {}
+        modpack_index = load_modpack_index() or {}
 
         guid_map: dict[str, Path] = {}
         for guid in all_guids:

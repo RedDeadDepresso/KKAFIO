@@ -360,29 +360,22 @@ def _modpack_payload(n=3):
 def test_load_modpack_index_downloads_and_revalidates(tmp_path):
     from index_cache import age, read_meta
     c = _Client('"e1"', _modpack_payload())
-    index = load_modpack_index("Koikatsu", c, tmp_path)
+    index = load_modpack_index(c, tmp_path)
     assert set(index) == {"pack.0", "pack.1", "pack.2"}
-    assert c.urls == [modpack.MODPACK_INDEX_URL_KK]
-    assert read_meta(tmp_path / "kk_modpack.json")["etag"] == '"e1"'
+    assert c.urls == [modpack.MODPACK_INDEX_URL]
+    assert read_meta(tmp_path / "modpack.json")["etag"] == '"e1"'
 
     again = _Client('"e2"', _modpack_payload(1))
-    assert load_modpack_index("Koikatsu", again, tmp_path) == index          # under an hour: no request
+    assert load_modpack_index(again, tmp_path) == index          # under an hour: no request
     assert again.urls == []
 
-    age(tmp_path / "kk_modpack.json", 2)
+    age(tmp_path / "modpack.json", 2)
     same = _Client('"e1"', _modpack_payload(1))                               # same ETag -> 304, cached copy
-    assert load_modpack_index("Koikatsu", same, tmp_path) == index
+    assert load_modpack_index(same, tmp_path) == index
 
-    age(tmp_path / "kk_modpack.json", 2)
+    age(tmp_path / "modpack.json", 2)
     new = _Client('"e2"', _modpack_payload(1))                                # new ETag -> re-download
-    assert set(load_modpack_index("Koikatsu", new, tmp_path)) == {"pack.0"}
-
-
-def test_load_modpack_index_uses_one_file_per_game_type(tmp_path):
-    kks = _Client('"k"', _modpack_payload(2))
-    assert len(load_modpack_index("KoikatsuSunshine", kks, tmp_path)) == 2
-    assert kks.urls == [modpack.MODPACK_INDEX_URL_KKS]
-    assert (tmp_path / "kks_modpack.json").exists() and not (tmp_path / "kk_modpack.json").exists()
+    assert set(load_modpack_index(new, tmp_path)) == {"pack.0"}
 
 
 def test_load_modpack_index_falls_back_to_cache_or_none(tmp_path):
@@ -392,11 +385,11 @@ def test_load_modpack_index_falls_back_to_cache_or_none(tmp_path):
         def get(self, *a, **k):
             raise OSError("offline")
 
-    assert load_modpack_index("Koikatsu", Down(), tmp_path) is None            # nothing cached
-    load_modpack_index("Koikatsu", _Client('"e1"', _modpack_payload()), tmp_path)
-    age(tmp_path / "kk_modpack.json", 2)
-    assert len(load_modpack_index("Koikatsu", Down(), tmp_path)) == 3          # offline: cached copy
-    assert load_modpack_index("Koikatsu", _Client('"x"', {"guids": [1]}), tmp_path / "other") is None  # wrong format
+    assert load_modpack_index(Down(), tmp_path) is None            # nothing cached
+    load_modpack_index(_Client('"e1"', _modpack_payload()), tmp_path)
+    age(tmp_path / "modpack.json", 2)
+    assert len(load_modpack_index(Down(), tmp_path)) == 3          # offline: cached copy
+    assert load_modpack_index(_Client('"x"', {"guids": [1]}), tmp_path / "other") is None  # wrong format
 
 
 def test_url_to_rel_path():

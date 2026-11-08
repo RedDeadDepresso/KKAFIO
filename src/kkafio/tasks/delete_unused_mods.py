@@ -20,7 +20,6 @@ from kkafio.cards.mods.zipmods import is_modpack_protected, local_mods_map
 from kkafio.cards.mods.png_guids import (
     collect_chara_guids, collect_coord_guids, collect_scene_guids,
 )
-from kkafio.core.config import GameType
 from kkafio.core.errors import InputError
 from kkafio.core.logger import logger
 from kkafio.indices.modpack import load_modpack_index
@@ -139,9 +138,7 @@ class DeleteUnusedMods(BaseTask):
         logger.info(TAG, f"Unused mods: {len(unused)}")
         logger.line()
 
-        game_type = self.config.config_data.get("Core", {}).get(
-            "GameType", GameType.KOIKATSU.value)
-        modpack_index = load_modpack_index(game_type=game_type) or {}
+        modpack_index = load_modpack_index() or {}
         folder_paths = [mods_dir / f for f in ex_folders]
 
         moved = 0

@@ -1,9 +1,8 @@
 """Sideloader Modpack index: {mod GUID: [download URL, ...]}.
 
-The indices are published by https://github.com/RedDeadDepresso/kk-mod-scraper (one file per
-game type, built from the BetterRepack server's listings). A copy is kept in
-CONFIG_DIR/indices/kk_modpack.json and kks_modpack.json; the server is asked at most once an
-hour, and a copy is only re-downloaded when its ETag changes (see kkafio.indices.cache). It lets
+The index is published by https://github.com/RedDeadDepresso/kk-mod-scraper (one file covering
+both Koikatsu and Koikatsu Sunshine, built from the BetterRepack server's listings). A copy is
+kept in CONFIG_DIR/indices/modpack.json; the server is asked at most once an hour, and a copy is only re-downloaded when its ETag changes (see kkafio.indices.cache). It lets
 Download Missing Mods, Archive Cards, Delete Unused Mods and the mods scan tell which GUIDs
 the Sideloader Modpack already provides without opening every zipmod in the modpack folders.
 
@@ -16,19 +15,13 @@ import json
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.indices import cache
 
 TAG = "MODPACK"
 
-MODPACK_INDEX_URL_KK  = "https://reddeaddepresso.github.io/kk-mod-scraper/indices/kk_modpack.json"
-
-MODPACK_INDEX_URL_KKS = "https://reddeaddepresso.github.io/kk-mod-scraper/indices/kks_modpack.json"
-
-MODPACK_INDEX_FILE_KK  = "kk_modpack.json"
-
-MODPACK_INDEX_FILE_KKS = "kks_modpack.json"
+MODPACK_INDEX_FILE = "modpack.json"
+MODPACK_INDEX_URL = f"https://reddeaddepresso.github.io/kk-mod-scraper/indices/{MODPACK_INDEX_FILE}"
 
 MODPACK_HOST        = "sideload.betterrepack.com"
 MODPACK_PATH_PREFIX = "/download/KKEC/"
@@ -73,6 +66,7 @@ def _load_cached_index(index_path: Path) -> dict | None:
         return None
 
 
+_MEMO_KEY = "modpack"
 _memo: dict[str, dict[str, list[str]] | None] = {}
 
 
@@ -81,34 +75,32 @@ def clear_cache() -> None:
     _memo.clear()
 
 
-def load_modpack_index(game_type: str = GameType.KOIKATSU.value, client=None,
-                       index_dir: Path | None = None) -> dict[str, list[str]] | None:
-    """Return the Sideloader Modpack index {guid: [url, ...]} (best URL first) for the game type.
+def load_modpack_index(client=None, index_dir: Path | None = None) -> dict[str, list[str]] | None:
+    """Return the Sideloader Modpack index {guid: [url, ...]} (best URL first).
 
-    Uses kks_modpack.json for KoikatsuSunshine, and kk_modpack.json for all other variants.
+    One file (modpack.json) covers every game type.
 
     The server is only asked if the cached copy was last checked an hour or more ago, with a
     conditional request (ETag), so an unchanged index costs a 304 and no download. If the
     download fails (e.g. offline), the cached copy is used. Returns None if no index is
     available.
 
-    Remembered (per game type) for the lifetime of the process — the index doesn't change
+    Remembered for the lifetime of the process — the index doesn't change
     mid-run, and this is called once per card by e.g. DeleteCards (scan_mods() →
     load_modpack_index() per file). Not remembered when `client` or `index_dir` is given.
     """
     memoize = client is None and index_dir is None
-    if memoize and game_type in _memo:
-        return _memo[game_type]
-    guids = _fetch_index(game_type, client, index_dir)
+    if memoize and _MEMO_KEY in _memo:
+        return _memo[_MEMO_KEY]
+    guids = _fetch_index(client, index_dir)
     if memoize:
-        _memo[game_type] = guids
+        _memo[_MEMO_KEY] = guids
     return guids
 
 
-def _fetch_index(game_type: str, client, index_dir: Path | None) -> dict[str, list[str]] | None:
-    is_kks = game_type == GameType.KOIKATSU_SUNSHINE.value
-    url = MODPACK_INDEX_URL_KKS if is_kks else MODPACK_INDEX_URL_KK
-    index_path = (index_dir or cache.default_dir()) / (MODPACK_INDEX_FILE_KKS if is_kks else MODPACK_INDEX_FILE_KK)
+def _fetch_index(client, index_dir: Path | None) -> dict[str, list[str]] | None:
+    url = MODPACK_INDEX_URL
+    index_path = (index_dir or cache.default_dir()) / MODPACK_INDEX_FILE
     name = index_path.name
 
     cached = _load_cached_index(index_path)

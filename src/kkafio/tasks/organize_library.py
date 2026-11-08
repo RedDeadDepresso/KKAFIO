@@ -36,7 +36,6 @@ import os
 from pathlib import Path
 
 from kkafio.cards.chara import hint_language
-from kkafio.core.config import GameType
 from kkafio.core.errors import InputError
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
@@ -129,11 +128,10 @@ class OrganizeLibrary(BaseTask):
         return installed_dir, downloaded_dir
 
     def _card_mods(self) -> CardMods:
-        game_type = getattr(self.config, "config_data", {}).get("Core", {}).get("GameType", GameType.KOIKATSU.value)
         installed_dir, downloaded_dir = self._mods_dirs()
         self._installed_mods_dir = installed_dir
         self._downloaded_mods_dir = downloaded_dir
-        return CardMods(ModsLookup(installed_dir, game_type, self.use_cache, extra_dirs=(downloaded_dir,)))
+        return CardMods(ModsLookup(installed_dir, use_cache=self.use_cache, extra_dirs=(downloaded_dir,)))
 
     # ------------------------------------------------------------------
     # Deleting the To Delete cards

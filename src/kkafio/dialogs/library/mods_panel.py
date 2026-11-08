@@ -29,7 +29,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from kkafio.core.config import GameType
 from kkafio.core.logger import logger
 from kkafio.cards.mods.zipmods import local_mods_map, resolve_guid
 from kkafio.indices.modpack import load_modpack_index
@@ -90,7 +89,7 @@ class ModsLookup:
     without a path.
     """
 
-    def __init__(self, mods_dir: Path | None, game_type: str = GameType.KOIKATSU.value,
+    def __init__(self, mods_dir: Path | None,
                  use_cache: bool = True, extra_dirs: Sequence[Path | None] = ()):
         self.mods_dir = Path(mods_dir).resolve() if mods_dir is not None else None
         # every folder to look in, resolved, without repeats (installed and downloaded may be the same)
@@ -103,7 +102,6 @@ class ModsLookup:
                 self.mods_dirs.append(d)
         if self.mods_dir is None and self.mods_dirs:
             self.mods_dir = self.mods_dirs[0]
-        self.game_type = game_type
         self.use_cache = use_cache
         self._lock = threading.Lock()
         self._local: dict[Path, dict[str, Path]] | None = None   # per folder: GUIDs of the mods outside the modpack
@@ -118,7 +116,7 @@ class ModsLookup:
         with self._lock:
             if self._local is not None:
                 return
-            self._modpack = load_modpack_index(game_type=self.game_type) or {}
+            self._modpack = load_modpack_index() or {}
             local: dict[Path, dict[str, Path]] = {}
             for folder in self.mods_dirs:
                 if not folder.is_dir():

@@ -17,7 +17,6 @@ from kkafio.cards.mods.zipmods import (
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
 from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
-from kkafio.core.config import GameType
 from kkafio.core.errors import InputError, TaskFailedError
 from kkafio.core.logger import logger
 from kkafio.indices.modpack import load_modpack_index
@@ -148,13 +147,12 @@ class ArchiveCards(BaseTask):
         zipmod_paths: list[Path] = []
         missing: set[str] = set()
         modpack_missing: set[str] = set()
-        game_type = self.config.config_data.get("Core", {}).get("GameType", GameType.KOIKATSU.value)
 
         if mods_dir and mods_dir.exists() and all_guids:
             logger.info("ARCHV",
                 f"  Scanning mods ({len(all_guids)} GUIDs needed): {mods_dir}")
 
-            modpack_index = load_modpack_index(game_type=game_type) or {}
+            modpack_index = load_modpack_index() or {}
             local_map = self._get_local_mods_map(mods_dir)
 
             resolution = resolve_guids(all_guids, local_map, modpack_index, mods_dir,
