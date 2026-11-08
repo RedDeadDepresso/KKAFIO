@@ -151,3 +151,55 @@ def apply_to_customtkinter() -> None:
 def _text_on(color: str) -> str:
     r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
     return "#1a1a1a" if (0.299 * r + 0.587 * g + 0.114 * b) > 160 else "#ffffff"
+
+
+# ---------------------------------------------------------------------------
+# The window icon
+# ---------------------------------------------------------------------------
+
+_ICON_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+
+
+def _recolor_icon(source: Path, target: Path, color: str) -> None:
+    """Write CustomTkinter's icon with its blue replaced by `color`.
+
+    The icon is blue (two tones: face and shadow) on white. A pixel's HSV saturation says how much
+    "blue" it holds (white 0, blue 1) and its value which tone (face 1.0, shadow ~0.7), so each pixel
+    becomes: white * (1 - s) + color * v * s. Anti-aliased edges and the alpha channel carry over."""
+    from PIL import Image
+
+    rgb = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
+    img = Image.open(source).convert("RGBA")
+    hsv = img.convert("RGB").convert("HSV")
+    out = []
+    for (r, g, b, a), (_h, s, v) in zip(img.getdata(), hsv.getdata()):
+        s, v = s / 255, v / 255
+        out.append(tuple(round(255 * (1 - s) + c * v * s) for c in rgb) + (a,))
+    img.putdata(out)
+    img.save(target, format="ICO", sizes=_ICON_SIZES)
+
+
+def accent_icon_path() -> str | None:
+    """Path of CustomTkinter's window icon recoloured in the accent (made once per colour, in the
+    temp folder), or None when it can't be made (not Windows, no Pillow, ...): the dialogs then keep
+    CustomTkinter's own icon. Only Windows uses this icon."""
+    import sys
+
+    if sys.platform != "win32":
+        return None
+    try:
+        import tempfile
+
+        import customtkinter
+
+        source = Path(customtkinter.__file__).parent / "assets" / "icons" / "CustomTkinter_icon_Windows.ico"
+        target_dir = Path(tempfile.gettempdir()) / "kkafio-icons"
+        target = target_dir / f"ctk-{_accent['default'][1:].lower()}.ico"
+        if not target.is_file():
+            target_dir.mkdir(parents=True, exist_ok=True)
+            partial = target.with_suffix(".tmp")
+            _recolor_icon(source, partial, _accent["default"])
+            partial.replace(target)
+        return str(target)
+    except Exception:
+        return None

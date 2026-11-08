@@ -57,7 +57,35 @@ def _get_host():
     theme.apply_to_customtkinter()          # settings.theme / settings.accentColor of mxu-KKAFIO.json
     _host = ctk.CTk()
     _host.withdraw()
+    set_window_icon(_host)
     return _host
+
+
+def set_window_icon(win) -> None:
+    """Give a CTk / CTkToplevel window CustomTkinter's icon in the accent colour (Windows).
+
+    CustomTkinter sets its blue icon ~200 ms after a window is created, unless iconbitmap() was
+    called by then; calling it here stops that. It is repeated a few times, as with the title bar
+    (sync_titlebar_theme), because Tk can lose an icon set on a window that is not mapped yet."""
+    from kkafio.core import theme
+
+    path = theme.accent_icon_path()
+    if path is None:
+        return
+
+    def apply() -> None:
+        try:
+            if win.winfo_exists():
+                win.iconbitmap(path)
+        except Exception:
+            pass
+
+    apply()
+    for delay in (50, 250, 600):
+        try:
+            win.after(delay, apply)
+        except Exception:
+            break
 
 
 def new_window(title: str, topmost: bool = True):
@@ -70,6 +98,7 @@ def new_window(title: str, topmost: bool = True):
     win = ctk.CTkToplevel(_get_host())
     win.withdraw()
     win.title(title)
+    set_window_icon(win)
     if topmost:
         win.attributes("-topmost", True)
     return win
