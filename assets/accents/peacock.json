@@ -1,0 +1,15 @@
+{
+  "name": "peacock",
+  "label": {
+    "zh-CN": "孔雀青",
+    "zh-TW": "孔雀青",
+    "en-US": "Peacock",
+    "ja-JP": "ピーコック",
+    "ko-KR": "피콕",
+    "ru-RU": "Павлиний"
+  },
+  "default": "#009FAA",
+  "hover": "#008F99",
+  "light": "#00BFCC",
+  "lightDark": "#006F77"
+}

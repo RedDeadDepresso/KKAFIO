@@ -143,6 +143,19 @@ _DARK = dict(bg="#17181c", side="#1d1f24", tile="#25282f", text="#e6e8ee", muted
              accent="#8ea6ff", sel="#2f3d6b", hover="#2b2e37", input="#12131a", border="#3a3f4b", cover="#33363f")
 
 
+def _apply_accent_to_palettes() -> None:
+    """Colour the accent entries of both palettes from the configured accent (core/theme.py)."""
+    from kkafio.core import theme
+
+    sel_light, sel_dark = theme.accent_selection_pair()
+    text_light, text_dark = theme.accent_text_pair()
+    _LIGHT.update(accent=text_light, sel=sel_light)
+    _DARK.update(accent=text_dark, sel=sel_dark)
+
+
+_apply_accent_to_palettes()
+
+
 # ---------------------------------------------------------------------------
 # The sidebar list
 # ---------------------------------------------------------------------------
@@ -487,6 +500,7 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
     if mods is not None:
         from kkafio.dialogs.library.mods_sidebar import ModsSidebar      # (it imports this module)
         import customtkinter as _ctk
+        _apply_accent_to_palettes()
         _dark = _ctk.get_appearance_mode() == "Dark"
         try:
             _scale = float(root._get_window_scaling())
@@ -596,6 +610,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     host.grid_columnconfigure(0, weight=1)
     host.grid_rowconfigure(0, weight=1)
 
+    _apply_accent_to_palettes()
     dark = ctk.get_appearance_mode() == "Dark"
     pal = _DARK if dark else _LIGHT
 

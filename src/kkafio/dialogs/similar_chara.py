@@ -284,10 +284,12 @@ def _ctk_dialog(title, groups, keep_choices, select_keep, extra_details) -> list
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(2, weight=1)       # the list takes all extra space
 
+    from kkafio.dialogs.library.window import _apply_accent_to_palettes
+    _apply_accent_to_palettes()
     dark = ctk.get_appearance_mode() == "Dark"
     pal = _DARK if dark else _LIGHT           # the canvas takes the colours of the theme
     lock_on, lock_off = (_LOCK_ON[1], _LOCK_OFF[1]) if dark else (_LOCK_ON[0], _LOCK_OFF[0])
-    accent = _ACCENT[1] if dark else _ACCENT[0]
+    accent = pal["accent"]                    # the configured accent colour
 
     try:
         scale = float(root._get_window_scaling())

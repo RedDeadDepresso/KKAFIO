@@ -53,7 +53,8 @@ def _get_host():
                 return _host
         except tk.TclError:
             pass
-    ctk.set_appearance_mode("system")
+    from kkafio.core import theme
+    theme.apply_to_customtkinter()          # settings.theme / settings.accentColor of mxu-KKAFIO.json
     _host = ctk.CTk()
     _host.withdraw()
     return _host
