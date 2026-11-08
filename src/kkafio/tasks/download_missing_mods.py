@@ -18,8 +18,10 @@ Strategy
      a) In modpack index → BetterRepack (httpx, no auth)
      b) Not in index, Telegram Sources includes KoikatsuCards → look up the
         GUID in mod.json (kk-mod-scraper; cached in CONFIG_DIR/indices and
-        checked for updates at most once an hour), then download the
-        linked t.me message directly from Telegram
+        checked for updates at most once an hour). It lists links on
+        Telegram, Google Drive and Mega; they are tried in that order
+        (fastest and most reliable first, see indices/mod.py SOURCE_ORDER)
+        until one downloads the mod
      c) Not in index (or the KKC mod index had no link / the download
         failed), Telegram Sources includes ChatLinks → search each
         configured Telegram Chat Links entry (channel, group, or forum
@@ -45,13 +47,14 @@ from kkafio.core import progress
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
-from kkafio.indices.mod import load_mod_index
+from kkafio.indices.mod import load_mod_index, ordered_links
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.services.mod_sources.betterrepack import (
     MAX_CONNECTIONS,
     download_betterrepack,
     make_http_client,
 )
+from kkafio.services.mod_sources.filehosts import download_via_host
 from kkafio.services.mod_sources.telegram.links import (
     parse_chat_links,
     telegram_sources_label,
@@ -511,7 +514,7 @@ class DownloadMissingMods(BaseTask):
 
                 # Telegram — sequential
                 if telegram_queue:
-                    mod_index: dict[str, str] = {}
+                    mod_index: dict[str, dict[str, list[str]]] = {}
                     if use_koikatsucards:
                         mod_index = await load_mod_index(br_client)
 
@@ -700,18 +703,33 @@ class DownloadMissingMods(BaseTask):
                                     progress.set_current(guid)
 
                                     if use_koikatsucards:
-                                        tg_link = mod_index.get(guid, "")
-                                        if tg_link:
+                                        # Links of the mod index in the order of speed
+                                        # and reliability (Telegram, Drive, Mega): the
+                                        # first one that downloads the mod wins.
+                                        links = ordered_links(mod_index.get(guid))
+                                        if links:
                                             found_source = True
-                                            logger.info("DLMOD", f"  Link: {tg_link}")
-                                            # Pass rel_path so the file is saved to the
-                                            # same subfolder as the modpack index
-                                            success = await download_via_teleget(
-                                                guid, tg_link, downloaded_mods_dir, tg_data,
-                                                guid_str_map, tg_client,
-                                                downloader=teleget_downloader,
-                                                rel_path=rel_path,
-                                            )
+                                            for n, (source, link) in enumerate(links, 1):
+                                                logger.info("DLMOD", f"  Link ({source}): {link}")
+                                                # Pass rel_path so the file is saved to the
+                                                # same subfolder as the modpack index
+                                                if source == "telegram":
+                                                    success = await download_via_teleget(
+                                                        guid, link, downloaded_mods_dir, tg_data,
+                                                        guid_str_map, tg_client,
+                                                        downloader=teleget_downloader,
+                                                        rel_path=rel_path,
+                                                    )
+                                                else:
+                                                    success = await download_via_host(
+                                                        source, link, guid, downloaded_mods_dir,
+                                                        br_client, rel_path=rel_path,
+                                                    )
+                                                if success in (True, "skipped"):
+                                                    break
+                                                if n < len(links):
+                                                    logger.warning("DLMOD",
+                                                        f"  {source} link failed — trying the next one")
                                         else:
                                             logger.warning("DLMOD",
                                                 f"  {guid} — not in mod index")

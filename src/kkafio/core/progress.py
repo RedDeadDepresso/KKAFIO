@@ -29,6 +29,7 @@ another thread than the one that draws the window.
 
 from __future__ import annotations
 
+import contextlib
 import itertools
 import threading
 import time
@@ -111,6 +112,7 @@ class ProgressTracker:
         self._current: str | None = None
         self._cancelled = False
         self._on_cancel = on_cancel
+        self._muted = 0                     # >0: files are not counted (see quiet_counts)
 
     # -- reporting side ----------------------------------------------------
 
@@ -122,8 +124,12 @@ class ProgressTracker:
 
     def count(self, result: str) -> None:
         with self._lock:
-            if result in self._counts:
+            if result in self._counts and not self._muted:
                 self._counts[result] += 1
+
+    def mute_counts(self, on: bool) -> None:
+        with self._lock:
+            self._muted = max(0, self._muted + (1 if on else -1))
 
     def item_done(self, n: int = 1) -> None:
         with self._lock:
@@ -144,7 +150,7 @@ class ProgressTracker:
     def _close(self, row: _Row, ok: bool) -> None:
         with self._lock:
             self._rows.pop(row.id, None)
-            if ok:
+            if ok and not self._muted:
                 self._counts["ok"] += 1
 
     # -- window side -------------------------------------------------------
@@ -189,6 +195,20 @@ def uninstall() -> None:
 def begin(name: str, total: int | None = None) -> TransferHandle | _NullHandle:
     tracker = _active
     return tracker.begin(name, total) if tracker is not None else _NULL_HANDLE
+
+
+@contextlib.contextmanager
+def quiet_counts():
+    """Inside the block finished files are not counted (the rows still show). For a caller that
+    counts per item itself (a mod) and uses a downloader that counts per file (Mega, Drive)."""
+    tracker = _active
+    if tracker is not None:
+        tracker.mute_counts(True)
+    try:
+        yield
+    finally:
+        if tracker is not None:
+            tracker.mute_counts(False)
 
 
 def count(result: str) -> None:

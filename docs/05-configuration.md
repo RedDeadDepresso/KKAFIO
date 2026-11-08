@@ -190,9 +190,13 @@ All of them are refreshed the same way (`src/kkafio/indices/cache.py`):
 
 Formats:
 
-- `mod.json` maps mod GUIDs to Telegram message links, e.g.
-  `{ "com.AgiShark.Casual_Moves_Part2": "https://t.me/KK_archive_modlibrary/25" }`. It is only read when at
-  least one mod needs a Telegram download and the `KoikatsuCards` entry of Telegram Sources is checked.
+- `mod.json` maps mod GUIDs to the links the mod can be downloaded from, per host, e.g.
+  `{ "com.AgiShark.Casual_Moves_Part2": { "mega": [], "drive": ["https://drive.google.com/file/d/…/view"], "telegram": ["https://t.me/KK_archive_modlibrary/25"] } }`.
+  Each list may hold several links or none. The links of a mod are tried in the order Telegram, Google Drive,
+  Mega (fastest and most reliable first; `SOURCE_ORDER` in `src/kkafio/indices/mod.py`) until one downloads the
+  mod; a download is only kept if its `manifest.xml` has the GUID that was asked for. It is only read when at
+  least one mod needs a download from outside the modpack and the `KoikatsuCards` entry of Telegram Sources is
+  checked. Telegram is needed for the whole step (the account is signed in before any link is tried).
 - `agv.json` is the character / series index (format version 1; anime and visual novel / JRPG games from the
   Bangumi Archive) used for the `hints` that **Group Characters** and **Rename Characters** send to the LLM. It is
   refreshed when those tasks run with *Hints Language* set to anything but `no`. An entry of `chars` is
