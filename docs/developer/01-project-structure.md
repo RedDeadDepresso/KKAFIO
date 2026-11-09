@@ -140,8 +140,8 @@ KKAFIO-dev/
 │       ├── subprocess_utils.py      # Windows-console-encoding-safe subprocess.run/Popen wrappers
 │       └── context_menu_batch.py    # Coalesces multi-select Explorer context-menu invocations
 │
-├── docs/                            # You are here
-└── wiki/                            # User-facing task documentation (mirrors GitHub Wiki pages)
+├── docs/                            # Documentation site source (Zensical): user guide + this developer guide
+└── zensical.toml                    # Documentation site configuration
 ```
 
 ## What is a "task"?
@@ -157,13 +157,13 @@ Every entry in the `src/kkafio/tasks/` folder maps 1:1 to a task declared in
 - **A pair of module-level functions**, `export()` + `process()` — used by
   `group_chara.py` and `rename_chara.py` in addition to their `GroupChara`/
   `RenameChara` classes, because the LLM round-trip dialog (see
-  [`llm.py`](../src/kkafio/dialogs/llm.py)) needs to build a prompt, hand
+  [`llm.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/dialogs/llm.py)) needs to build a prompt, hand
   control to the user, and then process whatever they paste back — the
   class's `run()` just calls both in sequence.
 
 Every task is declared once, as a `TaskSpec` in
-[`task_specs.py`](../src/kkafio/task_specs.py) (machinery in
-[`registry.py`](../src/kkafio/registry.py)). The spec names the task, points at
+[`task_specs.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/task_specs.py) (machinery in
+[`registry.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/registry.py)). The spec names the task, points at
 its class by `"module:Class"` string, and lists its command-line options; the
 subcommand, its `--help`, its dispatch from `kkafio_cli run` and its config
 overrides all follow from that. Nothing is auto-discovered from the `tasks/`
@@ -186,7 +186,7 @@ recorded behaviour — regenerate them deliberately with
 ### Raising errors
 
 Raise the exception that says who can fix the problem (all in
-[`core/errors.py`](../src/kkafio/core/errors.py)):
+[`core/errors.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/core/errors.py)):
 
 - The **user** can (a wrong setting, a folder that doesn't exist, nothing to
   process, a missing tool): raise `ConfigError` / `InputError` /

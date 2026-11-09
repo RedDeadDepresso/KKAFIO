@@ -1,0 +1,123 @@
+# Zensical configuration for the KKAFIO documentation.
+# Reference: https://zensical.org/docs/setup/basics/
+#
+#   uvx zensical serve     # live preview at http://localhost:8000
+#   uvx zensical build     # static site -> ./site
+
+[project]
+site_name = "KKAFIO"
+site_description = "Koikatsu Auto File I/O: download, install, sort and archive cards, scenes, outfits and mods."
+site_url = "https://reddeaddepresso.github.io/KKAFIO/"
+repo_url = "https://github.com/RedDeadDepresso/KKAFIO"
+repo_name = "RedDeadDepresso/KKAFIO"
+edit_uri = "edit/dev/docs/"
+docs_dir = "docs"
+site_dir = "site"
+
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = [
+    "getting-started/installation.md",
+    "getting-started/game-type.md",
+    "getting-started/context-menu.md",
+    "getting-started/languages.md",
+  ] },
+  { "Tasks" = [
+    "tasks/index.md",
+    "tasks/create-backup.md",
+    "tasks/download-contents.md",
+    "tasks/filter-convert-kks-cards.md",
+    "tasks/filter-duplicate-contents.md",
+    "tasks/download-missing-mods.md",
+    "tasks/compress-card-textures.md",
+    "tasks/install-contents.md",
+    "tasks/uninstall-contents.md",
+    "tasks/group-characters.md",
+    "tasks/ungroup-cards.md",
+    "tasks/rename-characters.md",
+    "tasks/archive-cards.md",
+    "tasks/delete-cards.md",
+    "tasks/export-mods.md",
+    "tasks/delete-unused-mods.md",
+    "tasks/group-scenes.md",
+    "tasks/review-similar-characters.md",
+    "tasks/organize-library.md",
+  ] },
+  { "Presets" = "presets.md" },
+  { "CLI usage" = "cli.md" },
+  { "Developer guide" = [
+    "developer/index.md",
+    "developer/01-project-structure.md",
+    "developer/02-how-it-works.md",
+    "developer/03-interface-json.md",
+    "developer/04-mxu-gui.md",
+    "developer/05-configuration.md",
+    "developer/06-gacha-index-format.md",
+  ] },
+  { "About" = [
+    "known-issues.md",
+    "acknowledgements.md",
+    "changelog.md",
+  ] },
+]
+
+[project.theme]
+language = "en"
+logo = "assets/icon.png"
+favicon = "assets/icon.png"
+features = [
+  "content.action.edit",
+  "content.code.copy",
+  "content.tabs.link",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+pymdownx.betterem = {}
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.keys = {}
+pymdownx.snippets.base_path = ["."]   # lets docs/changelog.md include ../CHANGELOG.md
+pymdownx.superfences = {}
+pymdownx.tabbed.alternate_style = true
+pymdownx.tasklist.custom_checkbox = true

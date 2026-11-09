@@ -1,0 +1,15 @@
+# Review Similar Characters
+
+- Finds character cards that were probably saved more than once and lets you decide, in a dialog, which ones to remove. It scans the game's female and male chara folders (or **Custom Chara Directory**) recursively and never deletes anything on its own — only the cards you tick and confirm with **Trash selected** are removed, and that removal is done by [Delete Cards](delete-cards.md).
+- **Match By** — how cards are grouped:
+  - **Similar cover image** _(default)_ — the cover pictures look alike (perceptual hash). Different characters in the same pose can match too, so check before removing.
+  - **Same first & last name** — the card's first and last name (read from the card) are both the same, ignoring case. Cards without a name are never grouped.
+  - **Similar filename** — file names are equal once a trailing number is removed, so `Rin`, `Rin_1`, `Rin (2)` and `Rin-03` form one group. **Recommended after running Group Characters and Rename Characters**, so the cards have consistent names and sit in their own folders. Only files in the *same folder* are grouped, even though subfolders are scanned. Only 1–3 digit numbers count: a long number such as the timestamp in the game's own file names isn't stripped.
+- The same options as Delete Cards apply to the removal — **Check for Shared Mods**, **Include Coordinates**, **Use Cache**, **Auto-resolve** and the **Custom Mods/Chara/Scene/Coordinate Directory** overrides — except there's no list of content paths: the dialog supplies it. **Use Cache** also caches cover hashes and character names (`kkafio_similar_chara_cache.json` in the scanned folder).
+- **The dialog** lists every group with each card's cover, size, creation date and folder, and a **Details** button (name, dates, full cover, *Show in folder*). Every group has a lock and every card a checkbox (tick = remove):
+  - Ticking or unticking a card is a decision, so it **locks its group** (🔒, one lock per group in the group's header). You can also click a lock to lock or unlock a group by hand.
+  - The **Auto-select** dropdown at the bottom left fills in every group that has *no* locked card: it keeps one card — newest, oldest, biggest file, smallest file, last or first alphabetically — and ticks the rest (*Select all (keep none)* ticks everything). Locked groups are skipped, and Auto-select never locks anything, so you can try several strategies. Tick/untick or lock a few groups by hand first, then Auto-select the rest.
+  - **Undo** (next to Auto-select) takes back the last Auto-select, one step at a time. Groups you've since decided by hand are left as you set them.
+  - Keys: **A / D** (or **← →**) change page, **W / S** (or **↑ ↓**) scroll the list. They are ignored while the search box has focus — press **Enter** there to hand the keyboard back to the list. The dialog is a normal window (not always-on-top), so you can put other apps in front of it.
+  - If a group would end up with every card ticked you're asked to confirm before trashing.
+  - The search box filters groups by file name, folder or character name.

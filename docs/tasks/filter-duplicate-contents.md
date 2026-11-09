@@ -1,0 +1,25 @@
+# Filter Duplicate Contents
+
+- Scans recursively for duplicate `.png` cards and `.zipmod` files in the game's content folders — or in the folders you point it at.
+- **Content Types** — pick which of Chara / Mods / Coords / Scenes / Overlays to check (all selected by default), the same as in Install Contents. Only duplicates of the selected types are touched.
+- **Custom Chara / Scene / Coordinate / Mods / Overlays Directory** — all blank by default, which means the game's own folder for that type (chara checks both the female and male folders; scenes need Studio to be installed). Set one to scan somewhere else instead, such as a staging folder; a folder shared by several types is scanned once. The **📥 Download, Filter & Install** preset points all five at `C:/KKAFIO/Downloads`.
+- Zipmods inside a Sideloader Modpack folder are never touched.
+- Duplicates are detected by **content** (not filename):
+  - PNG cards are fingerprinted using the character data payload embedded after the PNG IEND chunk, so two cards with different preview images are still caught as duplicates.
+  - To find characters that are *similar* rather than identical (a similar cover, the same name, a similar filename), use [Review Similar Characters](review-similar-characters.md), where you choose what to remove yourself.
+- Duplicates are moved into `_duplicates_/<category>/` subfolders:
+  - `chara/` — KK / KKSP / KKS character cards
+  - `coordinate/` — coordinate cards
+  - `scene/` — Studio scene files
+  - `overlays/` — unclassified PNGs
+  - `mods/` — zipmod files
+- **Keep strategy** controls which copy of a duplicate set is kept in place: Newest, Oldest (default), Last alphabetically, First alphabetically, or None (move all copies). A saved setting of the removed *Biggest/Smallest file size* strategies falls back to Oldest (with a warning in the log).
+- **Use Cache** (on by default) — remembers each file's content hash keyed by its mtime + size, so a repeat scan only re-hashes files that are new or have changed. Uses two separate cache files in the scanned folder:
+  - `kkafio_duplicate_png_cache.json` — xxHash + category for every PNG
+  - `kkafio_duplicate_mods_cache.json` — xxHash for every zipmod
+- **Duplicate Action** controls what happens to the copies that aren't kept:
+  - **Move & Rename** _(default)_: moves duplicates into `_duplicates_/<category>/` and renames them so it's obvious which card they're a copy of.
+    - If **Keep strategy** is **None** (all copies moved, none kept in place), the first duplicate found in each set keeps its own name, and every other duplicate in that set is renamed after it with a number — e.g. `bar.png`, `bar_1.png`, `bar_2.png`.
+    - If **Keep strategy** is anything else, every moved duplicate is renamed to the name of the copy that stayed in the source, plus a number — e.g. the kept `foo.png` leaves duplicates named `foo_1.png`, `foo_2.png`.
+  - **Move**: moves duplicates into `_duplicates_/<category>/` keeping their original filenames.
+  - **Delete**: sends duplicates straight to the recycle bin instead of moving them.

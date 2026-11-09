@@ -228,7 +228,7 @@ The native dialogs (Copy/Paste, password prompt, Review Similar Characters)
 are drawn by Python, not the GUI, so their text can't come from
 `interface.json`. It lives in `assets/i18n/runtime/<lang>.json` (the same six
 languages) and is looked up with `t("dialog.…", name=value)` from
-[`core/i18n.py`](../src/kkafio/core/i18n.py). The files are separate because
+[`core/i18n.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/core/i18n.py). The files are separate because
 `sync_i18n_keys.py` deletes every key `interface.json` doesn't reference. Values
 are `str.format` templates (`{name}` placeholders). Add a key to **all six**
 files; `tests/core/test_i18n.py` fails if a language is missing one, renames a

@@ -251,10 +251,10 @@ regenerates itself if the folder's contents don't match what's cached.
 |---|---|---|---|
 | `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`src/kkafio/cards/mods/zipmods.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
 | `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`src/kkafio/cards/chara/outfits.py`, used by Archive/Delete Cards) | xxh3-128 digest of each coordinate card's clothes + accessory data, with modded item IDs normalised to `ModID:Slot` via the file's own UAR info (looked up against a chara card's outfits) |
-| `kkafio_chara_guid_cache.json` | each scanned chara directory (one file per folder) | [Download Missing Mods](../wiki/Task-Download-Missing-Mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
+| `kkafio_chara_guid_cache.json` | each scanned chara directory (one file per folder) | [Download Missing Mods](../tasks/download-missing-mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
 | `kkafio_scene_guid_cache.json` | each scanned scene directory (one file per folder) | Download Missing Mods (scene scan), Delete Cards' shared-mod check | per-scene referenced mod GUIDs |
 | `kkafio_coord_guid_cache.json` | each scanned coordinate directory (one file per folder) | Download Missing Mods (coordinate scan), Delete Cards' shared-mod check | per-coordinate-card referenced mod GUIDs |
-| `kkafio_rename_cache.json` | the Rename Chara input folder | [Rename Chara](../wiki/Task-Rename-Chara.md) | which cards have already been renamed, and to what |
+| `kkafio_rename_cache.json` | the Rename Chara input folder | [Rename Chara](../tasks/rename-characters.md) | which cards have already been renamed, and to what |
 
 None of these are meant to be edited by hand, and all are safe to delete —
 worst case, the next run does a full rescan and rebuilds them.

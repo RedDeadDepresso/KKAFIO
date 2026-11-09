@@ -2,7 +2,7 @@
 
 This folder documents KKAFIO's internals — how the pieces fit together, not
 how to use them. If you're looking for user-facing task documentation, see
-the [wiki](../wiki/Home.md) or the [README](../README.md) instead.
+the [user guide](../index.md) instead.
 
 This is for anyone modifying KKAFIO itself: adding a task, adding an option,
 understanding why a change to `interface.json` didn't do anything, or trying
