@@ -1,11 +1,9 @@
-# Project Structure
-
-## Repository layout
+# Repository layout
 
 ```
 KKAFIO-dev/
 ├── kkafio_cli.py                    # Thin launcher (PyInstaller entry point; also `python kkafio_cli.py`)
-├── interface.json                   # Schema describing every task/option for the GUI (see doc 03)
+├── interface.json                   # Schema describing every task/option for the GUI (see the interface.json reference)
 ├── kkafio_setup.bat                 # Menu launcher: create default folders / enable clipboard history / register / unregister context menu / delete config+folders
 │
 ├── scripts/                         # Scripts run by kkafio_setup.bat (also runnable standalone)
@@ -19,15 +17,15 @@ KKAFIO-dev/
 ├── tools/                           # Standalone maintainer/setup scripts (not imported by kkafio_cli)
 │   ├── build_default_coordinate.py     # Records a folder of default coordinates in assets/indices/default_coordinate.json (Group Coordinates leaves those coordinates alone)
 │   ├── download_gui.py              # Downloads the MXU-KKAFIO GUI release as KKAFIO.exe
-│   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see doc 03)
-│   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see doc 03)
+│   ├── generate_config.py           # Regenerates src/kkafio/core/config.py's interface.json-driven sections (see the interface.json reference)
+│   └── sync_i18n_keys.py            # Adds/removes assets/i18n/*.json keys to match interface.json (see the interface.json reference)
 │
 ├── assets/                          # Static data shipped with every release
 │   ├── icon.png                     # App icon source (converted to kkafio.ico during CI build)
 │   ├── indices/                     # Static indices and reference data
 │   │   └── default_coordinate.json  # Optional, written by tools/build_default_coordinate.py: outfit digests of the default coordinates Group Coordinates skips
-│   └── i18n/                        # GUI translation strings, one file per language (see doc 03)
-│       ├── runtime/                 # Same languages: text for Python's own dialogs, via core/i18n.py (see doc 03)
+│   └── i18n/                        # GUI translation strings, one file per language (see the interface.json reference)
+│       ├── runtime/                 # Same languages: text for Python's own dialogs, via core/i18n.py (see the interface.json reference)
 │       ├── en_us.json
 │       ├── ja_jp.json
 │       ├── ko_kr.json
@@ -64,7 +62,7 @@ KKAFIO-dev/
 │   │   └── uninstall_contents.py
 │   │
 │   ├── core/                        # Configuration, logging, paths, file operations, session_store.py (JSON state files under sessions/)
-│   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see doc 05)
+│   │   ├── config.py                # Reads the GUI's JSON config, builds per-task config dicts (see the Configuration reference)
 │   │   ├── errors.py                # KKAFIOError / UserError / ConfigError / InputError / ToolNotFoundError / TaskFailedError
 │   │   ├── paths.py                 # Shipped-file paths (APP_DIR / ASSETS_DIR, frozen vs. source) and the per-user config dir (CONFIG_DIR)
 │   │   ├── folder_names.py          # safe_folder_name(): a series / character / author name made safe to create as a folder (Group Characters, Coordinates, Scenes)
@@ -94,7 +92,7 @@ KKAFIO-dev/
 │   │
 │   ├── indices/                     # Lookup indices (downloaded on demand and cached in CONFIG_DIR, or shipped in assets/); "no help" when unavailable
 │   │   ├── chara.py                 # Character lookup for Group / Rename Characters: gacha first, then AGV
-│   │   ├── gacha.py                 # Gacha-game character index (format: doc 06)
+│   │   ├── gacha.py                 # Gacha-game character index (format: reference/data-formats/gacha-index)
 │   │   ├── agv.py                   # Anime / visual novel / game character + series index (Bangumi Archive)
 │   │   ├── text.py                  # Text normalisation helpers for the two character indices
 │   │   ├── scene.py                 # pepper-scene-index: scene hash -> author / year (Group Scenes)
@@ -109,11 +107,12 @@ KKAFIO-dev/
 │   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
 │   │   │   ├── bepis.py  gofile.py  catbox.py  mega.py  gdrive.py   # One module per site
 │   │   │   ├── session_flow.py      # Shared "stored / env / ask for the cookie, validate, save" flow for the session.py files below
-│   │   │   ├── koikatsu/            # koikatsucards.com: downloader (__init__) + session.py (kkd_session cookie)
+│   │   │   ├── koikatsucards/       # koikatsucards.com: downloader (__init__) + session.py (kkd_session cookie)
 │   │   │   ├── pixiv/               # pixiv.net: downloader (__init__) + session.py (PHPSESSID cookie)
 │   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session use) · files · posts · downloader · session.py (session cookie, t1 files only)
 │   │   └── mod_sources/             # Where Download Missing Mods fetches mods from
 │   │       ├── betterrepack.py      # BetterRepack downloads + the shared HTTP client for Download Missing Mods
+│   │       ├── filehosts.py         # Downloads one mod from a Google Drive / Mega link of the mod index, verifying its manifest GUID
 │   │       └── telegram/            # Telegram support for Download Missing Mods
 │   │           ├── config.py        # Telegram API credential storage
 │   │           ├── links.py         # Parsing Telegram links / the chat list (pure string handling)
@@ -140,88 +139,19 @@ KKAFIO-dev/
 │       ├── subprocess_utils.py      # Windows-console-encoding-safe subprocess.run/Popen wrappers
 │       └── context_menu_batch.py    # Coalesces multi-select Explorer context-menu invocations
 │
+├── tests/                           # pytest suite (see Testing)
+│   ├── conftest.py                  # Redirects the config dir and home into a temp sandbox before kkafio is imported
+│   ├── helpers/                     # Synthetic card factory, CLI harness, golden generator
+│   ├── golden/                      # Recorded CLI behaviour that tests/characterization replays
+│   └── cards/ characterization/ core/ dialogs/ indices/ tasks/   # The tests, grouped like src/kkafio
+│
+├── .github/workflows/
+│   ├── build.yml                    # Release build (see Releasing)
+│   └── docs.yml                     # Publishes this documentation site
+│
 ├── docs/                            # Documentation site source (Zensical): user guide + this developer guide
 └── zensical.toml                    # Documentation site configuration
 ```
-
-## What is a "task"?
-
-Every entry in the `src/kkafio/tasks/` folder maps 1:1 to a task declared in
-`interface.json`, and to a key in `kkafio.core.config._TASK_KEY` /
-`_TASK_DEFAULTS`. A task is either:
-
-- **A class subclassing `BaseTask`** (most of them) — instantiated with
-  `(config, file_manager)`, configured by reading `self.config.<task_attr>`
-  in `__init__`, and run via `.run()`. `BaseTask` only provides logging
-  helpers (`log_start`/`log_done`) and `validate_input_path()`.
-- **A pair of module-level functions**, `export()` + `process()` — used by
-  `group_chara.py` and `rename_chara.py` in addition to their `GroupChara`/
-  `RenameChara` classes, because the LLM round-trip dialog (see
-  [`llm.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/dialogs/llm.py)) needs to build a prompt, hand
-  control to the user, and then process whatever they paste back — the
-  class's `run()` just calls both in sequence.
-
-Every task is declared once, as a `TaskSpec` in
-[`task_specs.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/task_specs.py) (machinery in
-[`registry.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/registry.py)). The spec names the task, points at
-its class by `"module:Class"` string, and lists its command-line options; the
-subcommand, its `--help`, its dispatch from `kkafio_cli run` and its config
-overrides all follow from that. Nothing is auto-discovered from the `tasks/`
-folder, so adding a task still means touching a few places — but the CLI is no
-longer one of them:
-
-1. `src/kkafio/tasks/your_task.py` — the actual implementation.
-2. `src/kkafio/task_specs.py` — add a `TaskSpec` to `TASK_SPECS`.
-3. `src/kkafio/core/config.py` — add to `_TASK_KEY`, `_TASK_DEFAULTS`, and a
-   `elif task_name == "YourTask":` branch in `_build_task_config()`.
-4. `interface.json` — declare the task and its options (see
-   [03 — interface.json](03-interface-json.md)), then run
-   `python tools/generate_config.py`.
-
-`tests/core/test_registry.py` fails if the task names in these places drift apart,
-and the characterization tests in `tests/` fail if a new subcommand has no
-recorded behaviour — regenerate them deliberately with
-`uv run python tests/helpers/generate_goldens.py` and review the diff.
-
-### Raising errors
-
-Raise the exception that says who can fix the problem (all in
-[`core/errors.py`](https://github.com/RedDeadDepresso/KKAFIO/blob/dev/src/kkafio/core/errors.py)):
-
-- The **user** can (a wrong setting, a folder that doesn't exist, nothing to
-  process, a missing tool): raise `ConfigError` / `InputError` /
-  `ToolNotFoundError` with `tag=` your log category. **Don't also log it** —
-  the CLI prints the message once, as `ERROR | <tag> | <message>`, and exits 1
-  without writing a traceback.
-- The work **failed** (an external tool errored, a file couldn't be written):
-  raise `TaskFailedError`. It is reported with a traceback.
-- Anything else is a bug and will be reported with a traceback automatically.
-
-Library code never exits the process; only `cli.py` does (a test enforces
-this).
-
-### How CLI options work
-
-Each option in a spec is either a `Value` (takes an argument), a `Toggle` (a
-`--x` / `--no-x` pair) or, for the odd ones, a `Custom`. An option that is
-given replaces the matching key of the task's config section **before the task
-is constructed**, so the task sees it exactly as if the GUI had configured it;
-an option that isn't given changes nothing (the GUI's value, or the default,
-stands). A few options need a small hook for logic that spans several flags —
-e.g. `download-missing-mods --mods-dir` setting both of its directories, or
-the context-menu batching of `delete-cards` / `archive-cards`.
-
-`GameFolders` (`--game-folders`) is the one option that acts last instead of
-first: after the hook has run, `TaskSpec.finish_overrides` blanks every folder
-setting the task lists in it that no other flag (nor the hook) set, and a
-blank folder means "the game's own folder" to the task. Add it to a task only
-if that is true of every key you list; it is why `archive-cards`, whose
-overrides mean "none" when blank, doesn't have it.
-
-Task classes are imported only when they run (the specs refer to them by
-string), so `--help` and every parse stay cheap. That also means PyInstaller
-can't discover them by scanning imports; the build uses
-`--collect-submodules kkafio` for this reason.
 
 ## `tasks/` vs. the rest of the package
 
@@ -246,18 +176,3 @@ shared subpackages → log results.
 rather than elsewhere — they're not generic utilities usable by anything,
 they're specifically the shared internals of the task classes (a mixin and a
 base class), so keeping them next to the classes that use them is clearer.
-
-## Running from source
-
-The package uses a `src/` layout. After `uv sync` it is installed in editable
-mode, so any of these work:
-
-```
-uv run kkafio <command>            # console script (kkafio.cli:main)
-uv run python -m kkafio <command>
-uv run python kkafio_cli.py <command>   # the launcher; also works without installing
-```
-
-Imports are always `kkafio.<subpackage>.<module>` (for example
-`from kkafio.core.logger import logger`). Shipped data files are found through
-`kkafio.core.paths` — never by walking up from `__file__`.

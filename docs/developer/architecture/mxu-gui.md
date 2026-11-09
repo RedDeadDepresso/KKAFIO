@@ -6,14 +6,14 @@ shell originally built to run [MaaFramework](https://github.com/MaaXYZ/MaaFramew
 automation projects (mobile game automation bots). Nothing in *this*
 repository imports or depends on that one; they only communicate through the
 config file and subprocess boundary described in
-[02 — How It Works](02-how-it-works.md).
+[How It Works](how-it-works.md).
 
 ## Why a MaaFramework GUI runs a file-management tool
 
 MXU is schema-driven: point it at an `interface.json` describing tasks and
 options, and it renders a full settings UI, task list, scheduler, and log
 viewer without knowing anything about what the tasks actually do. KKAFIO
-reuses that schema (see [03 — interface.json](03-interface-json.md)) to get
+reuses that schema (see [interface.json](../reference/interface-json.md)) to get
 a polished GUI for free, at the cost of some fields in `interface.json`
 existing only because the schema expects them, and some MaaFramework/MAA
 terminology and concepts leaking through (`pipeline_override`, "agent",
@@ -31,7 +31,7 @@ pieces:
 | `src-tauri/src/commands/kkafio.rs` | Spawns/stops the `kkafio_cli.exe` subprocess, streams its output, runs `Run Game`/`Run Studio`. |
 | `src-tauri/src/commands/state.rs` | The in-memory + on-disk runtime log buffer (`push_log`/`get_all_logs`), used for both live log display and `export_logs`. |
 | `src/utils/useKkafioLogger.ts` | Listens for `kkafio-output` events from Rust and feeds parsed log lines into the app state. |
-| `src/utils/llm_dialog` interactions | None on the GUI side — the Group Chara / Rename Chara Copy/Paste dialog is a **native OS dialog spawned by Python** (`src/kkafio/dialogs/llm.py`), not a React component. The GUI has no code for it at all. |
+| `src/utils/llm_dialog` interactions | None on the GUI side — the Group Chara / Rename Chara Copy/Paste dialog is a **window opened by Python** (a CustomTkinter dialog in `src/kkafio/dialogs/llm.py`), not a React component. The GUI has no code for it at all. |
 
 Everything else — how an option of type `folder`/`switch`/`checkbox`/etc.
 gets rendered and stored — is generic MXU code, unaware it's editing KKAFIO
@@ -87,7 +87,7 @@ from the same `logger.info(...)` call in Python:
 3. **`debug/runtime-<instance-id>.log`** on disk — written by the Rust
    `push_log` command specifically so `export_logs` (Settings → Export Logs)
    has something to include. This is the only one of the three that's
-   actually a persisted file; see [05 — Configuration](05-configuration.md).
+   actually a persisted file; see [Configuration](../reference/configuration.md).
 
 ## Extending the GUI vs. extending Python
 
@@ -103,5 +103,5 @@ A rule of thumb for "where does this change go":
 - **New button/action that isn't "run a task with these options"** (like
   `Run Game`/`Run Studio`, or the Copy/Paste dialog) → usually a dedicated
   Tauri command plus either a small UI addition (Run Game/Studio) or, if it
-  needs to block for user input mid-task, a native dialog spawned from
+  needs to block for user input mid-task, a dialog opened from
   Python instead of touching the GUI at all (Group Chara/Rename Chara).

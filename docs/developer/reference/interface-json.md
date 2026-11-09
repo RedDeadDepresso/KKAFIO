@@ -14,7 +14,7 @@ looking for code that reads them.
 ```jsonc
 {
   "interface_version": ...,
-  "name": "KKAFIO",              // used to derive the config filename — see doc 05
+  "name": "KKAFIO",              // used to derive the config filename — see the Configuration reference
   "label": ..., "title": ..., "version": "2.0.1",
   "github": ..., "description": ..., "icon": ...,
 
@@ -42,7 +42,7 @@ complete MaaFramework `ProjectInterface`. KKAFIO doesn't use any of them:
   function, `resolve_cli()` in `kkafio.rs`, which looks for
   `kkafio_cli.exe` next to the GUI executable (falling back to
   `python kkafio_cli.py`) and ignores this field entirely. See
-  [04 — The MXU GUI](04-mxu-gui.md).
+  [The MXU GUI](../architecture/mxu-gui.md).
 
 If you're trying to trace "how does the GUI know what to run", the answer
 is not in `interface.json` — it's in `kkafio.rs`.
@@ -139,8 +139,17 @@ Run it (without `--check`) after adding, renaming, or removing a task or
 option, and address any warnings it prints before committing — they mean an
 option's config-key mapping couldn't be resolved automatically and was
 skipped rather than guessed at. The rest of `src/kkafio/core/config.py` (the `Config`
-class, path validation, `GameType`, etc.) has no `interface.json` equivalent
-and is untouched by the generator.
+class, path validation, `GameType`, etc.) has no `interface.json` equivalent,
+so the generator emits it unchanged from fixed templates.
+
+!!! warning "Don't edit `config.py` directly"
+
+    The generator writes the **whole** of `src/kkafio/core/config.py`: the five generated
+    pieces plus the `HEADER` and `FOOTER` templates in `tools/generate_config.py`, which hold
+    the hand-written code (`_extract_opt()`, the `Config` class, `find_context_menu_instance()`
+    and so on). A change made only in `config.py` is overwritten the next time the generator
+    runs, and `--check` reports the file as stale. Make the change in the template, then run
+    the generator.
 
 ## `task` entries
 
@@ -166,12 +175,13 @@ under the top-level `"option"` dict).
 `_build_task_config()` — run `tools/generate_config.py` after renaming a
 task here so those stay matched. Nothing enforces this at schema level — a
 typo here means the task silently never runs (Python only reads task names
-it recognizes; see step 5 in [02 — How It Works](02-how-it-works.md)).
+it recognizes; see step 5 in [How It Works](../architecture/how-it-works.md)).
 
 ## `group` entries
 
 Purely a GUI concern — collapsible sections in the task list
-(`card-management`, `duplicate-handling`, `backup`). A task can belong to
+(`content-management`, `card-management`, `scene-management`, `chara-management`,
+`coordinate-management`, `mod-management`). A task can belong to
 multiple groups; Python never sees this field.
 
 ## Translations (`languages`)
@@ -242,11 +252,11 @@ operating system's UI language, and failing that English.
 
 ## `preset` entries
 
-Named bundles of tasks that can be enabled all at once from the GUI (⚡ All
-Tasks, 📥 Install & Filter, etc.). Each preset just lists task names in the
+Named bundles of tasks that can be enabled all at once from the GUI (`DownloadFilterAndInstall`,
+`OrganizeInstalledContents`, `ExportInstalledContents`, `ContextMenuTasks`). Each preset just lists task names in the
 order they should run — enabling a preset flips those tasks' `enabled` flag
 and sets their order in the GUI's state; it's resolved into the same
-`task_order` list described in doc 02 like any other manually-enabled set of
+`task_order` list described in [How It Works](../architecture/how-it-works.md) like any other manually-enabled set of
 tasks. Presets are a GUI-side convenience; there's no separate "preset" concept
 on the Python side at all.
 

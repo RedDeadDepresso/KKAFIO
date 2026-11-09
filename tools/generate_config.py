@@ -19,7 +19,7 @@ hand-kept in sync every time a task/option is added, renamed, or removed:
     accessor properties at the end of `validate_tasks()`
 
 This script derives all five straight from interface.json instead, using
-the same signal doc 03 calls "decorative" for the GUI but still describes
+the same signal the interface.json reference (docs/developer/reference/interface-json.md) calls "decorative" for the GUI but still describes
 as documentation of "this option ends up as config key X": each option's
 `pipeline_override` (top-level, or the union of its cases' overrides). In
 this codebase that signal already agrees with the hand-written mapping for

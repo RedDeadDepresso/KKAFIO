@@ -2,7 +2,7 @@
 gacha.py — Look characters and series up in the gacha-game index.
 
 The index is built from popular gacha characters' wiki pages by a separate repo and
-published on GitHub Pages (see docs/06-gacha-index-format.md for the file format). It is
+published on GitHub Pages (see docs/developer/reference/data-formats/gacha-index.md for the file format). It is
 downloaded on demand and cached in CONFIG_DIR/indices/gacha.json (see kkafio.indices.cache).
 
 It has the same shape of API as kkafio.indices.agv (available / lookup /

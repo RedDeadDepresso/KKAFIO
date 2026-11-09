@@ -47,12 +47,30 @@ nav = [
   { "CLI usage" = "cli.md" },
   { "Developer guide" = [
     "developer/index.md",
-    "developer/01-project-structure.md",
-    "developer/02-how-it-works.md",
-    "developer/03-interface-json.md",
-    "developer/04-mxu-gui.md",
-    "developer/05-configuration.md",
-    "developer/06-gacha-index-format.md",
+    { "Architecture" = [
+      "developer/architecture/repository-layout.md",
+      "developer/architecture/tasks.md",
+      "developer/architecture/how-it-works.md",
+      "developer/architecture/mxu-gui.md",
+    ] },
+    { "Guides" = [
+      "developer/guides/development-setup.md",
+      "developer/guides/adding-a-task.md",
+      "developer/guides/testing.md",
+      "developer/guides/releasing.md",
+    ] },
+    { "Reference" = [
+      "developer/reference/interface-json.md",
+      "developer/reference/configuration.md",
+      { "Data formats" = [
+        "developer/reference/data-formats/index.md",
+        "developer/reference/data-formats/mod-index.md",
+        "developer/reference/data-formats/modpack-index.md",
+        "developer/reference/data-formats/agv-index.md",
+        "developer/reference/data-formats/gacha-index.md",
+        "developer/reference/data-formats/default-coordinates.md",
+      ] },
+    ] },
   ] },
   { "About" = [
     "known-issues.md",

@@ -2,7 +2,7 @@
 
 - Given a list of character cards, coordinate cards, and/or Studio scene files, bundles each one with its required zipmods into a single archive.
 - **Include Coordinates** _(on by default)_: when a selected file is a character card, also bundles the coordinate cards it uses (matched by colour fingerprint, not filename) along with their mods. Disable to archive the character card by itself. This option has no effect on coordinate cards or scenes selected directly — a coordinate card is always archived with just its own mods, and scenes never have coordinates.
-- **Include Modpack** _(off by default)_: Sideloader Modpack mods are excluded from the archive by default (see [Modpack Index](../developer/05-configuration.md#modpack-index) in the configuration docs); turn this on to bundle them in too.
+- **Include Modpack** _(off by default)_: Sideloader Modpack mods are excluded from the archive by default (see [Modpack Index](../developer/reference/data-formats/modpack-index.md) in the configuration docs); turn this on to bundle them in too.
 - Zipmods are found by GUID.
 - **Auto-resolve** _(on by default)_: if the card/scene lives inside the game folder, mods and coordinate directories are inferred automatically. Override with **Custom Mods Directory** and **Custom Coordinate Directory** if needed (both blank by default).
 - **Output Directory** defaults to `C:/KKAFIO/Archived Cards`.

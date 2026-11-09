@@ -9,7 +9,7 @@ characters' wiki pages) and published on GitHub Pages at
 KKAFIO downloads it when **Group Characters** / **Rename Characters** run with
 *Hints Language* set to anything but `no`, caches it as `<config>/indices/gacha.json`, and
 revalidates with an ETag at most once an hour (a 304 costs no download). Offline, the cached copy is used. (The anime, games, vtubers index it is
-merged with is downloaded separately from agv-character-scraper, see `docs/05-configuration.md`.)
+merged with is downloaded separately from agv-character-scraper, see the [AGV character index](agv-index.md).)
 
 ```json
 {
@@ -45,9 +45,9 @@ Every language's text and every alias is searchable whatever the hint language.
 ## How it is used
 
 Group Characters' **Resolve Locally** compares a card's `birthMonth` / `birthDay` with these fields to pick one of
-several name matches (see the README); the hints sent to the LLM don't contain them.
+several name matches (see [Group Characters](../../../tasks/group-characters.md)); the hints sent to the LLM don't contain them.
 
-Nothing is resolved locally. Every card sent to the LLM gets a `hints` list: up to 5
+Every card that is still sent to the LLM gets a `hints` list: up to 5
 characters whose name matches the card (`kkafio.indices.chara.lookup`), written
 `"Last, First (Series)"` in the hint language. The two indexes' scores aren't comparable,
 so the lists are merged, not sorted: an index whose best candidate dominates its others

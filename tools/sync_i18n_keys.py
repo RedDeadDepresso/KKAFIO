@@ -2,7 +2,7 @@
 sync_i18n_keys.py — Keep assets/i18n/*.json in sync with interface.json.
 
 interface.json is the single source of truth for which "$dotted.key"
-translation keys exist (see docs/03-interface-json.md). Every time a task,
+translation keys exist (see docs/developer/reference/interface-json.md). Every time a task,
 option, group, or preset is added/renamed/removed there, the language files
 under assets/i18n/ need the matching keys added or removed by hand — easy to
 forget, and easy to leave stale/orphaned keys behind. This script automates
@@ -45,7 +45,7 @@ PRIMARY_LANG = "en_us"
 
 # ---------------------------------------------------------------------------
 # Key collection — mirrors "Translations (languages)" in
-# docs/03-interface-json.md: top-level, group, option (+ cases + inputs),
+# docs/developer/reference/interface-json.md: top-level, group, option (+ cases + inputs),
 # task, preset, in that order.
 # ---------------------------------------------------------------------------
 

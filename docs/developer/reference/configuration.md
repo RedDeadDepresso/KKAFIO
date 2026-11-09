@@ -30,9 +30,9 @@ this directory on import if it doesn't already exist.
 
 Referred to as `CONFIG_DIR` below.
 
----
-
 ## Global files (under `CONFIG_DIR`)
+
+
 
 ### `config/mxu-KKAFIO.json` — the GUI's config, and KKAFIO's actual input
 
@@ -91,7 +91,7 @@ it has its own folder, `sessions/telegram/`.
 
 Written/read by `src/kkafio/services/content_sources/koikatsucards/session.py`. Used by **Download Contents** when
 downloading from koikatsucards.com (not by Download Missing Mods, which
-uses the KKC mod index above). Validated against
+uses the [mod index](data-formats/mod-index.md)). Validated against
 `koikatsucards.com/api/session` before each use; if invalid, the user is
 prompted to paste a fresh cookie via a native dialog
 (`src/kkafio/dialogs/password_dialog.py`) and the file is overwritten.
@@ -164,52 +164,7 @@ same `"kkafio"` base name.
 
 ### `indices/` — downloaded index caches
 
-`%APPDATA%/KKAFIO/indices/` (under `CONFIG_DIR`, not inside `config/`) holds every index KKAFIO downloads.
-Each index is stored as `<name>.json`, named after the module in `src/kkafio/indices/` that downloads it,
-next to a `<name>.meta.json` file, `{"etag": "...", "last_checked": "<ISO 8601 datetime>"}`, with the ETag of the
-copy on disk and when KKAFIO last confirmed it is current (e.g. `password.json` and `password.meta.json`):
-
-| File | Module | Source | Used by |
-|---|---|---|---|
-| `agv.json` | `agv.py` | [agv-character-scraper](https://github.com/RedDeadDepresso/agv-character-scraper) | Group / Rename Characters hints |
-| `gacha.json` | `gacha.py` | [gacha-character-scraper](https://github.com/RedDeadDepresso/gacha-character-scraper) | Group / Rename Characters hints |
-| `mod.json` | `mod.py` | [kk-mod-scraper](https://github.com/RedDeadDepresso/kk-mod-scraper) | Download Missing Mods |
-| `password.json` | `password.py` | [kk-password-scraper](https://github.com/RedDeadDepresso/kk-password-scraper) | archive extraction |
-| `scene.json` | `scene.py` | [pepper-scene-hasher](https://github.com/RedDeadDepresso/pepper-scene-hasher) | Group Scenes |
-
-All of them are refreshed the same way (`src/kkafio/indices/cache.py`):
-
-1. If the cached copy was last checked less than 1 hour ago (`last_checked`), the server isn't asked at all.
-2. Otherwise the cached copy is requested again with a conditional request (`If-None-Match` with the saved ETag).
-3. A `304` means the cached copy is current: nothing is downloaded and `last_checked` is set to now.
-4. Otherwise the new index is validated, then written to `<name>.json`, with its ETag and the current time in
-   `<name>.meta.json`. A download that fails validation (e.g. an `agv.json` that isn't format version 1) leaves the
-   cached copy and its `last_checked` alone.
-5. If the server can't be reached (offline, rate-limited), the cached index is used if one exists; without one
-   the task runs without that index.
-
-Formats:
-
-- `mod.json` maps mod GUIDs to the links the mod can be downloaded from, per host, e.g.
-  `{ "com.AgiShark.Casual_Moves_Part2": { "mega": [], "drive": ["https://drive.google.com/file/d/…/view"], "telegram": ["https://t.me/KK_archive_modlibrary/25"] } }`.
-  Each list may hold several links or none. The links of a mod are tried in the order of the **Mod Sources**
-  option (`ModSources`: an `ordered_checkbox` of `Drive`, `Mega`, `Telegram`, in the user's order; unchecked
-  sources are not used) until one downloads the mod; a download is only kept if its `manifest.xml` has the GUID
-  that was asked for. `SOURCE_ORDER` in `src/kkafio/indices/mod.py` is only the default for `ordered_links()`.
-  The index is only read when at least one mod needs a download from outside the modpack and at least one source
-  is checked. Telegram is only connected to (the account is signed in once, before the first link is tried) when
-  `Telegram` is checked; if that fails, the Drive and Mega links still work. With `Telegram` checked and
-  `UseTelegramChatLinks` on, a search of the configured chats (`TelegramChatLinks`) follows the Telegram link in
-  that order, and is also what is left for a mod the index has no link for.
-- `agv.json` is the character / series index (format version 1; anime and visual novel / JRPG games from the
-  Bangumi Archive) used for the `hints` that **Group Characters** and **Rename Characters** send to the LLM. It is
-  refreshed when those tasks run with *Hints Language* set to anything but `no`. An entry of `chars` is
-  `[names, series ids, score]`, optionally followed by `birthMonth` and `birthDay` (integers, month 1-12 and day
-  1-31): `[names, series ids, score, 9, 28]`. Both may be left out, and `null` stands for an unknown one
-  (`[names, series ids, score, null, 28]`). The format version stays 1.
-- `gacha.json`: see `docs/06-gacha-index-format.md`.
-
-All files are safe to delete; the next run downloads a fresh copy.
+`%APPDATA%/KKAFIO/indices/` (under `CONFIG_DIR`, not inside `config/`) holds every index KKAFIO downloads: one `<name>.json` per index, next to a `<name>.meta.json` with its ETag and when it was last checked. How they are refreshed, and what each one contains, is described in [Data formats](data-formats/index.md). All files are safe to delete; the next run downloads a fresh copy.
 
 ### `download_history.json` — Download Contents dedup
 
@@ -219,12 +174,26 @@ downloaded URLs/filenames, consulted when **Skip already downloaded** is
 enabled on **Download Contents** so re-running the same links doesn't
 re-download everything.
 
+### `traceback.log`
+
+Lives directly under `CONFIG_DIR`. Each failing task appends a `[TaskName]` header followed by its traceback; it is cleared at the start of every run. See [How It Works](../architecture/how-it-works.md#8-when-something-goes-wrong).
+
+### `config/library-*.json` — Organize Library state
+
+The Organize Library window remembers its settings in three small files in `CONFIG_DIR/config/`, next to the GUI's own config:
+
+| File | Remembers | Code |
+|---|---|---|
+| `library-shortcuts.json` | The keyboard shortcuts of its six actions (rename, change folder, delete, archive, restore, show in file explorer), shared by every tab | `src/kkafio/dialogs/library/shortcuts.py` |
+| `library-suggestions.json` | What the folder box offers while you type, per tab (`none`, `existing` or `all`) | `src/kkafio/dialogs/library/suggestions.py` |
+| `library-view.json` | The tab that was open last and, per tab, how its cards were sorted and how big they were | `src/kkafio/dialogs/library/viewstate.py` |
+
 ### `debug/*.log` and `debug/runtime-<instance-id>.log`
 
 Written by the GUI, not Python. `debug/*.log` are the GUI's own internal
 application logs. `debug/runtime-<instance-id>.log` is where the GUI mirrors
 every log line it receives from the running `kkafio_cli` subprocess (see
-[04 — The MXU GUI](04-mxu-gui.md#logs-three-different-places-one-source)),
+[The MXU GUI](../architecture/mxu-gui.md#logs-three-different-places-one-source)),
 specifically so **Settings → Export Logs** has an on-disk copy of task
 output to bundle up, since the live log panel itself is only ever kept in
 memory/`localStorage`.
@@ -236,8 +205,6 @@ packaged (frozen) builds. Set the environment variable `KKAFIO_DEBUG=1`
 before launching a packaged build to see them (e.g. to find out why a
 particular card's mods were not counted by Delete Cards), or
 `KKAFIO_DEBUG=0` to silence them when running from source.
-
----
 
 ## Per-folder caches (live inside the user's own folders, not `CONFIG_DIR`)
 
@@ -251,84 +218,38 @@ regenerates itself if the folder's contents don't match what's cached.
 |---|---|---|---|
 | `kkafio_mods_cache.json` | the mods directory | mod GUID lookups (`src/kkafio/cards/mods/zipmods.py`, used by Download Missing Mods / Archive / Delete) | GUID → zipmod file path |
 | `kkafio_coord_cache.json` | the coordinate directory | coordinate matching (`src/kkafio/cards/chara/outfits.py`, used by Archive/Delete Cards) | xxh3-128 digest of each coordinate card's clothes + accessory data, with modded item IDs normalised to `ModID:Slot` via the file's own UAR info (looked up against a chara card's outfits) |
-| `kkafio_chara_guid_cache.json` | each scanned chara directory (one file per folder) | [Download Missing Mods](../tasks/download-missing-mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
+| `kkafio_chara_guid_cache.json` | each scanned chara directory (one file per folder) | [Download Missing Mods](../../tasks/download-missing-mods.md), Delete Cards' shared-mod check | per-chara-card referenced mod GUIDs |
 | `kkafio_scene_guid_cache.json` | each scanned scene directory (one file per folder) | Download Missing Mods (scene scan), Delete Cards' shared-mod check | per-scene referenced mod GUIDs |
 | `kkafio_coord_guid_cache.json` | each scanned coordinate directory (one file per folder) | Download Missing Mods (coordinate scan), Delete Cards' shared-mod check | per-coordinate-card referenced mod GUIDs |
-| `kkafio_rename_cache.json` | the Rename Chara input folder | [Rename Chara](../tasks/rename-characters.md) | which cards have already been renamed, and to what |
+| `kkafio_coord_sig_cache.json` | the coordinate directory | Group Coordinates | each coordinate card's outfit signature (clothes and accessories) |
+| `kkafio_coord_hair_cache.json` | the coordinate directory | Group Coordinates (grouping by hair) | each coordinate card's hair items |
+| `kkafio_coord_mod_cache.json` | the coordinate directory | Group Coordinates | each coordinate card's head mods |
+| `kkafio_chara_outfit_cache.json` | the coordinate directory | Group Coordinates | per chara card: outfit digests and signatures, hair items and head mods |
+| `kkafio_chara_key_cache.json` | each scanned chara directory (one file per folder) | Group Characters, Rename Characters | each card's identification key |
+| `kkafio_duplicate_png_cache.json` | the scanned folder | Filter Duplicate Contents | XXH3 hash and category of every PNG |
+| `kkafio_duplicate_mods_cache.json` | the scanned folder | Filter Duplicate Contents | XXH3 hash of every zipmod |
+| `kkafio_similar_chara_cache.json` | each scanned chara directory | Review Similar Characters | what the similarity scan computed per card |
+| `kkafio_rename_cache.json` | the Rename Chara input folder | [Rename Chara](../../tasks/rename-characters.md) | which cards have already been renamed, and to what |
 
 None of these are meant to be edited by hand, and all are safe to delete —
 worst case, the next run does a full rescan and rebuilds them.
 
----
+## Reports
+
+Two tasks write a plain-text report into their own folder every run, replacing the previous one:
+
+| File | Written to | By |
+|---|---|---|
+| `kkafio_download_contents_report.txt` | the output folder | [Download Contents](../../tasks/download-contents.md) |
+| `kkafio_missing_mods_report.txt` | the downloaded mods directory | [Download Missing Mods](../../tasks/download-missing-mods.md) |
 
 ## Files shipped with the app (not runtime config, but config-adjacent)
 
 | File | Purpose |
 |---|---|
-| `interface.json` | The task/option schema — see [03 — interface.json](03-interface-json.md). Read only by the GUI. |
-| `assets/indices/default_coordinate.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_coordinate.py`; see [Default Coordinates](#default-coordinates) below. Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
-| `assets/indices/author.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Organize Library's Scene tab suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/services/scene_authors.py`. |
-
----
-
-## Default Coordinates
-
-Default coordinates say nothing about whose outfit a coordinate is, so Group Coordinates can skip
-them per file: a coordinate card that is one of your default coordinates is not matched to any
-character, not moved, and not counted when grouping by hair.
-
-Put the default coordinates in a folder (any depth; other PNGs are skipped) and run:
-
-```
-python tools/build_default_coordinate.py "C:/KK/default coordinates"
-```
-
-This writes `assets/indices/default_coordinate.json` (replacing its previous content). Each
-default coordinate is recorded by its outfit digest, the same one Group Coordinates compares, so
-a copy that was renamed, moved to another folder or saved with a different picture is still
-recognised. Options:
-
-| Option | Effect |
-|---|---|
-| `--merge` | Add to the existing file instead of replacing it. |
-| `--output PATH` | Write somewhere else. |
-
-Delete the file to stop skipping anything. Nothing needs rebuilding: the lookup happens on every run.
-
----
-
-## Modpack Index
-
-The Sideloader Modpack index is published by
-[kk-mod-scraper](https://github.com/RedDeadDepresso/kk-mod-scraper), one file covering both Koikatsu and
-Koikatsu Sunshine, and downloaded like the other indices. A copy is kept in `%APPDATA%/KKAFIO/indices/`; the server is
-asked at most once an hour, and the copy is only re-downloaded when its ETag changes
-(`<name>.meta.json` holds the ETag and the time of the last check). If the download fails, the
-cached copy is used.
-
-| File | Games | Source |
-|---|---|---|
-| `modpack.json` | Koikatsu / Koikatsu Party / Koikatsu Sunshine | `https://reddeaddepresso.github.io/kk-mod-scraper/indices/modpack.json` |
-
-Each maps a mod GUID to the URLs it can be downloaded from on the BetterRepack server, best first:
-
-```json
-{
- "guids": {"com.example.mod": ["https://sideload.betterrepack.com/download/KKEC/Sideloader%20Modpack/a/mod.zipmod"]}
-}
-```
-
-The path of a mod inside the mods folder is not stored: it is the URL's path below
-`/download/KKEC/`, percent-decoded (`Sideloader Modpack/a/mod.zipmod`).
-`kkafio.indices.modpack.url_to_rel_path()` does this and refuses URLs that are not on the
-BetterRepack server or that could leave the mods folder.
-
-Archive Cards, Delete Cards, and Download Missing Mods use the index to instantly identify which required mods are
-covered by the Sideloader Modpack. If a GUID is not in the index, KKAFIO
-falls back to scanning the local mods folder automatically. If the index can be neither
-downloaded nor read from the cache, it is treated as empty, with a message in the log.
-
----
+| `interface.json` | The task/option schema — see [interface.json](interface-json.md). Read only by the GUI. |
+| `assets/indices/default_coordinate.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_coordinate.py`; see [Default coordinates](data-formats/default-coordinates.md). Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
+| `assets/indices/author.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Organize Library's Scene tab suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/indices/author.py`. |
 
 ## Quick reference: "where does X live?"
 
@@ -341,4 +262,4 @@ downloaded nor read from the cache, it is treated as empty, with a message in th
   `%APPDATA%/KKAFIO/download_history.json`
 - **Task output you can hand to a bug report** → **Settings → Export Logs**
   in the GUI, which bundles `debug/*.log` (see
-  [04 — The MXU GUI](04-mxu-gui.md))
+  [The MXU GUI](../architecture/mxu-gui.md))

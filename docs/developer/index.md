@@ -1,21 +1,51 @@
-# KKAFIO Developer Documentation
+# Developer guide
 
-This folder documents KKAFIO's internals — how the pieces fit together, not
-how to use them. If you're looking for user-facing task documentation, see
-the [user guide](../index.md) instead.
+This section documents KKAFIO's internals: how the pieces fit together, not how to use them. If you're looking for
+user-facing task documentation, see the [user guide](../index.md) instead.
 
-This is for anyone modifying KKAFIO itself: adding a task, adding an option,
-understanding why a change to `interface.json` didn't do anything, or trying
-to figure out where a given piece of state actually lives on disk.
+It is for anyone modifying KKAFIO itself: adding a task, adding an option, understanding why a change to
+`interface.json` didn't do anything, or working out where a piece of state lives on disk.
 
-| Doc | Covers |
+## Where to start
+
+| If you want to… | Read |
 |---|---|
-| [01 — Project Structure](01-project-structure.md) | Repo layout: what's a "task", how the `src/kkafio/` package is organised, and how the two repos (this one + the GUI) relate. |
-| [02 — How It Works](02-how-it-works.md) | The full execution flow from clicking Start in the GUI to a task actually running, end to end. |
-| [03 — interface.json](03-interface-json.md) | The schema that defines every task and option: structure, option types, quirks, and fields that look load-bearing but aren't. |
-| [04 — The MXU GUI](04-mxu-gui.md) | What MXU is, what's forked vs. KKAFIO-specific in this GUI, and how the Rust/TypeScript side talks to the Python CLI. |
-| [05 — Configuration](05-configuration.md) | Every config/cache/session file KKAFIO reads or writes: where it lives, its structure, and when it's used. |
-| [06 — Gacha index format](06-gacha-index-format.md) | The downloadable gacha character index used by Group/Rename Characters (format, caching, priority over the anime, games, vtubers index). |
+| Get the code running and know what to run before pushing | [Development setup](guides/development-setup.md) |
+| Add a task or an option | [Adding a task](guides/adding-a-task.md) |
+| Follow a click on Start all the way to a task running | [How it works](architecture/how-it-works.md) |
+| Find where something lives in the repository | [Repository layout](architecture/repository-layout.md) |
+| Understand a change to `interface.json` that did nothing | [interface.json](reference/interface-json.md) |
+| Find where a piece of state lives on disk | [Configuration](reference/configuration.md) |
+| Work on the tests or the golden recordings | [Testing](guides/testing.md) |
+| Publish a release | [Releasing](guides/releasing.md) |
+
+## Architecture
+
+How the code is organised and how the parts talk to each other.
+
+| Page | Covers |
+|---|---|
+| [Repository layout](architecture/repository-layout.md) | What every folder and module is for, and which subpackage a new piece of logic belongs in. |
+| [Anatomy of a task](architecture/tasks.md) | What a task is, how it is declared, how CLI options work, and how to raise errors. |
+| [How it works](architecture/how-it-works.md) | The full flow from clicking Start in the GUI to a task running, end to end. |
+| [The MXU GUI](architecture/mxu-gui.md) | What MXU is, what is KKAFIO-specific in the fork, and how the Rust/TypeScript side talks to the Python CLI. |
+
+## Guides
+
+| Page | Covers |
+|---|---|
+| [Development setup](guides/development-setup.md) | Requirements, running from source, the maintainer tools, pre-push checks and the documentation site. |
+| [Adding a task](guides/adding-a-task.md) | The checklist for a new task, and for a new option on an existing one. |
+| [Testing](guides/testing.md) | The test layout, the sandbox, and the golden-file characterization tests. |
+| [Releasing](guides/releasing.md) | What the release workflow does and what ends up in the zip. |
+
+## Reference
+
+| Page | Covers |
+|---|---|
+| [interface.json](reference/interface-json.md) | The schema that defines every task and option: structure, option types, quirks, and fields that look load-bearing but aren't. |
+| [Configuration](reference/configuration.md) | Every config, session, cache and report file KKAFIO reads or writes: where it lives and when it is used. |
+| [Data formats](reference/data-formats/index.md) | The downloaded indices and how they are refreshed, plus the [mod](reference/data-formats/mod-index.md), [modpack](reference/data-formats/modpack-index.md), [AGV](reference/data-formats/agv-index.md) and [gacha](reference/data-formats/gacha-index.md) index formats and the [default coordinates](reference/data-formats/default-coordinates.md) file. |
 
 ## The two repositories
 
@@ -32,5 +62,5 @@ JSON config file on disk and a subprocess boundary:
   Start.
 
 Neither repo imports code from the other. If you're debugging something and
-you're not sure which side owns it, [02 — How It Works](02-how-it-works.md)
+you're not sure which side owns it, [How It Works](architecture/how-it-works.md)
 walks through exactly where the boundary is at each step.

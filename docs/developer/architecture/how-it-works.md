@@ -11,8 +11,8 @@ On startup, the GUI's Rust backend (`AppConfigState::load_interface`) reads
 frontend. React components (`TaskItem.tsx`, `OptionEditor.tsx`) render each
 declared task and option generically, based on each option's `"type"` field
 (`folder`, `switch`, `checkbox`, `file_list`, `textarea`, `select`, ...). See
-[03 — interface.json](03-interface-json.md) for the schema itself and
-[04 — The MXU GUI](04-mxu-gui.md) for how the rendering actually works.
+[interface.json](../reference/interface-json.md) for the schema itself and
+[The MXU GUI](mxu-gui.md) for how the rendering actually works.
 
 Nothing here is KKAFIO-specific code — the GUI has no idea what
 "InstallContents" means. It just draws whatever `interface.json` describes.
@@ -31,7 +31,7 @@ Whenever config changes (and on app close), the GUI calls the Rust
 `save_config` command, which serializes all instances/tasks/option values to
 `%APPDATA%/KKAFIO/config/mxu-KKAFIO.json`. This file is the **only** channel
 between the GUI and the Python backend — there's no IPC, no shared memory,
-just this one JSON file. See [05 — Configuration](05-configuration.md) for
+just this one JSON file. See [Configuration](../reference/configuration.md) for
 its exact structure and location on each OS.
 
 ## 4. The user clicks Start
@@ -71,8 +71,7 @@ with the config file path and instance index. `Config.__init__` → `.read()`:
      — a big `if/elif` chain, one branch per task, that reads specific
      option IDs out of the raw `optionValues` dict via `_extract_opt()` and
      writes them into a flat config dict under KKAFIO's own internal key
-     names (which often don't match the option IDs — see doc 03's
-     "`pipeline_override` doesn't do what it looks like it does" section).
+     names (which often don't match the option IDs — see the [interface.json reference](../reference/interface-json.md#pipeline_override-doesnt-do-what-it-looks-like-it-does)).
    - Also collects **task order**: for each *enabled* task (KKAFIO task or
      "special task", see below), appends `{"name": ..., "params": ...}` to
      `task_order` in the order they appear in the GUI's task list. This is
@@ -119,8 +118,8 @@ just parsed log text and the process's final exit code.
 ## 7. Some tasks pause for human input
 
 `GroupChara`/`RenameChara`'s `.run()` calls `kkafio.dialogs.llm.llm_dialog()`,
-which shells out to `powershell.exe` to show a native WinForms
-Copy/Paste dialog and **blocks** until the user closes it or clicks Paste.
+which opens a CustomTkinter Copy/Paste window in the same process and **blocks** until the
+user closes it or clicks Paste (off Windows it falls back to a terminal prompt).
 Archive-password and session-cookie prompts work the same way via
 `kkafio.dialogs.password_dialog.password_dialog()`. From the GUI's perspective this
 just looks like the subprocess going quiet for a while — there's no special
