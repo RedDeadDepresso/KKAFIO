@@ -5,7 +5,7 @@
   "title": "$root.title",
   "version": "2.1.0",
   "github": "https://github.com/RedDeadDepresso/KKAFIO",
-  "mirrorchyan_rid": "",
+  "documentation": "https://reddeaddepresso.github.io/KKAFIO/tasks/",
   "description": "$root.description",
   "icon": "assets/icon.png",
   "agent": {
@@ -1767,12 +1767,12 @@
       "group": ["chara-management"],
       "option": [
         "GroupCharaIncludeSubfolders",
-        "OpenLlmWebsite",
-        "LlmWebsiteUrl",
         "PromptLanguage",
         "GroupCharaPrompt",
         "HintsLanguage",
         "GroupCharaResolveLocally",
+        "OpenLlmWebsite",
+        "LlmWebsiteUrl",
         "UseCache",
         "CharaDir"
       ]
@@ -1834,12 +1834,12 @@
         "SkipAlreadyRenamed",
         "RenameFiles",
         "UpdateMetadata",
-        "OpenLlmWebsite",
-        "LlmWebsiteUrl",
         "PromptLanguage",
         "RenameCharaPrompt",
         "HintsLanguage",
         "RenameCharaResolveLocally",
+        "OpenLlmWebsite",
+        "LlmWebsiteUrl",
         "UseCache",
         "CharaDir"
       ]
