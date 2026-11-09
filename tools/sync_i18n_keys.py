@@ -10,7 +10,7 @@ that:
 
   - Walks interface.json the same way the GUI resolves translations: root
     label/title/description, then each group's label, then each option's
-    label/description/case labels/input labels (+ pattern_msg), then each task's
+    label/description/case labels and descriptions/input labels (+ pattern_msg), then each task's
     label/description, then each preset's label/description.
   - For every language listed under interface.json's "languages" field:
       - Adds any key interface.json now references but the file is missing.
@@ -80,6 +80,7 @@ def collect_keys(interface: dict) -> list[str]:
         add(option.get("description"))
         for case in option.get("cases", []):
             add(case.get("label"))
+            add(case.get("description"))
         for inp in option.get("inputs", []):
             add(inp.get("label"))
             add(inp.get("pattern_msg"))
