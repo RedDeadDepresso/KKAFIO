@@ -40,6 +40,19 @@ See [Installation](https://reddeaddepresso.github.io/KKAFIO/getting-started/inst
 
 New to KKAFIO? The [presets](https://reddeaddepresso.github.io/KKAFIO/presets/) bundle tasks into one-click workflows, such as the full download-to-install pipeline.
 
+## Languages
+
+The GUI, the right-click context menu and the dialogs KKAFIO opens during a task are available in:
+
+- English
+- 简体中文 (Simplified Chinese)
+- 繁體中文 (Traditional Chinese)
+- 日本語 (Japanese)
+- 한국어 (Korean)
+- Русский (Russian)
+
+Pick one in the GUI's settings. CLI output, logs and error messages are English only. See [Languages](https://reddeaddepresso.github.io/KKAFIO/getting-started/languages/) for details.
+
 ## Documentation
 
 - [Getting started](https://reddeaddepresso.github.io/KKAFIO/getting-started/installation/): [game type](https://reddeaddepresso.github.io/KKAFIO/getting-started/game-type/), [context menu](https://reddeaddepresso.github.io/KKAFIO/getting-started/context-menu/), [languages](https://reddeaddepresso.github.io/KKAFIO/getting-started/languages/)
