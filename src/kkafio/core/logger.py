@@ -109,6 +109,28 @@ class KafioLogger(logging.LoggerAdapter):
         print("--------------------------------------------------------------------", flush=True)
 
 
+def _enable_windows_ansi() -> None:
+    """Turn on ANSI/virtual-terminal processing for the Windows console.
+
+    A classic Windows console prints escape codes as literal text (``←[94m``)
+    unless ENABLE_VIRTUAL_TERMINAL_PROCESSING is set on the output handle.
+    No-op on other platforms or when stdout is not a console.
+    """
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            kernel32.SetConsoleMode(handle, mode.value | 0x0004)  # VT processing
+    except Exception:
+        # Best effort: worst case the colour codes show as literal text.
+        pass
+
+
 def _build_logger() -> KafioLogger:
     # When running as script.exe stdout is block-buffered by default, which
     # delays output until the process exits. Force line-buffering so each
@@ -136,6 +158,8 @@ def _build_logger() -> KafioLogger:
         # isatty() is False, and there's no point emitting ANSI codes that
         # the consumer would just have to strip back out.
         use_color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+        if use_color:
+            _enable_windows_ansi()
         handler = logging.StreamHandler(stream=sys.stdout)
         handler.setFormatter(ColorFormatter(use_color=use_color))
         base_logger.addHandler(handler)
