@@ -224,7 +224,7 @@ regenerates itself if the folder's contents don't match what's cached.
 | `kkafio_coord_sig_cache.json` | the coordinate directory | Group Coordinates | each coordinate card's outfit signature (clothes and accessories) |
 | `kkafio_coord_hair_cache.json` | the coordinate directory | Group Coordinates (grouping by hair) | each coordinate card's hair items |
 | `kkafio_coord_mod_cache.json` | the coordinate directory | Group Coordinates | each coordinate card's head mods |
-| `kkafio_chara_outfit_cache.json` | the coordinate directory | Group Coordinates | per chara card: outfit digests and signatures, hair items and head mods |
+| `kkafio_chara_outfit_cache.json` | each scanned chara directory (one file per folder) | Group Coordinates | per chara card: outfit digests and signatures, hair items and head mods |
 | `kkafio_chara_key_cache.json` | each scanned chara directory (one file per folder) | Group Characters, Rename Characters | each card's identification key |
 | `kkafio_duplicate_png_cache.json` | the scanned folder | Filter Duplicate Contents | XXH3 hash and category of every PNG |
 | `kkafio_duplicate_mods_cache.json` | the scanned folder | Filter Duplicate Contents | XXH3 hash of every zipmod |

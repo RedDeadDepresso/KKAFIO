@@ -79,7 +79,7 @@ from kkafio.tasks.base_task import BaseTask, resolve_chara_dirs
 TAG = "GRPCOORD"
 
 CHARA_OUTFIT_CACHE_FILE = "kkafio_chara_outfit_cache.json"
-CHARA_OUTFIT_CACHE_VERSION = 8
+CHARA_OUTFIT_CACHE_VERSION = 9   # 9: one file per scanned chara folder (was one in the coordinate folder)
 
 
 def folder_name_for(chara_path: Path) -> str:
@@ -87,20 +87,29 @@ def folder_name_for(chara_path: Path) -> str:
     return safe_folder_name(chara_path.stem)
 
 
-def _load_outfit_cache(coord_dir: Path) -> dict[str, dict]:
+def _load_outfit_cache(folder: Path) -> dict[str, dict]:
+    """The outfit cache kept in one scanned chara folder ({} if missing, stale or unreadable)."""
     try:
-        data = json.loads((coord_dir / CHARA_OUTFIT_CACHE_FILE).read_text(encoding="utf-8"))
-        if data.get("version") == CHARA_OUTFIT_CACHE_VERSION:
+        data = json.loads((folder / CHARA_OUTFIT_CACHE_FILE).read_text(encoding="utf-8"))
+        if data.get("version") == CHARA_OUTFIT_CACHE_VERSION and data.get("dir") == str(folder):
             files = data.get("files", {})
             return files if isinstance(files, dict) else {}
     except FileNotFoundError:
         pass
     except Exception as e:
-        logger.debug("CACHE", f"Ignoring unreadable {coord_dir / CHARA_OUTFIT_CACHE_FILE}: {e}")
+        logger.debug("CACHE", f"Ignoring unreadable {folder / CHARA_OUTFIT_CACHE_FILE}: {e}")
     return {}
 
 
-def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
+def _root_of(png: Path, roots: list[Path]) -> Path | None:
+    """The scanned chara folder a card sits under (the first that contains it)."""
+    for root in roots:
+        if root in png.parents:
+            return root
+    return None
+
+
+def _scan_charas(chara_dirs: list[Path], use_cache: bool,
                  need_sigs: bool, need_hairs: bool = False,
                  need_mods: bool = False) -> dict[Path, dict]:
     """{chara PNG: {"digests": [...], "sigs": [[[clothes tokens], [accessories]], ...],
@@ -113,7 +122,10 @@ def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
     pngs = sorted(set(pngs))
     logger.info(TAG, f"Scanning {len(pngs)} PNG file(s) for character cards")
 
-    cache = _load_outfit_cache(coord_dir) if use_cache else {}
+    cache: dict[str, dict] = {}
+    if use_cache:
+        for folder in chara_dirs:
+            cache.update(_load_outfit_cache(folder))
     new_cache: dict[str, dict] = {}
     result: dict[Path, dict] = {}
     to_read: list[Path] = []
@@ -157,39 +169,43 @@ def _scan_charas(chara_dirs: list[Path], coord_dir: Path, use_cache: bool,
 
     if use_cache:
         logger.info(TAG, f"Chara cache: {len(pngs) - len(to_read)} reused, {len(to_read)} read")
-        try:
-            atomic_write_json(coord_dir / CHARA_OUTFIT_CACHE_FILE,
-                              {"version": CHARA_OUTFIT_CACHE_VERSION, "files": new_cache})
-        except Exception as e:
-            logger.warning(TAG, f"Could not save {coord_dir / CHARA_OUTFIT_CACHE_FILE}: {e}")
+        by_root: dict[Path, dict[str, dict]] = {folder: {} for folder in chara_dirs}
+        for sp, entry in new_cache.items():
+            root = _root_of(Path(sp), chara_dirs)
+            if root is not None:
+                by_root[root][sp] = entry
+        for folder, files in by_root.items():
+            if not folder.is_dir():
+                continue
+            try:
+                atomic_write_json(folder / CHARA_OUTFIT_CACHE_FILE,
+                                  {"version": CHARA_OUTFIT_CACHE_VERSION, "dir": str(folder), "files": files})
+            except Exception as e:
+                logger.warning(TAG, f"Could not save {folder / CHARA_OUTFIT_CACHE_FILE}: {e}")
     return result
 
 
-def collect_chara_digests(chara_dirs: list[Path], coord_dir: Path,
-                          use_cache: bool) -> dict[Path, set[str]]:
+def collect_chara_digests(chara_dirs: list[Path], use_cache: bool) -> dict[Path, set[str]]:
     """{chara PNG: set of its outfit digests} for every chara card under chara_dirs."""
-    scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=False)
+    scanned = _scan_charas(chara_dirs, use_cache, need_sigs=False)
     return {png: set(e["digests"]) for png, e in scanned.items()}
 
 
-def collect_chara_signatures(chara_dirs: list[Path], coord_dir: Path,
-                             use_cache: bool) -> dict[Path, list[OutfitSignature]]:
+def collect_chara_signatures(chara_dirs: list[Path], use_cache: bool) -> dict[Path, list[OutfitSignature]]:
     """{chara PNG: its outfit signatures} for every chara card under chara_dirs."""
-    scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=True)
+    scanned = _scan_charas(chara_dirs, use_cache, need_sigs=True)
     return {png: [(tuple(clothes), tuple(accs)) for clothes, accs in e["sigs"]] for png, e in scanned.items()}
 
 
-def collect_chara_hairs(chara_dirs: list[Path], coord_dir: Path,
-                        use_cache: bool) -> dict[Path, list[tuple[str, ...]]]:
+def collect_chara_hairs(chara_dirs: list[Path], use_cache: bool) -> dict[Path, list[tuple[str, ...]]]:
     """{chara PNG: the hairs its outfits wear} for every chara card under chara_dirs."""
-    scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=False, need_hairs=True)
+    scanned = _scan_charas(chara_dirs, use_cache, need_sigs=False, need_hairs=True)
     return {png: [tuple(hair) for hair in e.get("hairs", [])] for png, e in scanned.items()}
 
 
-def collect_chara_mods(chara_dirs: list[Path], coord_dir: Path,
-                       use_cache: bool) -> dict[Path, dict[str, float]]:
+def collect_chara_mods(chara_dirs: list[Path], use_cache: bool) -> dict[Path, dict[str, float]]:
     """{chara PNG: {head mod: share of its outfits wearing it}} for every chara card."""
-    scanned = _scan_charas(chara_dirs, coord_dir, use_cache, need_sigs=False, need_mods=True)
+    scanned = _scan_charas(chara_dirs, use_cache, need_sigs=False, need_mods=True)
     return {png: dict(e.get("mods", {})) for png, e in scanned.items()}
 
 
@@ -600,7 +616,7 @@ class GroupCoordinates(BaseTask):
         Returns the paths (as they are now) of the coordinates this pass settled, so the outfit
         pass leaves them alone. A coordinate whose hair fits no character or several is not
         settled."""
-        chara_hairs = collect_chara_hairs(chara_dirs, coord_dir, self.use_cache)
+        chara_hairs = collect_chara_hairs(chara_dirs, self.use_cache)
         if not any(hairs for hairs in chara_hairs.values()):
             logger.info(TAG, "No character wears a hair accessory — skipping the hair pass")
             return set()
@@ -657,14 +673,14 @@ class GroupCoordinates(BaseTask):
         # matches(key) -> [(chara folder name, clothes differences, accessory differences)], best first;
         # coord_keys maps each coordinate card's path to its key (falsy: not a coordinate card).
         if self.ignore_accessories or clothes_tolerance:
-            chara_sigs = collect_chara_signatures(chara_dirs, coord_dir, self.use_cache)
+            chara_sigs = collect_chara_signatures(chara_dirs, self.use_cache)
             if not chara_sigs:
                 logger.warning(TAG, "No character cards found — nothing to match outfits against")
                 return False
             matches = fuzzy_matcher(chara_sigs, self.ignore_accessories, clothes_tolerance)
             coord_keys = build_coord_sig_cache(coord_dir, use_cache=self.use_cache)
         else:
-            chara_digests = collect_chara_digests(chara_dirs, coord_dir, self.use_cache)
+            chara_digests = collect_chara_digests(chara_dirs, self.use_cache)
             if not chara_digests:
                 logger.warning(TAG, "No character cards found — nothing to match outfits against")
                 return False
@@ -731,7 +747,7 @@ class GroupCoordinates(BaseTask):
                              skip: set[str] = frozenset()) -> None:
         """Move the coordinates the earlier passes left alone into the folder of the one
         character wearing a mod their head accessories come from."""
-        chara_mods = collect_chara_mods(chara_dirs, coord_dir, self.use_cache)
+        chara_mods = collect_chara_mods(chara_dirs, self.use_cache)
         if not any(chara_mods.values()):
             logger.info(TAG, "No character wears a head mod — skipping the head mod pass")
             return
