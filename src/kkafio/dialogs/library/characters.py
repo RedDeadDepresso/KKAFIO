@@ -20,6 +20,8 @@ from kkafio.tasks.group_chara import move_card, read_card
 from kkafio.cards.mods.parsing import parse_chara_guids
 from kkafio.cards.mods.png_guids import collect_chara_guids_by_file
 
+TAG = "LIBRARY"
+
 
 def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
                       info_cache: CharaInfoCache) -> list:
@@ -34,7 +36,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
         for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png")):
             if all(is_plain_dir(part) for part in png.relative_to(root).parts[:-1]):
                 found.append((root, png))
-    logger.info("GROUP", f"Scanning {len(found)} PNG file(s) for the library")
+    logger.info(TAG, f"Scanning {len(found)} PNG file(s) for the library")
 
     unique = dict.fromkeys(png for _root, png in found)
     root_of = {png: root for root, png in found}
@@ -44,7 +46,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
             if key is None:
                 continue                                  # not a chara card
             if key.startswith("__error__"):
-                logger.warning("GROUP", f"Could not process {png.name}: {key[9:]}")
+                logger.warning(TAG, f"Could not process {png.name}: {key[9:]}")
                 continue
             last, first, nick = split_key(key)
             parts = png.relative_to(root_of[png]).parts
@@ -98,11 +100,11 @@ def manual_callbacks(known: dict[str, str], info_cache: CharaInfoCache, lang: st
         if not text.strip():                              # blank: up out of the series folder
             if item.path.parent == item.root:
                 return None                               # already at the top: nothing to do
-            dest = move_card(item.path, item.root, item.root.name, info_cache)
+            dest = move_card(item.path, item.root, item.root.name, info_cache, TAG)
             return None if dest is None else (dest, item.root.name)
         folder = resolve_series_folder(text, known, state["lang"])
         if not folder:
-            logger.warning("GROUP", f"'{text}' can't be used as a series folder name")
+            logger.warning(TAG, f"'{text}' can't be used as a series folder name")
             return None
         dest_dir = item.root / folder
         if item.path.parent == dest_dir:
@@ -110,9 +112,9 @@ def manual_callbacks(known: dict[str, str], info_cache: CharaInfoCache, lang: st
         try:
             dest_dir.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            logger.warning("GROUP", f"Could not create {dest_dir}: {e}")
+            logger.warning(TAG, f"Could not create {dest_dir}: {e}")
             return None
-        dest = move_card(item.path, dest_dir, folder, info_cache)
+        dest = move_card(item.path, dest_dir, folder, info_cache, TAG)
         if dest is None:
             return None
         known.setdefault(folder.casefold(), folder)
@@ -131,17 +133,17 @@ def chara_library_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
     existing series folders are suggested)."""
     if hint_lang:
         from kkafio.indices import agv
-        agv.refresh("GROUP")
+        agv.refresh(TAG)
         if not agv.available():
-            logger.info("GROUP", "No anime, games, vtubers index — only existing series folders are suggested.")
+            logger.info(TAG, "No anime, games, vtubers index — only existing series folders are suggested.")
     else:
-        logger.info("GROUP", "Hints Language is 'no' — only existing series folders are suggested.")
+        logger.info(TAG, "Hints Language is 'no' — only existing series folders are suggested.")
 
-    info_cache = CharaInfoCache(folders, use_cache, "GROUP")
+    info_cache = CharaInfoCache(folders, use_cache, TAG)
 
     def finish() -> None:
         if use_cache:
-            logger.info("GROUP", f"Key cache: {info_cache.summary()}")
+            logger.info(TAG, f"Key cache: {info_cache.summary()}")
             info_cache.save()
 
     def folder_renamed(old: str, new: str, paths) -> None:

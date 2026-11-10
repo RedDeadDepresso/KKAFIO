@@ -18,9 +18,11 @@ from kkafio.dialogs.library.common import (
     seed_known,
 )
 from kkafio.indices.author import canonical_name, load_authors, suggest_authors
-from kkafio.tasks.group_scenes import TAG, save_hash_cache, scan_scenes
+from kkafio.tasks.group_scenes import save_hash_cache, scan_scenes
 from kkafio.cards.mods.parsing import parse_scene_guids
 from kkafio.cards.mods.png_guids import collect_scene_guids_by_file
+
+TAG = "LIBRARY"
 
 SCENE_COVER_RATIO = 180 / 320       # a scene card's picture is landscape (320x180)
 
@@ -93,10 +95,10 @@ def scene_library_tab(folder: Path, use_cache: bool, label: str = ""):
     Returns a LibraryTab (its `.items` is empty when there is nothing to show) whose `finish()`
     must be called once the library is closed, also when it failed: it brings the hash cache
     along with the scenes that were moved."""
-    logger.info(TAG, "Manual: reading the scenes")
+    logger.info(TAG, "Reading the scenes")
     # Always with subfolders: the library window shows the whole library, with each scene's author (its
     # folder) shown; "Include subfolders" only decides what the automatic grouping looks at.
-    scenes, cache, new_entries = scan_scenes(folder, True, use_cache)
+    scenes, cache, new_entries = scan_scenes(folder, True, use_cache, TAG)
     items = []
     for path, _digest in sorted(scenes):
         parts = path.relative_to(folder).parts

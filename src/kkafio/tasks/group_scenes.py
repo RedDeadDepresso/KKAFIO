@@ -29,15 +29,16 @@ from kkafio.tasks.filter_duplicate_contents import (
     _save_duplic_cache, _xxh,
 )
 
-TAG = "GRPSCN"
+TAG = "GRPSCENE"
 
 UNSORTED_YEARS = "Unsorted Years"
 
-def scan_scenes(folder: Path, include_subfolders: bool, use_cache: bool):
-    """Hash the PNGs (reusing the shared cache) and pick out the scenes.
+def scan_scenes(folder: Path, include_subfolders: bool, use_cache: bool, tag: str = TAG):
+    """Hash the PNGs (reusing the shared cache) and pick out the scenes, logging under `tag`
+    (the library window passes its own).
     Returns (scenes [(path, digest)], cache as loaded, this scan's cache entries)."""
     png_files = list(folder.rglob("*.png") if include_subfolders else folder.glob("*.png"))
-    logger.info(TAG, f"Scanning {len(png_files)} PNG file(s) in {folder}")
+    logger.info(tag, f"Scanning {len(png_files)} PNG file(s) in {folder}")
 
     # Same cache file (and entry layout) as Filter Duplicate Contents, so
     # hashes computed by either task are reused by the other.
@@ -62,14 +63,14 @@ def scan_scenes(folder: Path, include_subfolders: bool, use_cache: bool):
             try:
                 path, digest, category, fp, was_cached = future.result()
             except Exception as e:
-                logger.error(TAG, f"Could not read {futures[future].name}: {e}")
+                logger.error(tag, f"Could not read {futures[future].name}: {e}")
                 continue
             new_entries[str(path)] = {"fp": fp, "xxh": digest, "category": category}
             reused += was_cached
             if category == "scene":
                 scenes.append((path, digest))
     if reused:
-        logger.info(TAG, f"Hash cache: {reused} unchanged, {len(png_files) - reused} new/changed")
+        logger.info(tag, f"Hash cache: {reused} unchanged, {len(png_files) - reused} new/changed")
     return scenes, cache, new_entries
 
 

@@ -45,6 +45,7 @@ from kkafio.core.logger import logger
 # Prompt template
 # ---------------------------------------------------------------------------
 
+TAG = "GRPCHARA"
 PROMPT_TEMPLATE = prompt_language.GROUP_DEFAULT_PROMPT
 
 def add_index_hints(json_str: str, lang: str,
@@ -65,7 +66,7 @@ def add_index_hints(json_str: str, lang: str,
         h = [c.hint for c in narrowed[key]] if narrowed and key in narrowed else chara.hints(key, lang)
         hinted += bool(h)
         out[key] = {"series": value, "hints": h}
-    logger.info("GROUP", f"Character index: {hinted} of {len(out)} character(s) have hints")
+    logger.info(TAG, f"Character index: {hinted} of {len(out)} character(s) have hints")
     return json.dumps(out, indent=4, ensure_ascii=False)
 
 
@@ -189,11 +190,11 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
 
     png_files = _list_pngs(folder_list, include_subfolders)
 
-    logger.info("GROUP", f"Scanning {len(png_files)} PNG file(s) in "
+    logger.info(TAG, f"Scanning {len(png_files)} PNG file(s) in "
                          + ", ".join(str(f) for f in folder_list)
                          + (" (top-level only)" if not include_subfolders else " (recursive)"))
 
-    info_cache = CharaInfoCache(folder_list, use_cache, "GROUP")
+    info_cache = CharaInfoCache(folder_list, use_cache, TAG)
 
     import os
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -206,23 +207,23 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
             if result is None:
                 pass                    # not a chara card — skip
             elif result.startswith("__error__"):
-                logger.warning("GROUP", f"Could not process {png.name}: {result[9:]}")
+                logger.warning(TAG, f"Could not process {png.name}: {result[9:]}")
             else:
                 characters.setdefault(result, "")
                 if birthdays is not None:
                     birthdays.setdefault(result, set()).add(birth or (None, None))
 
     if use_cache:
-        logger.info("GROUP", f"Key cache: {info_cache.summary()}")
+        logger.info(TAG, f"Key cache: {info_cache.summary()}")
         info_cache.save()
 
     if not characters:
-        logger.warning("GROUP", "No readable character cards found")
+        logger.warning(TAG, "No readable character cards found")
         return ""
 
     json_str = json.dumps(characters, indent=4, ensure_ascii=False)
 
-    logger.success("GROUP",
+    logger.success(TAG,
         f"Found {len(characters)} unique character(s). Copy the text and paste it into your LLM.")
     return json_str
 
@@ -232,10 +233,11 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
 # ---------------------------------------------------------------------------
 
 
-def move_card(png: Path, dest_dir: Path, series_folder: str, info_cache: CharaInfoCache) -> Path | None:
+def move_card(png: Path, dest_dir: Path, series_folder: str, info_cache: CharaInfoCache,
+              tag: str = TAG) -> Path | None:
     """Move `png` into the existing folder `dest_dir` (a file name already taken there gets
     _1, _2, ... added), keeping the chara info cache in step. Returns where it went, or None (after
-    a warning) if it couldn't be moved."""
+    a warning, under `tag`) if it couldn't be moved."""
     dest = dest_dir / png.name
     if dest.exists():
         stem, suffix = png.stem, png.suffix
@@ -246,10 +248,10 @@ def move_card(png: Path, dest_dir: Path, series_folder: str, info_cache: CharaIn
     try:
         shutil.move(str(png), str(dest))
         info_cache.moved(png, dest)
-        logger.success("GROUP", f"Moved {png.name} -> {series_folder}/")
+        logger.success(tag, f"Moved {png.name} -> {series_folder}/")
         return dest
     except Exception as e:
-        logger.warning("GROUP", f"Could not move {png.name}: {e}")
+        logger.warning(tag, f"Could not move {png.name}: {e}")
         return None
 
 
@@ -288,7 +290,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     try:
         raw = json.loads(clean) if clean else {}
     except json.JSONDecodeError as e:
-        logger.warning("GROUP", f"Could not parse response JSON: {e}")
+        logger.warning(TAG, f"Could not parse response JSON: {e}")
         return
     # A value is the series name; an LLM that echoed {"series": ..., "hints": ...} is fine too.
     mapping: dict[str, str] = {k: v.get("series", "") if isinstance(v, dict) else v
@@ -309,10 +311,10 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     local_dest = {kb: folder for kb, folder in local_dest.items() if folder}
 
     if not dest_map and not local_dest:
-        logger.warning("GROUP", "No series assignments found in response — nothing to do")
+        logger.warning(TAG, "No series assignments found in response — nothing to do")
         return
 
-    logger.info("GROUP",
+    logger.info(TAG,
         f"Processing {len(dest_map)} assignment(s)"
         + (f" and {len(local_dest)} resolved locally" if local_dest else "") + " in "
         + ", ".join(str(f) for f in folder_list))
@@ -324,7 +326,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                  for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png"))]
     moved = 0
     skipped = 0
-    info_cache = CharaInfoCache(folder_list, use_cache, "GROUP")
+    info_cache = CharaInfoCache(folder_list, use_cache, TAG)
 
     try:
         for folder_path, png in png_files:
@@ -346,7 +348,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                     continue
                 key, birth = key_of(info), info.birth
             except Exception as e:
-                logger.warning("GROUP", f"Could not read {png.name}: {e}")
+                logger.warning(TAG, f"Could not read {png.name}: {e}")
                 skipped += 1
                 continue
 
@@ -368,11 +370,11 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     finally:
         # Saved even if the run is stopped part-way, so what was moved/learned so far isn't lost.
         if use_cache:
-            logger.info("GROUP", f"Key cache: {info_cache.summary()}")
+            logger.info(TAG, f"Key cache: {info_cache.summary()}")
             info_cache.save()
 
     logger.line()
-    logger.success("GROUP", f"Done — moved: {moved}, skipped/unassigned: {skipped}")
+    logger.success(TAG, f"Done — moved: {moved}, skipped/unassigned: {skipped}")
 
 
 # ---------------------------------------------------------------------------
@@ -394,14 +396,14 @@ class GroupChara(BaseTask):
         self.llm_website_url  : str  = cfg.get("LlmWebsiteUrl", "") or DEFAULT_LLM_WEBSITE_URL
 
     def run(self) -> None:
-        folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, "GROUP")
+        folders = resolve_chara_dirs(self.config.game_path, self.chara_dir_str, TAG)
 
-        self.log_start("GROUP", ", ".join(str(f) for f in folders))
-        logger.info("GROUP", f"Use cache: {self.use_cache}")
+        self.log_start(TAG, ", ".join(str(f) for f in folders))
+        logger.info(TAG, f"Use cache: {self.use_cache}")
 
         prompt, prompt_lang = prompt_language.resolve(
-            self.prompt_language, self.prompt, prompt_language.GROUP, "GROUP")
-        hint_lang = hint_language.resolve(self.hints_language, prompt, "GROUP", prompt_lang)
+            self.prompt_language, self.prompt, prompt_language.GROUP, TAG)
+        hint_lang = hint_language.resolve(self.hints_language, prompt, TAG, prompt_lang)
         self._run_llm(folders, hint_lang, prompt)
 
     def _run_llm(self, folders: list[Path], hint_lang: str | None, prompt: str | None = None) -> bool:
@@ -409,10 +411,10 @@ class GroupChara(BaseTask):
         prompt = self.prompt if prompt is None else prompt
         resolve = self.resolve_locally
         if resolve and not hint_lang:
-            logger.info("GROUP", "Resolve Locally needs the character indexes (Hints Language is "
+            logger.info(TAG, "Resolve Locally needs the character indexes (Hints Language is "
                                  "'no') — every card goes to the LLM.")
             resolve = False
-        logger.info("GROUP", f"Resolve locally: {resolve}")
+        logger.info(TAG, f"Resolve locally: {resolve}")
 
         birthdays: dict[str, set[Birth]] | None = {} if resolve else None
         json_str = export(folders, include_subfolders=self.include_subfolders,
@@ -424,13 +426,13 @@ class GroupChara(BaseTask):
         narrowed: dict[str, list[Candidate]] = {}
         if hint_lang:
             from kkafio.indices import chara
-            chara.refresh("GROUP")
+            chara.refresh(TAG)
             if not chara.supports(hint_lang):
-                logger.info("GROUP", f"The character indexes have no {hint_lang} text — hints are in English.")
+                logger.info(TAG, f"The character indexes have no {hint_lang} text — hints are in English.")
             if resolve and chara.available():
                 local, narrowed = resolve_locally(birthdays, hint_lang)
                 cards_n = sum(len(b) for b in birthdays.values())
-                logger.info("GROUP", f"Resolved locally: {len(local)} of {cards_n} character/birthday "
+                logger.info(TAG, f"Resolved locally: {len(local)} of {cards_n} character/birthday "
                                      f"combination(s); {len(narrowed)} key(s) hinted with only the "
                                      f"matching character")
                 json_str = keys_left_for_llm(json_str, birthdays, local)
@@ -438,7 +440,7 @@ class GroupChara(BaseTask):
                 json_str = add_index_hints(json_str, hint_lang, narrowed)
 
         if not json.loads(json_str):
-            logger.success("GROUP", "Every character was resolved locally — the LLM is not needed.")
+            logger.success(TAG, "Every character was resolved locally — the LLM is not needed.")
             process(folders, "{}", include_subfolders=self.include_subfolders,
                     use_cache=self.use_cache, hint_language=hint_lang, local=local)
             return True
@@ -447,10 +449,10 @@ class GroupChara(BaseTask):
 
         from kkafio.dialogs.llm import llm_dialog, open_llm_website
         if self.open_llm_website:
-            open_llm_website("GROUP", self.llm_website_url)
+            open_llm_website(TAG, self.llm_website_url)
         response = llm_dialog(t("dialog.llm.group_title"), prompt_text)
         if not response or not response.strip():
-            logger.warning("GROUP", "Dialog cancelled or empty response — nothing to do.")
+            logger.warning(TAG, "Dialog cancelled or empty response — nothing to do.")
             return False
 
         process(folders, response, include_subfolders=self.include_subfolders,

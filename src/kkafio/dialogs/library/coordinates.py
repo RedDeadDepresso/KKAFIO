@@ -16,16 +16,18 @@ from kkafio.dialogs.library.common import (
     Suggester, chain_moves, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, rename_known,
     seed_known,
 )
-from kkafio.tasks.group_coordinates import TAG, move_unique, sorted_charas, update_coord_cache
+from kkafio.tasks.group_coordinates import move_unique, sorted_charas, update_coord_cache
 from kkafio.cards.mods.parsing import parse_coord_guids
 from kkafio.cards.mods.png_guids import collect_coord_guids_by_file
+
+TAG = "LIBRARY"
 
 
 def chara_folder_names(chara_dirs: list[Path]) -> dict[str, str]:
     """{casefolded folder name: folder name} for every chara card under chara_dirs, from its
     filename without ".png" — what a character's coordinates are grouped under."""
     known: dict[str, str] = {}
-    for chara, name in sorted_charas({png for folder in chara_dirs for png in folder.rglob("*.png")}):
+    for chara, name in sorted_charas({png for folder in chara_dirs for png in folder.rglob("*.png")}, TAG):
         known.setdefault(name.casefold(), name)
     return known
 
@@ -102,7 +104,7 @@ def coordinate_library_tab(chara_dirs: list[Path], coord_dir: Path, use_cache: b
     Returns a LibraryTab (its `.items` is empty when there is nothing to show) whose `finish()`
     must be called once the library is closed, also when it failed: it brings the coordinate
     caches along with the cards that were moved."""
-    logger.info(TAG, "Manual: reading the coordinate cards")
+    logger.info(TAG, "Reading the coordinate cards")
     items = scan_manual_items(coord_dir, use_cache)
     known = existing_folders(coord_dir)
     seed_known(known, items)

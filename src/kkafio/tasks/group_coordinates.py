@@ -209,13 +209,14 @@ def collect_chara_mods(chara_dirs: list[Path], use_cache: bool) -> dict[Path, di
     return {png: dict(e.get("mods", {})) for png, e in scanned.items()}
 
 
-def sorted_charas(charas) -> list[tuple[Path, str]]:
-    """[(chara PNG, folder name)] in a stable order (by filename); unusable names are skipped."""
+def sorted_charas(charas, tag: str = TAG) -> list[tuple[Path, str]]:
+    """[(chara PNG, folder name)] in a stable order (by filename); unusable names are skipped
+    (with a warning under `tag`)."""
     out = []
     for chara in sorted(charas, key=lambda p: (p.name.casefold(), str(p))):
         name = folder_name_for(chara)
         if not name:
-            logger.warning(TAG, f"{chara.name}: unusable filename for a folder, skipped")
+            logger.warning(tag, f"{chara.name}: unusable filename for a folder, skipped")
             continue
         out.append((chara, name))
     return out

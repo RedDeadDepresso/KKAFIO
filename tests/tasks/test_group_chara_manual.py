@@ -181,7 +181,7 @@ def test_suggest_is_capped():
 def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
     cards = _cards(tmp_path, a="Rin", b="Saber")
     with manual_fakes():
-        cache = CharaInfoCache([tmp_path], True, "GROUP")
+        cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         items = gal.scan_manual_items([tmp_path], False, cache)
         known = existing_folders(tmp_path)
         _suggest, assign = gal.manual_callbacks(known, cache, None)
@@ -205,7 +205,7 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
     _cards(tmp_path, a="Rin")
     _file(tmp_path / "Fate" / "a.png", b"CHARA|Someone")                  # name already taken there
     with manual_fakes():
-        cache = CharaInfoCache([tmp_path], True, "GROUP")
+        cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         items = gal.scan_manual_items([tmp_path], True, cache)
         rin = next(i for i in items if i.alias == "Rin")
         assert rin.series is None
@@ -223,7 +223,7 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
 def test_assign_blank_moves_the_card_up_out_of_its_folder(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes():
-        cache = CharaInfoCache([tmp_path], True, "GROUP")
+        cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         rin = next(i for i in gal.scan_manual_items([tmp_path], True, cache) if i.alias == "Rin")
         _s, assign = gal.manual_callbacks(existing_folders(tmp_path), cache, None)
 
