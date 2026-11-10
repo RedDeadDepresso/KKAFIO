@@ -12,26 +12,32 @@ import pytest
 
 from kkafio.indices import agv
 from kkafio.indices.text import norm
-from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
+from kkafio.cards.chara.chara_info_cache import CACHE_FILE, CharaInfoCache
 from kkafio.core.config import _build_task_config
 from kkafio.dialogs.library import characters as gal
 from kkafio.dialogs.library.common import existing_folders
 from kkafio.dialogs.library import (
     SORT_CREATED, SORT_FILENAME, SORT_NAME, SORT_SIZE, SORT_UPDATED, VIEW_ALL, VIEW_SERIES, VIEW_TO_DELETE, VIEW_UNTAGGED, CharaItem, LibraryModel, ellipsize)
+from kkafio.cards.chara.chara_key import CharaInfo
 from kkafio.tasks import group_chara
 
 from test_agv import _index
-from test_chara_key_cache import _cards, _file, fakes
+from test_chara_info_cache import _cards, _file, fakes
 
 
-def _key(card):
-    """A key in the real make_key() layout: last | first | nick | personality | hair."""
-    return f"{card.display_name()} |  | {card.display_name()} | calm | black hair"
+def _info(card):
+    return CharaInfo(card.display_name(), "", card.display_name(), 0, None, (None, None))
+
+
+def _key(info):
+    """A key in the real key_of() layout: last | first | nick | personality | hair."""
+    return f"{info.last} | {info.first} | {info.nick} | calm | black hair"
 
 
 @contextmanager
 def manual_fakes():
-    with fakes(), mock.patch.object(group_chara, "make_key", _key):
+    with fakes(), mock.patch.object(group_chara, "chara_info", _info), \
+            mock.patch.object(group_chara, "key_of", _key):
         yield
 
 
@@ -152,7 +158,7 @@ def test_resolve_series_folder_snaps_to_the_index_title(agv_file):
 
 def test_suggest_existing_folders_first_then_the_index(agv_file):
     known = {"fate grand order": "Fate Grand Order", "sao": "SAO"}
-    suggest, _assign = gal.manual_callbacks(known, CharaKeyCache([], False), "en_us")
+    suggest, _assign = gal.manual_callbacks(known, CharaInfoCache([], False), "en_us")
     assert suggest("") == ["Fate Grand Order", "SAO"]                   # nothing typed: the existing folders
     assert suggest("fate") == ["Fate Grand Order", "Fatestay night"]    # folder, then the index (as a folder name)
     assert suggest("sword") == ["Sword Art Online"]
@@ -162,20 +168,20 @@ def test_suggest_existing_folders_first_then_the_index(agv_file):
 
 
 def test_suggest_without_a_language_only_lists_folders(agv_file):
-    suggest, _ = gal.manual_callbacks({"fate": "Fate"}, CharaKeyCache([], False), None)
+    suggest, _ = gal.manual_callbacks({"fate": "Fate"}, CharaInfoCache([], False), None)
     assert suggest("sword") == [] and suggest("fa") == ["Fate"]
 
 
 def test_suggest_is_capped():
     known = {f"s{i:02}": f"S{i:02}" for i in range(30)}
-    suggest, _ = gal.manual_callbacks(known, CharaKeyCache([], False), None, max_suggestions=5)
+    suggest, _ = gal.manual_callbacks(known, CharaInfoCache([], False), None, max_suggestions=5)
     assert len(suggest("")) == 5
 
 
 def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
     cards = _cards(tmp_path, a="Rin", b="Saber")
     with manual_fakes():
-        cache = CharaKeyCache([tmp_path], True, "GROUP")
+        cache = CharaInfoCache([tmp_path], True, "GROUP")
         items = gal.scan_manual_items([tmp_path], False, cache)
         known = existing_folders(tmp_path)
         _suggest, assign = gal.manual_callbacks(known, cache, None)
@@ -191,7 +197,7 @@ def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
 
         cache.save()
         files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
-        assert files[str(new_path)]["key"] == "Rin |  | Rin | calm | black hair"   # the entry followed the card
+        assert files[str(new_path)]["info"]["last"] == "Rin"             # the entry followed the card
         assert str(cards["a"]) not in files
 
 
@@ -199,7 +205,7 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
     _cards(tmp_path, a="Rin")
     _file(tmp_path / "Fate" / "a.png", b"CHARA|Someone")                  # name already taken there
     with manual_fakes():
-        cache = CharaKeyCache([tmp_path], True, "GROUP")
+        cache = CharaInfoCache([tmp_path], True, "GROUP")
         items = gal.scan_manual_items([tmp_path], True, cache)
         rin = next(i for i in items if i.alias == "Rin")
         assert rin.series is None
@@ -217,7 +223,7 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
 def test_assign_blank_moves_the_card_up_out_of_its_folder(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes():
-        cache = CharaKeyCache([tmp_path], True, "GROUP")
+        cache = CharaInfoCache([tmp_path], True, "GROUP")
         rin = next(i for i in gal.scan_manual_items([tmp_path], True, cache) if i.alias == "Rin")
         _s, assign = gal.manual_callbacks(existing_folders(tmp_path), cache, None)
 
@@ -232,7 +238,7 @@ def test_assign_blank_moves_the_card_up_out_of_its_folder(tmp_path):
 def test_assign_reports_a_failed_move(tmp_path):
     _cards(tmp_path, a="Rin")
     with manual_fakes():
-        cache = CharaKeyCache([tmp_path], False)
+        cache = CharaInfoCache([tmp_path], False)
         rin = gal.scan_manual_items([tmp_path], False, cache)[0]
         _s, assign = gal.manual_callbacks({}, cache, None)
         with mock.patch.object(group_chara.shutil, "move", side_effect=OSError("locked")):
@@ -252,7 +258,7 @@ def test_scan_series_from_folders_and_skipped_ones(tmp_path):
     _file(tmp_path / ".hidden" / "w.png", b"CHARA|Hidden")
     _file(tmp_path / "pic.png", b"just a picture")
     with manual_fakes():
-        cache = CharaKeyCache([tmp_path], False)
+        cache = CharaInfoCache([tmp_path], False)
         top_only = gal.scan_manual_items([tmp_path], False, cache)
         assert [(i.name, i.series) for i in top_only] == [("top", None)]      # the file name is the label
 
@@ -268,9 +274,10 @@ def test_scan_shows_the_filename_and_keeps_the_character_name_searchable(tmp_pat
     _file(tmp_path / "a.png", b"CHARA|x")
     with mock.patch.object(group_chara, "get_card_type", lambda raw: "KK"), \
          mock.patch.object(group_chara, "KoikatuCharaData", mock.MagicMock()), \
-         mock.patch.object(group_chara, "make_key", side_effect=[" |  | Nick | calm | black hair"]), \
+         mock.patch.object(group_chara, "chara_info", return_value=CharaInfo("", "", "Nick", 0, None, (None, None))), \
+         mock.patch.object(group_chara, "key_of", side_effect=[" |  | Nick | calm | black hair"]), \
          mock.patch.object(group_chara, "CHARA_CARD_TYPES", ("KK",)):
-        (item,) = gal.scan_manual_items([tmp_path], False, CharaKeyCache([], False))
+        (item,) = gal.scan_manual_items([tmp_path], False, CharaInfoCache([], False))
     assert item.name == "a" and item.alias == "Nick"
     m = LibraryModel([item]); m.search = "nick"
     assert [i.name for i in m.visible()] == ["a"]                       # found by the character's name
@@ -378,16 +385,16 @@ def test_maximize_uses_zoomed_state_then_the_x11_attribute():
 
 def test_suggest_existing_leaves_out_the_index(agv_file):
     known = {"fate grand order": "Fate Grand Order", "sao": "SAO"}
-    suggest, _assign = gal.manual_callbacks(known, CharaKeyCache([], False), "en_us")
+    suggest, _assign = gal.manual_callbacks(known, CharaInfoCache([], False), "en_us")
     assert suggest.existing("fate") == ["Fate Grand Order"]        # no "Fatestay night" from the index
     assert suggest.existing("sword") == []
 
 
 def test_the_series_language_can_be_changed_after_the_callbacks_are_made(agv_file):
-    suggest, assign = gal.manual_callbacks({}, CharaKeyCache([], False), "en_us")
+    suggest, assign = gal.manual_callbacks({}, CharaInfoCache([], False), "en_us")
     assert suggest("fate") == ["Fatestay night"]
     suggest.set_language("ja_jp")
     assert suggest("fate") == [gal.safe_folder_name("フェイト/ステイナイト")]       # the same series, in Japanese
-    no_index, _ = gal.manual_callbacks({}, CharaKeyCache([], False), None)
+    no_index, _ = gal.manual_callbacks({}, CharaInfoCache([], False), None)
     no_index.set_language("ja_jp")                                              # a tab without an index stays without
     assert no_index("fate") == []

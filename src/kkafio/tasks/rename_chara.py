@@ -12,9 +12,9 @@ LLM response format — values are dicts:
 
 Caches (both in the scanned folder):
   kkafio_rename_cache.json    the LLM's translations (key -> names), merged on every run
-  kkafio_chara_key_cache.json each card's identification key, so unchanged cards aren't
+  kkafio_chara_info_cache.json each card's identity fields, so unchanged cards aren't
                               re-parsed on the next run (the "Use Cache" option; shared
-                              with Group Characters, see kkafio.cards.chara.chara_key_cache)
+                              with Group Characters, see kkafio.cards.chara.chara_info_cache)
 """
 
 from __future__ import annotations
@@ -29,9 +29,9 @@ from kkloader import KoikatuCharaData
 
 from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
-from kkafio.cards.chara.chara_key import birthday, make_key
+from kkafio.cards.chara.chara_key import chara_info, key_of
 from kkafio.cards.chara.lenient_load import load_chara
-from kkafio.cards.chara.chara_key_cache import CharaKeyCache
+from kkafio.cards.chara.chara_info_cache import CharaInfoCache
 from kkafio.cards.chara import hint_language, prompt_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.core.i18n import t
@@ -231,24 +231,26 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True,
     logger.info("RENAME", f"Scanning {len(png_files)} PNG file(s) in "
                           + ", ".join(str(f) for f in folder_list))
 
-    key_cache = CharaKeyCache(folder_list, use_cache, "RENAME")
+    info_cache = CharaInfoCache(folder_list, use_cache, "RENAME")
 
     def _proc(png: Path):
         try:
             if skip_already_renamed and _already_renamed(png.stem, known_stems):
                 return png, "__skip__", None
             fp = file_fp(png)
-            hit, key = key_cache.lookup(png, fp, birth=True)
+            hit, info = info_cache.lookup(png, fp)
             if hit:
-                return png, key, key_cache.birth_of(png)      # key None: not a chara card
+                if info is None:
+                    return png, None, None                    # cached as "not a chara card"
+                return png, key_of(info), info.birth
             raw = png.read_bytes()
             if get_card_type(raw) not in CHARA_CARD_TYPES:
-                key_cache.put(png, fp, None)
+                info_cache.put(png, fp, None)
                 return png, None, None
-            kc = load_chara(png, KoikatuCharaData)
-            key, birth = make_key(kc), birthday(kc)
-            key_cache.put(png, fp, key, birth)
-            return png, key, birth
+            kc   = load_chara(png, KoikatuCharaData)
+            info = chara_info(kc)
+            info_cache.put(png, fp, info)
+            return png, key_of(info), info.birth
         except Exception as e:
             return png, f"__error__{e}", None
 
@@ -275,8 +277,8 @@ def export(folders, skip_already_renamed: bool = True, use_cache: bool = True,
     if skipped:
         logger.info("RENAME", f"Skipped {skipped} already-renamed file(s)")
     if use_cache:
-        logger.info("RENAME", f"Key cache: {key_cache.summary()}")
-        key_cache.save()
+        logger.info("RENAME", f"Key cache: {info_cache.summary()}")
+        info_cache.save()
 
     if not to_translate:
         logger.success("RENAME", "All characters already known — nothing to send to LLM.")
@@ -300,7 +302,7 @@ def process(folders, json_str: str,
             use_cache: bool = True) -> None:
     """Apply the LLM's JSON response to every card in the given folder(s).
 
-    use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
+    use_cache: take each card's identity from kkafio_chara_info_cache.json when the file is
     unchanged, and keep that cache in step with what is done to the cards (a renamed
     card's entry follows it; a card whose metadata was rewritten gets its new key)."""
     folder_list = _as_folder_list(folders)
@@ -354,7 +356,7 @@ def _process_folder(folder_path: Path, response: dict,
             used_stems_by_dir[d] = counts
         return used_stems_by_dir[d]
 
-    key_cache = CharaKeyCache([folder_path], use_cache, "RENAME")
+    info_cache = CharaInfoCache([folder_path], use_cache, "RENAME")
     try:
         for png in png_files:
             if skip_already_renamed and _already_renamed(png.stem, known_stems):
@@ -365,20 +367,21 @@ def _process_folder(folder_path: Path, response: dict,
             orig_type = None
             try:
                 fp = file_fp(png)
-                hit, key = key_cache.lookup(png, fp, birth=True)
+                hit, info = info_cache.lookup(png, fp)
                 if not hit:
                     raw = png.read_bytes()
                     orig_type = get_card_type(raw)
                     if orig_type not in CHARA_CARD_TYPES:
-                        key_cache.put(png, fp, None)
+                        info_cache.put(png, fp, None)
                         skipped += 1
                         continue
-                    kc  = load_chara(png, KoikatuCharaData)
-                    key = make_key(kc)
-                    key_cache.put(png, fp, key, birthday(kc))
-                elif key is None:
+                    kc   = load_chara(png, KoikatuCharaData)
+                    info = chara_info(kc)
+                    info_cache.put(png, fp, info)
+                elif info is None:
                     skipped += 1          # cached as "not a chara card"
                     continue
+                key = key_of(info)
             except Exception as e:
                 logger.warning("RENAME", f"Could not read {png.name}: {e}")
                 skipped += 1
@@ -451,11 +454,11 @@ def _process_folder(folder_path: Path, response: dict,
                             f"({orig_type.value} -> {get_card_type(new_raw).value})")
 
                     os.replace(tmp_path, png)
-                    # The card's name (part of its key) and its fingerprint just changed.
+                    # The card's names and its fingerprint just changed.
                     try:
-                        key_cache.updated(png, make_key(kc))
+                        info_cache.updated(png, chara_info(kc))
                     except Exception:
-                        key_cache.forget(png)
+                        info_cache.forget(png)
                     logger.info("RENAME",
                         f"Metadata: {png.name} → {last} {first} ({nickname})")
                     updated += 1
@@ -488,7 +491,7 @@ def _process_folder(folder_path: Path, response: dict,
                     if new_path.name != png.name:
                         try:
                             png.rename(new_path)
-                            key_cache.moved(png, new_path)
+                            info_cache.moved(png, new_path)
                             old_key = _fold(png.stem)
                             used[old_key] = used.get(old_key, 1) - 1
                             if used[old_key] <= 0:
@@ -503,8 +506,8 @@ def _process_folder(folder_path: Path, response: dict,
     finally:
         # Saved even if the run is stopped part-way, so what was renamed/learned so far isn't lost.
         if use_cache:
-            logger.info("RENAME", f"Key cache: {key_cache.summary()}")
-            key_cache.save()
+            logger.info("RENAME", f"Key cache: {info_cache.summary()}")
+            info_cache.save()
 
     logger.line()
     parts = []

@@ -1,4 +1,4 @@
-"""Group Characters' Resolve Locally: the per-card birthday in the key cache, the local
+"""Group Characters' Resolve Locally: the per-card birthday in the chara info cache, the local
 decision (one candidate / birthday match / series without a title in the hints language),
 and the end-to-end move with stand-in cards (no real kkloader needed)."""
 
@@ -10,7 +10,8 @@ from unittest import mock
 from kkafio.indices import chara
 from kkafio.indices.agv import Candidate
 from kkafio.cards.cache_io import file_fp
-from kkafio.cards.chara.chara_key_cache import CACHE_FILE, CharaKeyCache
+from kkafio.cards.chara.chara_key import CharaInfo
+from kkafio.cards.chara.chara_info_cache import CACHE_FILE, CharaInfoCache
 from kkafio.cards.classifier import CHARA_CARD_TYPES
 from kkafio.tasks import group_chara
 
@@ -36,41 +37,38 @@ def index(table):
 
 
 # ---------------------------------------------------------------------------
-# the cache keeps the birthday apart from the key
+# the cache keeps the birthday with the other identity fields
 # ---------------------------------------------------------------------------
 
-def test_birthday_is_stored_beside_the_key_and_old_entries_are_read_again(tmp_path):
+def _info(last="Rin", birth=(None, None)):
+    return CharaInfo(last, "", "", 0, None, birth)
+
+
+def test_birthday_is_stored_with_the_fields_and_an_entry_without_one_is_read_again(tmp_path):
     a = _file(tmp_path / "a.png", b"one")
-    cache = CharaKeyCache([tmp_path])
-    cache.put(a, file_fp(a), "key")                                  # no birthday recorded
-    assert cache.lookup(a) == (True, "key")
-    assert cache.lookup(a, birth=True) == (False, None)              # asked for it: read again
-    cache.put(a, file_fp(a), "key", (9, 28))
-    assert cache.lookup(a, birth=True) == (True, "key") and cache.birth_of(a) == (9, 28)
+    cache = CharaInfoCache([tmp_path])
+    cache.put(a, file_fp(a), _info(birth=(9, 28)))
+    assert cache.lookup(a) == (True, _info(birth=(9, 28)))
     cache.save()
     entry = json.loads((tmp_path / CACHE_FILE).read_text())["files"][str(a)]
-    assert entry["key"] == "key" and entry["birth"] == [9, 28]       # separate from the key string
-    assert CharaKeyCache([tmp_path]).birth_of(a) == (9, 28)
+    assert entry["info"]["birth"] == [9, 28]
+    assert CharaInfoCache([tmp_path]).lookup(a)[1].birth == (9, 28)
+    del entry["info"]["birth"]                                       # an entry from before birthdays
+    cache._data[str(a)] = entry
+    assert cache.lookup(a) == (False, None)
 
 
-def test_birthday_follows_a_move_and_survives_a_metadata_update(tmp_path):
+def test_birthday_follows_a_move_and_a_metadata_update_records_it_again(tmp_path):
     a = _file(tmp_path / "a.png", b"data")
-    cache = CharaKeyCache([tmp_path])
-    cache.put(a, file_fp(a), "key", (None, 5))                       # a missing month is kept as null
+    cache = CharaInfoCache([tmp_path])
+    cache.put(a, file_fp(a), _info(birth=(None, 5)))                 # a missing month is kept as null
     b = tmp_path / "S" / "a.png"
     b.parent.mkdir()
     a.replace(b)
     cache.moved(a, b)
-    assert cache.birth_of(b) == (None, 5)
-    cache.updated(b, "new key")
-    assert cache.lookup(b, birth=True) == (True, "new key") and cache.birth_of(b) == (None, 5)
-
-
-def test_a_non_chara_png_never_needs_a_birthday(tmp_path):
-    p = _file(tmp_path / "p.png")
-    cache = CharaKeyCache([tmp_path])
-    cache.put(p, file_fp(p), None)
-    assert cache.lookup(p, birth=True) == (True, None)
+    assert cache.lookup(b)[1].birth == (None, 5)
+    cache.updated(b, _info("New", birth=(None, 5)))
+    assert cache.lookup(b) == (True, _info("New", birth=(None, 5)))
 
 
 # ---------------------------------------------------------------------------
@@ -152,8 +150,12 @@ class FakeCard:
         return self.p
 
 
-def _fake_key(card):
-    return f"{card.p['name']} | calm | black hair"
+def _fake_info(card):
+    return CharaInfo(card.p["name"], "", "", 0, None, (card.p["birthMonth"], card.p["birthDay"]))
+
+
+def _fake_key(info):
+    return f"{info.last} | calm | black hair"
 
 
 @contextmanager
@@ -161,7 +163,8 @@ def fakes():
     FakeCard.parsed = 0
     with ExitStack() as st:
         st.enter_context(mock.patch.object(group_chara, "KoikatuCharaData", FakeCard))
-        st.enter_context(mock.patch.object(group_chara, "make_key", _fake_key))
+        st.enter_context(mock.patch.object(group_chara, "chara_info", _fake_info))
+        st.enter_context(mock.patch.object(group_chara, "key_of", _fake_key))
         st.enter_context(mock.patch.object(group_chara, "get_card_type",
                                            lambda raw: KK if raw.startswith(b"CHARA|") else None))
         yield
@@ -202,19 +205,20 @@ def test_the_birthday_is_always_cached_resolve_locally_or_not(tmp_path):
     with fakes():
         group_chara.export(tmp_path)                                 # no birthdays asked for
         files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
-        assert next(iter(files.values()))["birth"] == [9, 28]
+        assert next(iter(files.values()))["info"]["birth"] == [9, 28]
         FakeCard.parsed = 0
         group_chara.process(tmp_path, json.dumps({"Rin | calm | black hair": "SAO"}))
         assert FakeCard.parsed == 0                                  # nothing read again
         files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
-    assert files[str(tmp_path / "SAO" / "a.png")]["birth"] == [9, 28]
+    assert files[str(tmp_path / "SAO" / "a.png")]["info"]["birth"] == [9, 28]
 
 
 def test_a_cache_entry_from_before_birthdays_is_read_once_more(tmp_path):
     a = _card(tmp_path, "a", "Rin", 9, 28)
     with fakes():
-        cache = CharaKeyCache([tmp_path])
-        cache.put(a, file_fp(a), "Rin | calm | black hair")        # old layout: no birthday
+        cache = CharaInfoCache([tmp_path])
+        cache.put(a, file_fp(a), _info())
+        cache._data[str(a)]["info"].pop("birth")                     # old layout: no birthday
         cache.save()
         FakeCard.parsed = 0
         group_chara.export(tmp_path)
@@ -257,7 +261,8 @@ def test_rename_export_collects_the_birthdays_of_the_characters_it_returns(tmp_p
     with ExitStack() as st:
         FakeCard.parsed = 0
         st.enter_context(mock.patch.object(rename_chara, "KoikatuCharaData", FakeCard))
-        st.enter_context(mock.patch.object(rename_chara, "make_key", _fake_key))
+        st.enter_context(mock.patch.object(rename_chara, "chara_info", _fake_info))
+        st.enter_context(mock.patch.object(rename_chara, "key_of", _fake_key))
         st.enter_context(mock.patch.object(rename_chara, "get_card_type",
                                            lambda raw: KK if raw.startswith(b"CHARA|") else None))
         births: dict = {}

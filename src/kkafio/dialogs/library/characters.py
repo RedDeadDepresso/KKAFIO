@@ -2,14 +2,14 @@
 characters.py — The Character tab of Organize Library: character cards sorted into series folders by hand.
 
 The user types a series for a character and the card is moved into <chara folder>/<series>/ at
-once. The scan reads the cards with the same key cache the LLM workflow uses (group_chara.py), and
+once. The scan reads the cards with the same chara info cache the LLM workflow uses (group_chara.py), and
 the series suggestions come from the existing folders and the anime / games / vtubers index.
 """
 
 from pathlib import Path
 from typing import Sequence
 
-from kkafio.cards.chara.chara_key_cache import CharaKeyCache
+from kkafio.cards.chara.chara_info_cache import CharaInfoCache
 from kkafio.core.folder_names import safe_folder_name
 from kkafio.core.logger import logger
 from kkafio.dialogs.library.model import COVER_RATIO, LibraryTab
@@ -22,7 +22,7 @@ from kkafio.cards.mods.png_guids import collect_chara_guids_by_file
 
 
 def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
-                      key_cache: CharaKeyCache) -> list:
+                      info_cache: CharaInfoCache) -> list:
     """The character cards for the library dialog, as CharaItems. A card directly in a chara
     folder has no series; one inside a folder has that (first) folder as its series."""
     import os
@@ -40,7 +40,7 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
     root_of = {png: root for root, png in found}
     items: list = []
     with ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 4) * 2)) as ex:
-        for png, key, _birth in ex.map(lambda p: read_card(p, key_cache), unique):
+        for png, key, _birth in ex.map(lambda p: read_card(p, info_cache), unique):
             if key is None:
                 continue                                  # not a chara card
             if key.startswith("__error__"):
@@ -67,7 +67,7 @@ def resolve_series_folder(text: str, known: dict[str, str], lang: str | None) ->
     return known.get(name.casefold(), name) if name else ""
 
 
-def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str | None,
+def manual_callbacks(known: dict[str, str], info_cache: CharaInfoCache, lang: str | None,
                      max_suggestions: int = 8):
     """(suggest, assign) for the library dialog. `known` ({casefolded: name}) holds the series
     folders that exist and grows as new ones are created; `lang` is the language of the index's
@@ -98,7 +98,7 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
         if not text.strip():                              # blank: up out of the series folder
             if item.path.parent == item.root:
                 return None                               # already at the top: nothing to do
-            dest = move_card(item.path, item.root, item.root.name, key_cache)
+            dest = move_card(item.path, item.root, item.root.name, info_cache)
             return None if dest is None else (dest, item.root.name)
         folder = resolve_series_folder(text, known, state["lang"])
         if not folder:
@@ -112,7 +112,7 @@ def manual_callbacks(known: dict[str, str], key_cache: CharaKeyCache, lang: str 
         except OSError as e:
             logger.warning("GROUP", f"Could not create {dest_dir}: {e}")
             return None
-        dest = move_card(item.path, dest_dir, folder, key_cache)
+        dest = move_card(item.path, dest_dir, folder, info_cache)
         if dest is None:
             return None
         known.setdefault(folder.casefold(), folder)
@@ -126,7 +126,7 @@ def chara_library_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
     character and each card is moved at once.
 
     Returns a LibraryTab (its `.items` is empty when there is nothing to show) whose `finish()`
-    must be called once the library is closed, also when it failed: it saves the key cache.
+    must be called once the library is closed, also when it failed: it saves the chara info cache.
     `hint_lang` is the language of the character index's series titles (None: no index, only the
     existing series folders are suggested)."""
     if hint_lang:
@@ -137,26 +137,26 @@ def chara_library_tab(folders: Sequence[Path], hint_lang: str | None, use_cache:
     else:
         logger.info("GROUP", "Hints Language is 'no' — only existing series folders are suggested.")
 
-    key_cache = CharaKeyCache(folders, use_cache, "GROUP")
+    info_cache = CharaInfoCache(folders, use_cache, "GROUP")
 
     def finish() -> None:
         if use_cache:
-            logger.info("GROUP", f"Key cache: {key_cache.summary()}")
-            key_cache.save()
+            logger.info("GROUP", f"Key cache: {info_cache.summary()}")
+            info_cache.save()
 
     def folder_renamed(old: str, new: str, paths) -> None:
         rename_known(known, old, new)                     # the suggestions follow the folder
         for src, dest in paths.items():
-            key_cache.moved(src, dest)                    # so do the cached keys
+            info_cache.moved(src, dest)                    # so do the cached keys
 
     known: dict[str, str] = {}
     try:
         # Always with subfolders: the library window shows the whole library, with each card's series
         # (its folder) shown; "Include subfolders" only decides what the LLM is sent.
-        items = scan_manual_items(folders, True, key_cache)
+        items = scan_manual_items(folders, True, info_cache)
         known.update(existing_folders(*folders))
         seed_known(known, items)
-        suggest, assign = manual_callbacks(known, key_cache, hint_lang)
+        suggest, assign = manual_callbacks(known, info_cache, hint_lang)
     except BaseException:
         finish()
         raise

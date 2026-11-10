@@ -40,7 +40,7 @@ def _dominant(cands: list[Candidate]) -> bool:
 
 
 def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:
-    """Up to `limit` (MAX_HINTS) candidates for a make_key() string, names and series in `lang`.
+    """Up to `limit` (MAX_HINTS) candidates for a key_of() string, names and series in `lang`.
 
     The two indexes' scores are not comparable, so they are merged rather than sorted: an
     index whose best candidate clearly dominates its own others goes first (gacha before

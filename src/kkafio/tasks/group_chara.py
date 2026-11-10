@@ -31,9 +31,9 @@ from kkloader import KoikatuCharaData
 
 from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
-from kkafio.cards.chara.chara_key import birthday, make_key
+from kkafio.cards.chara.chara_key import chara_info, key_of
 from kkafio.cards.chara.lenient_load import load_chara
-from kkafio.cards.chara.chara_key_cache import CharaKeyCache
+from kkafio.cards.chara.chara_info_cache import CharaInfoCache
 from kkafio.indices.agv import Candidate
 from kkafio.cards.chara import hint_language, prompt_language
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
@@ -141,24 +141,25 @@ def _list_pngs(folders: Sequence[Path], include_subfolders: bool) -> list[Path]:
     return pngs
 
 
-def read_card(png: Path, key_cache: CharaKeyCache) -> tuple[Path, str | None, Birth | None]:
+def read_card(png: Path, info_cache: CharaInfoCache) -> tuple[Path, str | None, Birth | None]:
     """Read, classify and build the key and birthday for one PNG, or take them from the
     cache. Returns (png, key, birthday): key None = not a chara card, "__error__<why>" = it
     couldn't be read. Runs in a thread pool worker."""
     try:
         fp = file_fp(png)
-        hit, key = key_cache.lookup(png, fp, birth=True)
+        hit, info = info_cache.lookup(png, fp)
         if hit:
-            return png, key, key_cache.birth_of(png)      # key None: not a chara card
+            if info is None:
+                return png, None, None                    # cached as "not a chara card"
+            return png, key_of(info), info.birth
         raw = png.read_bytes()
         if get_card_type(raw) not in CHARA_CARD_TYPES:
-            key_cache.put(png, fp, None)
+            info_cache.put(png, fp, None)
             return png, None, None  # not a chara card — skip silently
-        kc  = load_chara(png, KoikatuCharaData)
-        key = make_key(kc)
-        birth = birthday(kc)
-        key_cache.put(png, fp, key, birth)
-        return png, key, birth
+        kc   = load_chara(png, KoikatuCharaData)
+        info = chara_info(kc)
+        info_cache.put(png, fp, info)
+        return png, key_of(info), info.birth
     except Exception as e:
         return png, f"__error__{e}", None
 
@@ -175,10 +176,10 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
         include_subfolders: When False (default) only scans the top-level folder,
                             skipping already-sorted cards in subfolders.
                             When True scans recursively.
-        use_cache: Reuse each card's key from kkafio_chara_key_cache.json when the file
+        use_cache: Reuse each card's identity from kkafio_chara_info_cache.json when the file
                    hasn't changed (mtime + size), instead of re-parsing it.
         birthdays: If given (an empty dict), it is filled with {key: {(birthMonth, birthDay),
-                   ...}} for the cards found. Each card's birthday is always cached next to its key.
+                   ...}} for the cards found. Each card's birthday is always cached with its other identity fields.
 
     Returns only the JSON block (no prompt) — the caller splices its own
     prompt text in front, same pattern as rename_chara.export().
@@ -192,14 +193,14 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
                          + ", ".join(str(f) for f in folder_list)
                          + (" (top-level only)" if not include_subfolders else " (recursive)"))
 
-    key_cache = CharaKeyCache(folder_list, use_cache, "GROUP")
+    info_cache = CharaInfoCache(folder_list, use_cache, "GROUP")
 
     import os
     from concurrent.futures import ThreadPoolExecutor, as_completed
     workers = min(32, (os.cpu_count() or 4) * 2)
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = {ex.submit(read_card, png, key_cache): png for png in png_files}
+        futures = {ex.submit(read_card, png, info_cache): png for png in png_files}
         for future in as_completed(futures):
             png, result, birth = future.result()
             if result is None:
@@ -212,8 +213,8 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
                     birthdays.setdefault(result, set()).add(birth or (None, None))
 
     if use_cache:
-        logger.info("GROUP", f"Key cache: {key_cache.summary()}")
-        key_cache.save()
+        logger.info("GROUP", f"Key cache: {info_cache.summary()}")
+        info_cache.save()
 
     if not characters:
         logger.warning("GROUP", "No readable character cards found")
@@ -231,9 +232,9 @@ def export(folders: Path | Sequence[Path], include_subfolders: bool = False,
 # ---------------------------------------------------------------------------
 
 
-def move_card(png: Path, dest_dir: Path, series_folder: str, key_cache: CharaKeyCache) -> Path | None:
+def move_card(png: Path, dest_dir: Path, series_folder: str, info_cache: CharaInfoCache) -> Path | None:
     """Move `png` into the existing folder `dest_dir` (a file name already taken there gets
-    _1, _2, ... added), keeping the key cache in step. Returns where it went, or None (after
+    _1, _2, ... added), keeping the chara info cache in step. Returns where it went, or None (after
     a warning) if it couldn't be moved."""
     dest = dest_dir / png.name
     if dest.exists():
@@ -244,7 +245,7 @@ def move_card(png: Path, dest_dir: Path, series_folder: str, key_cache: CharaKey
             counter += 1
     try:
         shutil.move(str(png), str(dest))
-        key_cache.moved(png, dest)
+        info_cache.moved(png, dest)
         logger.success("GROUP", f"Moved {png.name} -> {series_folder}/")
         return dest
     except Exception as e:
@@ -265,7 +266,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
     already sitting in subfolders are regrouped too; when False only
     top-level cards are touched.
 
-    use_cache: take each card's key from kkafio_chara_key_cache.json when the file is
+    use_cache: take each card's identity from kkafio_chara_info_cache.json when the file is
     unchanged, and keep that cache in step with the moves (a moved card's entry follows
     it to its new folder) so the next run doesn't have to read the cards again.
 
@@ -323,28 +324,27 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                  for png in (root.rglob("*.png") if include_subfolders else root.glob("*.png"))]
     moved = 0
     skipped = 0
-    key_cache = CharaKeyCache(folder_list, use_cache, "GROUP")
+    info_cache = CharaInfoCache(folder_list, use_cache, "GROUP")
 
     try:
         for folder_path, png in png_files:
             # Pre-filter: skip non-chara-card files before passing to kkloader
             try:
                 fp = file_fp(png)
-                hit, key = key_cache.lookup(png, fp, birth=True)
-                birth: Birth | None = key_cache.birth_of(png) if hit else None
+                hit, info = info_cache.lookup(png, fp)
                 if not hit:
                     raw = png.read_bytes()
                     if get_card_type(raw) not in CHARA_CARD_TYPES:
-                        key_cache.put(png, fp, None)
+                        info_cache.put(png, fp, None)
                         skipped += 1
                         continue
-                    kc  = load_chara(png, KoikatuCharaData)
-                    key = make_key(kc)
-                    birth = birthday(kc)
-                    key_cache.put(png, fp, key, birth)
-                elif key is None:
+                    kc   = load_chara(png, KoikatuCharaData)
+                    info = chara_info(kc)
+                    info_cache.put(png, fp, info)
+                elif info is None:
                     skipped += 1          # cached as "not a chara card"
                     continue
+                key, birth = key_of(info), info.birth
             except Exception as e:
                 logger.warning("GROUP", f"Could not read {png.name}: {e}")
                 skipped += 1
@@ -361,15 +361,15 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                 skipped += 1          # already in the right series folder
                 continue
             dest_dir.mkdir(parents=True, exist_ok=True)
-            if move_card(png, dest_dir, series_folder, key_cache) is not None:
+            if move_card(png, dest_dir, series_folder, info_cache) is not None:
                 moved += 1
             else:
                 skipped += 1
     finally:
         # Saved even if the run is stopped part-way, so what was moved/learned so far isn't lost.
         if use_cache:
-            logger.info("GROUP", f"Key cache: {key_cache.summary()}")
-            key_cache.save()
+            logger.info("GROUP", f"Key cache: {info_cache.summary()}")
+            info_cache.save()
 
     logger.line()
     logger.success("GROUP", f"Done — moved: {moved}, skipped/unassigned: {skipped}")

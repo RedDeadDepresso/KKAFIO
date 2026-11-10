@@ -1,24 +1,27 @@
 """
-chara_key_cache.py — Remembers each chara card's identification key between runs.
+chara_info_cache.py — Remembers what was read off each chara card between runs.
 
-Group Characters and Rename Characters both need `make_key(card)` (the
-"lastname | firstname | nickname | personality | hair colour" string) for every PNG, and getting it means
-reading the whole file and fully parsing the character data — tens of MB per
-card. Group Characters even does that twice per run (once to export, once to
-move). This cache stores, per file, what was learned the last time:
+Group Characters and Rename Characters both need a card's identity (last name, first name,
+nickname, personality, hair colour, birthday) for every PNG, and getting it means reading the
+whole file and fully parsing the character data — tens of MB per card. Group Characters even
+does that twice per run (once to export, once to move). This cache stores, per file, the raw
+fields read the last time (see chara_key.CharaInfo):
 
-    {"<path>": {"fp": [mtime, size], "key": "<key>" | null, "birth": [month, day]}}
+    {"<path>": {"fp": [mtime, size],
+                "info": {"last", "first", "nick", "pers", "hair": [r, g, b] | null,
+                         "birth": [month, day]} | null}}
 
-`key` is null for a PNG that isn't a chara card, so those aren't re-read either. `birth` is the
-card's birthMonth / birthDay (each an integer or null), kept apart from the key. Both tasks
-always record it; an entry from before that existed is simply read once more.
-An entry is only trusted while the file's [mtime, size] still match, so any edit
-to a card makes it be read again.
+The key string ("last | first | nick | personality | hair colour") is not stored: `key_of(info)`
+builds it from the fields, so changing how keys are built needs no re-read of any card.
+`info` is null for a PNG that isn't a chara card, so those aren't re-read either. An entry that
+is missing a field, or whose fields are malformed, counts as a miss and the card is read again.
+An entry is only trusted while the file's [mtime, size] still match, so any edit to a card makes
+it be read again.
 
 One cache file per scanned folder (CACHE_FILE, same layout and atomic write as the
 other incremental caches). Both tasks share it, and both keep it in step with what
 they do to the files: a moved or renamed card's entry follows it to its new path,
-and a card whose metadata was rewritten gets its new key and fingerprint — so the
+and a card whose metadata was rewritten gets its new fields and fingerprint — so the
 next run doesn't have to read any of them again.
 
 Not to be confused with kkafio_rename_cache.json, which holds the LLM's
@@ -31,13 +34,17 @@ import os
 from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
+from kkafio.cards.chara.chara_key import CharaInfo
 from kkafio.core.logger import logger
 
-CACHE_FILE = "kkafio_chara_key_cache.json"
+# Not the old kkafio_chara_key_cache.json (which stored finished key strings): that file is
+# simply never read again.
+CACHE_FILE = "kkafio_chara_info_cache.json"
 
-# Bump when make_key() changes what it returns for a card (or the entry layout
-# changes): caches written by an older version are then ignored, not trusted.
-CACHE_VERSION = 3
+# Bump when the entry layout changes in a way CharaInfo.from_json can't tell from a missing or
+# malformed field: caches written by an older version are then ignored, not trusted. A new
+# CharaInfo field doesn't need it; entries without the field are read again by themselves.
+CACHE_VERSION = 1
 
 
 def _load(folder: Path) -> dict[str, dict]:
@@ -54,8 +61,8 @@ def _load(folder: Path) -> dict[str, dict]:
     return {}
 
 
-class CharaKeyCache:
-    """The key cache for a set of chara folders ("roots").
+class CharaInfoCache:
+    """The chara info cache for a set of chara folders ("roots").
 
     With `enabled=False` it does nothing at all (every lookup misses, nothing is
     read or written), so callers don't need to special-case the option.
@@ -78,49 +85,36 @@ class CharaKeyCache:
 
     # -- reading ------------------------------------------------------------
 
-    def lookup(self, path: Path, fp: list[int] | None = None,
-               birth: bool = False) -> tuple[bool, str | None]:
-        """(True, key) if `path` is cached and unchanged — `key` is None for a PNG that
-        isn't a chara card. (False, None) if it has to be read. With `birth=True` a chara
-        card cached without its birthday counts as a miss (see `birth_of`)."""
+    def lookup(self, path: Path, fp: list[int] | None = None) -> tuple[bool, CharaInfo | None]:
+        """(True, info) if `path` is cached and unchanged — `info` is None for a PNG that
+        isn't a chara card. (False, None) if it has to be read: not cached, changed since, or
+        cached without every field CharaInfo has now."""
         if not self.enabled:
             return False, None
         entry = self._data.get(str(path))
-        if (entry is not None and "key" in entry
-                and entry.get("fp") == (fp if fp is not None else file_fp(path))
-                and (not birth or entry["key"] is None or self._birth(entry) is not None)):
-            self.hits += 1
-            return True, entry["key"]
+        if (entry is not None and "info" in entry
+                and entry.get("fp") == (fp if fp is not None else file_fp(path))):
+            raw = entry["info"]
+            info = None if raw is None else CharaInfo.from_json(raw)
+            if raw is None or info is not None:
+                self.hits += 1
+                return True, info
         self.misses += 1
         return False, None
 
-    @staticmethod
-    def _birth(entry: dict) -> tuple[int | None, int | None] | None:
-        b = entry.get("birth")
-        if isinstance(b, (list, tuple)) and len(b) == 2:
-            return tuple(v if isinstance(v, int) and not isinstance(v, bool) else None for v in b)
-        return None
-
-    def birth_of(self, path: Path) -> tuple[int | None, int | None] | None:
-        """(birthMonth, birthDay) recorded for `path`, or None if none was recorded."""
-        entry = self._data.get(str(path)) if self.enabled else None
-        return self._birth(entry) if entry else None
-
     # -- recording what was learned -------------------------------------------
 
-    def put(self, path: Path, fp: list[int], key: str | None,
-            birth: tuple[int | None, int | None] | None = None) -> None:
+    def put(self, path: Path, fp: list[int], info: CharaInfo | None) -> None:
+        """Record what was read from `path` (`info` None: not a chara card)."""
         if self.enabled:
-            entry = {"fp": list(fp), "key": key}
-            if birth is not None:
-                entry["birth"] = list(birth)
-            self._data[str(path)] = entry
+            self._data[str(path)] = {"fp": list(fp),
+                                     "info": info.to_json() if info is not None else None}
             self._dirty = True
 
-    def updated(self, path: Path, key: str) -> None:
-        """`path` was rewritten by us (metadata update): record its new key under its new
-        fingerprint. The birthday isn't something we change, so it is carried over."""
-        self.put(path, file_fp(path), key, self.birth_of(path))
+    def updated(self, path: Path, info: CharaInfo) -> None:
+        """`path` was rewritten by us (metadata update): record the card's new fields under
+        its new fingerprint."""
+        self.put(path, file_fp(path), info)
 
     def moved(self, old: Path, new: Path) -> None:
         """`old` was moved/renamed to `new`: its entry follows it. A move keeps mtime and

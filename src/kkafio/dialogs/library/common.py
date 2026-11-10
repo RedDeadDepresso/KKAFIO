@@ -1,7 +1,7 @@
 """
 common.py — The pieces the character, coordinate and scene libraries have in common.
 
-Each library still has its own scan (key cache / coordinate cache / hash cache), its own source of
+Each library still has its own scan (chara info cache / coordinate cache / hash cache), its own source of
 suggestions (series index / character names / authors) and its own `finish()`; what is the same
 in all three lives here: which folders count, listing the folders that exist, building a card's
 `CharaItem`, ranking the suggestions, and the window's wording.

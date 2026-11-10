@@ -82,8 +82,8 @@ KKAFIO-dev/
 │   │   │   ├── kks_scene.py         # Converting a KKS Studio scene to KK
 │   │   │   └── msgpack_min.py       # Byte-exact MessagePack codec used by the scene converter
 │   │   └── chara/                   # Identifying and comparing characters
-│   │       ├── chara_key.py         # "last | first | nick | personality | hair" key for LLM matching
-│   │       ├── chara_key_cache.py   # per-card key cache for Group / Rename Characters
+│   │       ├── chara_key.py         # CharaInfo (raw identity fields) and the "last | first | nick | personality | hair" key built from it
+│   │       ├── chara_info_cache.py   # per-card CharaInfo cache for Group / Rename Characters
 │   │       ├── hint_language.py     # Language of the character-index hints
 │   │       ├── prompt_language.py   # Built-in LLM prompts per language (Prompt Language option)
 │   │       ├── hair_color.py        # RGB -> hair colour name used in the character key

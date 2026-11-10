@@ -11,7 +11,7 @@ into its folder the moment you confirm it
 The folders default to the game's (Studio scene folder, female + male chara folders, coordinate
 folder); the Scene folder is left out of the window when the game has no Studio and no folder was
 given. The caches the Group tasks use are used here too (the PNG hash cache for scenes, the
-character key cache, the coordinate caches) and brought along with every card that is moved.
+character info cache, the coordinate caches) and brought along with every card that is moved.
 
 A collapsible sidebar on the right of the window lists the mods (GUIDs) the card under the cursor
 uses, marking each installed or missing in the installed and downloaded mods folders (the game's, or the

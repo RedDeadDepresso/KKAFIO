@@ -125,7 +125,7 @@ def _candidate(idx: _Built, c: _Char, lang: str | None) -> Candidate:
 
 
 def lookup(key: str, lang: str | None = None, limit: int = MAX_HINTS) -> tuple[Candidate, ...]:
-    """Gacha characters whose name matches a make_key() string, most popular first; names
+    """Gacha characters whose name matches a key_of() string, most popular first; names
     and series come back in `lang` (English where the index has nothing in it)."""
     idx = _load()
     if not idx:
