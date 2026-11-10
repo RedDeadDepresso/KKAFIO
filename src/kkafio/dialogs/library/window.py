@@ -457,7 +457,7 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
     keys = [tab.key or f"tab{i}" for i, tab in enumerate(tabs)]
     initial = view_state.initial_index(keys, initial, [bool(tab.items) for tab in tabs])   # the tab left open last
 
-    # search bar, with the tabs on its left and the Settings button on its right
+    # search bar, with the tabs on its left and the Settings and Info buttons on its right
     top = ctk.CTkFrame(root, fg_color="transparent")
     top.grid(row=0, column=0, columnspan=2, padx=12, pady=(12, 8), sticky="ew")
     top.grid_columnconfigure(1, weight=1)
@@ -471,6 +471,13 @@ def _ctk_dialog(title: str, tabs: list[LibraryTab], initial: int, mods=None,
 
     ctk.CTkButton(top, text="\u2699 " + t("dialog.settings.button"), width=110, height=34,
                   command=open_settings).grid(row=0, column=2, padx=(10, 0))
+
+    def open_info() -> None:
+        from kkafio.dialogs.library.info_dialog import open_info_dialog
+        open_info_dialog(root, shortcuts)
+
+    ctk.CTkButton(top, text="\u24d8 " + t("dialog.info.button"), width=110, height=34,
+                  command=open_info).grid(row=0, column=3, padx=(10, 0))
 
     stack = ctk.CTkFrame(root, fg_color="transparent")          # the libraries sit on top of each other
     stack.grid(row=1, column=0, sticky="nsew")
@@ -820,19 +827,12 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     scroll_sb = ctk.CTkScrollbar(main, command=canvas.yview)
     scroll_sb.grid(row=1, column=1, sticky="ns", padx=(4, 0))
 
-    # status line + Info button: under the card grid only (not under its scrollbar), so the button's
-    # right edge lines up with the grid's
+    # status line: under the card grid only (not under its scrollbar)
     foot = ctk.CTkFrame(main, fg_color="transparent")
     foot.grid(row=2, column=0, pady=10, sticky="ew")
     foot.grid_columnconfigure(0, weight=1)
     status = ctk.CTkLabel(foot, text="", anchor="w")
     status.grid(row=0, column=0, sticky="ew")
-
-    def open_info() -> None:
-        from kkafio.dialogs.library.info_dialog import open_info_dialog
-        open_info_dialog(root, shortcuts)
-
-    ctk.CTkButton(foot, text="\u24d8 " + t("dialog.info.button"), width=110, command=open_info).grid(row=0, column=1)
 
     # -----------------------------------------------------------------------
     # layout + drawing

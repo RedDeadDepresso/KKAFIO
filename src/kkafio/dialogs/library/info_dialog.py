@@ -1,5 +1,5 @@
 """
-info_dialog.py — The library window's Info dialog (the Info button at the bottom of every tab).
+info_dialog.py — The library window's Info dialog (the Info button next to Settings, top right).
 
 A short guide to using the library: selecting cards, giving them a folder, renaming, finding and
 sorting, and the To Delete / To Archive lists. The keys that can be changed in Settings are shown as
