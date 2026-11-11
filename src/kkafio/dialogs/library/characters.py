@@ -57,15 +57,15 @@ def scan_manual_items(folders: Sequence[Path], include_subfolders: bool,
     return items
 
 
-def resolve_series_folder(text: str, known: dict[str, str], lang: str | None) -> str:
-    """The folder name for a series the user typed: snapped to the index's title for it (when
-    `lang` is set), made safe to use as a folder name, and spelled like the existing folder
-    when one with the same name (in any case) exists. "" if nothing usable is left."""
-    name = text.strip()
-    if lang and name:
-        from kkafio.indices import agv
-        name = agv.canonical_series(name, lang)
-    name = safe_folder_name(name)
+def resolve_series_folder(text: str, known: dict[str, str]) -> str:
+    """The folder name for a series the user typed or picked: made safe to use as a folder name,
+    and spelled like the existing folder when one with the same name (in any case) exists.
+    "" if nothing usable is left.
+
+    The text is not matched against the index: the index's titles are what the suggestions
+    offer (already in this form), so a picked suggestion is canonical, and a name that was
+    typed and not picked stays as the user wrote it."""
+    name = safe_folder_name(text.strip())
     return known.get(name.casefold(), name) if name else ""
 
 
@@ -102,7 +102,7 @@ def manual_callbacks(known: dict[str, str], info_cache: CharaInfoCache, lang: st
                 return None                               # already at the top: nothing to do
             dest = move_card(item.path, item.root, item.root.name, info_cache, TAG)
             return None if dest is None else (dest, item.root.name)
-        folder = resolve_series_folder(text, known, state["lang"])
+        folder = resolve_series_folder(text, known)
         if not folder:
             logger.warning(TAG, f"'{text}' can't be used as a series folder name")
             return None

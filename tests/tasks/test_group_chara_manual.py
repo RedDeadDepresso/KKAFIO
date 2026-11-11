@@ -134,22 +134,34 @@ def test_ellipsize():
 
 def test_resolve_series_folder_is_safe_and_reuses_existing_spelling():
     known = {"fate": "Fate", "genshin impact": "Genshin Impact"}
-    assert gal.resolve_series_folder("  fate ", known, None) == "Fate"
-    assert gal.resolve_series_folder("New Series", known, None) == "New Series"
-    assert gal.resolve_series_folder("a/b:c", known, None) == "abc"
+    assert gal.resolve_series_folder("  fate ", known) == "Fate"
+    assert gal.resolve_series_folder("New Series", known) == "New Series"
+    assert gal.resolve_series_folder("a/b:c", known) == "abc"
     for bad in ("", "   ", "..", ".", "CON", "nul.txt", "???"):
-        assert gal.resolve_series_folder(bad, known, None) == "", bad
+        assert gal.resolve_series_folder(bad, known) == "", bad
 
 
-def test_resolve_series_folder_snaps_to_the_index_title(agv_file):
+def test_a_typed_series_is_not_snapped_to_the_index_title(agv_file, tmp_path):
+    """Only a picked suggestion (already the index's title) is canonical; what is typed stays as
+    typed, and an existing folder wins even when the index spells the series differently."""
     known = {}
-    assert gal.resolve_series_folder("sword art online", known, "en_us") == "Sword Art Online"
-    assert gal.resolve_series_folder("SWORD-ART ONLINE", known, "en_us") == "Sword Art Online"
-    assert gal.resolve_series_folder("My Own Series", known, "en_us") == "My Own Series"
-    # no language = the user chose not to use the indexes: the text is kept
-    assert gal.resolve_series_folder("sword art online", known, None) == "sword art online"
+    assert gal.resolve_series_folder("sword art online", known) == "sword art online"
+    assert gal.resolve_series_folder("SWORD-ART ONLINE", known) == "SWORD-ART ONLINE"
+    assert gal.resolve_series_folder("Sword Art Online", known) == "Sword Art Online"    # a picked suggestion
     # "/" is not allowed in a folder name, exactly as for the LLM's answers
-    assert gal.resolve_series_folder("fate stay night", known, "en_us") == "Fatestay night"
+    assert gal.resolve_series_folder("Fate/stay night", known) == "Fatestay night"
+    known = {"sword-art online": "Sword-Art Online"}                                      # a folder you already have
+    assert gal.resolve_series_folder("sword-art online", known) == "Sword-Art Online"
+
+
+def test_assign_with_an_index_language_keeps_the_typed_name(agv_file, tmp_path):
+    _cards(tmp_path, a="Rin")
+    with manual_fakes():
+        cache = CharaInfoCache([tmp_path], True, "LIBRARY")
+        items = gal.scan_manual_items([tmp_path], False, cache)
+        _suggest, assign = gal.manual_callbacks(existing_folders(tmp_path), cache, "en_us")
+        _path, folder = assign(items[0], "sword art online")
+        assert folder == "sword art online"                                               # not "Sword Art Online"
 
 
 # ---------------------------------------------------------------------------

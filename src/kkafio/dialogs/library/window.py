@@ -593,7 +593,6 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
             set_language(suggestions.language)
 
     def assign(item, text: str):
-        apply_language()                                # a typed series is matched in that language too
         return assign_source(item, text)
 
     def suggest(text: str) -> list[str]:
