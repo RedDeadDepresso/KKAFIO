@@ -9,6 +9,7 @@ from kkafio.core.logger import logger
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
+from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
 from kkafio.services.content_sources.pawchive.access import PawchiveAuth, PawchiveThrottle, pawchive_get
 from kkafio.services.content_sources.pawchive.files import download_pawchive_file, pawchive_already_downloaded
@@ -23,6 +24,8 @@ async def _download_pawchive_link(
         kind, fn = "gofile", download_gofile
     elif is_catbox_url(link):
         kind, fn = "catbox", download_catbox
+    elif is_mediafire_url(link):
+        kind, fn = "mediafire", download_mediafire
     elif is_mega_url(link):
         kind, fn = "mega", download_mega
     elif is_gdrive_url(link):

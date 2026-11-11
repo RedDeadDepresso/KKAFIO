@@ -13,6 +13,7 @@ from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse
 
 from kkafio.core.logger import logger
 from kkafio.services.content_sources.catbox import is_catbox_url, parse_catbox_url
+from kkafio.services.content_sources.mediafire import is_mediafire_url, parse_mediafire_url
 from kkafio.services.content_sources.gdrive import is_gdrive_url, parse_gdrive_url
 from kkafio.services.content_sources.gofile import is_gofile_url, parse_gofile_url
 from kkafio.services.content_sources.mega import is_mega_url
@@ -261,7 +262,7 @@ def pawchive_temp_item(entry: dict, link: str) -> dict:
 # key!) are kept.
 _PAWCHIVE_LINK_RE = re.compile(
     r"""(?<![\w.-])(?:https?://)?(?:[\w-]+\.)*?"""
-    r"""(?:mega\.nz|mega\.co\.nz|gofile\.io|catbox\.moe|drive\.google\.com|"""
+    r"""(?:mega\.nz|mega\.co\.nz|gofile\.io|catbox\.moe|mediafire\.com|drive\.google\.com|"""
     r"""drive\.usercontent\.google\.com|docs\.google\.com/uc)"""
     r"""(?:[/?#][^\s"'<>]*)?""",
     re.IGNORECASE,
@@ -279,13 +280,15 @@ def _pawchive_link_usable(url: str) -> bool:
         return len([s for s in parts.path.split("/") if s]) >= 2 or bool(parts.fragment)
     if is_catbox_url(url):
         return parse_catbox_url(url) is not None
+    if is_mediafire_url(url):
+        return parse_mediafire_url(url) is not None
     if is_gdrive_url(url):
         return parse_gdrive_url(url) is not None
     return False
 
 
 def pawchive_content_links(content) -> list[str]:
-    """Mega, Gofile, Catbox and Google Drive links found in a post's content, in order
+    """Mega, Gofile, Catbox, MediaFire and Google Drive links found in a post's content, in order
     of appearance and without duplicates, each exactly as written (query and
     fragment included).
 

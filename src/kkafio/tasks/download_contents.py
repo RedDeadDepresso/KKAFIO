@@ -15,7 +15,7 @@ Supports:
                                   attachment of a post of type .rar / .zip / .7z /
                                   .zipmod / .png is downloaded (a PNG only if it is
                                   320x180 / 252x352-ratio; other types are skipped), and the mega,
-                                  gofile, catbox and Google Drive links in the post text
+                                  gofile, catbox, mediafire and Google Drive links in the post text
                                   are followed. The listings are paged 50 posts at a
                                   time (?o=), with the usual | N / | N | M / | all
                                   directives; without one only page 1 is read.
@@ -27,6 +27,7 @@ Supports:
                                   subfolders into subdirectories; a password can
                                   be given as ?password=...
   https://catbox.moe            — files (files.catbox.moe/NAME.ext, litter.catbox.moe/NAME.ext)
+  https://www.mediafire.com     — files (/file/ID/NAME/file) and folders (/folder/ID)
                                   and albums (/c/ID); every file of an album is
                                   downloaded
   https://drive.google.com      — public files (/file/d/ID, open?id=ID, uc?id=ID) and
@@ -51,7 +52,7 @@ Input line formats (| is the separator — safe because URLs never contain |):
                                 visited only once. Can be combined with a page
                                 directive: "url | 1 | 3 | f"
                                 (also accepted: fi, follow, follow illustrations)
-                                The mega, Google Drive, gofile and catbox links in a pixiv
+                                The mega, Google Drive, gofile, catbox and mediafire links in a pixiv
                                 description are always downloaded, with or without f.
   # comment                     lines starting with # are ignored
 
@@ -76,6 +77,7 @@ from kkafio.dialogs.progress_dialog import download_progress
 from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.bepis import BEPIS_URL, download_bepis
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
+from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.gofile import GOFILE_USER_AGENT, download_gofile, is_gofile_url
 from kkafio.services.content_sources.koikatsucards import KOIKATSU_URL, download_koikatsu
@@ -216,6 +218,7 @@ class _Clients:
     pixiv: httpx.AsyncClient
     gofile: httpx.AsyncClient
     catbox: httpx.AsyncClient
+    mediafire: httpx.AsyncClient
     mega: httpx.AsyncClient
     gdrive: httpx.AsyncClient
     pawchive: httpx.AsyncClient
@@ -227,7 +230,7 @@ class _Clients:
     @property
     def pawchive_externals(self) -> dict[str, httpx.AsyncClient]:
         """Clients for the hosts of the links found inside pawchive posts."""
-        return {"gofile": self.gofile, "catbox": self.catbox, "mega": self.mega, "gdrive": self.gdrive}
+        return {"gofile": self.gofile, "catbox": self.catbox, "mediafire": self.mediafire, "mega": self.mega, "gdrive": self.gdrive}
 
 
 @dataclass
@@ -440,6 +443,7 @@ class DownloadContents(BaseTask):
                 gofile=await enter(make_client(
                     extra_headers={"User-Agent": GOFILE_USER_AGENT})),
                 catbox=await enter(make_client()),
+                mediafire=await enter(make_client()),
                 mega=await enter(make_client()),
                 gdrive=await enter(make_client()),
                 pawchive=await enter(make_client(
@@ -545,6 +549,10 @@ class DownloadContents(BaseTask):
             self._note_page_directive_ignored("Catbox", page_start)
             return await download_catbox(clients.catbox, url_str, out, history, skip)
 
+        if is_mediafire_url(url_str):
+            self._note_page_directive_ignored("MediaFire", page_start)
+            return await download_mediafire(clients.mediafire, url_str, out, history, skip)
+
         if is_mega_url(url_str):
             self._note_page_directive_ignored("Mega", page_start)
             return await download_mega(clients.mega, url_str, out, history, skip)
@@ -554,7 +562,7 @@ class DownloadContents(BaseTask):
             return await download_gdrive(clients.gdrive, url_str, out, history, skip)
 
         logger.error("DLOAD",
-            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mega.nz or drive.google.com): {url_str}")
+            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, mega.nz or drive.google.com): {url_str}")
         progress.count("failed")
         return 0, 0, 1
 

@@ -316,14 +316,14 @@ TASK_SPECS: tuple[TaskSpec, ...] = (
                        "OnlyUsed=download missing mods used by chara (default), "
                        "All=download all missing modpack mods"),
             Value("--mod-sources", key="ModSources", default=None, nargs="*",
-                  choices=["Drive", "Mega", "Telegram", "Gofile", "Catbox"], metavar="SOURCE",
+                  choices=["Drive", "Mega", "Telegram", "Gofile", "Catbox", "MediaFire"], metavar="SOURCE",
                   help="Where to look for mods not covered by BetterRepack, in the order to try "
-                       "them; give any of: Drive=Google Drive, Mega=Mega, Gofile=Gofile, Catbox=Catbox, Telegram=the Telegram "
+                       "them; give any of: Drive=Google Drive, Mega=Mega, Gofile=Gofile, Catbox=Catbox, MediaFire=MediaFire, Telegram=the Telegram "
                        "message (needs a Telegram account; also enables --use-telegram-chat-links). "
                        "The links come from the kk-mod-scraper index. The first source that "
                        "downloads a mod wins. Pass the flag with no sources to only use "
                        "BetterRepack. Default: the setting in the config "
-                       "(Drive Mega Telegram Gofile Catbox)"),
+                       "(Drive Mega Telegram Gofile Catbox MediaFire)"),
             Toggle("use-telegram-chat-links", key="UseTelegramChatLinks",
                    help="Also search the chats in --telegram-chat-links for a mod right after its "
                         "Telegram link; only used when Telegram is one of the --mod-sources "

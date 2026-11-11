@@ -21,8 +21,8 @@ ENTRY = {"mega": ["https://mega.nz/file/a#k"], "drive": ["https://drive.google.c
 
 # -- format and order -------------------------------------------------------
 
-def test_sources_are_tried_telegram_then_drive_then_mega_then_gofile_then_catbox():
-    assert SOURCE_ORDER == ("telegram", "drive", "mega", "gofile", "catbox")
+def test_sources_are_tried_telegram_then_drive_then_mega_then_the_other_hosts():
+    assert SOURCE_ORDER == ("telegram", "drive", "mega", "gofile", "catbox", "mediafire")
     assert [s for s, _ in ordered_links(ENTRY)] == ["telegram", "drive", "mega"]
 
 
@@ -232,27 +232,30 @@ def test_quiet_counts_without_a_window_is_harmless():
 
 # -- Gofile / Catbox --------------------------------------------------------
 
-def test_gofile_and_catbox_links_are_read_and_misfiled_ones_are_moved():
+def test_gofile_catbox_and_mediafire_links_are_read_and_misfiled_ones_are_moved():
     raw = {"com.mod": {"mega": ["https://gofile.io/d/AbC123", "https://mega.nz/file/a#k"],
                        "gofile": ["https://gofile.io/d/Other1"],
                        "catbox": ["https://files.catbox.moe/abc.zipmod"]},
-           "com.other": {"drive": ["https://catbox.moe/c/xyz"]}}
+           "com.other": {"drive": ["https://catbox.moe/c/xyz", "https://www.mediafire.com/file/k1234567/x/file"]}}
     index = mod._normalize_index(raw)
     assert index["com.mod"] == {"mega": ["https://mega.nz/file/a#k"],
                                 "gofile": ["https://gofile.io/d/Other1", "https://gofile.io/d/AbC123"],
                                 "catbox": ["https://files.catbox.moe/abc.zipmod"]}
-    assert index["com.other"] == {"catbox": ["https://catbox.moe/c/xyz"]}
+    assert index["com.other"] == {"catbox": ["https://catbox.moe/c/xyz"],
+                                  "mediafire": ["https://www.mediafire.com/file/k1234567/x/file"]}
     assert normalize_sources(["Catbox", "Gofile", "catbox"]) == ("catbox", "gofile")
 
 
-@pytest.mark.parametrize("source", ["gofile", "catbox"])
-def test_a_gofile_or_catbox_download_of_the_mod_is_saved(tmp_path, monkeypatch, source):
+@pytest.mark.parametrize("source", ["gofile", "catbox", "mediafire"])
+def test_a_gofile_catbox_or_mediafire_download_of_the_mod_is_saved(tmp_path, monkeypatch, source):
     _fake(monkeypatch, source, {"[a] mod.zipmod": "com.mod"})
     assert _run(source, tmp_path) is True
     assert (tmp_path / "[a] mod.zipmod").exists()
 
 
-def test_the_real_gofile_and_catbox_downloaders_are_registered():
+def test_the_real_gofile_catbox_and_mediafire_downloaders_are_registered():
     assert filehosts._DOWNLOADERS["gofile"][0]("https://gofile.io/d/AbC123")
     assert filehosts._DOWNLOADERS["catbox"][0]("https://files.catbox.moe/abc.zipmod")
+    assert filehosts._DOWNLOADERS["mediafire"][0]("https://www.mediafire.com/file/abc123XYZ/x.zip/file")
     assert not filehosts._DOWNLOADERS["catbox"][0]("https://mega.nz/file/a#k")
+    assert not filehosts._DOWNLOADERS["mediafire"][0]("https://mega.nz/file/a#k")

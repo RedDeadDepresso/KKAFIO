@@ -11,7 +11,7 @@ from kkafio.services.content_sources import history as history_store
 from kkafio.tasks import base_task as bt
 from kkafio.tasks import download_contents as dc
 
-SITES = ("pawchive", "bepis", "koikatsu", "pixiv", "gofile", "catbox", "mega", "gdrive")
+SITES = ("pawchive", "bepis", "koikatsu", "pixiv", "gofile", "catbox", "mediafire", "mega", "gdrive")
 
 
 class _Cfg:
@@ -64,6 +64,7 @@ def test_each_link_goes_to_its_sites_downloader(rig):
         "https://www.pixiv.net/en/artworks/1\n"
         "https://gofile.io/d/x | 3\n"
         "https://catbox.moe/c/abc123\n"
+        "https://www.mediafire.com/file/abc123XYZ/x.zip/file\n"
         "https://mega.nz/file/a#b\n"
         "https://drive.google.com/file/d/1234567890abc/view\n"
         "https://pawchive.pw/posts?q=https://db.bepis.moe/x | 2 | 4\n")
@@ -73,6 +74,7 @@ def test_each_link_goes_to_its_sites_downloader(rig):
         ("pixiv", "https://www.pixiv.net/en/artworks/1"),
         ("gofile", "https://gofile.io/d/x"),
         ("catbox", "https://catbox.moe/c/abc123"),
+        ("mediafire", "https://www.mediafire.com/file/abc123XYZ/x.zip/file"),
         ("mega", "https://mega.nz/file/a#b"),
         ("gdrive", "https://drive.google.com/file/d/1234567890abc/view"),
         ("pawchive", "https://pawchive.pw/posts?q=https://db.bepis.moe/x"),   # host wins over the query
@@ -80,8 +82,8 @@ def test_each_link_goes_to_its_sites_downloader(rig):
     assert all(directory == out for _, _, directory, _ in calls)
     paw = calls[-1][3]
     assert (paw["page_start"], paw["page_end"]) == (2, 4)
-    assert set(paw["externals"]) == {"gofile", "catbox", "mega", "gdrive"}
-    assert len(saves) == 8 + 1                   # after every URL, plus the final save
+    assert set(paw["externals"]) == {"gofile", "catbox", "mediafire", "mega", "gdrive"}
+    assert len(saves) == 9 + 1                   # after every URL, plus the final save
 
 
 def test_pawchive_auth_and_throttle_are_shared_by_all_its_links(rig):

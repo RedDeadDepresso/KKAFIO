@@ -432,7 +432,8 @@
        "Mega",
        "Telegram",
        "Gofile",
-       "Catbox"
+       "Catbox",
+       "MediaFire"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -1004,7 +1005,8 @@
        "Mega",
        "Telegram",
        "Gofile",
-       "Catbox"
+       "Catbox",
+       "MediaFire"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [

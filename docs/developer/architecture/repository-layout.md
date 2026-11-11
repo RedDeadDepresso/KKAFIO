@@ -105,14 +105,14 @@ KKAFIO-dev/
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
 │   │   │   ├── net.py / history.py / transfer.py   # Shared: retry + HTTP client, download history, streaming downloads and paged listings
 │   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
-│   │   │   ├── bepis.py  gofile.py  catbox.py  mega.py  gdrive.py   # One module per site
+│   │   │   ├── bepis.py  gofile.py  catbox.py  mediafire.py  mega.py  gdrive.py   # One module per site
 │   │   │   ├── session_flow.py      # Shared "stored / env / ask for the cookie, validate, save" flow for the session.py files below
 │   │   │   ├── koikatsucards/       # koikatsucards.com: downloader (__init__) + session.py (kkd_session cookie)
 │   │   │   ├── pixiv/               # pixiv.net: downloader (__init__) + session.py (PHPSESSID cookie)
 │   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session use) · files · posts · downloader · session.py (session cookie, t1 files only)
 │   │   └── mod_sources/             # Where Download Missing Mods fetches mods from
 │   │       ├── betterrepack.py      # BetterRepack downloads + the shared HTTP client for Download Missing Mods
-│   │       ├── filehosts.py         # Downloads one mod from a Google Drive / Mega / Gofile / Catbox link of the mod index, verifying its manifest GUID
+│   │       ├── filehosts.py         # Downloads one mod from a Google Drive / Mega / Gofile / Catbox / MediaFire link of the mod index, verifying its manifest GUID
 │   │       └── telegram/            # Telegram support for Download Missing Mods
 │   │           ├── config.py        # Telegram API credential storage
 │   │           ├── links.py         # Parsing Telegram links / the chat list (pure string handling)

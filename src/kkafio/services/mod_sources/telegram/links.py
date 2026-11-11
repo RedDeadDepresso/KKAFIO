@@ -49,6 +49,7 @@ MOD_SOURCE_LABELS = {
     "telegram": "Telegram",
     "gofile":   "Gofile",
     "catbox":   "Catbox",
+    "mediafire": "MediaFire",
 }
 
 
