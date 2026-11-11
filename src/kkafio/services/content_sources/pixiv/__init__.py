@@ -22,6 +22,7 @@ from kkafio.services.content_sources.card_size import kk_size_matches
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
+from kkafio.services.content_sources.pixeldrain import download_pixeldrain, is_pixeldrain_url
 from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
 from kkafio.services.content_sources.net import get_with_retry
@@ -193,7 +194,7 @@ def pixiv_description_links(content) -> tuple[list[str], list[str]]:
     """The references found in an artwork's description (HTML or plain text).
 
     Returns (artwork_ids, external_links): the ids of other pixiv artworks, and
-    the mega / gofile / catbox / mediafire / Google Drive links -- each in order of appearance,
+    the mega / gofile / catbox / mediafire / pixeldrain / Google Drive links -- each in order of appearance,
     without duplicates.
     """
     if not isinstance(content, str) or not content:
@@ -222,13 +223,15 @@ async def _download_external_link(
     link: str, externals: dict | None, directory: Path, history: dict, skip: bool,
 ) -> tuple[int, int, int]:
     """Hand a link found in a description to the downloader for its host.
-    `externals` maps "gofile" / "catbox" / "mediafire" / "mega" / "gdrive" to their HTTP clients."""
+    `externals` maps "gofile" / "catbox" / "mediafire" / "pixeldrain" / "mega" / "gdrive" to their HTTP clients."""
     if is_gofile_url(link):
         kind, fn = "gofile", download_gofile
     elif is_catbox_url(link):
         kind, fn = "catbox", download_catbox
     elif is_mediafire_url(link):
         kind, fn = "mediafire", download_mediafire
+    elif is_pixeldrain_url(link):
+        kind, fn = "pixeldrain", download_pixeldrain
     elif is_mega_url(link):
         kind, fn = "mega", download_mega
     elif is_gdrive_url(link):

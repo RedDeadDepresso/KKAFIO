@@ -50,6 +50,7 @@ MOD_SOURCE_LABELS = {
     "gofile":   "Gofile",
     "catbox":   "Catbox",
     "mediafire": "MediaFire",
+    "pixeldrain": "Pixeldrain",
 }
 
 

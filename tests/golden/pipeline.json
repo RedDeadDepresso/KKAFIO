@@ -433,7 +433,8 @@
        "Telegram",
        "Gofile",
        "Catbox",
-       "MediaFire"
+       "MediaFire",
+       "Pixeldrain"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -1006,7 +1007,8 @@
        "Telegram",
        "Gofile",
        "Catbox",
-       "MediaFire"
+       "MediaFire",
+       "Pixeldrain"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
