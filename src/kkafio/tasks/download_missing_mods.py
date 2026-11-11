@@ -18,7 +18,7 @@ Strategy
      a) In modpack index → BetterRepack (httpx, no auth)
      b) Not in index → look the GUID up in mod.json (kk-mod-scraper; cached in
         CONFIG_DIR/indices and checked for updates at most once an hour). It lists links
-        on Google Drive, Mega and Telegram; the ones of the sources checked in "Mod
+        on Google Drive, Mega, Telegram, Gofile and Catbox; the ones of the sources checked in "Mod
         Sources" are tried in the order of that option until one downloads the mod.
         Telegram is the only one that needs an account.
      c) Telegram is checked and "Use Telegram Chat Links" is on → right after the
@@ -256,8 +256,8 @@ class DownloadMissingMods(BaseTask):
         self.use_cache           : bool = cfg.get("UseCache",             True)
         self.on_failed_downloads : list[str] = cfg.get("OnFailedDownloads", ["OpenReport", "CopyToClipboard"])
         self.modpack_mode        : str  = cfg.get("SideloaderModpack",    "OnlyUsed")
-        # Where to look for mods outside the modpack, in the order to try them: any of Drive, Mega, Telegram.
-        self.mod_sources         : list[str] = cfg.get("ModSources", ["Drive", "Mega", "Telegram"])
+        # Where to look for mods outside the modpack, in the order to try them: any of Drive, Mega, Telegram, Gofile, Catbox.
+        self.mod_sources         : list[str] = cfg.get("ModSources", ["Drive", "Mega", "Telegram", "Gofile", "Catbox"])
         self.use_telegram_chat_links : bool = cfg.get("UseTelegramChatLinks", True)   # only with Telegram in mod_sources
         self.telegram_chat_links_raw : str = cfg.get("TelegramChatLinks", DEFAULT_TELEGRAM_CHAT_LINKS)
         self.website_urls_raw    : str  = cfg.get("WebsiteUrls", DEFAULT_WEBSITE_URLS)
@@ -621,7 +621,7 @@ class DownloadMissingMods(BaseTask):
         ok = fail = 0
         failed_guids:  set[str]  = set()
         downloaded_br:  dict[str, str] = {}    # guid -> path (below the mods dir) of the file saved
-        downloaded_other: dict[str, str] = {}   # guid -> the source it came from (Google Drive, Mega, ...)
+        downloaded_other: dict[str, str] = {}   # guid -> the source it came from (Google Drive, Mega, Gofile, ...)
 
         async def _run_all() -> None:
             nonlocal ok, fail, failed_guids, downloaded_br, downloaded_other
@@ -694,7 +694,7 @@ class DownloadMissingMods(BaseTask):
 
                 # Sequential. Links are tried in the order of the Mod Sources option.
                 if other_queue:
-                    # The index lists, per mod, its links on Google Drive, Mega and Telegram.
+                    # The index lists, per mod, its links on Google Drive, Mega, Telegram, Gofile and Catbox.
                     mod_index = await load_mod_index(br_client)
 
                     chat_links: list[tuple[str | int, int | None]] = []

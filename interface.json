@@ -1086,7 +1086,7 @@
       "type": "ordered_checkbox",
       "label": "$option.ModSources.label",
       "description": "$option.ModSources.description",
-      "default_case": ["Drive", "Mega", "Telegram"],
+      "default_case": ["Drive", "Mega", "Telegram", "Gofile", "Catbox"],
       "cases": [
         {
           "name": "Drive",
@@ -1099,6 +1099,14 @@
         {
           "name": "Telegram",
           "label": "$option.ModSources.case.Telegram.label"
+        },
+        {
+          "name": "Gofile",
+          "label": "$option.ModSources.case.Gofile.label"
+        },
+        {
+          "name": "Catbox",
+          "label": "$option.ModSources.case.Catbox.label"
         }
       ]
     },

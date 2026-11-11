@@ -47,6 +47,8 @@ MOD_SOURCE_LABELS = {
     "drive":    "Google Drive",
     "mega":     "Mega",
     "telegram": "Telegram",
+    "gofile":   "Gofile",
+    "catbox":   "Catbox",
 }
 
 

@@ -13,7 +13,7 @@ kkafio_cli download-missing-mods [--installed-mods-dir DIR] [--downloaded-mods-d
                                  [--use-cache | --no-use-cache]
                                  [--open-report | --no-open-report]
                                  [--modpack-mode Skip|OnlyUsed|All]
-                                 [--mod-sources [Drive|Mega|Telegram ...]]
+                                 [--mod-sources [Drive|Mega|Telegram|Gofile|Catbox ...]]
                                  [--use-telegram-chat-links | --no-use-telegram-chat-links]
                                  [--telegram-chat-links LINKS]
 

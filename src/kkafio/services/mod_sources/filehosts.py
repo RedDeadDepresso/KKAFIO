@@ -1,5 +1,5 @@
 """
-filehosts.py — Download one mod from a Google Drive or Mega link of the mod index (indices/mod.py).
+filehosts.py — Download one mod from a Google Drive, Mega, Gofile or Catbox link of the mod index (indices/mod.py).
 
 Reuses the downloaders of the content sources (services/content_sources/gdrive.py, mega.py), with
 three differences for a mod:
@@ -23,12 +23,16 @@ from kkafio.cards.mods.zipmods import guid_from_zipmod
 from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.services.content_sources import history as history_store
+from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
+from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
 
 _DOWNLOADERS = {
     "drive": (is_gdrive_url, download_gdrive),
     "mega":  (is_mega_url,   download_mega),
+    "gofile": (is_gofile_url, download_gofile),
+    "catbox": (is_catbox_url, download_catbox),
 }
 
 
@@ -60,7 +64,7 @@ async def download_via_host(
     client,
     rel_path: str | None = None,
 ) -> bool | str:
-    """Download the mod `guid` from `url`, a link of `source` ("drive" or "mega").
+    """Download the mod `guid` from `url`, a link of `source` ("drive", "mega", "gofile" or "catbox").
 
     The file is saved as mods_dir / <folder of rel_path> / <its name> (like the Telegram downloads
     do; directly in mods_dir without a rel_path). Returns True once it is saved, "skipped" if a file

@@ -21,8 +21,8 @@ ENTRY = {"mega": ["https://mega.nz/file/a#k"], "drive": ["https://drive.google.c
 
 # -- format and order -------------------------------------------------------
 
-def test_sources_are_tried_telegram_then_drive_then_mega():
-    assert SOURCE_ORDER == ("telegram", "drive", "mega")
+def test_sources_are_tried_telegram_then_drive_then_mega_then_gofile_then_catbox():
+    assert SOURCE_ORDER == ("telegram", "drive", "mega", "gofile", "catbox")
     assert [s for s, _ in ordered_links(ENTRY)] == ["telegram", "drive", "mega"]
 
 
@@ -31,6 +31,7 @@ def test_ordered_links_keeps_the_order_of_the_index_within_a_source():
     assert ordered_links(entry) == [("telegram", "t1"), ("telegram", "t2"), ("drive", "d1"),
                                     ("drive", "d2"), ("mega", "m1")]
     assert ordered_links({"mega": ["m"]}) == [("mega", "m")]
+    assert ordered_links({"catbox": ["c"], "gofile": ["g"]}) == [("gofile", "g"), ("catbox", "c")]
     assert ordered_links({}) == [] and ordered_links(None) == []
 
 
@@ -227,3 +228,31 @@ def test_quiet_counts_mutes_file_counters_and_nothing_else():
 def test_quiet_counts_without_a_window_is_harmless():
     with progress.quiet_counts():
         progress.count("failed")
+
+
+# -- Gofile / Catbox --------------------------------------------------------
+
+def test_gofile_and_catbox_links_are_read_and_misfiled_ones_are_moved():
+    raw = {"com.mod": {"mega": ["https://gofile.io/d/AbC123", "https://mega.nz/file/a#k"],
+                       "gofile": ["https://gofile.io/d/Other1"],
+                       "catbox": ["https://files.catbox.moe/abc.zipmod"]},
+           "com.other": {"drive": ["https://catbox.moe/c/xyz"]}}
+    index = mod._normalize_index(raw)
+    assert index["com.mod"] == {"mega": ["https://mega.nz/file/a#k"],
+                                "gofile": ["https://gofile.io/d/Other1", "https://gofile.io/d/AbC123"],
+                                "catbox": ["https://files.catbox.moe/abc.zipmod"]}
+    assert index["com.other"] == {"catbox": ["https://catbox.moe/c/xyz"]}
+    assert normalize_sources(["Catbox", "Gofile", "catbox"]) == ("catbox", "gofile")
+
+
+@pytest.mark.parametrize("source", ["gofile", "catbox"])
+def test_a_gofile_or_catbox_download_of_the_mod_is_saved(tmp_path, monkeypatch, source):
+    _fake(monkeypatch, source, {"[a] mod.zipmod": "com.mod"})
+    assert _run(source, tmp_path) is True
+    assert (tmp_path / "[a] mod.zipmod").exists()
+
+
+def test_the_real_gofile_and_catbox_downloaders_are_registered():
+    assert filehosts._DOWNLOADERS["gofile"][0]("https://gofile.io/d/AbC123")
+    assert filehosts._DOWNLOADERS["catbox"][0]("https://files.catbox.moe/abc.zipmod")
+    assert not filehosts._DOWNLOADERS["catbox"][0]("https://mega.nz/file/a#k")

@@ -430,7 +430,9 @@
       "mod_sources": [
        "Drive",
        "Mega",
-       "Telegram"
+       "Telegram",
+       "Gofile",
+       "Catbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -1000,7 +1002,9 @@
       "mod_sources": [
        "Drive",
        "Mega",
-       "Telegram"
+       "Telegram",
+       "Gofile",
+       "Catbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [

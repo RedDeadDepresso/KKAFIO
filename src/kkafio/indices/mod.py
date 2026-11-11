@@ -1,19 +1,20 @@
-"""kk-mod-scraper index: {mod GUID: {"mega": [...], "drive": [...], "telegram": [...]}}.
+"""kk-mod-scraper index: {mod GUID: {"mega": [...], "drive": [...], "telegram": [...], "gofile": [...], "catbox": [...]}}.
 
 The index is published by https://github.com/RedDeadDepresso/kk-mod-scraper and tells
 Download Missing Mods where a given mod can be downloaded: each list holds links to the file
-on that host (Mega, Google Drive, a t.me message). A copy is kept in
+on that host (Mega, Google Drive, a t.me message, Gofile, Catbox). A copy is kept in
 CONFIG_DIR/indices/mod.json; the server is asked at most once an hour, and the copy is only
 re-downloaded when its ETag changes (see kkafio.indices.cache).
 """
 
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 from kkafio.core.logger import logger
 from kkafio.indices import cache
 
-SOURCES = ("mega", "drive", "telegram")         # the keys of an entry of the index
+SOURCES = ("mega", "drive", "telegram", "gofile", "catbox")   # the keys of an entry of the index
 
 # The default order to try the sources of a mod in. Download Missing Mods itself uses the order
 # (and the selection) of its "Mod Sources" option, which is the user's to change; the trade-offs:
@@ -24,9 +25,25 @@ SOURCES = ("mega", "drive", "telegram")         # the keys of an entry of the in
 #             ("too many users have viewed or downloaded this file").
 #   mega      transfers are metered per IP address and stop when the quota is used up, the
 #             data is decrypted on the fly (slower), and its links die more often.
-SOURCE_ORDER = ("telegram", "drive", "mega")
+#   gofile    no account needed (a guest token is created on the fly); files expire when nobody
+#             downloads them for a while, so its links die too.
+#   catbox    plain HTTP download without any account or quota; the least likely to be rate
+#             limited, but only has the mods somebody uploaded there.
+SOURCE_ORDER = ("telegram", "drive", "mega", "gofile", "catbox")
 
 ModIndex = dict[str, dict[str, list[str]]]
+
+# Hosts that are always the same source, whatever list of the entry a link was put in.
+_HOST_SOURCES = {"gofile.io": "gofile", "catbox.moe": "catbox"}
+
+
+def _source_of_host(url: str) -> str | None:
+    """"gofile" / "catbox" if `url` is a link of that host, else None."""
+    host = (urlparse(url).hostname or "").lower()
+    for domain, source in _HOST_SOURCES.items():
+        if host == domain or host.endswith("." + domain):
+            return source
+    return None
 
 INDEX_FILENAME = "mod.json"
 MOD_INDEX_URL = f"https://reddeaddepresso.github.io/kk-mod-scraper/indices/{INDEX_FILENAME}"
@@ -49,6 +66,16 @@ def _normalize_index(raw) -> ModIndex:
                 urls = [u.strip() for u in urls if isinstance(u, str) and u.strip()]
                 if urls:
                     links[source] = urls
+        # A Gofile / Catbox link is used as such even if the index listed it under another source.
+        for source in list(links):
+            for url in list(links[source]):
+                host_source = _source_of_host(url)
+                if host_source and host_source != source:
+                    links[source].remove(url)
+                    if url not in links.setdefault(host_source, []):
+                        links[host_source].append(url)
+            if not links[source]:
+                del links[source]
         if links:
             index[guid] = links
     return index

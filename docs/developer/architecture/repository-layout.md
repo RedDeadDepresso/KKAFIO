@@ -112,7 +112,7 @@ KKAFIO-dev/
 │   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session use) · files · posts · downloader · session.py (session cookie, t1 files only)
 │   │   └── mod_sources/             # Where Download Missing Mods fetches mods from
 │   │       ├── betterrepack.py      # BetterRepack downloads + the shared HTTP client for Download Missing Mods
-│   │       ├── filehosts.py         # Downloads one mod from a Google Drive / Mega link of the mod index, verifying its manifest GUID
+│   │       ├── filehosts.py         # Downloads one mod from a Google Drive / Mega / Gofile / Catbox link of the mod index, verifying its manifest GUID
 │   │       └── telegram/            # Telegram support for Download Missing Mods
 │   │           ├── config.py        # Telegram API credential storage
 │   │           ├── links.py         # Parsing Telegram links / the chat list (pure string handling)
