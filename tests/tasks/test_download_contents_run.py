@@ -11,7 +11,7 @@ from kkafio.services.content_sources import history as history_store
 from kkafio.tasks import base_task as bt
 from kkafio.tasks import download_contents as dc
 
-SITES = ("pawchive", "bepis", "koikatsu", "pixiv", "gofile", "catbox", "mediafire", "pixeldrain", "mega", "gdrive")
+SITES = ("pawchive", "bepis", "koikatsu", "pixiv", "gofile", "catbox", "mediafire", "pixeldrain", "dropbox", "mega", "gdrive")
 
 
 class _Cfg:
@@ -66,6 +66,7 @@ def test_each_link_goes_to_its_sites_downloader(rig):
         "https://catbox.moe/c/abc123\n"
         "https://www.mediafire.com/file/abc123XYZ/x.zip/file\n"
         "https://pixeldrain.com/u/AbC12345\n"
+        "https://www.dropbox.com/scl/fi/abc123xyz/x.zipmod?rlkey=k&dl=0\n"
         "https://mega.nz/file/a#b\n"
         "https://drive.google.com/file/d/1234567890abc/view\n"
         "https://pawchive.pw/posts?q=https://db.bepis.moe/x | 2 | 4\n")
@@ -77,6 +78,7 @@ def test_each_link_goes_to_its_sites_downloader(rig):
         ("catbox", "https://catbox.moe/c/abc123"),
         ("mediafire", "https://www.mediafire.com/file/abc123XYZ/x.zip/file"),
         ("pixeldrain", "https://pixeldrain.com/u/AbC12345"),
+        ("dropbox", "https://www.dropbox.com/scl/fi/abc123xyz/x.zipmod?rlkey=k&dl=0"),
         ("mega", "https://mega.nz/file/a#b"),
         ("gdrive", "https://drive.google.com/file/d/1234567890abc/view"),
         ("pawchive", "https://pawchive.pw/posts?q=https://db.bepis.moe/x"),   # host wins over the query
@@ -85,7 +87,7 @@ def test_each_link_goes_to_its_sites_downloader(rig):
     paw = calls[-1][3]
     assert (paw["page_start"], paw["page_end"]) == (2, 4)
     assert set(paw["externals"]) == {"gofile", "catbox", "mediafire", "pixeldrain", "mega", "gdrive"}
-    assert len(saves) == 10 + 1                   # after every URL, plus the final save
+    assert len(saves) == 11 + 1                   # after every URL, plus the final save
 
 
 def test_pawchive_auth_and_throttle_are_shared_by_all_its_links(rig):

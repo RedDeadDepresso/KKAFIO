@@ -42,7 +42,7 @@ The preset enables **Download Missing Mods**, configured with:
 - **Installed Mods Directory** → blank (the game's mods folder, so mods you already have installed aren't downloaded again)
 - **Downloaded Mods Directory** → your staging folder
 - **Content Types to Scan** → deselect any type you aren't staging (e.g. uncheck Scenes/Coordinates if the staging folder only has chara cards) — this also means KKAFIO won't require that type's directory to be resolvable
-- **Mod Sources** → check all of them (Google Drive, Mega, Telegram, Gofile, Catbox, MediaFire, Pixeldrain) and leave **Use Telegram Chat Links** on, for maximum coverage
+- **Mod Sources** → check all of them (Google Drive, Mega, Telegram, Gofile, Catbox, MediaFire, Pixeldrain, Dropbox) and leave **Use Telegram Chat Links** on, for maximum coverage
 
 These paths default to the staging folder already; adjust them only if you're scanning content types the staging folder doesn't have, or want to point elsewhere. KKAFIO then scans the selected content types in the staging folder, finds which mods they reference, and downloads any that are missing from both your game's mods folder and the staging folder into the staging folder alongside them.
 
@@ -98,7 +98,7 @@ The preset enables **Rename Characters** with the game's female and male chara f
 - **Sideloader Modpack** is set to `Only Used`.
 - **Custom Chara Directory**, **Custom Scene Directory**, **Custom Coordinate Directory**, **Installed Mods Directory**, and **Downloaded Mods Directory** are left blank (uses game defaults).
 
-All **Mod Sources** (Google Drive, Mega, Telegram, Gofile, Catbox, MediaFire, Pixeldrain) and **Use Telegram Chat Links** are already on for maximum coverage. Just enable **Download Missing Mods** and click **Start** to verify that all mods required by your currently installed cards are present. No staging folder needed.
+All **Mod Sources** (Google Drive, Mega, Telegram, Gofile, Catbox, MediaFire, Pixeldrain, Dropbox) and **Use Telegram Chat Links** are already on for maximum coverage. Just enable **Download Missing Mods** and click **Start** to verify that all mods required by your currently installed cards are present. No staging folder needed.
 
 KKAFIO scans your installed chara cards, scenes, and coordinates, finds any missing mod GUIDs, downloads missing Sideloader Modpack mods from BetterRepack, and (if any **Mod Sources** are checked) downloads any remaining mods from Google Drive, Mega or Telegram.
 

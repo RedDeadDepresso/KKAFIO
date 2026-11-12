@@ -31,6 +31,9 @@ Supports:
   https://pixeldrain.com        — files (/u/ID) and lists (/l/ID)
                                   and albums (/c/ID); every file of an album is
                                   downloaded
+  https://www.dropbox.com       — shared files (/scl/fi/..., /s/...) and folders
+                                  (/scl/fo/..., /sh/...; a folder is downloaded as
+                                  a zip and unpacked, keeping its subfolders)
   https://drive.google.com      — public files (/file/d/ID, open?id=ID, uc?id=ID) and
                                   folders (/drive/folders/ID; subfolders go into
                                   subdirectories; Google Docs/Sheets are skipped).
@@ -79,6 +82,7 @@ from kkafio.services.content_sources import history as history_store
 from kkafio.services.content_sources.bepis import BEPIS_URL, download_bepis
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
+from kkafio.services.content_sources.dropbox import download_dropbox, is_dropbox_url
 from kkafio.services.content_sources.pixeldrain import download_pixeldrain, is_pixeldrain_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.gofile import GOFILE_USER_AGENT, download_gofile, is_gofile_url
@@ -222,6 +226,7 @@ class _Clients:
     catbox: httpx.AsyncClient
     mediafire: httpx.AsyncClient
     pixeldrain: httpx.AsyncClient
+    dropbox: httpx.AsyncClient
     mega: httpx.AsyncClient
     gdrive: httpx.AsyncClient
     pawchive: httpx.AsyncClient
@@ -448,6 +453,7 @@ class DownloadContents(BaseTask):
                 catbox=await enter(make_client()),
                 mediafire=await enter(make_client()),
                 pixeldrain=await enter(make_client()),
+                dropbox=await enter(make_client()),
                 mega=await enter(make_client()),
                 gdrive=await enter(make_client()),
                 pawchive=await enter(make_client(
@@ -561,6 +567,10 @@ class DownloadContents(BaseTask):
             self._note_page_directive_ignored("Pixeldrain", page_start)
             return await download_pixeldrain(clients.pixeldrain, url_str, out, history, skip)
 
+        if is_dropbox_url(url_str):
+            self._note_page_directive_ignored("Dropbox", page_start)
+            return await download_dropbox(clients.dropbox, url_str, out, history, skip)
+
         if is_mega_url(url_str):
             self._note_page_directive_ignored("Mega", page_start)
             return await download_mega(clients.mega, url_str, out, history, skip)
@@ -570,7 +580,7 @@ class DownloadContents(BaseTask):
             return await download_gdrive(clients.gdrive, url_str, out, history, skip)
 
         logger.error("DLOAD",
-            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, mega.nz or drive.google.com): {url_str}")
+            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, dropbox.com, mega.nz or drive.google.com): {url_str}")
         progress.count("failed")
         return 0, 0, 1
 

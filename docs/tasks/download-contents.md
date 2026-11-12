@@ -1,6 +1,6 @@
 # Download Contents
 
-- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [pawchive.pw](https://pawchive.pw), [gofile.io](https://gofile.io), [catbox.moe](https://catbox.moe), [mediafire.com](https://www.mediafire.com), [pixeldrain.com](https://pixeldrain.com), [mega.nz](https://mega.nz) and [Google Drive](https://drive.google.com).
+- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [pawchive.pw](https://pawchive.pw), [gofile.io](https://gofile.io), [catbox.moe](https://catbox.moe), [mediafire.com](https://www.mediafire.com), [pixeldrain.com](https://pixeldrain.com), [dropbox.com](https://www.dropbox.com), [mega.nz](https://mega.nz) and [Google Drive](https://drive.google.com).
 - **Output Directory** defaults to `C:/KKAFIO/Downloads`.
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
 - **Pagination formats** (use `|` as separator):
@@ -76,6 +76,10 @@ paste a file link (`https://www.mediafire.com/file/ID/name.zip/file`; the `/view
 ### pixeldrain.com
 
 paste a file link (`https://pixeldrain.com/u/AbC123`) or a list link (`https://pixeldrain.com/l/AbC123`); the `pixeldrain.net` and `pixeldrain.dev` mirrors work too. Every file of a list is downloaded into the output directory (a `#item=N` on a list link is ignored). No login is needed. Pixeldrain can refuse anonymous downloads of very popular files (rate limit or captcha required), which shows up as a failed download.
+
+### dropbox.com
+
+paste a shared file link (`https://www.dropbox.com/scl/fi/ID/name.zip?rlkey=KEY&dl=0`, or the old `https://www.dropbox.com/s/ID/name.zip?dl=0`), a shared folder link (`https://www.dropbox.com/scl/fo/ID/KEY?rlkey=KEY&dl=0` or the old `/sh/ID/KEY`) or a direct `dl.dropboxusercontent.com` link. KKAFIO asks Dropbox for the link with `dl=1` (other parameters such as `rlkey` are kept, as new style links do not work without it). A folder is served by Dropbox as one zip, which KKAFIO unpacks into the output directory, keeping its subfolders. No login is needed. Links the owner has removed, or files that hit Dropbox's traffic limit, show up as failed downloads. The page directive is ignored.
 
 ### mega.nz
 

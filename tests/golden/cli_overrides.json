@@ -3421,7 +3421,7 @@
    "--modpack-mode",
    "All",
    "--mod-sources",
-   "Pixeldrain",
+   "Dropbox",
    "--no-use-telegram-chat-links",
    "--telegram-chat-links",
    "S_telegram_chat_links",
@@ -3438,7 +3438,7 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "mod_sources": [
-       "Pixeldrain"
+       "Dropbox"
       ],
       "modpack_mode": "All",
       "on_failed_downloads": [
@@ -8314,7 +8314,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8561,7 +8562,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8616,7 +8618,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8669,7 +8672,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8720,7 +8724,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8770,7 +8775,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8821,7 +8827,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -8874,7 +8881,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9311,7 +9319,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9364,7 +9373,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9417,7 +9427,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9470,7 +9481,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9523,7 +9535,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9576,7 +9589,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9629,7 +9643,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9681,7 +9696,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9734,7 +9750,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9787,7 +9804,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -9882,6 +9900,53 @@
       "installed_mods_dir_str": "",
       "mod_sources": [
        "Drive"
+      ],
+      "modpack_mode": "OnlyUsed",
+      "on_failed_downloads": [
+       "OpenReport",
+       "CopyToClipboard"
+      ],
+      "scene_dir_str": "",
+      "telegram_chat_links_raw": "<str len=242 sha1=17248e1fe218>",
+      "use_cache": true,
+      "use_telegram_chat_links": true,
+      "website_urls_raw": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
+     },
+     "class": "DownloadMissingMods",
+     "enabled": true,
+     "kind": "task",
+     "run_kwargs": {},
+     "task": "DownloadMissingMods"
+    }
+   ],
+   "outcome": {
+    "error": null,
+    "exit": null
+   }
+  },
+  "world": "default"
+ },
+ "download-missing-mods --mod-sources=Dropbox": {
+  "argv": [
+   "download-missing-mods",
+   "--mod-sources",
+   "Dropbox"
+  ],
+  "result": {
+   "events": [
+    {
+     "attrs": {
+      "chara_dir_str": "",
+      "content_types": [
+       "Chara",
+       "Scene",
+       "Coord"
+      ],
+      "coord_dir_str": "",
+      "downloaded_mods_dir_str": "",
+      "installed_mods_dir_str": "",
+      "mod_sources": [
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10169,7 +10234,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "All",
       "on_failed_downloads": [
@@ -10222,7 +10288,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10275,7 +10342,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "Skip",
       "on_failed_downloads": [
@@ -10328,7 +10396,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10381,7 +10450,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10432,7 +10502,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10483,7 +10554,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10534,7 +10606,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10586,7 +10659,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10638,7 +10712,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10691,7 +10766,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10743,7 +10819,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10795,7 +10872,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10847,7 +10925,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10899,7 +10978,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -10952,7 +11032,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11005,7 +11086,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11058,7 +11140,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11110,7 +11193,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11162,7 +11246,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11215,7 +11300,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11268,7 +11354,8 @@
        "Gofile",
        "Catbox",
        "MediaFire",
-       "Pixeldrain"
+       "Pixeldrain",
+       "Dropbox"
       ],
       "modpack_mode": "OnlyUsed",
       "on_failed_downloads": [
@@ -11388,7 +11475,7 @@
    "--modpack-mode",
    "All",
    "--mod-sources",
-   "Pixeldrain",
+   "Dropbox",
    "--no-use-telegram-chat-links",
    "--telegram-chat-links",
    "S_telegram_chat_links",
@@ -11405,7 +11492,7 @@
       "downloaded_mods_dir_str": "S_downloaded_mods_dir",
       "installed_mods_dir_str": "S_installed_mods_dir",
       "mod_sources": [
-       "Pixeldrain"
+       "Dropbox"
       ],
       "modpack_mode": "All",
       "on_failed_downloads": [

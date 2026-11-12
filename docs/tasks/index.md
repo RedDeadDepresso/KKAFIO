@@ -5,7 +5,7 @@ KKAFIO is a list of tasks. Tick the ones you want in the GUI, configure their op
 | Task | What it does |
 |---|---|
 | [Create Backup](create-backup.md) | Archives `UserData`, `Mods` and/or `BepInEx` into a `.7z`. |
-| [Download Contents](download-contents.md) | Downloads cards from db.bepis.moe, koikatsucards.com, pixiv, pawchive, gofile, catbox, MediaFire, Pixeldrain, Mega and Google Drive. |
+| [Download Contents](download-contents.md) | Downloads cards from db.bepis.moe, koikatsucards.com, pixiv, pawchive, gofile, catbox, MediaFire, Pixeldrain, Dropbox, Mega and Google Drive. |
 | [Filter & Convert KKS Cards](filter-convert-kks-cards.md) | Finds KK and KKS cards and scenes, converts KKS to KK, and extracts archives. |
 | [Filter Duplicate Contents](filter-duplicate-contents.md) | Finds duplicate cards and zipmods by content and moves or deletes the copies. |
 | [Download Missing Mods](download-missing-mods.md) | Finds mods your cards, scenes and coordinates need but you don't have, and downloads them. |

@@ -1086,7 +1086,7 @@
       "type": "ordered_checkbox",
       "label": "$option.ModSources.label",
       "description": "$option.ModSources.description",
-      "default_case": ["Drive", "Mega", "Telegram", "Gofile", "Catbox", "MediaFire", "Pixeldrain"],
+      "default_case": ["Drive", "Mega", "Telegram", "Gofile", "Catbox", "MediaFire", "Pixeldrain", "Dropbox"],
       "cases": [
         {
           "name": "Drive",
@@ -1115,6 +1115,10 @@
         {
           "name": "Pixeldrain",
           "label": "$option.ModSources.case.Pixeldrain.label"
+        },
+        {
+          "name": "Dropbox",
+          "label": "$option.ModSources.case.Dropbox.label"
         }
       ]
     },

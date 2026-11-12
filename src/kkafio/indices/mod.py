@@ -1,8 +1,8 @@
-"""kk-mod-scraper index: {mod GUID: {"mega": [...], "drive": [...], "telegram": [...], "gofile": [...], "catbox": [...], "mediafire": [...], "pixeldrain": [...]}}.
+"""kk-mod-scraper index: {mod GUID: {"mega": [...], "drive": [...], "telegram": [...], "gofile": [...], "catbox": [...], "mediafire": [...], "pixeldrain": [...], "dropbox": [...]}}.
 
 The index is published by https://github.com/RedDeadDepresso/kk-mod-scraper and tells
 Download Missing Mods where a given mod can be downloaded: each list holds links to the file
-on that host (Mega, Google Drive, a t.me message, Gofile, Catbox, MediaFire, Pixeldrain). A copy is kept in
+on that host (Mega, Google Drive, a t.me message, Gofile, Catbox, MediaFire, Pixeldrain, Dropbox). A copy is kept in
 CONFIG_DIR/indices/mod.json; the server is asked at most once an hour, and the copy is only
 re-downloaded when its ETag changes (see kkafio.indices.cache).
 """
@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 from kkafio.core.logger import logger
 from kkafio.indices import cache
 
-SOURCES = ("mega", "drive", "telegram", "gofile", "catbox", "mediafire", "pixeldrain")   # the keys of an entry of the index
+SOURCES = ("mega", "drive", "telegram", "gofile", "catbox", "mediafire", "pixeldrain", "dropbox")   # the keys of an entry of the index
 
 # The default order to try the sources of a mod in. Download Missing Mods itself uses the order
 # (and the selection) of its "Mod Sources" option, which is the user's to change; the trade-offs:
@@ -33,17 +33,21 @@ SOURCES = ("mega", "drive", "telegram", "gofile", "catbox", "mediafire", "pixeld
 #             files are only kept while somebody downloads them.
 #   pixeldrain no account needed; popular files can be refused for anonymous downloads
 #             (rate limit / captcha), and files expire when nobody downloads them.
-SOURCE_ORDER = ("telegram", "drive", "mega", "gofile", "catbox", "mediafire", "pixeldrain")
+#   dropbox   no account needed; a shared link is a plain HTTP download (a folder is fetched as a
+#             zip), but links die when their owner removes the share, and heavily shared files
+#             can hit Dropbox's traffic limit.
+SOURCE_ORDER = ("telegram", "drive", "mega", "gofile", "catbox", "mediafire", "pixeldrain", "dropbox")
 
 ModIndex = dict[str, dict[str, list[str]]]
 
 # Hosts that are always the same source, whatever list of the entry a link was put in.
 _HOST_SOURCES = {"gofile.io": "gofile", "catbox.moe": "catbox", "mediafire.com": "mediafire",
-                 "pixeldrain.com": "pixeldrain", "pixeldrain.net": "pixeldrain", "pixeldrain.dev": "pixeldrain"}
+                 "pixeldrain.com": "pixeldrain", "pixeldrain.net": "pixeldrain", "pixeldrain.dev": "pixeldrain",
+                 "dropbox.com": "dropbox", "dropboxusercontent.com": "dropbox"}
 
 
 def _source_of_host(url: str) -> str | None:
-    """"gofile" / "catbox" / "mediafire" / "pixeldrain" if `url` is a link of that host, else None."""
+    """"gofile" / "catbox" / "mediafire" / "pixeldrain" / "dropbox" if `url` is a link of that host, else None."""
     host = (urlparse(url).hostname or "").lower()
     for domain, source in _HOST_SOURCES.items():
         if host == domain or host.endswith("." + domain):

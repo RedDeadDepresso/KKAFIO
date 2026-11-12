@@ -51,6 +51,7 @@ MOD_SOURCE_LABELS = {
     "catbox":   "Catbox",
     "mediafire": "MediaFire",
     "pixeldrain": "Pixeldrain",
+    "dropbox":  "Dropbox",
 }
 
 
