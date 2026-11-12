@@ -1,0 +1,160 @@
+import 'dart:async';
+
+import 'package:bonsoir/bonsoir.dart';
+import 'package:filesync/utils/sort.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// The discovery service state provider.
+final discoveryTypeStateProvider = AsyncNotifierProvider.autoDispose
+    .family<BonsoirDiscoveryTypeStateNotifier, BonsoirDiscoveryState, String>(
+      BonsoirDiscoveryTypeStateNotifier.new,
+    );
+
+/// The discovery service state notifier.
+class BonsoirDiscoveryTypeStateNotifier
+    extends AsyncNotifier<BonsoirDiscoveryState> {
+  /// The Bonsoir service type.
+  final String arg;
+
+  /// Creates a new Bonsoir discovery type state notifier instance.
+  BonsoirDiscoveryTypeStateNotifier(this.arg);
+
+  @override
+  FutureOr<BonsoirDiscoveryState> build() async {
+    BonsoirDiscovery discovery = BonsoirDiscovery(type: arg);
+    await discovery.initialize();
+    discovery.eventStream?.listen(_onEventOccurred);
+    ref.onDispose(discovery.stop);
+    discovery.start();
+    return BonsoirDiscoveryReadyState(
+      type: arg,
+      services: [],
+      serviceResolver: discovery.serviceResolver,
+    );
+  }
+
+  /// Handles the discovery event.
+  Future<void> _onEventOccurred(BonsoirDiscoveryEvent event) async {
+    if (!ref.mounted) {
+      return;
+    }
+    BonsoirDiscoveryState state = await future;
+    void onUpdate(BonsoirService updatedService) {
+      List<BonsoirService> services = List.of(state.services);
+      services = [
+        for (BonsoirService service in services)
+          if (service.name == updatedService.name) updatedService else service,
+      ];
+      sortServiceList(services);
+      this.state = AsyncData(
+        BonsoirDiscoveryStartedState(
+          type: state.type,
+          services: services,
+          serviceResolver: state.serviceResolver,
+        ),
+      );
+    }
+
+    switch (event) {
+      case BonsoirDiscoveryStartedEvent():
+        this.state = AsyncData(
+          BonsoirDiscoveryStartedState(
+            type: state.type,
+            services: [],
+            serviceResolver: state.serviceResolver,
+          ),
+        );
+        break;
+      case BonsoirDiscoveryServiceFoundEvent():
+        List<BonsoirService> services = List.of(state.services);
+        services.add(event.service);
+        sortServiceList(services);
+        this.state = AsyncData(
+          BonsoirDiscoveryStartedState(
+            type: state.type,
+            services: services,
+            serviceResolver: state.serviceResolver,
+          ),
+        );
+        event.service.resolve(state.serviceResolver);
+        break;
+      case BonsoirDiscoveryServiceResolvedEvent():
+        onUpdate(event.service);
+        break;
+      case BonsoirDiscoveryServiceUpdatedEvent():
+        onUpdate(event.service);
+        break;
+      case BonsoirDiscoveryServiceLostEvent():
+        List<BonsoirService> services = List.of(state.services);
+        services.removeWhere((service) => service.name == event.service.name);
+        this.state = AsyncData(
+          BonsoirDiscoveryStartedState(
+            type: state.type,
+            services: services,
+            serviceResolver: state.serviceResolver,
+          ),
+        );
+        break;
+      case BonsoirDiscoveryStoppedEvent():
+        this.state = AsyncData(
+          BonsoirDiscoveryStoppedState(
+            type: state.type,
+            services: state.services,
+            serviceResolver: state.serviceResolver,
+          ),
+        );
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/// Represents a Bonsoir discovery state.
+sealed class BonsoirDiscoveryState {
+  /// The service type.
+  final String type;
+
+  /// The list of discovered services.
+  final List<BonsoirService> services;
+
+  /// The service resolver.
+  final ServiceResolver serviceResolver;
+
+  /// Creates a new Bonsoir discovery state instance.
+  const BonsoirDiscoveryState({
+    required this.type,
+    this.services = const [],
+    required this.serviceResolver,
+  });
+}
+
+/// The Bonsoir discovery ready state.
+class BonsoirDiscoveryReadyState extends BonsoirDiscoveryState {
+  /// Creates a new Bonsoir discovery ready state instance.
+  const BonsoirDiscoveryReadyState({
+    required super.type,
+    required super.services,
+    required super.serviceResolver,
+  });
+}
+
+/// The Bonsoir discovery started state.
+class BonsoirDiscoveryStartedState extends BonsoirDiscoveryState {
+  /// Creates a new Bonsoir discovery started state instance.
+  const BonsoirDiscoveryStartedState({
+    required super.type,
+    required super.services,
+    required super.serviceResolver,
+  });
+}
+
+/// The Bonsoir discovery stopped state.
+class BonsoirDiscoveryStoppedState extends BonsoirDiscoveryState {
+  /// Creates a new Bonsoir discovery stopped state instance.
+  const BonsoirDiscoveryStoppedState({
+    required super.type,
+    required super.services,
+    required super.serviceResolver,
+  });
+}

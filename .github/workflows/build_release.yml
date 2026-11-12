@@ -1,0 +1,352 @@
+name: Build & Release
+
+# Triggers:
+#   - Push a tag like v1.2.3  →  full build + GitHub Release
+#   - Manual dispatch         →  choose platforms and whether to publish
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to build (comma-separated: android,ios,windows,linux)'
+        required: false
+        default: 'android,ios,windows,linux'
+      publish_release:
+        description: 'Publish a GitHub Release?'
+        type: boolean
+        default: false
+
+# ── Shared env ────────────────────────────────────────────────────────────────
+env:
+  FLUTTER_VERSION: '3.41.6'
+  # Set these secrets in your repo → Settings → Secrets and variables → Actions
+  # ANDROID_KEYSTORE_BASE64   : base64-encoded JKS/PKCS12 keystore
+  # ANDROID_KEY_ALIAS         : key alias inside the keystore
+  # ANDROID_KEY_PASSWORD      : key password
+  # ANDROID_STORE_PASSWORD    : store password
+  # IOS_CERTIFICATE_BASE64    : base64-encoded .p12 distribution certificate
+  # IOS_CERTIFICATE_PASSWORD  : .p12 password
+  # IOS_PROVISION_PROFILE_BASE64 : base64-encoded .mobileprovision
+  # IOS_TEAM_ID               : Apple developer team ID (10-char string)
+  # IOS_BUNDLE_ID             : e.g. com.yourcompany.filesync
+
+jobs:
+  # ── Determine which platforms to build ──────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      build_android: ${{ steps.parse.outputs.android }}
+      build_ios:     ${{ steps.parse.outputs.ios }}
+      build_windows: ${{ steps.parse.outputs.windows }}
+      build_linux:   ${{ steps.parse.outputs.linux }}
+      version:       ${{ steps.version.outputs.value }}
+    steps:
+      - name: Parse platform list
+        id: parse
+        run: |
+          PLATFORMS="${{ github.event.inputs.platforms || 'android,ios,windows,linux' }}"
+          echo "android=$([[ $PLATFORMS == *android* ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "ios=$([[ $PLATFORMS == *ios* ]] && echo true || echo false)"         >> $GITHUB_OUTPUT
+          echo "windows=$([[ $PLATFORMS == *windows* ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "linux=$([[ $PLATFORMS == *linux* ]] && echo true || echo false)"     >> $GITHUB_OUTPUT
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "value=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "value=dev-$(date +'%Y%m%d')-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
+  # ── Android ─────────────────────────────────────────────────────────────────
+  android:
+    needs: setup
+    if: needs.setup.outputs.build_android == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Decode keystore
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+
+      - name: Write key.properties
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          cat > android/key.properties << EOF
+          storeFile=keystore.jks
+          storePassword=${ANDROID_STORE_PASSWORD}
+          keyAlias=${ANDROID_KEY_ALIAS}
+          keyPassword=${ANDROID_KEY_PASSWORD}
+          EOF
+
+      - name: Build APK (debug – no keystore)
+        if: env.ANDROID_KEYSTORE_BASE64 == ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Build APK + AAB (release – signed)
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          flutter build apk --release --no-tree-shake-icons
+          flutter build appbundle --release --no-tree-shake-icons
+
+      - name: Rename artifacts
+        run: |
+          VERSION=${{ needs.setup.outputs.version }}
+          mkdir -p dist
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            cp build/app/outputs/flutter-apk/app-release.apk dist/filesync-${VERSION}.apk
+          elif [ -f build/app/outputs/flutter-apk/app-debug.apk ]; then
+            cp build/app/outputs/flutter-apk/app-debug.apk dist/filesync-${VERSION}-debug.apk
+          fi
+          if [ -f build/app/outputs/bundle/release/app-release.aab ]; then
+            cp build/app/outputs/bundle/release/app-release.aab dist/filesync-${VERSION}.aab
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/
+          retention-days: 7
+
+  # # ── iOS ─────────────────────────────────────────────────────────────────────
+  # ios:
+  #   needs: setup
+  #   if: needs.setup.outputs.build_ios == 'true'
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: ${{ env.FLUTTER_VERSION }}
+  #         channel: stable
+  #         cache: true
+
+  #     - name: Flutter pub get
+  #       run: flutter pub get
+
+  #     - name: Install Apple certificate & provisioning profile
+  #       if: ${{ secrets.IOS_CERTIFICATE_BASE64 != '' }}
+  #       env:
+  #         IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+  #         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+  #         IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+  #       run: |
+  #         # Keychain
+  #         KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+  #         KEYCHAIN_PASSWORD=$(uuidgen)
+  #         security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+  #         security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+  #         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+  #         # Certificate
+  #         CERT_PATH=$RUNNER_TEMP/cert.p12
+  #         echo "$IOS_CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
+  #         security import $CERT_PATH -P "$IOS_CERTIFICATE_PASSWORD" \
+  #           -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+  #         security set-key-partition-list -S apple-tool:,apple: \
+  #           -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+  #         security list-keychains -d user -s $KEYCHAIN_PATH
+
+  #         # Provisioning profile
+  #         PP_PATH=$RUNNER_TEMP/profile.mobileprovision
+  #         echo "$IOS_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+  #         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+  #         PP_UUID=$(security cms -D -i $PP_PATH | \
+  #           plutil -extract UUID raw -)
+  #         cp $PP_PATH \
+  #           ~/Library/MobileDevice/Provisioning\ Profiles/${PP_UUID}.mobileprovision
+
+  #     - name: Build IPA (no-codesign, no secrets)
+  #       if: ${{ secrets.IOS_CERTIFICATE_BASE64 == '' }}
+  #       run: |
+  #         flutter build ios --release --no-codesign --no-tree-shake-icons
+
+  #     - name: Build IPA (signed)
+  #       if: ${{ secrets.IOS_CERTIFICATE_BASE64 != '' }}
+  #       env:
+  #         IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+  #         IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+  #       run: |
+  #         flutter build ipa --release --no-tree-shake-icons \
+  #           --export-options-plist=ios/ExportOptions.plist
+
+  #     - name: Package unsigned build for artifact
+  #       if: ${{ secrets.IOS_CERTIFICATE_BASE64 == '' }}
+  #       run: |
+  #         VERSION=${{ needs.setup.outputs.version }}
+  #         mkdir -p dist
+  #         # Pack the .app into a zip for distribution / simulator testing
+  #         cd build/ios/iphoneos
+  #         zip -r ../../../dist/filesync-${VERSION}-ios-no-codesign.zip Runner.app
+
+  #     - name: Copy signed IPA
+  #       if: ${{ secrets.IOS_CERTIFICATE_BASE64 != '' }}
+  #       run: |
+  #         VERSION=${{ needs.setup.outputs.version }}
+  #         mkdir -p dist
+  #         cp build/ios/ipa/*.ipa dist/filesync-${VERSION}.ipa
+
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ios
+  #         path: dist/
+  #         retention-days: 7
+
+  # ── Windows ──────────────────────────────────────────────────────────────────
+  windows:
+    needs: setup
+    if: needs.setup.outputs.build_windows == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release --no-tree-shake-icons
+
+      - name: Zip release
+        shell: pwsh
+        run: |
+          $version = "${{ needs.setup.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path dist
+          Compress-Archive `
+            -Path build\windows\x64\runner\Release\* `
+            -DestinationPath dist\filesync-$version-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/
+          retention-days: 7
+
+  # ── Linux ────────────────────────────────────────────────────────────────────
+  linux:
+    needs: setup
+    if: needs.setup.outputs.build_linux == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libayatana-appindicator3-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release --no-tree-shake-icons
+
+      - name: Tar release
+        run: |
+          VERSION=${{ needs.setup.outputs.version }}
+          mkdir -p dist
+          tar -cJf dist/filesync-${VERSION}-linux-x64.tar.xz \
+            -C build/linux/x64/release/bundle .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/
+          retention-days: 7
+
+  # ── GitHub Release ────────────────────────────────────────────────────────────
+  release:
+    needs: [setup, android, windows, linux]
+    # Run even if some platform jobs were skipped; fail if any ran and errored.
+    if: |
+      always() &&
+      (github.event_name == 'push' ||
+       github.event.inputs.publish_release == 'true') &&
+      !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          find artifacts/ -type f | while read f; do
+            cp "$f" release/
+          done
+          ls -lh release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.setup.outputs.version }}
+          name: FileSync ${{ needs.setup.outputs.version }}
+          draft: false
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+          generate_release_notes: true
+          files: release/*
+          body: |
+            ## FileSync ${{ needs.setup.outputs.version }}
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | Android APK | `filesync-*-android.apk` or `filesync-*.apk` |
+            | Windows | `filesync-*-windows.zip` |
+            | Linux | `filesync-*-linux-x64.tar.xz` |
+
+            ### Notes
+            - **Android**: Install the APK directly on your device. The AAB is for Google Play Store submission.
+            - **Windows**: Extract the zip and run `filesync.exe`.
+            - **Linux**: Extract the tarball and run `./filesync`.
