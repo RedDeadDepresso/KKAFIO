@@ -22,6 +22,7 @@ def test_url_parsing():
     assert P("https://www.pixeldrain.dev/l/Li5t1234") == ("list", "Li5t1234")
     assert P("https://pixeldrain.com/l/Li5t1234#item=2") == ("list", "Li5t1234")
     assert P("https://pixeldrain.com/api/list/Li5t1234") == ("list", "Li5t1234")
+    assert P("https://pixeldrain.com/api/file/5YLNRZm4/info/zip/Sunglasses%20studio%20acc_F.zipmod") == ("file", "5YLNRZm4")
     assert P("https://pixeldrain.com/") is None and P("https://pixeldrain.com/user/files") is None
     assert P("https://pixeldrain.com/u/") is None and P("https://example.com/u/AbC12345") is None
 
@@ -98,3 +99,22 @@ def test_an_unsupported_link_is_one_failure_without_a_request(tmp_path):
     seen = []
     assert _run(_client({}, {}, seen), "https://pixeldrain.com/user/files", tmp_path) == (0, 0, 1)
     assert seen == []
+
+
+def test_a_file_inside_an_archive_downloads_only_that_file(tmp_path):
+    url = "https://pixeldrain.com/api/file/5YLNRZm4/info/zip/Sunglasses%20studio%20acc_F.zipmod"
+    assert pixeldrain.parse_pixeldrain_zip_member(url) == "Sunglasses studio acc_F.zipmod"
+    seen, history = [], {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(req.url.raw_path.decode())
+        if req.url.path == "/api/file/5YLNRZm4/info/zip/Sunglasses studio acc_F.zipmod":
+            return httpx.Response(200, content=b"MOD", headers={"content-length": "3"})
+        return httpx.Response(404)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
+    assert _run(client, url, tmp_path, history) == (1, 0, 0)
+    assert (tmp_path / "Sunglasses studio acc_F.zipmod").read_bytes() == b"MOD"
+    assert seen == ["/api/file/5YLNRZm4/info/zip/Sunglasses%20studio%20acc_F.zipmod"]   # never the whole archive
+    assert list(history) == [url]
+    assert _run(_client({}, {}, []), url, tmp_path, history) == (0, 1, 0)

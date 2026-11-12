@@ -2,6 +2,10 @@
 
   https://pixeldrain.com/u/<id>          one file (also /api/file/<id>)
   https://pixeldrain.com/l/<id>          a list: every file in it is downloaded (also /api/list/<id>)
+  https://pixeldrain.com/api/file/<id>/info/zip/<name>
+                                         one file inside an archive (also /u/<id>/zip/<name>): that
+                                         endpoint returns the inner file's bytes, so only that file
+                                         is downloaded, never the whole archive
 
 Pixeldrain's API needs no key or login for public files: a file is a plain GET of
 /api/file/<id> (the name comes from its Content-Disposition), and a list is read from
@@ -26,6 +30,8 @@ PIXELDRAIN_HOSTS = ("pixeldrain.com", "pixeldrain.net", "pixeldrain.dev")
 
 _ID = r"[A-Za-z0-9_-]{4,24}"
 _FILE_RE = re.compile(rf"^/(?:u|api/file)/({_ID})/?$")
+# A file inside an archive: .../<id>/info/zip/<path> or .../<id>/zip/<path>
+_MEMBER_RE = re.compile(rf"^/(?:u|api/file)/({_ID})/(?:info/)?zip/(.+?)/?$")
 _LIST_RE = re.compile(rf"^/(?:l|api/list)/({_ID})/?$")
 
 
@@ -42,10 +48,21 @@ def parse_pixeldrain_url(url: str) -> tuple[str, str] | None:
     m = _FILE_RE.match(path)
     if m:
         return "file", m.group(1)
+    m = _MEMBER_RE.match(path)
+    if m:
+        return "file", m.group(1)
     m = _LIST_RE.match(path)
     if m:
         return "list", m.group(1)
     return None
+
+
+def parse_pixeldrain_zip_member(url: str) -> str | None:
+    """The path of the file inside the archive for a ".../<id>/info/zip/<path>" link, else None."""
+    if not is_pixeldrain_url(url):
+        return None
+    m = _MEMBER_RE.match(unquote(urlparse(url).path))
+    return m.group(2) if m else None
 
 
 def pixeldrain_file_url(file_id: str) -> str:
@@ -64,8 +81,16 @@ async def download_pixeldrain(
         return 0, 0, 1
     kind, ident = parsed
 
+    member = parse_pixeldrain_zip_member(url)
+
     names: dict[str, str] = {}
-    if kind == "file":
+    if member is not None:
+        # The link itself serves the inner file: fetch it as is.
+        logger.info("DLOAD", f"Pixeldrain file in archive: {ident} -> {member}")
+        direct = url.split("#", 1)[0]
+        file_urls = [direct]
+        names[direct] = safe_filename(member.rsplit("/", 1)[-1], ident)
+    elif kind == "file":
         logger.info("DLOAD", f"Pixeldrain file: {ident}")
         file_urls = [pixeldrain_file_url(ident)]
         names[file_urls[0]] = ident
@@ -95,3 +120,4 @@ async def download_pixeldrain(
                                   history, skip)
     history_store.save_history(history)
     return result
+
