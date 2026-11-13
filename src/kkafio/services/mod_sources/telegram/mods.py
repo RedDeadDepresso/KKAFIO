@@ -10,6 +10,7 @@ from kkafio.core import progress
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.services.mod_sources.telegram.links import parse_tme_link
+from kkafio.services.mod_sources.telegram.qr_login import sign_in_with_qr
 
 
 async def _retry_flood_wait(coro_fn, *args, context: str, max_wait: int = 300, **kwargs):
@@ -306,18 +307,38 @@ async def search_chat_links_and_download(
 # Telethon session management
 # ---------------------------------------------------------------------------
 
+async def _sign_in_with_2fa(client) -> bool:
+    """Ask for the 2FA cloud password and finish the sign-in. False if not given / wrong."""
+    from telethon.errors import PasswordHashInvalidError
+    from kkafio.dialogs.password_dialog import password_dialog
+
+    pw = password_dialog(
+        t("dialog.password.tfa_title"),
+        t("dialog.password.tfa_body"),
+    )
+    if not pw:
+        logger.error("DLMOD", "2FA password not provided.")
+        return False
+    try:
+        await client.sign_in(password=pw)
+    except PasswordHashInvalidError:
+        logger.error("DLMOD", "2FA password was incorrect.")
+        return False
+    return True
+
+
 async def ensure_session(tg_data: dict) -> bool:
     """
     Ensure a valid Telethon .session file exists in the session directory.
     If the session file is missing or the user is not authorised, walk them
-    through phone + code (+ optional 2FA) dialogs and save the result.
+    through a QR code scan (or, as a fallback, phone + code dialogs), plus the
+    2FA password if the account has one, and save the result.
     Returns True if authorised, False if the user cancelled or sign-in
     ultimately failed.
     """
     from telethon import TelegramClient
     from telethon.errors import (
         SessionPasswordNeededError,
-        PasswordHashInvalidError,
         PhoneCodeInvalidError,
         PhoneCodeExpiredError,
         PhoneNumberInvalidError,
@@ -349,6 +370,22 @@ async def ensure_session(tg_data: dict) -> bool:
             return True
 
         logger.info("DLMOD", "Telegram session not found or expired — starting sign-in...")
+
+        # Preferred: scan a QR code with the Telegram phone app (no phone number / SMS code
+        # to type). The phone-number flow below is the fallback, or what the user picks
+        # with "Use phone number instead".
+        outcome = await sign_in_with_qr(client)
+        if outcome == "ok":
+            logger.success("DLMOD", "Telegram sign-in successful. Session saved.")
+            return True
+        if outcome == "cancelled":
+            logger.error("DLMOD", "Telegram sign-in cancelled.")
+            return False
+        if outcome == "password":
+            if not await _sign_in_with_2fa(client):
+                return False
+            logger.success("DLMOD", "Telegram sign-in successful. Session saved.")
+            return True
 
         phone = password_dialog(
             t("dialog.password.phone_title"),
@@ -397,17 +434,7 @@ async def ensure_session(tg_data: dict) -> bool:
                     f"Verification code still incorrect after {max_code_attempts} attempts — giving up.")
                 return False
             except SessionPasswordNeededError:
-                pw = password_dialog(
-                    t("dialog.password.tfa_title"),
-                    t("dialog.password.tfa_body"),
-                )
-                if not pw:
-                    logger.error("DLMOD", "2FA password not provided.")
-                    return False
-                try:
-                    await client.sign_in(password=pw)
-                except PasswordHashInvalidError:
-                    logger.error("DLMOD", "2FA password was incorrect.")
+                if not await _sign_in_with_2fa(client):
                     return False
                 break
 

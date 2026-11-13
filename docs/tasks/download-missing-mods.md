@@ -55,7 +55,7 @@ https://t.me/kknowcc
 
 1. Go to [my.telegram.org/apps](https://my.telegram.org/apps), log in, and create an app to get an **API ID** and **API Hash**. Enter these in the GUI's settings.
 2. Check `Telegram` in **Mod Sources** in the GUI's settings (it is checked by default).
-3. On first use, KKAFIO opens [my.telegram.org](https://my.telegram.org) in your browser and shows dialogs for your phone number and verification code (and 2FA password if enabled). The session is saved to `%APPDATA%/KKAFIO/sessions/telegram/kkafio.session` and reused automatically.
+3. On first use, KKAFIO opens [my.telegram.org](https://my.telegram.org) in your browser for the API credentials, then shows a QR code: in the Telegram app on your phone go to **Settings → Devices → Link Desktop Device** and scan it (the code refreshes automatically; a 2FA password is asked for if enabled). Click **Use phone number instead** to sign in with your phone number and verification code, which is also the fallback if the QR code isn't scanned in time or can't be shown. The session is saved to `%APPDATA%/KKAFIO/sessions/telegram/kkafio.session` and reused automatically.
 
 !!! warning "Security notice"
 
