@@ -1406,7 +1406,7 @@
         },
         {
           "name": "CopyToClipboard",
-          "label": "$option.OnFailedDownloads.case.CopyToClipboard.label",
+          "label": "$option.OnFailedModDownloads.case.CopyToClipboard.label",
           "pipeline_override": {
             "CopyReportToClipboard": true
           }
