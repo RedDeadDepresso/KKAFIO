@@ -193,6 +193,19 @@ def test_a_path_link_takes_only_that_folder_as_the_root(tmp_path):
     assert (tmp_path / "b.png").exists() and not (tmp_path / "a.zip").exists()
 
 
+def test_a_path_to_a_file_downloads_only_that_file(tmp_path):
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"A"), "2": ("/pack/Hair/b.png", b"B"), "3": ("/pack/Hair/c.png", b"C")})
+    history = {}
+    assert _run(fake, SHARE + "?path=%2Fpack%2FHair%2Fc.png", tmp_path, history) == (1, 0, 0)
+    assert [p.name for p in tmp_path.rglob("*") if p.is_file()] == ["c.png"]
+    assert list(history) == ["terabox://AbCdEf12345/3"]
+
+
+def test_a_path_to_a_missing_file_is_one_failure(tmp_path):
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"A")})
+    assert _run(fake, SHARE + "?path=%2Fpack%2Fnope.zip", tmp_path) == (0, 0, 1)
+
+
 def test_without_the_share_page_the_list_api_is_used(tmp_path):
     fake = FakeTerabox({"1": ("/pack/a.zip", b"A"), "2": ("/pack/Sub/b.zip", b"B")}, wap=False)
     assert _run(fake, SHARE, tmp_path) == (2, 0, 0)

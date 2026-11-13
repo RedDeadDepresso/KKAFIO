@@ -6,6 +6,8 @@
   https://1024terabox.com/s/1<surl>                      any of the TeraBox mirrors (terabox.app, 1024tera.com,
                                                          teraboxapp.com, nephobox.com, 4funbox.com, ...)
   ...?surl=<surl>&path=/Folder/Sub                       only that folder of the share (also ``dir=``)
+  ...?surl=<surl>&path=/Folder/Sub/file.zip              only that one file (TeraBox has no link of its own
+                                                         for a file: it is the share plus the file's path)
 
 The resolver follows the one of Teralace (https://github.com/LoLyeah/teralace), without its
 user-configured "API pool" / Cloudflare Worker resolvers:
@@ -418,9 +420,32 @@ class TeraboxResolver:
             except Exception:
                 raise api_exc
 
+    async def _single_file(self, link: TeraboxLink) -> tuple[ShareMeta, list[tuple[ShareFile, tuple[str, ...]]]] | None:
+        """If ``link.path`` names a file (not a folder), just that file; else None.
+
+        TeraBox gives a file no link of its own, so a link to one file is the share plus the file's
+        path: ``...?surl=<id>&path=%2FFolder%2Ffile.zip``. The file is looked up in its parent folder."""
+        if not link.path:
+            return None
+        parent, _, name = link.path.rstrip("/").rpartition("/")
+        try:
+            listing = await self.list_share(TeraboxLink(link.surl, parent or None))
+        except Exception:
+            return None                    # not readable as a file's parent: read it as a folder
+        wanted = link.path.rstrip("/")
+        for item in listing.files:
+            if item.path == wanted or (item.path is None and item.name.lower() == name.lower()):
+                if item.is_dir:
+                    return None
+                return listing.meta, [(item, ())]
+        return None
+
     async def collect(self, link: TeraboxLink) -> tuple[ShareMeta, list[tuple[ShareFile, tuple[str, ...]]]]:
         """Every file of the share with the subfolders (names) it sits in; folders are followed
         breadth-first, MAX_DEPTH levels deep. A folder that cannot be read is logged and left out."""
+        single = await self._single_file(link)
+        if single is not None:
+            return single
         listing = await self.list_share(link)
         out: list[tuple[ShareFile, tuple[str, ...]]] = []
         queue: deque[tuple[str, tuple[str, ...], int]] = deque()
