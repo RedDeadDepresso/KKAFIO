@@ -1396,7 +1396,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         lb = tk.Listbox(canvas, height=min(len(names), _SHOWN_SUGGESTIONS), bg=pal["input"], fg=pal["text"],
                         selectbackground=pal["sel"], selectforeground=pal["text"], activestyle="none",
                         exportselection=False, relief="flat", borderwidth=0, highlightthickness=1,
-                        highlightbackground=pal["border"], highlightcolor=pal["border"], font=f_small, takefocus=0)
+                        highlightbackground=pal["border"], highlightcolor=pal["border"], font=f_series, takefocus=0)
         for name in names:
             lb.insert("end", name)
         lb.bind("<Button-1>", on_suggestion_click)      # handled here so the entry never loses focus
@@ -1807,7 +1807,7 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
         box = tk.Listbox(dlg, height=_SHOWN_SUGGESTIONS, bg=pal["input"], fg=pal["text"],
                          selectbackground=pal["sel"], selectforeground=pal["text"], activestyle="none",
                          exportselection=False, relief="flat", borderwidth=0, highlightthickness=1,
-                         highlightbackground=pal["border"], highlightcolor=pal["border"], font=f_small, takefocus=0)
+                         highlightbackground=pal["border"], highlightcolor=pal["border"], font=f_series, takefocus=0)
         names: list[str] = []
 
         def refresh(_event=None) -> None:
