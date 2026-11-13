@@ -371,7 +371,7 @@ def test_gofile_website_token_formula():
 
 
 def test_gofile_secret_is_decoded_from_the_script():
-    script = open(Path(__file__).resolve().parents[1] / "data" / "gofile-wt.obf.js", encoding="utf-8").read()
+    script = open(Path(__file__).resolve().parents[2] / "data" / "gofile-wt.obf.js", encoding="utf-8").read()
     assert gofile._gofile_secret_from(script) == "12af056dacea0b"
     import pytest
     with pytest.raises(ValueError):

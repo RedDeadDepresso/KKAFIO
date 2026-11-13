@@ -115,7 +115,7 @@ def test_there_is_no_mode_option_any_more():
 
 
 def test_interface_json_has_no_mode_option():
-    interface = json.loads((Path(__file__).resolve().parents[2] / "interface.json").read_text(encoding="utf-8"))
+    interface = json.loads((Path(__file__).resolve().parents[3] / "interface.json").read_text(encoding="utf-8"))
     assert "GroupScenesMode" not in interface["option"]
     assert "GroupScenesMode" not in next(t for t in interface["task"] if t["name"] == "GroupScenes")["option"]
 

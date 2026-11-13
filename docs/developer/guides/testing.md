@@ -18,7 +18,7 @@ so a machine without a display toolkit still runs the rest.
 
 | Folder | What is in it |
 |---|---|
-| `tests/cards/`, `core/`, `indices/`, `tasks/` | Ordinary tests, grouped like `src/kkafio`. |
+| `tests/cards/`, `core/`, `indices/`, `tasks/` | Ordinary tests, grouped like `src/kkafio`. `tasks/` is split further by task: `download_contents/`, `group_chara/`, `group_coordinates/`, `group_scenes/` and `library/`. |
 | `tests/dialogs/` | Tests of the dialogs, including the Organize Library window in `tests/dialogs/library/`. |
 | `tests/characterization/` | Tests that replay the recordings in `tests/golden/` (see below). |
 | `tests/golden/` | The recordings, as JSON. |

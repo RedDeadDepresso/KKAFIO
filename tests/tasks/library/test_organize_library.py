@@ -13,7 +13,7 @@ from kkafio.core.errors import InputError
 from kkafio.dialogs.library import CharaItem, LibraryTab
 from kkafio.tasks import organize_library as rg
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 def _task(tmp_path, game=None, **cfg):

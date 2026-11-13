@@ -430,7 +430,7 @@ def test_delete_options_are_one_checkbox_group_in_interface_json():
     import json
     from kkafio.core.config import _build_task_config
 
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[3]
     interface = json.loads((root / "interface.json").read_text(encoding="utf-8"))
     task = next(t for t in interface["task"] if t["name"] == "ReviewSimilarChara")
     opt = interface["option"]["ReviewSimilarCharaDeleteOptions"]

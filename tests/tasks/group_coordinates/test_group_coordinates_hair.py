@@ -539,7 +539,7 @@ def test_default_coordinates_do_not_take_part_in_grouping_by_hair(tmp_path, monk
 
 def test_the_tool_collects_the_digests_of_a_folder_of_coordinates(tmp_path):
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools"))
     import build_default_coordinate as tool
     folder = tmp_path / "defaults"
     one, two = _outfit(top="pack.stock:10"), _outfit(top=2)
