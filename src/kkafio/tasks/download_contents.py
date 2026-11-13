@@ -31,6 +31,11 @@ Supports:
   https://pixeldrain.com        — files (/u/ID) and lists (/l/ID)
                                   and albums (/c/ID); every file of an album is
                                   downloaded
+  https://www.terabox.com       — shares (/s/1ID, /sharing/link?surl=ID; also the
+                                  terabox.app, 1024tera.com, ... mirrors); every
+                                  file is downloaded, subfolders into
+                                  subdirectories. Most files need the `ndus`
+                                  login cookie, asked for like pixiv's PHPSESSID
   https://www.dropbox.com       — shared files (/scl/fi/..., /s/...) and folders
                                   (/scl/fo/..., /sh/...; a folder is downloaded as
                                   a zip and unpacked, keeping its subfolders)
@@ -84,6 +89,7 @@ from kkafio.services.content_sources.catbox import download_catbox, is_catbox_ur
 from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
 from kkafio.services.content_sources.dropbox import download_dropbox, is_dropbox_url
 from kkafio.services.content_sources.pixeldrain import download_pixeldrain, is_pixeldrain_url
+from kkafio.services.content_sources.terabox import download_terabox, is_terabox_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.gofile import GOFILE_USER_AGENT, download_gofile, is_gofile_url
 from kkafio.services.content_sources.koikatsucards import KOIKATSU_URL, download_koikatsu
@@ -226,6 +232,7 @@ class _Clients:
     catbox: httpx.AsyncClient
     mediafire: httpx.AsyncClient
     pixeldrain: httpx.AsyncClient
+    terabox: httpx.AsyncClient
     dropbox: httpx.AsyncClient
     mega: httpx.AsyncClient
     gdrive: httpx.AsyncClient
@@ -250,6 +257,8 @@ class _Run:
     kkd_session: str | None
     # Pixiv artworks whose description was read, shared by all lines of the run.
     pixiv_follow: PixivFollowState
+    # The TeraBox `ndus` cookie (None: anonymous).
+    terabox_session: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -282,6 +291,7 @@ class DownloadContents(BaseTask):
 
         kkd_session = self._resolve_kkd_session(urls)
         pixiv_session = self._resolve_pixiv_session(urls)
+        terabox_session = self._resolve_terabox_session(urls)
 
         history = history_store.load_history()
         totals = _Totals()
@@ -291,7 +301,8 @@ class DownloadContents(BaseTask):
             # The progress window is shown for the whole run; Cancel in it cancels this coroutine.
             async with download_progress(t("dialog.progress.contents_title"), "links", len(urls)):
                 await self._download_all(
-                    urls, output_dir, history, totals, kkd_session, pixiv_session, results)
+                    urls, output_dir, history, totals, kkd_session, pixiv_session, results,
+                    terabox_session)
 
         try:
             try:
@@ -428,6 +439,15 @@ class DownloadContents(BaseTask):
         import kkafio.services.content_sources.pixiv.session as _pxv
         return _pxv.get_or_prompt()
 
+    @staticmethod
+    def _resolve_terabox_session(urls: list[_Link]) -> str | None:
+        """The TeraBox ``ndus`` cookie — optional: without it only what TeraBox gives anonymous
+        visitors downloads, so cancelling the dialog is not fatal."""
+        if not any(is_terabox_url(url_str) for url_str, *_ in urls):
+            return None
+        import kkafio.services.content_sources.terabox_session as _tbx
+        return _tbx.get_or_prompt()
+
     # -- the run -------------------------------------------------------------
 
     @asynccontextmanager
@@ -453,6 +473,7 @@ class DownloadContents(BaseTask):
                 catbox=await enter(make_client()),
                 mediafire=await enter(make_client()),
                 pixeldrain=await enter(make_client()),
+                terabox=await enter(make_client()),
                 dropbox=await enter(make_client()),
                 mega=await enter(make_client()),
                 gdrive=await enter(make_client()),
@@ -472,10 +493,10 @@ class DownloadContents(BaseTask):
     async def _download_all(
         self, urls: list[_Link], output_dir: Path, history: dict[str, str],
         totals: _Totals, kkd_session: str | None, pixiv_session: str | None,
-        results: list[_LinkResult] | None = None,
+        results: list[_LinkResult] | None = None, terabox_session: str | None = None,
     ) -> None:
         async with self._open_clients(kkd_session, pixiv_session) as clients:
-            run = _Run(output_dir, history, clients, kkd_session, PixivFollowState())
+            run = _Run(output_dir, history, clients, kkd_session, PixivFollowState(), terabox_session)
             for link in urls:
                 url_str, page_start, page_end, follow_illustrations = link
                 entry = _LinkResult(link)
@@ -567,6 +588,11 @@ class DownloadContents(BaseTask):
             self._note_page_directive_ignored("Pixeldrain", page_start)
             return await download_pixeldrain(clients.pixeldrain, url_str, out, history, skip)
 
+        if is_terabox_url(url_str):
+            self._note_page_directive_ignored("TeraBox", page_start)
+            return await download_terabox(clients.terabox, url_str, out, history, skip,
+                                          session=run.terabox_session)
+
         if is_dropbox_url(url_str):
             self._note_page_directive_ignored("Dropbox", page_start)
             return await download_dropbox(clients.dropbox, url_str, out, history, skip)
@@ -580,7 +606,7 @@ class DownloadContents(BaseTask):
             return await download_gdrive(clients.gdrive, url_str, out, history, skip)
 
         logger.error("DLOAD",
-            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, dropbox.com, mega.nz or drive.google.com): {url_str}")
+            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, terabox.com, dropbox.com, mega.nz or drive.google.com): {url_str}")
         progress.count("failed")
         return 0, 0, 1
 

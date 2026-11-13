@@ -19,8 +19,12 @@ from kkafio.services.content_sources.net import MAX_CONNECTIONS, MAX_CONSECUTIVE
 async def download_file(
     client, url: str, directory: Path, default_name: str,
     history: dict[str, str], skip_downloaded: bool,
+    *, filename: str | None = None, headers: dict[str, str] | None = None,
 ) -> tuple[str, Exception | None, bool]:
-    """Download one file. Returns (url, error, was_skipped)."""
+    """Download one file. Returns (url, error, was_skipped).
+
+    `filename` fixes the name on disk (otherwise it comes from the response / URL); `headers` are
+    sent with this transfer only."""
     if skip_downloaded and url in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
         progress.count("skipped")
@@ -36,13 +40,16 @@ async def download_file(
         handle = None
         try:
             import aiofiles
-            async with client.stream("GET", url) as response:
+            async with client.stream("GET", url, headers=headers) as response:
                 response.raise_for_status()
-                filename = resolve_filename(response, url, default_name)
-                dest = directory / filename
+                if filename is None:
+                    name = resolve_filename(response, url, default_name)
+                else:
+                    name = filename
+                dest = directory / name
                 part = dest.with_name(dest.name + ".part")
-                logger.info("DLOAD", f"Downloading: {filename}")
-                handle = progress.begin(filename, progress.content_length(response))
+                logger.info("DLOAD", f"Downloading: {name}")
+                handle = progress.begin(name, progress.content_length(response))
                 received = 0
                 async with aiofiles.open(part, "wb") as f:
                     async for chunk in response.aiter_bytes(chunk_size=65536):
