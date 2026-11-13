@@ -86,8 +86,17 @@ def test_wap_state_is_read_into_files_and_meta():
 class FakeTerabox:
     """One share. Files: {fs_id: (path, bytes)}; a path's folders are derived from it."""
 
-    def __init__(self, files, wap=True, login_needed=False, sharedownload=True, wap_dlinks=False, wap_limit=None):
+    def __init__(self, files, wap=True, login_needed=False, sharedownload=True, wap_dlinks=False, wap_limit=None,
+                 info=False, strict_list=False, randsk="", need_token=False, wap_path=True, wap_sign="SIGN", need_jar=False):
+        self.need_jar = need_jar              # /share/list wants the cookie the share page sets (browserid)
+        self.wap_sign = wap_sign              # the sign the share page shows (shorturlinfo / the API use "SIGN")
+        self.need_token = need_token          # /share/list wants the jsToken (errno 4000020 without it)
+        self.wap_path = wap_path              # the share page can render a ?path= folder
         self.files, self.wap, self.login_needed = files, wap, login_needed
+        self.info = info                      # /api/shorturlinfo answers (with a randsk)
+        self.strict_list = strict_list        # /share/list refuses anything but the signed call
+        self.randsk = randsk
+        self.sekeys: list[str] = []
         self.wap_limit = wap_limit            # the share page renders only this many items
         self.sharedownload, self.wap_dlinks = sharedownload, wap_dlinks
         self.seen: list[str] = []
@@ -123,12 +132,30 @@ class FakeTerabox:
             if not self.wap:
                 return httpx.Response(500)
             directory = q.get("path", "")
+            if directory and not self.wap_path:
+                return httpx.Response(200, text="<html>no state</html>")
             items = self._entries(directory) if directory else self._entries("/pack")
             shown = items[:self.wap_limit] if self.wap_limit else items
-            state = {"share": {"fileList": shown, "shareInfo": {**meta, "filesTotal": len(items)}}}
+            state = {"share": {"fileList": shown, "shareInfo": {**meta, "sign": self.wap_sign, "filesTotal": len(items)}}}
             return httpx.Response(200, text=f"<html><script>window.__INITIAL_STATE__={json.dumps(state)};</script></html>")
+        if path == "/api/shorturlinfo" and self.info:
+            return httpx.Response(200, json={"errno": 0, "list": self._entries("/pack")[:2], "randsk": self.randsk,
+                                             "title": "pack", **meta})
+        if path in ("/s/1AbCdEf12345", "/") and req.method == "GET" and (self.need_token or self.need_jar):
+            return httpx.Response(200, text="x fn%28a%29 window.jsToken = 'TOK123'; ",
+                                  headers={"set-cookie": "browserid=B1; Path=/; Domain=terabox.com"})
         if path == "/share/list":
+            if self.need_jar and not all(c in (req.headers.get("cookie") or "") for c in ("browserid=B1", "ndus=")):
+                return httpx.Response(200, json={"errno": 4000020})
+            if self.need_token and q.get("jsToken") != "TOK123":
+                return httpx.Response(200, json={"errno": 4000020})
+            if "sign" in q and q["sign"] != "SIGN":
+                return httpx.Response(200, json={"errno": 4000020})
+            if self.strict_list and not all(k in q for k in ("shareid", "uk", "sign", "timestamp", "order")):
+                return httpx.Response(200, json={"errno": 2})
             directory = q.get("dir")
+            if directory == "/" and q.get("root") == "1":
+                directory = None              # the signed call names the root "/"
             items = self._entries(directory if directory else "/pack")
             if "dir" not in q and "root" not in q:
                 return httpx.Response(200, json={"errno": 2})
@@ -139,6 +166,8 @@ class FakeTerabox:
             if not self.sharedownload:
                 return httpx.Response(200, json={"errno": 31045})
             body = parse_qs(req.content.decode())
+            if "extra" in body:
+                self.sekeys.append(json.loads(body["extra"][0]).get("sekey", ""))
             fs_id = body["fs_ids"][0].strip("[]") if "fs_ids" in body else body["fid_list"][0].strip("[]")
             return httpx.Response(200, json={"errno": 0, "list": [{"dlink": f"https://d.terabox.com/dl/{fs_id}"}]})
         if req.url.host == "d.terabox.com" and path.startswith("/dl/"):
@@ -257,3 +286,84 @@ def test_an_unsupported_link_is_one_failure_without_a_request(tmp_path):
     fake = FakeTerabox({})
     assert _run(fake, "https://www.terabox.com/login", tmp_path) == (0, 0, 1)
     assert fake.seen == []
+
+
+# -- the signed listing (Terabox-DL's method) -----------------------------------------------------
+
+def test_js_token_is_found_in_every_format():
+    E = terabox.extract_js_token
+    assert E("`function%20fn%28a%29%7Bwindow.jsToken%20%3D%20a%7D%3Bfn%28%22ABC123def%22%29`") == "ABC123def"
+    assert E('window.jsToken = "tok-en_1.2";') == "tok-en_1.2"
+    assert E('{"jsToken": "xyz789"}') == "xyz789"
+    assert E('fn("0123456789abcdefXYZ")') == "0123456789abcdefXYZ"
+    assert E("<html></html>") is None
+
+
+def test_every_folder_is_listed_page_by_page_with_the_signed_call(tmp_path, monkeypatch):
+    # a folder of 25 files and a nested one: only the signed /share/list (shareid, uk, sign, timestamp,
+    # order=name) answers, so a lazy / unsigned listing would lose files
+    monkeypatch.setattr(terabox, "PAGE_SIZE", 10)
+    files = {str(i): (f"/pack/Big/f{i:03}.zip", b"x") for i in range(1, 26)}
+    files["100"] = ("/pack/Big/Deep/Deeper/z.zip", b"Z")
+    fake = FakeTerabox(files, info=True, strict_list=True, randsk="RS")
+    assert _run(fake, SHARE, tmp_path) == (26, 0, 0)
+    assert len(list(tmp_path.joinpath("Big").glob("*.zip"))) == 25
+    assert (tmp_path / "Big" / "Deep" / "Deeper" / "z.zip").read_bytes() == b"Z"
+
+
+def test_deeply_nested_folders_are_followed(tmp_path):
+    deep = "/pack/" + "/".join(f"d{i}" for i in range(12)) + "/x.zip"      # deeper than the old limit of 5
+    assert _run(FakeTerabox({"1": (deep, b"X")}, info=True), SHARE, tmp_path) == (1, 0, 0)
+    assert len(list(tmp_path.rglob("x.zip"))) == 1
+
+
+def test_the_randsk_is_sent_as_the_sekey(tmp_path):
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"A")}, info=True, randsk="RS%2Bkey")
+    assert _run(fake, SHARE, tmp_path) == (1, 0, 0)
+    assert fake.sekeys and fake.sekeys[0] == "RS+key"
+
+
+def test_shorturlinfo_is_asked_only_once(tmp_path):
+    fake = FakeTerabox({str(i): (f"/pack/f{i}.zip", b"x") for i in range(1, 6)})        # no shorturlinfo
+    assert _run(fake, SHARE, tmp_path) == (5, 0, 0)
+    assert sum(1 for s in fake.seen if s == "GET www.terabox.com/api/shorturlinfo") == 1
+
+
+def test_a_file_path_is_found_by_walking_down_from_the_root(tmp_path):
+    # the share page cannot render folders, and the link spells a folder in another case: the parent
+    # cannot be listed directly, so the file is looked for level by level from the root
+    files = {"1": ("/pack/Cards/Alucid/I.R.I.S.png", b"IRIS"), "2": ("/pack/Cards/Alucid/other.png", b"O"),
+             "3": ("/pack/Cards/x.png", b"X")}
+    fake = FakeTerabox(files, info=True, wap_path=False)
+    history = {}
+    assert _run(fake, SHARE + "?path=%2Fpack%2Fcards%2FAlucid%2FI.R.I.S.png", tmp_path, history) == (1, 0, 0)
+    assert [p.name for p in tmp_path.rglob("*") if p.is_file()] == ["I.R.I.S.png"]
+    assert list(history) == ["terabox://AbCdEf12345/1"]
+
+
+def test_a_folder_path_is_found_by_walking_down_too(tmp_path):
+    files = {"1": ("/pack/Cards/Alucid/a.png", b"A"), "2": ("/pack/Cards/b.png", b"B")}
+    fake = FakeTerabox(files, info=True, wap_path=False)
+    assert _run(fake, SHARE + "?path=%2Fpack%2Fcards%2FAlucid", tmp_path) == (1, 0, 0)
+    assert (tmp_path / "a.png").exists() and not (tmp_path / "b.png").exists()
+
+
+def test_a_list_that_wants_the_js_token_gets_one(tmp_path):
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"A"), "2": ("/pack/Sub/b.zip", b"B")}, info=True, need_token=True)
+    assert _run(fake, SHARE, tmp_path) == (2, 0, 0)
+
+
+def test_shorturlinfos_sign_wins_over_the_share_pages(tmp_path):
+    # the share page shows a sign the folder listing refuses (errno 4000020); shorturlinfo's one works
+    files = {"1": ("/pack/Cards/Alucid/I.R.I.S.png", b"IRIS"), "2": ("/pack/Cards/x.png", b"X")}
+    fake = FakeTerabox(files, info=True, wap_path=False, wap_sign="WAPSIGN", strict_list=True)
+    assert _run(fake, SHARE + "?path=%2Fpack%2FCards%2FAlucid%2FI.R.I.S.png", tmp_path) == (1, 0, 0)
+    assert (tmp_path / "I.R.I.S.png").read_bytes() == b"IRIS"
+
+
+def test_the_listing_sends_the_cookies_the_share_page_set_besides_ndus(tmp_path):
+    # TeraBox refuses a folder listing (errno 4000020) that lacks the cookie its share page set
+    files = {"1": ("/pack/a.zip", b"A"), "2": ("/pack/Sub/b.zip", b"B")}
+    fake = FakeTerabox(files, info=True, strict_list=True, need_jar=True, wap_path=False)
+    assert _run(fake, SHARE, tmp_path, session="AbCdEf0123456789xyz") == (2, 0, 0)
+    assert (tmp_path / "Sub" / "b.zip").read_bytes() == b"B"
