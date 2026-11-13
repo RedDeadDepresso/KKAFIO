@@ -23,9 +23,9 @@ from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import safe_filename
-from kkafio.services.content_sources.transfer import download_files
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import safe_filename
+from kkafio.services.content_sources.shared.transfer import download_files
 
 DROPBOX_HOSTS = ("dropbox.com", "dropboxusercontent.com")
 

@@ -6,9 +6,9 @@ from pathlib import Path
 import httpx
 import pytest
 
-from kkafio.services.content_sources import catbox, history as history_store
+from kkafio.services.content_sources import catbox
 
-
+from kkafio.services.content_sources.shared import history as history_store
 @pytest.fixture(autouse=True)
 def _no_real_history(monkeypatch):
     monkeypatch.setattr(history_store, "save_history", lambda h: None)
@@ -101,7 +101,7 @@ def test_already_downloaded_files_are_skipped(tmp_path):
 
 
 def test_one_missing_file_in_an_album_counts_as_a_failure(tmp_path, monkeypatch):
-    monkeypatch.setattr("kkafio.services.content_sources.transfer.retry_delay", lambda exc, attempt: 0.0)
+    monkeypatch.setattr("kkafio.services.content_sources.shared.transfer.retry_delay", lambda exc, attempt: 0.0)
     page = '<a href="https://files.catbox.moe/ok.png">1</a><a href="https://files.catbox.moe/gone.png">2</a>'
     client = _client({"ok.png": b"fine"}, {"alb": page}, [])
     assert _run(client, "https://catbox.moe/c/alb", tmp_path) == (1, 0, 1)

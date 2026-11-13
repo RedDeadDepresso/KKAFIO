@@ -32,8 +32,8 @@ from urllib.parse import parse_qsl, unquote, urlencode, urlparse
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import RETRY_ATTEMPTS, get_with_retry, is_transient, retry_delay, safe_filename
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import RETRY_ATTEMPTS, get_with_retry, is_transient, retry_delay, safe_filename
 
 GDRIVE_ROOT      = "https://drive.google.com"
 GDRIVE_DOWNLOAD  = "https://drive.usercontent.google.com/download"

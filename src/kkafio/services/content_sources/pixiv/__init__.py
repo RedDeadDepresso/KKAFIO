@@ -16,16 +16,16 @@ from pathlib import Path
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse
 
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources import transfer
-from kkafio.services.content_sources.card_size import kk_size_matches
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared import transfer
+from kkafio.services.content_sources.shared.card_size import kk_size_matches
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
 from kkafio.services.content_sources.pixeldrain import download_pixeldrain, is_pixeldrain_url
 from kkafio.services.content_sources.gofile import download_gofile, is_gofile_url
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
-from kkafio.services.content_sources.net import get_with_retry
+from kkafio.services.content_sources.shared.net import get_with_retry
 from kkafio.services.content_sources.pawchive.parsing import pawchive_content_links
 
 PIXIV_URL     = "https://www.pixiv.net"

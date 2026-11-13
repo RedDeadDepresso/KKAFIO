@@ -6,7 +6,8 @@ import time
 from pathlib import Path
 
 from kkafio.tasks import download_contents as dc
-from kkafio.services.content_sources import card_size, gdrive, gofile, history as history_store, mega, net, pixiv, transfer
+from kkafio.services.content_sources import gdrive, gofile, mega, pixiv
+from kkafio.services.content_sources.shared import card_size, history as history_store, net, transfer
 from kkafio.services.content_sources.pawchive import access as pw_access, downloader as pw_downloader, parsing as pw_parsing, posts as pw_posts
 
 
@@ -1988,7 +1989,7 @@ def test_pawchive_session_cleaning_and_shape():
 
 def test_pawchive_session_get_or_prompt(monkeypatch):
     import dataclasses
-    from kkafio.services.content_sources import session_flow
+    from kkafio.services.content_sources.shared import session_flow
     from kkafio.services.content_sources.pawchive import session as ps
     tok, new = "eyJ" + "a" * 30, "eyJ" + "n" * 30
     saved: list[str] = []
@@ -2057,7 +2058,7 @@ def test_session_store_roundtrip_and_failures(tmp_path):
 
 def test_session_flow_without_site_check_and_with_env(monkeypatch):
     import dataclasses
-    from kkafio.services.content_sources import session_flow
+    from kkafio.services.content_sources.shared import session_flow
     from kkafio.services.content_sources.pixiv import session as px
     good, other = "12345678_" + "a" * 20, "87654321_" + "b" * 20
     saved: list[str] = []
@@ -2091,7 +2092,7 @@ def test_session_flow_without_site_check_and_with_env(monkeypatch):
 
 def test_session_flow_kkd_site_check(monkeypatch):
     import dataclasses
-    from kkafio.services.content_sources import session_flow
+    from kkafio.services.content_sources.shared import session_flow
     from kkafio.services.content_sources.koikatsucards import session as kk
     saved: list[str] = []
     state = {"stored": "old", "valid": {"old": False, "new": True}, "paste": "  new "}

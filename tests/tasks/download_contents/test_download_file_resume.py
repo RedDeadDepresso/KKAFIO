@@ -6,8 +6,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from kkafio.services.content_sources import transfer
-
+from kkafio.services.content_sources.shared import transfer
 CONTENT = bytes((i * 7) % 251 for i in range(50000))
 URL = "https://files.example.com/dl/card.png"
 

@@ -8,9 +8,9 @@ from pathlib import Path
 import httpx
 import pytest
 
-from kkafio.services.content_sources import dropbox, history as history_store
+from kkafio.services.content_sources import dropbox
 
-
+from kkafio.services.content_sources.shared import history as history_store
 @pytest.fixture(autouse=True)
 def _no_real_history(monkeypatch):
     monkeypatch.setattr(history_store, "save_history", lambda h: None)
@@ -90,7 +90,7 @@ def test_already_downloaded_files_are_skipped_without_a_request(tmp_path):
 
 
 def test_a_dead_link_is_one_failure(tmp_path, monkeypatch):
-    monkeypatch.setattr("kkafio.services.content_sources.transfer.retry_delay", lambda exc, attempt: 0.0)
+    monkeypatch.setattr("kkafio.services.content_sources.shared.transfer.retry_delay", lambda exc, attempt: 0.0)
     assert _run(_client({}, []), FILE_NEW, tmp_path) == (0, 0, 1)
 
 

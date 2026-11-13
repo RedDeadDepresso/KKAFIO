@@ -22,7 +22,7 @@ so a machine without a display toolkit still runs the rest.
 | `tests/dialogs/` | Tests of the dialogs, including the Organize Library window in `tests/dialogs/library/`. |
 | `tests/characterization/` | Tests that replay the recordings in `tests/golden/` (see below). |
 | `tests/golden/` | The recordings, as JSON. |
-| `tests/helpers/` | `card_factory.py`, `cli_harness.py`, `cli_process.py`, `generate_goldens.py`, `index_cache.py`, `pure_corpus.py`. |
+| `tests/helpers/` | `agv_index.py`, `card_factory.py`, `chara_fakes.py`, `cli_harness.py`, `cli_process.py`, `generate_goldens.py`, `index_cache.py`, `pure_corpus.py`. |
 | `tests/data/` | Static fixture files. |
 
 ## The sandbox

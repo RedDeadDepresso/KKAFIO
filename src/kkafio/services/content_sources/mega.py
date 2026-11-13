@@ -34,8 +34,8 @@ from urllib.parse import quote, urlparse
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import RETRY_ATTEMPTS, is_transient, retry_delay, safe_filename
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import RETRY_ATTEMPTS, is_transient, retry_delay, safe_filename
 
 MEGA_API            = "https://g.api.mega.co.nz/cs"
 MEGA_ROOT           = "https://mega.nz"

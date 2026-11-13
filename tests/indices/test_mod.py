@@ -182,7 +182,7 @@ def test_an_existing_copy_of_the_mod_is_skipped(tmp_path, monkeypatch):
 
 
 def test_the_download_history_is_neither_used_nor_saved(tmp_path, monkeypatch):
-    from kkafio.services.content_sources import history as history_store
+    from kkafio.services.content_sources.shared import history as history_store
     saves, saved = [], []
     original = history_store.save_history
 

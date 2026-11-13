@@ -11,7 +11,7 @@ import asyncio
 import time
 
 from kkafio.core.logger import logger
-from kkafio.services.content_sources.net import get_with_retry, is_rate_limited, retry_after_seconds
+from kkafio.services.content_sources.shared.net import get_with_retry, is_rate_limited, retry_after_seconds
 from kkafio.services.content_sources.pawchive.parsing import PAWCHIVE_COOKIE_DOMAIN
 
 PAWCHIVE_PARALLEL  = 4                          # most files downloaded at once (the ceiling)

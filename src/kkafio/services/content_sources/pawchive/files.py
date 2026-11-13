@@ -8,8 +8,8 @@ from pathlib import Path
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
-from kkafio.services.content_sources.card_size import kk_size_matches
-from kkafio.services.content_sources.net import RETRY_ATTEMPTS, is_rate_limited, is_transient, retry_after_seconds, retry_delay
+from kkafio.services.content_sources.shared.card_size import kk_size_matches
+from kkafio.services.content_sources.shared.net import RETRY_ATTEMPTS, is_rate_limited, is_transient, retry_after_seconds, retry_delay
 from kkafio.services.content_sources.pawchive.access import PAWCHIVE_MAX_RATE_LIMITED, PawchiveThrottle
 from kkafio.services.content_sources.pawchive.parsing import pawchive_item_key
 

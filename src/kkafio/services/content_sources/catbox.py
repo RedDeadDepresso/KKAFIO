@@ -18,9 +18,9 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import get_with_retry
-from kkafio.services.content_sources.transfer import download_files
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import get_with_retry
+from kkafio.services.content_sources.shared.transfer import download_files
 
 CATBOX_ROOT        = "https://catbox.moe"
 CATBOX_FILE_HOSTS  = ("files.catbox.moe", "litter.catbox.moe")

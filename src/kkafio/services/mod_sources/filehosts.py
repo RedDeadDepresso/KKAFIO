@@ -22,7 +22,7 @@ from pathlib import Path
 from kkafio.cards.mods.zipmods import guid_from_zipmod
 from kkafio.core import progress
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
+from kkafio.services.content_sources.shared import history as history_store
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.dropbox import download_dropbox, is_dropbox_url
 from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_url

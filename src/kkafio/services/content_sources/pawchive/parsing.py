@@ -18,7 +18,7 @@ from kkafio.services.content_sources.pixeldrain import is_pixeldrain_url, parse_
 from kkafio.services.content_sources.gdrive import is_gdrive_url, parse_gdrive_url
 from kkafio.services.content_sources.gofile import is_gofile_url, parse_gofile_url
 from kkafio.services.content_sources.mega import is_mega_url
-from kkafio.services.content_sources.net import safe_filename
+from kkafio.services.content_sources.shared.net import safe_filename
 
 PAWCHIVE_URL       = "https://pawchive.pw"
 PAWCHIVE_API_URL   = f"{PAWCHIVE_URL}/api/v1"

@@ -33,8 +33,8 @@ from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.core.paths import SESSIONS_DIR
 from kkafio.core.session_store import SessionStore
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import RETRY_ATTEMPTS, get_with_retry, is_transient, resolve_filename, retry_delay, safe_filename
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import RETRY_ATTEMPTS, get_with_retry, is_transient, resolve_filename, retry_delay, safe_filename
 
 GOFILE_API         = "https://api.gofile.io"
 GOFILE_DOMAIN      = ".gofile.io"

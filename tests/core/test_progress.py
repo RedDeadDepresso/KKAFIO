@@ -48,8 +48,7 @@ def test_cancel_runs_the_callback_once():
 
 
 def test_download_file_reports_a_row_and_the_outcome(tmp_path):
-    from kkafio.services.content_sources import transfer
-
+    from kkafio.services.content_sources.shared import transfer
     body = b"x" * 200_000
 
     def handler(request: httpx.Request) -> httpx.Response:

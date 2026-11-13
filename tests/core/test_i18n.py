@@ -29,7 +29,7 @@ def _fields(template: str) -> set[str]:
 
 
 def _dialog_keys_in_source() -> set[str]:
-    """The `dialog_key="..."` values of the session specs (see services/content_sources/session_flow.py)."""
+    """The `dialog_key="..."` values of the session specs (see services/content_sources/shared/session_flow.py)."""
     keys: set[str] = set()
     for path in SRC.rglob("*.py"):
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):

@@ -24,7 +24,7 @@ import re
 
 from kkafio.core.paths import SESSIONS_DIR
 from kkafio.core.session_store import SessionStore
-from kkafio.services.content_sources.session_flow import SessionSpec, obtain_session
+from kkafio.services.content_sources.shared.session_flow import SessionSpec, obtain_session
 
 PIXIV_LOGIN_URL = "https://accounts.pixiv.net/login"
 ENV_VAR         = "PIXIV_PHPSESSID"

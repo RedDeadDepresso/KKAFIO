@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import MAX_CONSECUTIVE_BAD_PAGES
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import MAX_CONSECUTIVE_BAD_PAGES
 from kkafio.services.content_sources.pawchive.access import PawchiveAuth, PawchiveThrottle, pawchive_get
 from kkafio.services.content_sources.pawchive.parsing import PAWCHIVE_EXTENSIONS, parse_pawchive_url, pawchive_api_url, pawchive_posts_from, pawchive_url_page
 from kkafio.services.content_sources.pawchive.posts import PawchiveRun, pawchive_process_posts

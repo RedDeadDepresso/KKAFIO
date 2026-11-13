@@ -30,7 +30,7 @@ share page). The ``randsk`` also goes into the ``sharedownload`` request as its 
 anonymous calls stay as fallbacks.
 
 Most original files need a TeraBox login: the ``ndus`` cookie is asked for (and stored) like the pixiv
-PHPSESSID -- see ``terabox_session``. Without one, what the anonymous resolvers cannot reach fails.
+PHPSESSID -- see ``terabox.session``. Without one, what the anonymous resolvers cannot reach fails.
 A folder's subfolders become subfolders of the output directory, like Gofile, MediaFire and Mega.
 """
 
@@ -46,9 +46,9 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import MAX_CONNECTIONS, safe_filename
-from kkafio.services.content_sources.transfer import download_file
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.shared.net import MAX_CONNECTIONS, safe_filename
+from kkafio.services.content_sources.shared.transfer import download_file
 
 APP_ID = "250528"
 # TeraBox's own desktop client: its download CDN is happiest with it, and it sends no Referer.

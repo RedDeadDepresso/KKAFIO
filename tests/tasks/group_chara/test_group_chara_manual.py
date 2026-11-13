@@ -21,8 +21,8 @@ from kkafio.dialogs.library import (
 from kkafio.cards.chara.chara_key import CharaInfo
 from kkafio.tasks import group_chara
 
-from test_agv import _index
-from test_chara_info_cache import _cards, _file, fakes
+from agv_index import make_index
+from chara_fakes import fake_cards, write_cards, write_file
 
 
 def _info(card):
@@ -36,7 +36,7 @@ def _key(info):
 
 @contextmanager
 def manual_fakes():
-    with fakes(), mock.patch.object(group_chara, "chara_info", _info), \
+    with fake_cards(), mock.patch.object(group_chara, "chara_info", _info), \
             mock.patch.object(group_chara, "key_of", _key):
         yield
 
@@ -44,7 +44,7 @@ def manual_fakes():
 @pytest.fixture
 def agv_file(tmp_path):
     p = tmp_path / "agv.json"
-    p.write_text(json.dumps(_index(), ensure_ascii=False), encoding="utf-8")
+    p.write_text(json.dumps(make_index(), ensure_ascii=False), encoding="utf-8")
     agv.set_index_path(p)
     yield
     agv.set_index_path(None)
@@ -155,7 +155,7 @@ def test_a_typed_series_is_not_snapped_to_the_index_title(agv_file, tmp_path):
 
 
 def test_assign_with_an_index_language_keeps_the_typed_name(agv_file, tmp_path):
-    _cards(tmp_path, a="Rin")
+    write_cards(tmp_path, a="Rin")
     with manual_fakes():
         cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         items = gal.scan_manual_items([tmp_path], False, cache)
@@ -191,7 +191,7 @@ def test_suggest_is_capped():
 
 
 def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
-    cards = _cards(tmp_path, a="Rin", b="Saber")
+    cards = write_cards(tmp_path, a="Rin", b="Saber")
     with manual_fakes():
         cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         items = gal.scan_manual_items([tmp_path], False, cache)
@@ -214,8 +214,8 @@ def test_assign_moves_into_a_new_series_folder_and_keeps_the_cache(tmp_path):
 
 
 def test_assign_collision_same_folder_and_unusable_names(tmp_path):
-    _cards(tmp_path, a="Rin")
-    _file(tmp_path / "Fate" / "a.png", b"CHARA|Someone")                  # name already taken there
+    write_cards(tmp_path, a="Rin")
+    write_file(tmp_path / "Fate" / "a.png", b"CHARA|Someone")                  # name already taken there
     with manual_fakes():
         cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         items = gal.scan_manual_items([tmp_path], True, cache)
@@ -233,7 +233,7 @@ def test_assign_collision_same_folder_and_unusable_names(tmp_path):
 
 
 def test_assign_blank_moves_the_card_up_out_of_its_folder(tmp_path):
-    _cards(tmp_path, a="Rin")
+    write_cards(tmp_path, a="Rin")
     with manual_fakes():
         cache = CharaInfoCache([tmp_path], True, "LIBRARY")
         rin = next(i for i in gal.scan_manual_items([tmp_path], True, cache) if i.alias == "Rin")
@@ -248,7 +248,7 @@ def test_assign_blank_moves_the_card_up_out_of_its_folder(tmp_path):
 
 
 def test_assign_reports_a_failed_move(tmp_path):
-    _cards(tmp_path, a="Rin")
+    write_cards(tmp_path, a="Rin")
     with manual_fakes():
         cache = CharaInfoCache([tmp_path], False)
         rin = gal.scan_manual_items([tmp_path], False, cache)[0]
@@ -263,12 +263,12 @@ def test_assign_reports_a_failed_move(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_scan_series_from_folders_and_skipped_ones(tmp_path):
-    _cards(tmp_path, top="Rin")
-    _file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
-    _file(tmp_path / "Fate" / "deeper" / "y.png", b"CHARA|Archer")
-    _file(tmp_path / "_duplicates_" / "z.png", b"CHARA|Dup")
-    _file(tmp_path / ".hidden" / "w.png", b"CHARA|Hidden")
-    _file(tmp_path / "pic.png", b"just a picture")
+    write_cards(tmp_path, top="Rin")
+    write_file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
+    write_file(tmp_path / "Fate" / "deeper" / "y.png", b"CHARA|Archer")
+    write_file(tmp_path / "_duplicates_" / "z.png", b"CHARA|Dup")
+    write_file(tmp_path / ".hidden" / "w.png", b"CHARA|Hidden")
+    write_file(tmp_path / "pic.png", b"just a picture")
     with manual_fakes():
         cache = CharaInfoCache([tmp_path], False)
         top_only = gal.scan_manual_items([tmp_path], False, cache)
@@ -283,7 +283,7 @@ def test_scan_series_from_folders_and_skipped_ones(tmp_path):
 
 
 def test_scan_shows_the_filename_and_keeps_the_character_name_searchable(tmp_path):
-    _file(tmp_path / "a.png", b"CHARA|x")
+    write_file(tmp_path / "a.png", b"CHARA|x")
     with mock.patch.object(group_chara, "get_card_type", lambda raw: "KK"), \
          mock.patch.object(group_chara, "KoikatuCharaData", mock.MagicMock()), \
          mock.patch.object(group_chara, "chara_info", return_value=CharaInfo("", "", "Nick", 0, None, (None, None))), \
@@ -325,7 +325,7 @@ def test_run_always_runs_the_llm_workflow(tmp_path):
 
 
 def test_library_tab_opens_with_the_cards_and_saves_the_cache(tmp_path):
-    _cards(tmp_path, a="Rin")
+    write_cards(tmp_path, a="Rin")
     with manual_fakes(), mock.patch.object(group_chara.hint_language, "resolve", return_value=None):
         tab = gal.chara_library_tab([tmp_path], None, True)
         try:
@@ -358,8 +358,8 @@ def test_round_corners_and_polygon_points():
 
 
 def test_library_always_includes_subfolders(tmp_path):
-    _cards(tmp_path, top="Rin")
-    _file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
+    write_cards(tmp_path, top="Rin")
+    write_file(tmp_path / "Fate" / "x.png", b"CHARA|Saber")
     with manual_fakes():
         tab = gal.chara_library_tab([tmp_path], None, True)      # the Include Subfolders option is not involved
         tab.finish()

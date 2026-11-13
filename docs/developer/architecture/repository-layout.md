@@ -103,13 +103,14 @@ KKAFIO-dev/
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
-│   │   │   ├── net.py / history.py / transfer.py   # Shared: retry + HTTP client, download history, streaming downloads and paged listings
-│   │   │   ├── card_size.py         # 320x180 / 252x352-ratio test that identifies KK cards and scenes
-│   │   │   ├── bepis.py  gofile.py  catbox.py  mediafire.py  pixeldrain.py  terabox.py  dropbox.py  mega.py  gdrive.py   # One module per site
-│   │   │   ├── terabox_session.py   # TeraBox `ndus` cookie (stored / env / ask), via session_flow.py
-│   │   │   ├── session_flow.py      # Shared "stored / env / ask for the cookie, validate, save" flow for the session.py files below
+│   │   │   ├── shared/              # Plumbing every source builds on
+│   │   │   │   ├── net.py / history.py / transfer.py   # Retry + HTTP client, download history, streaming downloads and paged listings
+│   │   │   │   ├── card_size.py     # 320x180 / 252x352-ratio test that identifies KK cards and scenes
+│   │   │   │   └── session_flow.py  # "Stored / env / ask for the cookie, validate, save" flow for the session.py files below
+│   │   │   ├── bepis.py  gofile.py  catbox.py  mediafire.py  pixeldrain.py  dropbox.py  mega.py  gdrive.py   # One module per site
 │   │   │   ├── koikatsucards/       # koikatsucards.com: downloader (__init__) + session.py (kkd_session cookie)
 │   │   │   ├── pixiv/               # pixiv.net: downloader (__init__) + session.py (PHPSESSID cookie)
+│   │   │   ├── terabox/             # terabox.com: downloader (__init__) + session.py (`ndus` cookie, via shared/session_flow.py)
 │   │   │   └── pawchive/            # parsing (links, posts) · access (throttle, session use) · files · posts · downloader · session.py (session cookie, t1 files only)
 │   │   └── mod_sources/             # Where Download Missing Mods fetches mods from
 │   │       ├── betterrepack.py      # BetterRepack downloads + the shared HTTP client for Download Missing Mods

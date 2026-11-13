@@ -8,13 +8,16 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 
-from kkafio.services.content_sources import history as history_store, terabox, terabox_session
+from kkafio.services.content_sources import terabox
+
+from kkafio.services.content_sources.shared import history as history_store
+from kkafio.services.content_sources.terabox import session as terabox_session
 
 
 @pytest.fixture(autouse=True)
 def _no_real_history(monkeypatch):
     monkeypatch.setattr(history_store, "save_history", lambda h: None)
-    monkeypatch.setattr("kkafio.services.content_sources.transfer.retry_delay", lambda exc, attempt: 0.0)
+    monkeypatch.setattr("kkafio.services.content_sources.shared.transfer.retry_delay", lambda exc, attempt: 0.0)
 
 
 # -- links -----------------------------------------------------------------------------------------
@@ -391,7 +394,7 @@ def test_an_expired_link_is_replaced_and_the_download_finishes(tmp_path):
 
 
 def test_a_kept_part_of_the_same_file_is_continued_with_a_new_link(tmp_path):
-    from kkafio.services.content_sources import transfer
+    from kkafio.services.content_sources.shared import transfer
     link = terabox.parse_terabox_url(SHARE)
     part = transfer.part_path(tmp_path, "a.zip", terabox.history_key(link, terabox.ShareFile("1", "a.zip")))
     part.write_bytes(b"AA")

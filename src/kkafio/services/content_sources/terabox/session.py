@@ -1,5 +1,5 @@
 """
-terabox_session.py — Manage the TeraBox ``ndus`` login cookie.
+terabox/session.py — Manage the TeraBox ``ndus`` login cookie.
 
 The session is stored in %APPDATA%/KKAFIO/sessions/terabox.json:
   {
@@ -22,7 +22,7 @@ from __future__ import annotations
 import re
 
 from kkafio.core.paths import SESSIONS_DIR
-from kkafio.services.content_sources.session_flow import SessionSpec, obtain_session
+from kkafio.services.content_sources.shared.session_flow import SessionSpec, obtain_session
 from kkafio.core.session_store import SessionStore
 
 TERABOX_LOGIN_URL = "https://www.terabox.com/login"

@@ -10,8 +10,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import transfer
-from kkafio.services.content_sources.net import get_with_retry, set_page
+from kkafio.services.content_sources.shared import transfer
+from kkafio.services.content_sources.shared.net import get_with_retry, set_page
 
 KOIKATSU_URL  = "https://koikatsucards.com"
 KK_SCRAPE_CONCURRENCY = 5      # simultaneous koikatsucards card-page fetches

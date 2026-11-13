@@ -7,9 +7,9 @@ from pathlib import Path
 import httpx
 import pytest
 
-from kkafio.services.content_sources import history as history_store, mediafire
+from kkafio.services.content_sources import mediafire
 
-
+from kkafio.services.content_sources.shared import history as history_store
 @pytest.fixture(autouse=True)
 def _no_real_history(monkeypatch):
     monkeypatch.setattr(history_store, "save_history", lambda h: None)

@@ -7,7 +7,7 @@ sharing the pawchive state, counting results and checkpointing the history.
 
 import pytest
 
-from kkafio.services.content_sources import history as history_store
+from kkafio.services.content_sources.shared import history as history_store
 from kkafio.tasks import base_task as bt
 from kkafio.tasks import download_contents as dc
 

@@ -6,8 +6,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from kkafio.core.logger import logger
-from kkafio.services.content_sources import transfer
-from kkafio.services.content_sources.net import get_with_retry, set_page
+from kkafio.services.content_sources.shared import transfer
+from kkafio.services.content_sources.shared.net import get_with_retry, set_page
 
 BEPIS_URL     = "https://db.bepis.moe"
 BEPIS_API_URL = "https://db.bepis.moe/api/frontend/search?"

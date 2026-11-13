@@ -4,62 +4,47 @@ and the number of cards actually parsed can be counted)."""
 
 import json
 import os
-from contextlib import ExitStack, contextmanager
-from pathlib import Path
 from unittest import mock
 
+from chara_fakes import FakeCard, fake_cards, make_info, write_cards, write_file
 from kkafio.cards.chara import chara_info_cache as ckc
 from kkafio.cards.chara.chara_key import CharaInfo
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara.chara_info_cache import CACHE_FILE, CharaInfoCache
-from kkafio.cards.classifier import CHARA_CARD_TYPES
 from kkafio.tasks import group_chara, rename_chara
-
-KK = CHARA_CARD_TYPES[0]
 
 
 # ---------------------------------------------------------------------------
 # the cache class
 # ---------------------------------------------------------------------------
 
-def _file(path: Path, data: bytes = b"x") -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
-    return path
-
-
-def _info(last: str = "Rin", **fields) -> CharaInfo:
-    values = dict(last=last, first="", nick="", personality=0, hair=None, birth=(None, None))
-    return CharaInfo(**{**values, **fields})
-
-
 def test_lookup_hits_only_while_the_file_is_unchanged(tmp_path):
-    a = _file(tmp_path / "a.png", b"one")
+    a = write_file(tmp_path / "a.png", b"one")
     cache = CharaInfoCache([tmp_path])
     assert cache.lookup(a) == (False, None)
-    cache.put(a, file_fp(a), _info("A"))
-    assert cache.lookup(a) == (True, _info("A"))
+    cache.put(a, file_fp(a), make_info("A"))
+    assert cache.lookup(a) == (True, make_info("A"))
     a.write_bytes(b"changed, and a different size")
     assert cache.lookup(a) == (False, None)                 # fingerprint no longer matches
     assert (cache.hits, cache.misses) == (1, 2)
 
 
 def test_a_non_chara_png_is_cached_as_none(tmp_path):
-    p = _file(tmp_path / "p.png")
+    p = write_file(tmp_path / "p.png")
     cache = CharaInfoCache([tmp_path])
     cache.put(p, file_fp(p), None)
     assert cache.lookup(p) == (True, None)                  # a hit, whose key is "not a chara card"
 
 
 def test_moved_entry_follows_the_file_and_changed_file_is_dropped(tmp_path):
-    a = _file(tmp_path / "a.png", b"data")
+    a = write_file(tmp_path / "a.png", b"data")
     cache = CharaInfoCache([tmp_path])
-    cache.put(a, file_fp(a), _info("K"))
+    cache.put(a, file_fp(a), make_info("K"))
     b = tmp_path / "Series" / "a.png"
     b.parent.mkdir()
     os.replace(a, b)
     cache.moved(a, b)
-    assert cache.lookup(b) == (True, _info("K")) and cache.lookup(a) == (False, None)
+    assert cache.lookup(b) == (True, make_info("K")) and cache.lookup(a) == (False, None)
 
     c = tmp_path / "c.png"
     os.replace(b, c)
@@ -69,23 +54,23 @@ def test_moved_entry_follows_the_file_and_changed_file_is_dropped(tmp_path):
 
 
 def test_updated_records_the_new_fields_and_fingerprint(tmp_path):
-    a = _file(tmp_path / "a.png", b"old")
+    a = write_file(tmp_path / "a.png", b"old")
     cache = CharaInfoCache([tmp_path])
-    cache.put(a, file_fp(a), _info("Old"))
+    cache.put(a, file_fp(a), make_info("Old"))
     a.write_bytes(b"rewritten metadata")
-    cache.updated(a, _info("New"))
-    assert cache.lookup(a) == (True, _info("New"))
+    cache.updated(a, make_info("New"))
+    assert cache.lookup(a) == (True, make_info("New"))
     cache.forget(a)
     assert cache.lookup(a) == (False, None)
 
 
 def test_save_and_reload_round_trip_per_root_and_drop_missing_files(tmp_path):
     female, male = tmp_path / "female", tmp_path / "male"
-    f1, f2 = _file(female / "a.png", b"1"), _file(female / "sub" / "b.png", b"22")
-    m1, gone = _file(male / "m.png", b"333"), _file(male / "gone.png", b"4")
+    f1, f2 = write_file(female / "a.png", b"1"), write_file(female / "sub" / "b.png", b"22")
+    m1, gone = write_file(male / "m.png", b"333"), write_file(male / "gone.png", b"4")
     cache = CharaInfoCache([female, male])
     for p, k in ((f1, "A"), (f2, "B"), (m1, "M"), (gone, "G")):
-        cache.put(p, file_fp(p), _info(k))
+        cache.put(p, file_fp(p), make_info(k))
     gone.unlink()
     cache.save()
     assert (female / CACHE_FILE).exists() and (male / CACHE_FILE).exists()
@@ -93,14 +78,14 @@ def test_save_and_reload_round_trip_per_root_and_drop_missing_files(tmp_path):
     assert set(json.loads((male / CACHE_FILE).read_text())["files"]) == {str(m1)}   # gone.png pruned
 
     again = CharaInfoCache([female, male])
-    assert again.lookup(f2) == (True, _info("B")) and again.lookup(m1) == (True, _info("M"))
+    assert again.lookup(f2) == (True, make_info("B")) and again.lookup(m1) == (True, make_info("M"))
     assert again.lookup(gone) == (False, None)
 
 
 def test_unchanged_cache_is_not_rewritten(tmp_path):
-    a = _file(tmp_path / "a.png")
+    a = write_file(tmp_path / "a.png")
     cache = CharaInfoCache([tmp_path])
-    cache.put(a, file_fp(a), _info("k"))
+    cache.put(a, file_fp(a), make_info("k"))
     cache.save()
     first = (tmp_path / CACHE_FILE).stat().st_mtime_ns
     again = CharaInfoCache([tmp_path])
@@ -110,8 +95,8 @@ def test_unchanged_cache_is_not_rewritten(tmp_path):
 
 
 def test_cache_from_another_version_or_folder_or_garbage_is_ignored(tmp_path):
-    a = _file(tmp_path / "a.png")
-    entry = {str(a): {"fp": file_fp(a), "info": _info("k").to_json()}}
+    a = write_file(tmp_path / "a.png")
+    entry = {str(a): {"fp": file_fp(a), "info": make_info("k").to_json()}}
     cases = {
         "wrong version": {"version": ckc.CACHE_VERSION + 1, "dir": str(tmp_path), "files": entry},
         "other folder":  {"version": ckc.CACHE_VERSION, "dir": str(tmp_path / "elsewhere"), "files": entry},
@@ -124,17 +109,17 @@ def test_cache_from_another_version_or_folder_or_garbage_is_ignored(tmp_path):
     assert CharaInfoCache([tmp_path]).lookup(a) == (False, None)
     (tmp_path / CACHE_FILE).write_text(json.dumps(
         {"version": ckc.CACHE_VERSION, "dir": str(tmp_path), "files": entry}))
-    assert CharaInfoCache([tmp_path]).lookup(a) == (True, _info("k"))     # ...and a good one is used
+    assert CharaInfoCache([tmp_path]).lookup(a) == (True, make_info("k"))     # ...and a good one is used
 
 
 def test_disabled_cache_reads_and_writes_nothing(tmp_path):
-    a = _file(tmp_path / "a.png")
+    a = write_file(tmp_path / "a.png")
     (tmp_path / CACHE_FILE).write_text(json.dumps(
-        {"version": ckc.CACHE_VERSION, "dir": str(tmp_path), "files": {str(a): {"fp": file_fp(a), "info": _info("k").to_json()}}}))
+        {"version": ckc.CACHE_VERSION, "dir": str(tmp_path), "files": {str(a): {"fp": file_fp(a), "info": make_info("k").to_json()}}}))
     before = (tmp_path / CACHE_FILE).read_bytes()
     cache = CharaInfoCache([tmp_path], enabled=False)
     assert cache.lookup(a) == (False, None)
-    cache.put(a, file_fp(a), _info("other")); cache.moved(a, tmp_path / "b.png"); cache.forget(a); cache.save()
+    cache.put(a, file_fp(a), make_info("other")); cache.moved(a, tmp_path / "b.png"); cache.forget(a); cache.save()
     assert (tmp_path / CACHE_FILE).read_bytes() == before                # untouched
 
 
@@ -143,15 +128,15 @@ def test_disabled_cache_reads_and_writes_nothing(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_info_round_trips_through_json_including_missing_values():
-    for info in (_info("Rin", first="Tohsaka", nick="R", personality=7, hair=(255, 0, 0), birth=(9, 28)),
-                 _info("Rin", hair=None, birth=(None, 5)),
-                 _info("", personality=99)):
+    for info in (make_info("Rin", first="Tohsaka", nick="R", personality=7, hair=(255, 0, 0), birth=(9, 28)),
+                 make_info("Rin", hair=None, birth=(None, 5)),
+                 make_info("", personality=99)):
         assert CharaInfo.from_json(json.loads(json.dumps(info.to_json()))) == info
 
 
 def test_an_entry_missing_a_field_or_malformed_is_read_again(tmp_path):
-    a = _file(tmp_path / "a.png")
-    good = _info("Rin", hair=(1, 2, 3), birth=(9, 28)).to_json()
+    a = write_file(tmp_path / "a.png")
+    good = make_info("Rin", hair=(1, 2, 3), birth=(9, 28)).to_json()
     bad = {
         "no birthday (written before it existed)": {k: v for k, v in good.items() if k != "birth"},
         "no hair field": {k: v for k, v in good.items() if k != "hair"},
@@ -166,13 +151,13 @@ def test_an_entry_missing_a_field_or_malformed_is_read_again(tmp_path):
         cache._data[str(a)] = {"fp": file_fp(a), "info": info}
         assert cache.lookup(a) == (False, None), name
     cache._data[str(a)] = {"fp": file_fp(a), "info": good}
-    assert cache.lookup(a) == (True, _info("Rin", hair=(1, 2, 3), birth=(9, 28)))
+    assert cache.lookup(a) == (True, make_info("Rin", hair=(1, 2, 3), birth=(9, 28)))
     cache._data[str(a)] = {"fp": file_fp(a), "key": "an entry from the old key cache"}
     assert cache.lookup(a) == (False, None)
 
 
 def test_the_old_key_cache_file_is_not_read(tmp_path):
-    a = _file(tmp_path / "a.png")
+    a = write_file(tmp_path / "a.png")
     (tmp_path / "kkafio_chara_key_cache.json").write_text(json.dumps(
         {"version": 3, "dir": str(tmp_path), "files": {str(a): {"fp": file_fp(a), "key": "k", "birth": [1, 1]}}}))
     assert CACHE_FILE != "kkafio_chara_key_cache.json"
@@ -183,18 +168,18 @@ def test_key_of_builds_the_key_from_the_raw_fields():
     from kkafio.cards.chara.chara_key import key_of
     from kkafio.cards.chara.hair_color import hair_color_name
     from kkafio.cards.classifier import PERSONALITIES
-    info = _info("Toh|saka", first=" Rin ", nick="", personality=1, hair=(255, 0, 0), birth=(9, 28))
+    info = make_info("Toh|saka", first=" Rin ", nick="", personality=1, hair=(255, 0, 0), birth=(9, 28))
     assert key_of(info) == f"Toh/saka | Rin |  | {PERSONALITIES[1]} | {hair_color_name((255, 0, 0))} hair"
     assert info.last == "Toh|saka"                                       # stored as the card has it
-    assert key_of(_info("X", personality=len(PERSONALITIES) + 5, hair=None)).endswith(
+    assert key_of(make_info("X", personality=len(PERSONALITIES) + 5, hair=None)).endswith(
         f"| {len(PERSONALITIES) + 5} | unknown hair")                    # unknown personality / no hair colour
 
 
 def test_changing_how_keys_are_built_does_not_invalidate_the_cache(tmp_path):
     from kkafio.cards.chara import chara_key
-    a = _file(tmp_path / "a.png")
+    a = write_file(tmp_path / "a.png")
     cache = CharaInfoCache([tmp_path])
-    cache.put(a, file_fp(a), _info("Rin", hair=(255, 0, 0)))
+    cache.put(a, file_fp(a), make_info("Rin", hair=(255, 0, 0)))
     cache.save()
     _hit, info = CharaInfoCache([tmp_path]).lookup(a)
     before = chara_key.key_of(info)
@@ -230,65 +215,11 @@ def test_chara_info_reads_raw_values_off_a_card():
 # both tasks, end to end, with stand-in cards
 # ---------------------------------------------------------------------------
 
-class FakeCard:
-    """Stands in for KoikatuCharaData. A card file is  b"CHARA|<name>"."""
-    parsed = 0
-
-    def __init__(self, path):
-        FakeCard.parsed += 1
-        self.name = Path(path).read_bytes().split(b"|", 1)[1].decode()
-        self.parameter = {"lastname": "", "firstname": "", "nickname": ""}
-
-    @classmethod
-    def load(cls, path):
-        return cls(path)
-
-    def __getitem__(self, k):
-        return self.parameter
-
-    def display_name(self):
-        last, first = self.parameter["lastname"], self.parameter["firstname"]
-        return f"{last} {first}" if last or first else self.name
-
-    def save(self, path):
-        Path(path).write_bytes(b"CHARA|" + self.display_name().encode())
-
-
-def _fake_info(card):
-    return _info(card.display_name())
-
-
-def _fake_key(info):
-    return f"{info.last} | calm | black hair"
-
-
-def _fake_card_type(raw):
-    return KK if raw.startswith(b"CHARA|") else None
-
-
-@contextmanager
-def fakes():
-    FakeCard.parsed = 0
-    with ExitStack() as st:
-        for module in (group_chara, rename_chara):
-            st.enter_context(mock.patch.object(module, "KoikatuCharaData", FakeCard))
-            st.enter_context(mock.patch.object(module, "chara_info", _fake_info))
-            st.enter_context(mock.patch.object(module, "key_of", _fake_key))
-            st.enter_context(mock.patch.object(module, "get_card_type", _fake_card_type))
-        yield
-
-
-def _cards(folder: Path, **names) -> dict[str, Path]:
-    out = {}
-    for stem, name in names.items():
-        out[stem] = _file(folder / f"{stem}.png", b"CHARA|" + name.encode())
-    return out
-
 
 def test_group_chara_reads_each_card_once_then_reuses_the_cache_even_after_moving(tmp_path):
-    cards = _cards(tmp_path, a="Rin", b="Saber")
-    _file(tmp_path / "not_a_card.png", b"just a picture")
-    with fakes():
+    cards = write_cards(tmp_path, a="Rin", b="Saber")
+    write_file(tmp_path / "not_a_card.png", b"just a picture")
+    with fake_cards():
         first = json.loads(group_chara.export(tmp_path))
         assert set(first) == {"Rin | calm | black hair", "Saber | calm | black hair"}
         assert FakeCard.parsed == 2                                  # the non-card was classified, not parsed
@@ -304,7 +235,7 @@ def test_group_chara_reads_each_card_once_then_reuses_the_cache_even_after_movin
 
         # the entry followed the card to its new folder
         files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
-        assert CharaInfo.from_json(files[str(moved)]["info"]) == _info("Rin")
+        assert CharaInfo.from_json(files[str(moved)]["info"]) == make_info("Rin")
         assert str(cards["a"]) not in files
         assert files[str(tmp_path / "not_a_card.png")]["info"] is None
 
@@ -314,8 +245,8 @@ def test_group_chara_reads_each_card_once_then_reuses_the_cache_even_after_movin
 
 
 def test_group_chara_rereads_a_card_that_changed(tmp_path):
-    cards = _cards(tmp_path, a="Rin")
-    with fakes():
+    cards = write_cards(tmp_path, a="Rin")
+    with fake_cards():
         group_chara.export(tmp_path)
         cards["a"].write_bytes(b"CHARA|Rin but edited later")
         FakeCard.parsed = 0
@@ -324,8 +255,8 @@ def test_group_chara_rereads_a_card_that_changed(tmp_path):
 
 
 def test_group_chara_without_cache_reads_every_time_and_writes_no_file(tmp_path):
-    _cards(tmp_path, a="Rin", b="Saber")
-    with fakes():
+    write_cards(tmp_path, a="Rin", b="Saber")
+    with fake_cards():
         group_chara.export(tmp_path, use_cache=False)
         group_chara.export(tmp_path, use_cache=False)
         assert FakeCard.parsed == 4
@@ -335,7 +266,7 @@ def test_group_chara_without_cache_reads_every_time_and_writes_no_file(tmp_path)
 
 
 def test_group_chara_cache_is_saved_even_if_the_run_is_interrupted(tmp_path):
-    _cards(tmp_path, a="Rin", b="Saber")
+    write_cards(tmp_path, a="Rin", b="Saber")
     real_move = group_chara.shutil.move
     calls = []
 
@@ -346,7 +277,7 @@ def test_group_chara_cache_is_saved_even_if_the_run_is_interrupted(tmp_path):
         return real_move(src, dst)
 
     mapping = json.dumps({"Rin | calm | black hair": "S1", "Saber | calm | black hair": "S2"})
-    with fakes(), mock.patch.object(group_chara.shutil, "move", stop_on_second):
+    with fake_cards(), mock.patch.object(group_chara.shutil, "move", stop_on_second):
         try:
             group_chara.process(tmp_path, mapping)
         except KeyboardInterrupt:
@@ -357,11 +288,11 @@ def test_group_chara_cache_is_saved_even_if_the_run_is_interrupted(tmp_path):
 
 
 def test_rename_chara_updates_the_cache_for_rewritten_and_renamed_cards(tmp_path):
-    cards = _cards(tmp_path, a="Rin", b="Saber")
+    cards = write_cards(tmp_path, a="Rin", b="Saber")
     response = json.dumps({
         "Rin | calm | black hair": {"lastname": "Tohsaka", "firstname": "Rin", "nickname": "Rin"},
     })
-    with fakes():
+    with fake_cards():
         rename_chara.export(tmp_path)
         assert FakeCard.parsed == 2
         FakeCard.parsed = 0
@@ -375,7 +306,7 @@ def test_rename_chara_updates_the_cache_for_rewritten_and_renamed_cards(tmp_path
         files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
         assert str(cards["a"]) not in files                           # old path gone
         entry = files[str(renamed)]
-        assert CharaInfo.from_json(entry["info"]) == _info("Tohsaka Rin")   # the NEW name
+        assert CharaInfo.from_json(entry["info"]) == make_info("Tohsaka Rin")   # the NEW name
         assert entry["fp"] == file_fp(renamed)                        # and the new fingerprint
 
         FakeCard.parsed = 0
@@ -384,11 +315,11 @@ def test_rename_chara_updates_the_cache_for_rewritten_and_renamed_cards(tmp_path
 
 
 def test_rename_chara_only_loads_cards_when_it_must(tmp_path):
-    _cards(tmp_path, a="Rin", b="Saber")
+    write_cards(tmp_path, a="Rin", b="Saber")
     response = json.dumps({
         "Rin | calm | black hair": {"lastname": "Tohsaka", "firstname": "Rin", "nickname": "Rin"},
     })
-    with fakes():
+    with fake_cards():
         rename_chara.export(tmp_path)                                  # warm the cache
         FakeCard.parsed = 0
         # file rename only: the keys come from the cache, so no card needs parsing at all
@@ -396,15 +327,15 @@ def test_rename_chara_only_loads_cards_when_it_must(tmp_path):
         assert FakeCard.parsed == 0
     assert (tmp_path / "Tohsaka_Rin.png").exists()
     files = json.loads((tmp_path / CACHE_FILE).read_text())["files"]
-    assert CharaInfo.from_json(files[str(tmp_path / "Tohsaka_Rin.png")]["info"]) == _info("Rin")
+    assert CharaInfo.from_json(files[str(tmp_path / "Tohsaka_Rin.png")]["info"]) == make_info("Rin")
 
 
 def test_rename_chara_without_cache_matches_the_old_behaviour(tmp_path):
-    _cards(tmp_path, a="Rin")
+    write_cards(tmp_path, a="Rin")
     response = json.dumps({
         "Rin | calm | black hair": {"lastname": "Tohsaka", "firstname": "Rin", "nickname": "Rin"},
     })
-    with fakes():
+    with fake_cards():
         rename_chara.export(tmp_path, use_cache=False)
         rename_chara.process([tmp_path], response, update_metadata=True, rename_files=True, use_cache=False)
     assert not (tmp_path / CACHE_FILE).exists()

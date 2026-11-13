@@ -83,7 +83,7 @@ from kkafio.core import progress
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
-from kkafio.services.content_sources import history as history_store
+from kkafio.services.content_sources.shared import history as history_store
 from kkafio.services.content_sources.bepis import BEPIS_URL, download_bepis
 from kkafio.services.content_sources.catbox import download_catbox, is_catbox_url
 from kkafio.services.content_sources.mediafire import download_mediafire, is_mediafire_url
@@ -94,7 +94,7 @@ from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_ur
 from kkafio.services.content_sources.gofile import GOFILE_USER_AGENT, download_gofile, is_gofile_url
 from kkafio.services.content_sources.koikatsucards import KOIKATSU_URL, download_koikatsu
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
-from kkafio.services.content_sources.net import make_client
+from kkafio.services.content_sources.shared.net import make_client
 from kkafio.services.content_sources.pawchive import (
     PAWCHIVE_URL,
     PawchiveAuth,
@@ -445,7 +445,7 @@ class DownloadContents(BaseTask):
         visitors downloads, so cancelling the dialog is not fatal."""
         if not any(is_terabox_url(url_str) for url_str, *_ in urls):
             return None
-        import kkafio.services.content_sources.terabox_session as _tbx
+        import kkafio.services.content_sources.terabox.session as _tbx
         return _tbx.get_or_prompt()
 
     # -- the run -------------------------------------------------------------
