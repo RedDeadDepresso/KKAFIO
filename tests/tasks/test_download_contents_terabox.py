@@ -29,6 +29,10 @@ def test_parse_terabox_url():
     assert P("https://www.terabox.com/sharing/link?surl=abcDEF123&path=%2FMods%2FHair").path == "/Mods/Hair"
     assert P("https://www.terabox.com/sharing/link?surl=abcDEF123&dir=Mods").path == "/Mods"
     assert P("https://www.terabox.com/sharing/link?surl=abcDEF123&path=%2F").path is None
+    # query form: a real 22-character id may itself start with "1"; a 23-character one has the prefix
+    assert P("https://www.terabox.com/sharing/link?surl=1ZpGkkYh2mj_6296Dsb_nA").surl == "1ZpGkkYh2mj_6296Dsb_nA"
+    assert P("https://www.terabox.com/sharing/link?surl=1bZpGkkYh2mj_6296Dsb_nA").surl == "bZpGkkYh2mj_6296Dsb_nA"
+    assert P("https://www.1024tera.com/sharing/link?surl=bZpGkkYh2mj_6296Dsb_nA&path=/Cards").path == "/Cards"
     assert P("https://www.terabox.com/") is None and P("https://www.terabox.com/login") is None
     assert P("https://www.terabox.com/s/") is None and P("https://example.com/s/1abcDEF123") is None
 

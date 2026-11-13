@@ -80,6 +80,7 @@ _HOST_PATTERNS = [re.compile(p, re.I) for p in (
     r"(^|\.)(playduo\.link|theteraboxmod\.app|teraboxdownloader\.com|teradownloader\.com)$",
 )]
 
+SURL_LENGTH = 22
 _SURL = r"[A-Za-z0-9_-]{6,64}"
 _PATH_SURL_RE = re.compile(rf"^/s/({_SURL})/?$")
 _QUERY_SURL_RE = re.compile(rf"^({_SURL})$")
@@ -114,16 +115,20 @@ def parse_terabox_url(url: str) -> TeraboxLink | None:
     surl = ""
     m = _PATH_SURL_RE.match(path)
     if m:
+        # /s/1<surl>: the web puts a "1" in front of the id; the APIs take it without.
         surl = m.group(1)
+        if surl.startswith("1") and len(surl) > 1:
+            surl = surl[1:]
     elif path.rstrip("/").endswith(("/sharing/link", "/wap/share/filelist", "/share/link", "/share/filelist")):
         value = (query.get("surl") or [""])[0].strip()
         if _QUERY_SURL_RE.match(value):
             surl = value
+            # Normally already without the "1", but some links keep it. An id is 22 characters, so a
+            # 23-character one starting with "1" has the prefix (a real id may itself start with "1").
+            if len(surl) == SURL_LENGTH + 1 and surl.startswith("1"):
+                surl = surl[1:]
     if not surl:
         return None
-    # "1abc..." is how the web shows it; the APIs take it without the leading 1.
-    if surl.startswith("1") and len(surl) > 1:
-        surl = surl[1:]
     folder = None
     for key in ("path", "dir"):
         value = (query.get(key) or [""])[0].strip()
