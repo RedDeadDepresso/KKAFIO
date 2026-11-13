@@ -895,17 +895,28 @@ async def download_terabox(
             progress.count("skipped")
             return "skipped"
         async with sem:
-            try:
-                dlink = await resolver.download_link(link, meta, item)
-            except Exception as exc:
-                logger.error("DLOAD", f"  Failed: {name} — {exc}")
-                progress.count("failed")
-                return "failed"
-            target_dir.mkdir(parents=True, exist_ok=True)
-            scratch: dict[str, str] = {}
-            _, err, _ = await download_file(
-                client, dlink, target_dir, name, scratch, False,
-                filename=name, headers=resolver.download_headers(dlink))
+            err = None
+            for round_ in (1, 2):
+                try:
+                    dlink = await resolver.download_link(link, meta, item)
+                except Exception as exc:
+                    logger.error("DLOAD", f"  Failed: {name} — {exc}")
+                    progress.count("failed")
+                    return "failed"
+                target_dir.mkdir(parents=True, exist_ok=True)
+                scratch: dict[str, str] = {}
+                # The link is temporary, so the interrupted part is tied to the share + file id.
+                _, err, _ = await download_file(
+                    client, dlink, target_dir, name, scratch, False,
+                    filename=name, headers=resolver.download_headers(dlink), resume_key=key,
+                    count_failure=round_ == 2)
+                status = getattr(getattr(err, "response", None), "status_code", None)
+                if err is not None and round_ == 1:
+                    if status in (403, 410):
+                        logger.info("DLOAD", f"  TeraBox link expired for {name}; getting a new one.")
+                        continue                # a new link continues the kept part
+                    progress.count("failed")    # a final failure after all
+                break
         if err:
             logger.error("DLOAD", f"  Failed: {name} — {err}")
             return "failed"

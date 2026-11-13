@@ -87,7 +87,10 @@ class FakeTerabox:
     """One share. Files: {fs_id: (path, bytes)}; a path's folders are derived from it."""
 
     def __init__(self, files, wap=True, login_needed=False, sharedownload=True, wap_dlinks=False, wap_limit=None,
-                 info=False, strict_list=False, randsk="", need_token=False, wap_path=True, wap_sign="SIGN", need_jar=False):
+                 info=False, strict_list=False, randsk="", need_token=False, wap_path=True, wap_sign="SIGN", need_jar=False, expire_once=False):
+        self.expire_once = expire_once        # the first real download request gets a 403 (link expired)
+        self.expired = False
+        self.downloads: list[str | None] = []
         self.need_jar = need_jar              # /share/list wants the cookie the share page sets (browserid)
         self.wap_sign = wap_sign              # the sign the share page shows (shorturlinfo / the API use "SIGN")
         self.need_token = need_token          # /share/list wants the jsToken (errno 4000020 without it)
@@ -175,8 +178,19 @@ class FakeTerabox:
             if self.login_needed and "ndus=" not in (req.headers.get("cookie") or ""):
                 return httpx.Response(403)
             data = self.files[fs_id][1]
+            if req.headers.get("range") != "bytes=0-0":
+                self.downloads.append(req.headers.get("range"))
+                if self.expire_once and not self.expired:
+                    self.expired = True
+                    return httpx.Response(403)
             if req.headers.get("range") == "bytes=0-0":
                 return httpx.Response(206, content=data[:1])
+            rng = req.headers.get("range")
+            if rng and rng.startswith("bytes=") and rng != "bytes=0-0":
+                start = int(rng[6:].rstrip("-"))
+                body = data[start:]
+                return httpx.Response(206, content=body, headers={
+                    "content-length": str(len(body)), "content-range": f"bytes {start}-{len(data) - 1}/{len(data)}"})
             return httpx.Response(200, content=data, headers={"content-length": str(len(data))})
         if req.url.host == "tbx.indexsubtitle.cc":
             return httpx.Response(404)
@@ -367,3 +381,21 @@ def test_the_listing_sends_the_cookies_the_share_page_set_besides_ndus(tmp_path)
     fake = FakeTerabox(files, info=True, strict_list=True, need_jar=True, wap_path=False)
     assert _run(fake, SHARE, tmp_path, session="AbCdEf0123456789xyz") == (2, 0, 0)
     assert (tmp_path / "Sub" / "b.zip").read_bytes() == b"B"
+
+
+def test_an_expired_link_is_replaced_and_the_download_finishes(tmp_path):
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"AAA")}, expire_once=True)
+    assert _run(fake, SHARE, tmp_path) == (1, 0, 0)          # one file, no phantom failure
+    assert (tmp_path / "a.zip").read_bytes() == b"AAA"
+    assert len(fake.downloads) == 2 and not list(tmp_path.rglob("*.part"))
+
+
+def test_a_kept_part_of_the_same_file_is_continued_with_a_new_link(tmp_path):
+    from kkafio.services.content_sources import transfer
+    link = terabox.parse_terabox_url(SHARE)
+    part = transfer.part_path(tmp_path, "a.zip", terabox.history_key(link, terabox.ShareFile("1", "a.zip")))
+    part.write_bytes(b"AA")
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"AAABBB")})
+    assert _run(fake, SHARE, tmp_path) == (1, 0, 0)
+    assert (tmp_path / "a.zip").read_bytes() == b"AAABBB"
+    assert fake.downloads == ["bytes=2-"]

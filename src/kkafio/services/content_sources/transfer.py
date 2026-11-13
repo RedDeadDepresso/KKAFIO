@@ -1,84 +1,162 @@
 """Streaming downloads and paged-listing loops shared by the sources.
 
-``download_file`` fetches one URL into ``<name>.part`` and renames it once the
-whole body has arrived; ``download_files`` runs a batch of them with bounded
+``download_file`` fetches one URL into a ``.part`` file (continued with a Range request after an
+interruption) and renames it once the whole body has arrived; ``download_files`` runs a batch of them with bounded
 concurrency; ``download_pages`` walks a listing's pages.
 """
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
+import re
 from pathlib import Path
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
 from kkafio.services.content_sources import history as history_store
-from kkafio.services.content_sources.net import MAX_CONNECTIONS, MAX_CONSECUTIVE_BAD_PAGES, RETRY_ATTEMPTS, is_transient, resolve_filename, retry_delay, strip_page
+from kkafio.services.content_sources.net import (
+    MAX_CONNECTIONS, MAX_CONSECUTIVE_BAD_PAGES, RETRY_ATTEMPTS, is_transient, resolve_filename, retry_delay,
+    safe_filename, strip_page,
+)
+
+MAX_RESUMES = 25        # extra tries given to a transfer that keeps making progress before it drops
+
+
+class _Incomplete(Exception):
+    """The body ended before the announced size: worth another (resumed) try."""
+
+
+def _content_range(response) -> tuple[int, int | None] | None:
+    """(first byte, total size or None) of a 206's "Content-Range: bytes a-b/total"."""
+    m = re.match(r"\s*bytes\s+(\d+)-\d+/(\d+|\*)", response.headers.get("content-range", ""), re.IGNORECASE)
+    if not m:
+        return None
+    return int(m.group(1)), (int(m.group(2)) if m.group(2).isdigit() else None)
+
+
+def _unsatisfied_total(response) -> int | None:
+    """The total size of a 416's "Content-Range: bytes */total", if it says."""
+    m = re.match(r"\s*bytes\s+\*/(\d+)", response.headers.get("content-range", ""), re.IGNORECASE)
+    return int(m.group(1)) if m else None
+
+
+def part_path(directory: Path, name: str, key: str) -> Path:
+    """The ``.part`` file of a download. Its name is known before the request (so an interrupted
+    transfer can be continued) and tied to `key` (the URL, or whatever identifies the file when its
+    URL is temporary), so two different files that share a name never share a part."""
+    tag = hashlib.sha1(key.encode("utf-8")).hexdigest()[:8]
+    return directory / f"{safe_filename(name, 'download')}.{tag}.part"
+
 
 async def download_file(
     client, url: str, directory: Path, default_name: str,
     history: dict[str, str], skip_downloaded: bool,
     *, filename: str | None = None, headers: dict[str, str] | None = None,
+    resume_key: str | None = None, count_failure: bool = True,
 ) -> tuple[str, Exception | None, bool]:
     """Download one file. Returns (url, error, was_skipped).
 
     `filename` fixes the name on disk (otherwise it comes from the response / URL); `headers` are
-    sent with this transfer only."""
+    sent with this transfer only.
+
+    The body is streamed into a ``.part`` file that is renamed to the real name once it is complete,
+    so a truncated card never sits under its final name (where Install Contents would pick it up).
+    An interrupted transfer keeps its part: the next attempt (or run) continues it with a Range
+    request. A server that ignores Range sends the whole file, which replaces the part; a part that
+    is not a prefix of the file (416) is dropped and the file fetched again. An attempt that gained
+    bytes does not use up a retry, so a big file on a bad connection keeps going. `resume_key`
+    identifies the file across runs when its URL changes every time (default: the URL).
+    ``count_failure=False`` leaves a final failure uncounted, for a caller that retries it.
+    """
     if skip_downloaded and url in history:
         logger.info("DLOAD", f"Skipping (already downloaded): {Path(history[url]).name}")
         progress.count("skipped")
         return url, None, True
 
-    for attempt in range(1, RETRY_ATTEMPTS + 1):
-        # Stream into "<name>.part" and only rename to the real name once the
-        # whole body has arrived. A failed/cancelled transfer therefore never
-        # leaves a truncated card behind under its final name (where Install
-        # Contents would happily pick it up).
-        part: Path | None = None
-        completed = False
+    part = part_path(directory, filename or default_name, resume_key or url)
+    attempt = 1
+    resumes = 0
+    while attempt <= RETRY_ATTEMPTS:
         handle = None
+        start = written = 0
         try:
             import aiofiles
-            async with client.stream("GET", url, headers=headers) as response:
-                response.raise_for_status()
-                if filename is None:
-                    name = resolve_filename(response, url, default_name)
+            offset = part.stat().st_size if part.exists() else 0
+            req_headers = {"Accept-Encoding": "identity", **(headers or {})}      # byte counts must be exact
+            if offset:
+                req_headers["Range"] = f"bytes={offset}-"
+            async with client.stream("GET", url, headers=req_headers) as response:
+                complete_already = False
+                if offset and response.status_code == 416:
+                    if _unsatisfied_total(response) == offset:
+                        complete_already = True         # the part is the whole file; it was never renamed
+                    else:
+                        part.unlink(missing_ok=True)    # the part is not a prefix of the file
+                        continue                        # start again; this try is not used up
                 else:
-                    name = filename
+                    response.raise_for_status()
+                name = filename or resolve_filename(response, url, default_name)
                 dest = directory / name
-                part = dest.with_name(dest.name + ".part")
-                logger.info("DLOAD", f"Downloading: {name}")
-                handle = progress.begin(name, progress.content_length(response))
-                received = 0
-                async with aiofiles.open(part, "wb") as f:
-                    async for chunk in response.aiter_bytes(chunk_size=65536):
-                        await f.write(chunk)
-                        received += len(chunk)
-                        handle.update(received)
+
+                total: int | None = None
+                length = response.headers.get("content-length", "")
+                if complete_already:
+                    total = offset
+                elif offset and response.status_code == 206:
+                    span = _content_range(response)
+                    if span is None or span[0] != offset:
+                        part.unlink(missing_ok=True)
+                        raise _Incomplete("server answered a different range than asked; restarting")
+                    total = span[1] or (offset + int(length) if length.isdigit() else None)
+                else:                                   # a plain 200: the whole file, Range or not
+                    offset = 0
+                    total = int(length) if length.isdigit() else None
+                start = written = offset
+                logger.info("DLOAD", f"{'Resuming' if offset else 'Downloading'}: {name}"
+                                     + (f" from {offset} bytes" if offset else ""))
+                handle = progress.begin(name, total)
+                handle.update(written)
+                if not complete_already:
+                    async with aiofiles.open(part, "ab" if offset else "wb") as f:
+                        # No re-chunking: what has arrived is written at once, so a dropped
+                        # connection loses nothing that was received.
+                        async for chunk in response.aiter_bytes():
+                            await f.write(chunk)
+                            written += len(chunk)
+                            handle.update(written)
+            if total is not None and written != total:
+                if written > total:
+                    part.unlink(missing_ok=True)        # more than the file holds: unusable
+                raise _Incomplete(f"incomplete download ({written} of {total} bytes)")
             os.replace(part, dest)
-            completed = True
             history[url] = str(dest)
             handle.close(ok=True)
             return url, None, False
         except Exception as exc:
-            if attempt < RETRY_ATTEMPTS and is_transient(exc):
+            retryable = is_transient(exc) or isinstance(exc, _Incomplete)
+            if retryable and written > start and resumes < MAX_RESUMES:
+                resumes += 1                            # it moved forward: continue without using a try
+                logger.warning("DLOAD", f"  {url} — {exc}; resuming from {part.stat().st_size} bytes")
+                await asyncio.sleep(retry_delay(exc, 1))
+                continue
+            if retryable and attempt < RETRY_ATTEMPTS:
                 delay = retry_delay(exc, attempt)
                 logger.warning("DLOAD",
                     f"  {url} — {exc}; retrying in {delay:.0f}s ({attempt}/{RETRY_ATTEMPTS - 1})")
                 await asyncio.sleep(delay)
+                attempt += 1
                 continue
-            progress.count("failed")
+            if getattr(getattr(exc, "response", None), "status_code", None) in (404, 410):
+                part.unlink(missing_ok=True)            # the file is gone: nothing to resume later
+            if count_failure:
+                progress.count("failed")
             return url, exc, False
         finally:
             if handle is not None:
                 handle.close()          # no-op after a success; drops the row on a retry / cancel
-            if part is not None and not completed:
-                # Covers errors and cancellation (Stop / Ctrl+C) alike.
-                try:
-                    part.unlink(missing_ok=True)
-                except OSError:
-                    pass
+            # A failed or cancelled (Stop / Ctrl+C) transfer keeps its part for the next attempt.
     return url, RuntimeError("retries exhausted"), False  # not reached
 
 
