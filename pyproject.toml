@@ -18,7 +18,7 @@ dependencies = [
     "numpy>=2.5.3",
     "packaging>=26.0",
     "pillow>=12.3.0",
-    "qrcode>=8.0",
+    "qrcode>=8.2",
     "scipy>=1.18.1",
     "send2trash>=1.8.3",
     "teleget9527[fast]",
