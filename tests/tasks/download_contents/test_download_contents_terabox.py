@@ -106,6 +106,7 @@ class FakeTerabox:
         self.wap_limit = wap_limit            # the share page renders only this many items
         self.sharedownload, self.wap_dlinks = sharedownload, wap_dlinks
         self.seen: list[str] = []
+        self.unsigned_lists = 0               # /share/list calls without a sign (they can only fail on the real site)
         self.cookies: list[str | None] = []
 
     def _entries(self, directory):
@@ -151,6 +152,8 @@ class FakeTerabox:
             return httpx.Response(200, text="x fn%28a%29 window.jsToken = 'TOK123'; ",
                                   headers={"set-cookie": "browserid=B1; Path=/; Domain=terabox.com"})
         if path == "/share/list":
+            if "sign" not in q:
+                self.unsigned_lists += 1
             if self.need_jar and not all(c in (req.headers.get("cookie") or "") for c in ("browserid=B1", "ndus=")):
                 return httpx.Response(200, json={"errno": 4000020})
             if self.need_token and q.get("jsToken") != "TOK123":
@@ -402,3 +405,47 @@ def test_a_kept_part_of_the_same_file_is_continued_with_a_new_link(tmp_path):
     assert _run(fake, SHARE, tmp_path) == (1, 0, 0)
     assert (tmp_path / "a.zip").read_bytes() == b"AAABBB"
     assert fake.downloads == ["bytes=2-"]
+
+
+def test_a_missing_file_is_reported_as_missing_and_names_what_is_there(tmp_path):
+    # the share reads fine, the file is not in it: no unsigned /share/list fallback (it can only fail
+    # with errno 4000020) and the error says which folder was read and what it holds
+    files = {"1": ("/pack/Cards/a.png", b"A"), "2": ("/pack/Cards/b.png", b"B")}
+    fake = FakeTerabox(files, info=True, wap_path=False)
+
+    async def go():
+        client = fake.client()
+        try:
+            resolver = terabox.TeraboxResolver(client)
+            return await resolver.collect(terabox.parse_terabox_url(SHARE + "?path=%2Fpack%2FCards%2FTrigger.png"))
+        finally:
+            await client.aclose()
+
+    with pytest.raises(terabox.TeraboxNotFound) as err:
+        asyncio.run(go())
+    message = str(err.value)
+    assert "/pack/Cards/Trigger.png" in message and "a.png" in message and "b.png" in message
+    assert "4000020" not in message
+    assert fake.unsigned_lists == 0
+
+
+def test_a_listing_after_the_share_page_failed_still_has_shorturlinfos_credentials(tmp_path):
+    # shorturlinfo was read once; a later listing that starts from an empty ShareMeta (the share page
+    # failed for it) must get those values instead of staying incomplete
+    fake = FakeTerabox({"1": ("/pack/a.zip", b"A")}, info=True, randsk="RS")
+
+    async def go():
+        client = fake.client()
+        try:
+            resolver = terabox.TeraboxResolver(client)
+            first = terabox.ShareMeta()
+            await resolver._complete_meta("AbCdEf12345", first)
+            second = terabox.ShareMeta()
+            await resolver._complete_meta("AbCdEf12345", second)
+            return first, second
+        finally:
+            await client.aclose()
+
+    first, second = asyncio.run(go())
+    assert first.complete and second.complete and second.sign == "SIGN" and second.randsk == "RS"
+    assert sum(1 for s in fake.seen if s == "GET www.terabox.com/api/shorturlinfo") == 1

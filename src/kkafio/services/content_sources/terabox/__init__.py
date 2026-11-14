@@ -205,6 +205,10 @@ class TeraboxError(Exception):
     pass
 
 
+class TeraboxNotFound(TeraboxError):
+    """The share is readable, but the file or folder the link names is not in it."""
+
+
 def _as_int(value) -> int | None:
     if isinstance(value, bool):
         return None
@@ -339,6 +343,8 @@ class TeraboxResolver:
         self._js_token: str | None = None
         self._info_tried = False        # shorturlinfo is asked once per resolver
         self._token_tried = False       # so is the first jsToken scrape
+        self._info_meta: ShareMeta | None = None    # what shorturlinfo said: it wins over the share page's
+        self._seen: tuple[str, list[str]] | None = None   # the last folder _resolve_path read: (folder, names)
 
     # headers ----------------------------------------------------------------
     def _headers(self, user_agent: str, referer: str | None = None, extra: dict | None = None) -> dict:
@@ -566,6 +572,13 @@ class TeraboxResolver:
 
     async def _complete_meta(self, surl: str, meta: ShareMeta) -> None:
         """Fill the share's metadata (and its randsk) from shorturlinfo, then from a one-item list."""
+        if self._info_meta is not None:
+            # shorturlinfo was already read: its values win every time, also for a fresh ShareMeta
+            # (a listing made after the share page failed), which must not stay empty or carry the
+            # share page's sign.
+            meta.override(self._info_meta)
+            if meta.complete:
+                return
         if meta.complete and (meta.randsk or self._info_tried):
             return
         if not self._info_tried:
@@ -573,7 +586,8 @@ class TeraboxResolver:
             try:
                 # Terabox-DL signs its listing with shorturlinfo's values; the share page's sign may
                 # not be accepted by /share/list for folders (errno 4000020), so these win.
-                meta.override((await self.share_info(surl)).meta)
+                self._info_meta = (await self.share_info(surl)).meta
+                meta.override(self._info_meta)
                 have = [n for n in ("shareid", "uk", "sign", "timestamp", "randsk") if getattr(meta, n)]
                 logger.info("DLOAD", f"  TeraBox: shorturlinfo credentials: {', '.join(have)}; "
                                      f"jsToken {'yes' if self._js_token else 'no'}.")
@@ -631,6 +645,7 @@ class TeraboxResolver:
         root = await self.list_share(TeraboxLink(link.surl, None))
         meta, items, current = root.meta, root.files, ""
         for index, segment in enumerate(segments):
+            self._seen = (current or "/", [f.name for f in items])
             want = f"{current}/{segment}"
             item = (next((f for f in items if (f.path or "").rstrip("/") == want), None)
                     or next((f for f in items if f.name == segment), None)
@@ -673,9 +688,19 @@ class TeraboxResolver:
         except Exception as exc:
             logger.info("DLOAD", f"  TeraBox: could not walk to {link.path}: {exc}")
             return None
-        if found is None or found.is_dir:
+        if found is None:
+            # The share was read fine and the item is not in it: say so (and what is there), instead
+            # of falling through to listings that can only fail with a misleading errno.
+            raise TeraboxNotFound(self._not_found_message(link))
+        if found.is_dir:
             return None
         return meta, [(found, ())]
+
+    def _not_found_message(self, link: TeraboxLink) -> str:
+        folder, names = self._seen or ("/", [])
+        shown = ", ".join(names[:12]) + (f", ... ({len(names) - 12} more)" if len(names) > 12 else "")
+        return (f"{link.path} is not in the share (the owner may have renamed, moved or deleted it); "
+                f"{folder} has {len(names)} item(s)" + (f": {shown}" if names else ""))
 
     async def collect(self, link: TeraboxLink) -> tuple[ShareMeta, list[tuple[ShareFile, tuple[str, ...]]]]:
         """Every file of the share with the subfolders (names) it sits in; folders are followed
