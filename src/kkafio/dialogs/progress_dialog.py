@@ -41,8 +41,9 @@ _WIDTH = 560
 _NAME_MAX_CHARS = 64
 # CustomTkinter finishes its Windows window setup (title bar colour, icon) ~200 ms
 # after a window is created; setting the icon on a window that is already visible
-# makes Windows blank and redraw it. So the window stays hidden until that is done.
-_SHOW_DELAY_SECONDS = 0.4
+# makes Windows blank and redraw it. common.set_window_icon re-applies the icon at
+# 50 / 250 / 600 ms, so the window stays hidden until after the last of those.
+_SHOW_DELAY_SECONDS = 0.9
 _RATE_SMOOTHING = 0.3          # weight of the newest speed sample
 
 
