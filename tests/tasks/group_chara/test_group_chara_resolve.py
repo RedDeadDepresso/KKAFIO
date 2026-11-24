@@ -139,7 +139,8 @@ class FakeCard:
 
     def __init__(self, path):
         FakeCard.parsed += 1
-        name, month, day = Path(path).read_bytes().split(b"|", 3)[1:]
+        raw = path if isinstance(path, bytes) else Path(path).read_bytes()   # path, or the bytes already read
+        name, month, day = raw.split(b"|", 3)[1:]
         self.p = {"birthMonth": int(month), "birthDay": int(day), "name": name.decode()}
 
     @classmethod

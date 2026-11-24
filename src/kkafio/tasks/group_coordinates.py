@@ -61,6 +61,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from kkafio.cards import scan_session as scans
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.classifier import CHARA_CARD_TYPES, get_card_type
 from kkafio.cards.chara.outfits import (
@@ -142,16 +143,22 @@ def _scan_charas(chara_dirs: list[Path], use_cache: bool,
         else:
             to_read.append(png)
 
+    def _parse(png: Path) -> dict:
+        raw = png.read_bytes()
+        if get_card_type(raw) not in CHARA_CARD_TYPES:
+            return {"digests": [], "sigs": [], "hairs": [], "mods": {}}
+        from kkloader import KoikatuCharaData
+        kc = KoikatuCharaData.load(raw)
+        return {"digests": sorted(chara_outfit_digests(kc)),
+                "sigs": [[list(clothes), list(accs)] for clothes, accs in chara_outfit_signatures(kc)],
+                "hairs": [list(hair) for hair in chara_outfit_hairs(kc)],
+                "mods": chara_outfit_head_mods(kc)}
+
     def _read(png: Path) -> tuple[Path, list[int], dict]:
         fp = file_fp(png)
-        if get_card_type(png.read_bytes()) not in CHARA_CARD_TYPES:
-            return png, fp, {"digests": [], "sigs": [], "hairs": [], "mods": {}}
-        from kkloader import KoikatuCharaData
-        kc = KoikatuCharaData.load(str(png))
-        return png, fp, {"digests": sorted(chara_outfit_digests(kc)),
-                         "sigs": [[list(clothes), list(accs)] for clothes, accs in chara_outfit_signatures(kc)],
-                         "hairs": [list(hair) for hair in chara_outfit_hairs(kc)],
-                         "mods": chara_outfit_head_mods(kc)}
+        # Inside a scan session a later pass reuses what an earlier one parsed (every pass's
+        # `_parse` yields all four fields), so with the cache off a card is still parsed once.
+        return png, fp, scans.memoized(("chara", str(png), tuple(fp)), lambda: _parse(png))
 
     if to_read:
         workers = min(32, (os.cpu_count() or 4) * 2)
@@ -581,7 +588,10 @@ class GroupCoordinates(BaseTask):
         logger.info(TAG, f"Ignore accessories: {self.ignore_accessories}, clothes tolerance: {clothes_tolerance}"
                          + ("" if fuzzy else " (exact copies only)"))
         logger.info(TAG, f"Group remaining coordinates by hair: {self.group_by_hair}")
-        self._run_automatic(chara_dirs, coord_dir, clothes_tolerance)
+        # The passes below each want a different field of the same cards; one session lets them
+        # share a single read + parse per file instead of repeating it (see cards/scan_session.py).
+        with scans.scan_session():
+            self._run_automatic(chara_dirs, coord_dir, clothes_tolerance)
 
     def _run_automatic(self, chara_dirs: list[Path], coord_dir: Path, clothes_tolerance: int) -> None:
         """The matching passes: hair, outfit, head mod and (optionally) the leftovers by hair."""

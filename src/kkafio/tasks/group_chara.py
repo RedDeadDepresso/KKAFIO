@@ -157,7 +157,7 @@ def read_card(png: Path, info_cache: CharaInfoCache) -> tuple[Path, str | None, 
         if get_card_type(raw) not in CHARA_CARD_TYPES:
             info_cache.put(png, fp, None)
             return png, None, None  # not a chara card — skip silently
-        kc   = load_chara(png, KoikatuCharaData)
+        kc   = load_chara(png, KoikatuCharaData, raw=raw)
         info = chara_info(kc)
         info_cache.put(png, fp, info)
         return png, key_of(info), info.birth
@@ -340,7 +340,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                         info_cache.put(png, fp, None)
                         skipped += 1
                         continue
-                    kc   = load_chara(png, KoikatuCharaData)
+                    kc   = load_chara(png, KoikatuCharaData, raw=raw)
                     info = chara_info(kc)
                     info_cache.put(png, fp, info)
                 elif info is None:

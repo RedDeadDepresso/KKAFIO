@@ -12,7 +12,9 @@ from send2trash import send2trash
 from kkafio.tasks.base_task import BaseTask
 from kkafio.cards.mods.zipmods import is_modpack_protected, local_mods_map, resolve_paths
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
-from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
+from kkafio.cards.mods.parsing import (
+    parse_chara_guids, parse_coord_guids, parse_scene_guids, payload_of,
+)
 from kkafio.cards.mods.shared_mods import find_guids_in_use, keep_unshared, path_key
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.logger import logger
@@ -83,6 +85,7 @@ class DeleteCards(BaseTask):
         is_scene  = card_type == CardType.SCENE
         is_chara  = card_type in (CardType.KK, CardType.KKSP, CardType.KKS) and not is_scene
         is_coord  = card_type == CardType.UNKNOWN and is_coordinate(raw)
+        payload   = payload_of(raw)          # parsed below without reading the file again
 
         mods_dir, coord_dir = resolve_paths(
             content_path, game_base, self.auto_resolve, mods_ov, coord_ov)
@@ -91,14 +94,14 @@ class DeleteCards(BaseTask):
         coord_guids: set[str] = set()
 
         if is_scene:
-            own_guids = parse_scene_guids(content_path)
+            own_guids = parse_scene_guids(content_path, payload=payload)
             logger.info("DELETE", "  Scene — skipping coordinate matching")
         elif is_coord:
-            own_guids = parse_coord_guids(content_path)
+            own_guids = parse_coord_guids(content_path, payload=payload)
             logger.info("DELETE", "  Coordinate card — bundling its own mods only")
         elif is_chara:
             try:
-                own_guids = parse_chara_guids(content_path)
+                own_guids = parse_chara_guids(content_path, payload=payload)
             except Exception as e:
                 # A corrupt/truncated/unusual card must not abort the whole
                 # batch. Its mods are simply left alone (the safe direction).
@@ -113,7 +116,7 @@ class DeleteCards(BaseTask):
                 from kkloader import KoikatuCharaData
                 from kkafio.cards.chara.lenient_load import load_chara
                 try:
-                    kc = load_chara(content_path, KoikatuCharaData)
+                    kc = load_chara(content_path, KoikatuCharaData, raw=raw)
                     coord_map = self._get_coord_map(coord_dir)
                     coord_paths = find_matching_coords(kc, coord_map)
                     logger.info("DELETE", f"  Matching coordinates: {len(coord_paths)}")

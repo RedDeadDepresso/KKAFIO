@@ -15,7 +15,9 @@ from kkafio.cards.mods.zipmods import (
     in_modpack_folder, iter_mod_files, local_mods_map, resolve_guids, resolve_paths,
 )
 from kkafio.cards.chara.outfits import build_coord_cache, find_matching_coords
-from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
+from kkafio.cards.mods.parsing import (
+    parse_chara_guids, parse_coord_guids, parse_scene_guids, payload_of,
+)
 from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
 from kkafio.core.errors import InputError, TaskFailedError
 from kkafio.core.logger import logger
@@ -104,6 +106,7 @@ class ArchiveCards(BaseTask):
         is_scene  = card_type == CardType.SCENE
         is_chara  = card_type in (CardType.KK, CardType.KKSP, CardType.KKS) and not is_scene
         is_coord  = card_type == CardType.UNKNOWN and is_coordinate(raw)
+        payload   = payload_of(raw)          # parsed below without reading the file again
 
         mods_dir, coord_dir = resolve_paths(
             content_path, game_base, self.auto_resolve, mods_ov, coord_ov)
@@ -112,14 +115,14 @@ class ArchiveCards(BaseTask):
         coord_guids_all: set[str] = set()
 
         if is_scene:
-            own_guids = parse_scene_guids(content_path)
+            own_guids = parse_scene_guids(content_path, payload=payload)
             logger.info("ARCHV", f"  Zipmod GUIDs in scene : {len(own_guids)}")
             logger.info("ARCHV", "  Scene — skipping coordinate matching")
         elif is_coord:
-            own_guids = parse_coord_guids(content_path)
+            own_guids = parse_coord_guids(content_path, payload=payload)
             logger.info("ARCHV", f"  Zipmod GUIDs in coord : {len(own_guids)}")
         elif is_chara:
-            own_guids = parse_chara_guids(content_path)
+            own_guids = parse_chara_guids(content_path, payload=payload)
             logger.info("ARCHV", f"  Zipmod GUIDs in chara : {len(own_guids)}")
 
             if not self.include_coordinates:
@@ -128,7 +131,7 @@ class ArchiveCards(BaseTask):
                 from kkloader import KoikatuCharaData
                 from kkafio.cards.chara.lenient_load import load_chara
                 try:
-                    kc = load_chara(content_path, KoikatuCharaData)
+                    kc = load_chara(content_path, KoikatuCharaData, raw=raw)
                     coord_map = self._get_coord_map(coord_dir)
                     coord_paths = find_matching_coords(kc, coord_map)
                     logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")

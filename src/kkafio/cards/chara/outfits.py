@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterable
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 
+from kkafio.cards import scan_session
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.mods.parsing import _coord_kkex_bytes, _find_iend_end, _unpack_kkex, uar_resolve_infos
 from kkafio.core.logger import logger
@@ -432,48 +433,78 @@ def _read_coord_outfit(path: Path) -> tuple[dict, list[dict]] | None:
     return entry.data, infos
 
 
+def _field_signature(outfit: dict, infos: list[dict]) -> list:
+    clothes, accessories = outfit_signature(outfit, infos)
+    return [list(clothes), list(accessories)]
+
+
+def _field_digest(outfit: dict, infos: list[dict]) -> str:
+    return outfit_digest(outfit, infos)
+
+
+# What each per-file cache stores for a coordinate card, by field name. Lists (not tuples) so a
+# value survives the JSON cache unchanged.
+_COORD_FIELDS: dict[str, Callable[[dict, list[dict]], object]] = {
+    "digest": _field_digest,
+    "sig":    _field_signature,
+    "hair":   lambda outfit, infos: list(outfit_hair(outfit, infos)),
+    "mods":   lambda outfit, infos: list(outfit_head_mods(outfit, infos)),
+}
+
+
+def _coord_field(path: Path, name: str):
+    """One field (see _COORD_FIELDS) of a coordinate card file, or None if it isn't a readable
+    coordinate card (e.g. a chara card or stray PNG in the folder).
+
+    Inside a scan_session() all four fields are worked out from ONE read of the file and
+    remembered, because a run asks for several of them (hair, outfit, mods...) one pass after
+    another; outside a session only the requested field is computed."""
+    def compute(wanted: tuple[str, ...]):
+        try:
+            loaded = _read_coord_outfit(path)
+        except Exception:
+            return None
+        if not loaded:
+            return None
+        out: dict[str, object] = {}
+        for field in wanted:
+            try:
+                out[field] = _COORD_FIELDS[field](*loaded)
+            except Exception:
+                out[field] = None
+        return out
+
+    if scan_session.active():
+        fp = tuple(file_fp(path))
+        fields = scan_session.memoized(("coord", str(path), fp), lambda: compute(tuple(_COORD_FIELDS)))
+    else:
+        fields = compute((name,))
+    return fields[name] if fields else None
+
+
 def _coord_file_digest(path: Path) -> str | None:
     """Digest of a coordinate card file, or None if it isn't a readable
     Koikatu coordinate card (e.g. a chara card or stray PNG in the folder)."""
-    try:
-        loaded = _read_coord_outfit(path)
-        return outfit_digest(*loaded) if loaded else None
-    except Exception:
-        return None
+    return _coord_field(path, "digest")
 
 
 def _coord_file_signature(path: Path) -> list | None:
     """[clothes tokens, accessory tokens] of a coordinate card file (a list, so it
     survives the JSON cache unchanged), or None if it isn't a readable coordinate card."""
-    try:
-        loaded = _read_coord_outfit(path)
-        if not loaded:
-            return None
-        clothes, accessories = outfit_signature(*loaded)
-        return [list(clothes), list(accessories)]
-    except Exception:
-        return None
+    return _coord_field(path, "sig")
 
 
 def _coord_file_hair(path: Path) -> list[str] | None:
     """Hair items of a coordinate card file in slot order (a list, so it survives the JSON
     cache unchanged; empty if it has no hair accessory), or None if it isn't a readable
     coordinate card."""
-    try:
-        loaded = _read_coord_outfit(path)
-        return list(outfit_hair(*loaded)) if loaded else None
-    except Exception:
-        return None
+    return _coord_field(path, "hair")
 
 
 def _coord_file_mods(path: Path) -> list[str] | None:
     """Head mods of a coordinate card file (a list, so it survives the JSON cache), or None
     if it isn't a readable coordinate card."""
-    try:
-        loaded = _read_coord_outfit(path)
-        return list(outfit_head_mods(*loaded)) if loaded else None
-    except Exception:
-        return None
+    return _coord_field(path, "mods")
 
 
 def _build_cache(coord_dir: Path, use_cache: bool, *, file_name: str, version: int, section: str,

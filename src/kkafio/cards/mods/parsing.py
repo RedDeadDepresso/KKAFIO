@@ -170,6 +170,13 @@ def _payload_after_png(path: Path) -> bytes | None:
     return None
 
 
+def payload_of(raw: bytes) -> bytes | None:
+    """The bytes after the PNG's IEND chunk in an already-read card file (what
+    `_payload_after_png` reads from disk), or None if there are none."""
+    end = _find_iend_end(raw)
+    return raw[end:] if 0 <= end < len(raw) else None
+
+
 def parse_chara_guids(path: Path, payload: bytes | None = None) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a chara card.
 

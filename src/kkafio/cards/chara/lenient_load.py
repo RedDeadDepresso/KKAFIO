@@ -20,10 +20,26 @@ from kkloader import KoikatuCharaData
 
 from kkafio.cards.chara.kkex_repair import repair_card
 
-def load_chara(path: str | Path, cls=KoikatuCharaData) -> KoikatuCharaData:
+def load_chara(path: str | Path, cls=KoikatuCharaData, raw: bytes | None = None) -> KoikatuCharaData:
     """KoikatuCharaData.load(path); when that fails to decode the card's extended data and the card
     has the KoiCardTexTool damage above, the repaired card loaded instead. `cls` is the loader
-    class, so a caller (or a test) that substitutes KoikatuCharaData keeps doing so."""
+    class, so a caller (or a test) that substitutes KoikatuCharaData keeps doing so.
+
+    `raw` is the card file's bytes when the caller has already read them (to classify the card,
+    say): the card is then loaded from them, and a repair is done on them too, so the file is
+    never read a second time."""
+    if raw is not None:
+        try:
+            return cls.load(raw)
+        except UnicodeDecodeError as first:
+            repaired = repair_card(raw)
+            if repaired is None:
+                raise first
+            try:
+                return cls.load(repaired)
+            except Exception:
+                raise first
+
     try:
         return cls.load(str(path))
     except UnicodeDecodeError as first:

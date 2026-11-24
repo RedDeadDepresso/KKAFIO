@@ -30,7 +30,8 @@ class FakeCard:
 
     def __init__(self, path):
         FakeCard.parsed += 1
-        self.name = Path(path).read_bytes().split(b"|", 1)[1].decode()
+        raw = path if isinstance(path, bytes) else Path(path).read_bytes()   # path, or the bytes already read
+        self.name = raw.split(b"|", 1)[1].decode()
         self.parameter = {"lastname": "", "firstname": "", "nickname": ""}
 
     @classmethod
