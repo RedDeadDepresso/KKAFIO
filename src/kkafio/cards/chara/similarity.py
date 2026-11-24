@@ -56,6 +56,24 @@ def read_png_preview(path: Path) -> bytes | None:
         return None
 
 
+def png_preview_of_bytes(data: bytes) -> bytes | None:
+    """Same as read_png_preview, for a card file whose bytes the caller already has (so the
+    file isn't opened a second time): the PNG image portion, signature through IEND, or None
+    if it isn't a well-formed PNG."""
+    if data[:8] != _PNG_SIG:
+        return None
+    pos = 8
+    while pos + 8 <= len(data):
+        length = struct.unpack(">I", data[pos:pos + 4])[0]
+        end = pos + 8 + length + 4                  # header + chunk data + CRC
+        if end > len(data):
+            return None
+        if data[pos + 4:pos + 8] == _IEND:
+            return data[:end]
+        pos = end
+    return None
+
+
 def phash_of_png_bytes(image_bytes: bytes) -> str | None:
     """64-bit perceptual hash (16 hex chars) of PNG bytes, or None on failure."""
     try:
@@ -67,9 +85,11 @@ def phash_of_png_bytes(image_bytes: bytes) -> str | None:
         return None
 
 
-def phash_of_file(path: Path) -> str | None:
-    """Perceptual hash of a card's preview image, or None if it can't be read."""
-    preview = read_png_preview(path)
+def phash_of_file(path: Path, raw: bytes | None = None) -> str | None:
+    """Perceptual hash of a card's preview image, or None if it can't be read. `raw` is the
+    file's bytes when the caller has already read them; the preview is then cut from them
+    instead of opening the file again."""
+    preview = png_preview_of_bytes(raw) if raw is not None else read_png_preview(path)
     return phash_of_png_bytes(preview) if preview else None
 
 

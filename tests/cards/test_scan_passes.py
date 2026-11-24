@@ -170,3 +170,50 @@ def test_group_chara_read_card_reads_each_file_once(tmp_path, monkeypatch):
             _, key, _ = group_chara.read_card(png, cache)
             assert key and not key.startswith("__error__")
     assert sorted(reads) == ["a.png", "b.png"]        # classified and loaded from the same bytes
+
+
+# --- review similar characters: a cold scan reads each card once ----------------------------------------
+
+def test_review_similar_cold_scan_reads_each_card_once(tmp_path, monkeypatch):
+    import io
+    from pathlib import Path
+    from PIL import Image
+    from kkafio.cards.chara.similarity import png_preview_of_bytes, read_png_preview
+    from kkafio.tasks import review_similar_chara as rsc
+
+    buf = io.BytesIO()
+    Image.new("RGB", (16, 16), (200, 30, 30)).save(buf, "PNG")
+    card = buf.getvalue() + b"\x00" + "【KoiKatuChara】".encode() + b"\x00" * 64
+    for n in "ab":
+        (tmp_path / f"{n}.png").write_bytes(card)
+
+    assert png_preview_of_bytes(card) == read_png_preview(_write(tmp_path.parent / (tmp_path.name + "_c.png"), card))
+    assert png_preview_of_bytes(b"not a png") is None and png_preview_of_bytes(card[:30]) is None
+
+    opened = []
+    real_read, real_open = Path.read_bytes, Path.open
+    inside_read = []                                    # read_bytes() may call open() itself: count once
+
+    def spy_read(self):
+        opened.append(self.name)
+        inside_read.append(1)
+        try:
+            return real_read(self)
+        finally:
+            inside_read.pop()
+
+    def spy_open(self, *a, **k):
+        if not inside_read:
+            opened.append(self.name)
+        return real_open(self, *a, **k)
+
+    monkeypatch.setattr(Path, "read_bytes", spy_read)
+    monkeypatch.setattr(Path, "open", spy_open)
+    cards = rsc._Scanner(rsc.MODE_COVER, use_cache=False).scan([tmp_path])
+    assert sorted(c.path.name for c in cards) == ["a.png", "b.png"] and all(c.phash for c in cards)
+    assert sorted(n for n in opened if n in ("a.png", "b.png")) == ["a.png", "b.png"]   # once each
+
+
+def _write(path, data):
+    path.write_bytes(data)
+    return path

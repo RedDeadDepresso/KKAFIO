@@ -134,10 +134,10 @@ def _iter_pngs(root: Path):
                 yield Path(dirpath, name)
 
 
-def _read_names(path: Path) -> tuple[str, str]:
+def _read_names(path: Path, raw: bytes | None = None) -> tuple[str, str]:
     from kkloader import KoikatuCharaData
     from kkafio.cards.chara.lenient_load import load_chara
-    parameter = load_chara(path, KoikatuCharaData)["Parameter"]
+    parameter = load_chara(path, KoikatuCharaData, raw=raw)["Parameter"]
     return str(parameter["firstname"] or ""), str(parameter["lastname"] or "")
 
 
@@ -180,19 +180,23 @@ class _Scanner:
             sp, fp = str(path), file_fp(path)
             entry = cache.get(sp)
             entry = dict(entry) if entry and entry.get("fp") == fp else {"fp": fp}
+            raw: bytes | None = None          # the file's bytes, read at most once for all of the below
             if "chara" not in entry:
                 known = png_cache.get(sp)
                 if known and known.get("fp") == fp and "category" in known:
                     entry["chara"] = known["category"] == "chara"
                 else:
-                    entry["chara"] = get_card_type(path) in CHARA_CARD_TYPES
+                    raw = path.read_bytes()
+                    entry["chara"] = get_card_type(raw) in CHARA_CARD_TYPES
             if entry["chara"]:
                 if self.mode == MODE_COVER and not entry.get("phash"):
-                    ph = phash_of_file(path)
+                    # With the bytes in hand the preview is cut from them; otherwise only the
+                    # preview part of the file is read (it's a few KB of a possibly huge card).
+                    ph = phash_of_file(path, raw)
                     if ph:                      # never cache a failed hash
                         entry["phash"] = ph
                 elif self.mode == MODE_NAME and "first" not in entry:
-                    entry["first"], entry["last"] = _read_names(path)
+                    entry["first"], entry["last"] = _read_names(path, raw)
             return path, entry
 
         done = 0
