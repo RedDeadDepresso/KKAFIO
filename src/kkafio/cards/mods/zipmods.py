@@ -83,9 +83,13 @@ def build_mods_cache(mods_dir: Path, include_modpack: bool = False,
         except Exception as e:
             logger.debug("CACHE", f"Ignoring unreadable {cache_path}: {e}")
 
-    # Only iterate files actually present on disk — deleted files are implicitly pruned
+    # Only iterate files actually present on disk — deleted files are implicitly pruned.
+    # Plain ".zip" files are candidates too, but are NOT opened here to see whether they
+    # hold a manifest (iter_mod_files does that, one by one on this thread, on every
+    # call): a zip without a manifest.xml simply comes back from guid_from_zipmod with
+    # no GUID — in the worker pool below, and cached with that result like any other.
     all_zips = [
-        zp for zp in iter_mod_files(mods_dir)
+        zp for zp in iter_mod_candidates(mods_dir)
         if include_modpack or not in_modpack_folder(zp, mods_dir)
     ]
     all_zip_strs = {str(zp) for zp in all_zips}
@@ -168,6 +172,15 @@ def guid_from_zipmod(path: Path) -> str | None:
             return el.text.strip() if el is not None and el.text else None
     except Exception:
         return None
+
+
+def iter_mod_candidates(mods_dir: Path):
+    """Yield every ".zipmod" and every plain ".zip" under mods_dir WITHOUT opening any of
+    them. Unlike iter_mod_files, plain zips that aren't mods (no manifest.xml) are
+    included; a caller that goes on to read their manifest (guid_from_zipmod) gets None
+    for those, so they drop out without a separate, serial open-each-zip pass."""
+    yield from mods_dir.rglob("*.zipmod")
+    yield from mods_dir.rglob("*.zip")
 
 
 def iter_mod_files(mods_dir: Path):

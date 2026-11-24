@@ -144,25 +144,39 @@ def _extract_guids_from_kkex(kkex_bytes: bytes) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def _payload_after_png(path: Path) -> bytes | None:
-    """Read `path` and return the raw bytes appended after the PNG's own
-    IEND chunk — the game's custom card/scene/coordinate payload that every
-    parse_*_guids()/parse_coord_outfit() function starts from. This exact
-    read-file + find-IEND-end + slice sequence used to be repeated at the
-    top of each of those functions; factored out here so there's one place
-    that knows how a KKAFIO-relevant PNG is structured, rather than several
-    copies that could individually drift (e.g. one checking `>=` and
-    another `>`) without anyone noticing.
+    """Return the raw bytes appended after the PNG's own IEND chunk — the game's
+    custom card/scene/coordinate payload that every parse_*_guids() function
+    starts from — or None if the file has no such payload.
+
+    The PNG image itself (usually the bulk of the file) is never read: the chunk
+    headers are walked with seek(), then only the payload is read. Same result as
+    reading the whole file and slicing after `_find_iend_end`, for far less I/O.
     """
-    data = path.read_bytes()
-    png_end = _find_iend_end(data)
-    if png_end < 0 or png_end >= len(data):
-        return None
-    return data[png_end:]
+    with open(path, "rb") as f:
+        size = f.seek(0, io.SEEK_END)
+        pos = 8                             # same as _find_iend_end: signature isn't checked
+        while pos + 12 <= size:
+            f.seek(pos)
+            head = f.read(8)
+            if len(head) < 8:
+                return None
+            length = struct.unpack(">I", head[:4])[0]
+            pos += 12 + length
+            if head[4:8] == PNG_IEND:
+                if pos >= size:
+                    return None
+                f.seek(pos)
+                return f.read()
+    return None
 
 
-def parse_chara_guids(path: Path) -> list[str]:
-    """Return sorted unique zipmod GUIDs referenced by a chara card."""
-    payload = _payload_after_png(path)
+def parse_chara_guids(path: Path, payload: bytes | None = None) -> list[str]:
+    """Return sorted unique zipmod GUIDs referenced by a chara card.
+
+    `payload` is the bytes after the PNG (see `_payload_after_png`) when the caller
+    has already read them, so the file isn't read a second time."""
+    if payload is None:
+        payload = _payload_after_png(path)
     if payload is None:
         return []
 
@@ -292,10 +306,11 @@ def _extract_guids_from_scene_blob(data: bytes) -> list[str]:
     return guids
 
 
-def parse_scene_guids(path: Path) -> list[str]:
+def parse_scene_guids(path: Path, payload: bytes | None = None) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a Studio scene file."""
     try:
-        payload = _payload_after_png(path)
+        if payload is None:
+            payload = _payload_after_png(path)
         if payload is None:
             return []
         return sorted(set(_extract_guids_from_scene_blob(payload)))
@@ -336,10 +351,11 @@ def _coord_kkex_bytes(payload: bytes) -> bytes | None:
     return s.read(ext_len)
 
 
-def parse_coord_guids(path: Path) -> list[str]:
+def parse_coord_guids(path: Path, payload: bytes | None = None) -> list[str]:
     """Return sorted unique zipmod GUIDs referenced by a coordinate card."""
     try:
-        payload = _payload_after_png(path)
+        if payload is None:
+            payload = _payload_after_png(path)
         kkex = _coord_kkex_bytes(payload) if payload is not None else None
         return sorted(set(_extract_guids_from_kkex(kkex))) if kkex else []
     except Exception:

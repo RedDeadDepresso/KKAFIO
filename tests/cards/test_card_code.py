@@ -151,9 +151,9 @@ def test_collect_handles_empty_and_missing_dirs(tmp_path):
 def _counting_collect(tmp_path, use_cache):
     calls = []
 
-    def parse(path):
+    def parse(path, payload=None):
         calls.append(path.name)
-        return parsing.parse_chara_guids(path)
+        return parsing.parse_chara_guids(path, payload)
 
     from kkafio.cards.classifier import CardType, get_card_type
     guids, by_file = png_guids.collect_png_guids(
@@ -459,3 +459,48 @@ def test_outfit_digest_ignores_versions_and_equates_slot_spellings():
 def test_outfit_digest_values_are_stable():
     golden = json.loads((Path(__file__).resolve().parents[1] / "golden" / "pure_functions.json").read_text(encoding="utf-8"))
     assert _digest_cases() == golden["outfit_digests"]
+
+
+# --- single-read / payload-only scanning ---------------------------------------------------
+
+def test_payload_after_png_matches_whole_file_slice(tmp_path):
+    png = cf.png_bytes()
+    for name, data in (("card.png", cf.chara_card([G1])), ("plain.png", png),
+                       ("tail.png", png + b"tail"), ("trunc.png", png[:-6]),
+                       ("sig.png", b"\x89PNG\r\n\x1a\n")):
+        p = cf.write(tmp_path / name, data)
+        end = parsing._find_iend_end(data)
+        expected = data[end:] if 0 <= end < len(data) else None
+        assert parsing._payload_after_png(p) == expected, name
+
+
+def test_parsers_accept_a_preread_payload_without_touching_the_file(tmp_path):
+    p = cf.write(tmp_path / "c.png", cf.chara_card([G1, G2]))
+    payload = parsing._payload_after_png(p)
+    p.unlink()                                                  # a file read would now fail
+    assert parsing.parse_chara_guids(p, payload=payload) == [G1, G2]
+
+
+def test_collector_reads_each_file_once_and_only_past_the_png(tmp_path, monkeypatch):
+    _populate_charas(tmp_path)
+    reads = []
+    real = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", lambda self: reads.append(self.name) or real(self))
+    guids, _ = png_guids.collect_png_guids(
+        [tmp_path], False, png_guids.CHARA_GUID_CACHE_FILE, "Chara",
+        lambda raw: b"KoiKatuChara" in raw, parsing.parse_chara_guids)
+    assert guids == {G1, G2} and reads == []                    # no whole-file read_bytes at all
+
+
+def test_scan_caches_plain_zips_without_manifest_and_skips_reopening_them(tmp_path, monkeypatch):
+    cf.zipmod(tmp_path / "a.zipmod", "g.a")
+    cf.zipmod(tmp_path / "plain_mod.zip", "g.b")
+    cf.zipmod(tmp_path / "just_files.zip", None)
+    assert zipmods.build_mods_cache(tmp_path, use_cache=True) == {
+        "g.a": str(tmp_path / "a.zipmod"), "g.b": str(tmp_path / "plain_mod.zip")}
+
+    opened = []
+    real = zipmods.guid_from_zipmod
+    monkeypatch.setattr(zipmods, "guid_from_zipmod", lambda zp: opened.append(zp.name) or real(zp))
+    assert set(zipmods.build_mods_cache(tmp_path, use_cache=True)) == {"g.a", "g.b"}
+    assert opened == []                                         # all three served from the cache

@@ -8,7 +8,9 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
-from kkafio.cards.mods.parsing import parse_chara_guids, parse_coord_guids, parse_scene_guids
+from kkafio.cards.mods.parsing import (
+    _payload_after_png, parse_chara_guids, parse_coord_guids, parse_scene_guids,
+)
 from kkafio.core.logger import logger
 
 
@@ -73,10 +75,12 @@ def collect_png_guids(
     """Incrementally collect GUIDs from a set of PNG-based card files.
 
     Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
-    Only new or changed PNGs are fully read. Shared implementation used for
-    chara cards, Studio scenes, and coordinate cards — `is_valid(raw_bytes)`
-    decides whether a given PNG belongs to this collector's content type,
-    and `parse_guids` extracts the GUIDs from files that pass.
+    Only new or changed PNGs are read, and each is read ONCE and only past its
+    PNG image: `is_valid(payload)` gets the bytes after the PNG's IEND chunk (the
+    game's card/scene/coordinate data, where every marker lives) and decides
+    whether the file belongs to this collector's content type; the same bytes
+    are then handed to `parse_guids(path, payload=payload)`. Shared
+    implementation used for chara cards, Studio scenes, and coordinate cards.
 
     Each folder in `dirs` has its own cache file (`<folder>/<cache_file>`)
     holding only the files found under that folder, so the cache is reusable
@@ -98,17 +102,17 @@ def collect_png_guids(
 
     workers = min(32, (os.cpu_count() or 4) * 2)
 
-    def _proc(png: Path):
+    def _proc(png: Path, fp: list[int]):
         try:
-            raw = png.read_bytes()
-            if is_valid(raw):
-                return png, [g for g in parse_guids(png) if g]
+            payload = _payload_after_png(png)
+            if payload is not None and is_valid(payload):
+                return png, fp, [g for g in parse_guids(png, payload=payload) if g]
         except Exception as e:
             # The file is left out of the results (and the cache), exactly as
             # before — but say why, so a card whose mods silently aren't
             # counted can be diagnosed (run with KKAFIO_DEBUG=1).
             logger.debug("CACHE", f"Could not parse {png}: {type(e).__name__}: {e}")
-        return png, None
+        return png, fp, None
 
     guids:     set[str]             = set()
     all_by_file: dict[str, list[str]] = {}
@@ -131,7 +135,7 @@ def collect_png_guids(
 
         new_files: dict = {}
         dir_by_file: dict[str, list[str]] = {}
-        to_read: list[Path] = []
+        to_read: list[tuple[Path, list[int]]] = []
 
         for png in d.rglob("*.png"):
             sp = str(png)
@@ -147,21 +151,21 @@ def collect_png_guids(
                 new_files[sp]   = old
                 memo[sp]        = old_guids_by_file[sp]
             else:
-                to_read.append(png)
+                to_read.append((png, fp))
 
         total_reused  += len(dir_by_file)
         total_scanned += len(to_read)
 
         if to_read:
             with ThreadPoolExecutor(max_workers=workers) as ex:
-                for future in as_completed([ex.submit(_proc, png) for png in to_read]):
-                    png, file_guids = future.result()
+                for future in as_completed([ex.submit(_proc, png, fp) for png, fp in to_read]):
+                    png, fp, file_guids = future.result()
                     sp = str(png)
                     memo[sp] = file_guids
                     if file_guids is None:
                         continue
-                    fp = file_fp(png)
-                    new_files[sp]   = fp
+                    new_files[sp]   = fp          # fingerprint from BEFORE the read: a file that
+                                                  # changed meanwhile is simply re-read next run
                     dir_by_file[sp] = file_guids
 
         if use_cache:
