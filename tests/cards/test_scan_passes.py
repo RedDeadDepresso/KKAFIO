@@ -7,7 +7,6 @@ from unittest import mock
 
 from kkafio.cards import scan_session
 from kkafio.cards.chara import outfits
-from kkafio.cards.chara.lenient_load import load_chara
 from kkafio.tasks import group_coordinates as gc
 
 
@@ -116,40 +115,6 @@ def test_chara_passes_share_one_parse_per_card_in_a_session(tmp_path):
             for _ in range(3):
                 assert gc._scan_charas([tmp_path], False, need_sigs=False)
         assert loads == [bytes]                       # one parse, from the bytes already read
-
-
-# --- load_chara from bytes ---------------------------------------------------------------------------
-
-class _Loader:
-    """Fails on `bad` (as kkloader does on a damaged card) and loads anything else."""
-    seen: list = []
-
-    @classmethod
-    def load(cls, src):
-        cls.seen.append(src)
-        if src == b"bad":
-            raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")
-        return ("loaded", src)
-
-
-def test_load_chara_from_bytes_never_touches_the_file(tmp_path):
-    _Loader.seen = []
-    assert load_chara(tmp_path / "gone.png", _Loader, raw=b"ok") == ("loaded", b"ok")
-    assert _Loader.seen == [b"ok"]
-
-
-def test_load_chara_repairs_from_the_bytes_without_a_temp_file(tmp_path):
-    _Loader.seen = []
-    with mock.patch("kkafio.cards.chara.lenient_load.repair_card", lambda raw: b"fixed"):
-        assert load_chara(tmp_path / "gone.png", _Loader, raw=b"bad") == ("loaded", b"fixed")
-    assert _Loader.seen == [b"bad", b"fixed"]
-    with mock.patch("kkafio.cards.chara.lenient_load.repair_card", lambda raw: None):
-        try:
-            load_chara(tmp_path / "gone.png", _Loader, raw=b"bad")
-        except UnicodeDecodeError:
-            pass
-        else:
-            raise AssertionError("an unrepairable card must still raise")
 
 
 # --- the chara-key readers read a card file once -------------------------------------------------------

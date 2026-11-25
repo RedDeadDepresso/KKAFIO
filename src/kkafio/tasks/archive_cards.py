@@ -129,9 +129,8 @@ class ArchiveCards(BaseTask):
                 logger.info("ARCHV", "  IncludeCoordinates disabled — skipping coordinate matching")
             elif coord_dir and coord_dir.exists():
                 from kkloader import KoikatuCharaData
-                from kkafio.cards.chara.lenient_load import load_chara
                 try:
-                    kc = load_chara(content_path, KoikatuCharaData, raw=raw)
+                    kc = KoikatuCharaData.load(raw)
                     coord_map = self._get_coord_map(coord_dir)
                     coord_paths = find_matching_coords(kc, coord_map)
                     logger.info("ARCHV", f"  Matching coordinates  : {len(coord_paths)}")
@@ -198,8 +197,7 @@ class ArchiveCards(BaseTask):
             return content_path.stem
         try:
             from kkloader import KoikatuCharaData
-            from kkafio.cards.chara.lenient_load import load_chara
-            kc = load_chara(content_path, KoikatuCharaData)
+            kc = KoikatuCharaData.load(str(content_path))
             p  = kc["Parameter"]
             name = f"{p.data.get('lastname', '')} {p.data.get('firstname', '')}".strip()
             return name or p.data.get("nickname", "") or content_path.stem

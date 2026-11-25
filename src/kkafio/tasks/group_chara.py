@@ -32,7 +32,6 @@ from kkloader import KoikatuCharaData
 from kkafio.tasks.base_task import BaseTask, DEFAULT_LLM_WEBSITE_URL, resolve_chara_dirs
 from kkafio.cards.cache_io import file_fp
 from kkafio.cards.chara.chara_key import chara_info, key_of
-from kkafio.cards.chara.lenient_load import load_chara
 from kkafio.cards.chara.chara_info_cache import CharaInfoCache
 from kkafio.indices.agv import Candidate
 from kkafio.cards.chara import hint_language, prompt_language
@@ -157,7 +156,7 @@ def read_card(png: Path, info_cache: CharaInfoCache) -> tuple[Path, str | None, 
         if get_card_type(raw) not in CHARA_CARD_TYPES:
             info_cache.put(png, fp, None)
             return png, None, None  # not a chara card — skip silently
-        kc   = load_chara(png, KoikatuCharaData, raw=raw)
+        kc   = KoikatuCharaData.load(raw)
         info = chara_info(kc)
         info_cache.put(png, fp, info)
         return png, key_of(info), info.birth
@@ -340,7 +339,7 @@ def process(folders: Path | Sequence[Path], json_str: str, include_subfolders: b
                         info_cache.put(png, fp, None)
                         skipped += 1
                         continue
-                    kc   = load_chara(png, KoikatuCharaData, raw=raw)
+                    kc   = KoikatuCharaData.load(raw)
                     info = chara_info(kc)
                     info_cache.put(png, fp, info)
                 elif info is None:

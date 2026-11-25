@@ -136,8 +136,7 @@ def _iter_pngs(root: Path):
 
 def _read_names(path: Path, raw: bytes | None = None) -> tuple[str, str]:
     from kkloader import KoikatuCharaData
-    from kkafio.cards.chara.lenient_load import load_chara
-    parameter = load_chara(path, KoikatuCharaData, raw=raw)["Parameter"]
+    parameter = KoikatuCharaData.load(raw if raw is not None else str(path))["Parameter"]
     return str(parameter["firstname"] or ""), str(parameter["lastname"] or "")
 
 
