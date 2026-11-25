@@ -185,7 +185,7 @@ The Organize Library window remembers its settings in three small files in `CONF
 | File | Remembers | Code |
 |---|---|---|
 | `library-shortcuts.json` | The keyboard shortcuts of its six actions (rename, change folder, delete, archive, restore, show in file explorer), shared by every tab | `src/kkafio/dialogs/library/shortcuts.py` |
-| `library-suggestions.json` | What the folder box offers while you type, per tab (`none`, `existing` or `all`) | `src/kkafio/dialogs/library/suggestions.py` |
+| `library-suggestions.json` | What the folder box offers while you type, per tab (`none`, `existing`, `all`, or `authors` for characters and coordinates) | `src/kkafio/dialogs/library/suggestions.py` |
 | `library-view.json` | The tab that was open last and, per tab, how its cards were sorted and how big they were | `src/kkafio/dialogs/library/viewstate.py` |
 
 ### `debug/*.log` and `debug/runtime-<instance-id>.log`

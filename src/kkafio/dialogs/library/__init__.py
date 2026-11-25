@@ -10,7 +10,7 @@ library — The Organize Library window and what each of its tabs does.
     scenes.py       the Scene tab: scan, suggest, move into author folders
     common.py       what the three tabs share
     shortcuts.py    the keyboard shortcuts (rename, change folder, delete) and their config file
-    suggestions.py  what the folder box offers per kind of card (none / existing / all), and its config file
+    suggestions.py  what the folder box offers per kind of card (none / existing / all / authors), and its config file
     settings_dialog.py  the Settings window (Settings button): the Shortcuts and Folder suggestions tabs
     shortcuts_dialog.py  the Shortcuts tab of it
     viewstate.py    the last open tab and each tab's sort and cover size, kept between runs

@@ -166,7 +166,7 @@ def test_library_tab_lists_scenes_only_moves_them_and_keeps_the_hash_cache(tmp_p
     cf.write(tmp_path / "_skipped_" / "s3.png", cf.scene_card([["c"]]))
     cf.write(tmp_path / "chara.png", cf.chara_card(["x"]))                    # not a scene
 
-    with mock.patch.object(gal, "load_authors", return_value=AUTHORS), \
+    with mock.patch.object(gal, "get_authors", return_value=AUTHORS), \
          mock.patch.object(gs, "load_scene_index", side_effect=AssertionError("Manual needs no index")):
         tab = gal.scene_library_tab(tmp_path, True)
         try:
@@ -202,3 +202,14 @@ def test_suggest_existing_leaves_out_the_known_authors():
     suggest, _ = gal.manual_callbacks(known, AUTHORS, {})
     assert suggest.existing("ali") == ["Alicia"]                   # no "Alice" from the authors
     assert suggest.existing("") == ["Alicia", "Zed"]
+
+
+def test_the_authors_are_loaded_once_per_run_and_an_empty_result_is_retried():
+    sa.reset_shared()
+    try:
+        with mock.patch.object(sa, "load_authors", return_value=[]) as load:
+            assert sa.get_authors() == [] and sa.get_authors() == [] and load.call_count == 2
+        with mock.patch.object(sa, "load_authors", return_value=[Author("A")]) as load:
+            assert sa.get_authors() == [Author("A")] and sa.get_authors() == [Author("A")] and load.call_count == 1
+    finally:
+        sa.reset_shared()

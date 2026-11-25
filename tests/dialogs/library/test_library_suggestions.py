@@ -7,7 +7,7 @@ import conftest  # noqa: F401  (sandbox env must be set before kkafio is importe
 from kkafio.core.session_store import SessionStore
 from kkafio.dialogs.library.common import Suggester
 from kkafio.dialogs.library.suggestions import (
-    CATEGORIES, SUGGEST_ALL, SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings)
+    CATEGORIES, SUGGEST_ALL, SUGGEST_AUTHORS, SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings, modes_for)
 
 
 def test_everything_is_suggested_by_default_and_unknown_categories_too():
@@ -56,3 +56,16 @@ def test_the_series_language_is_english_by_default_saved_and_checked(tmp_path):
     assert SuggestionSettings(SessionStore(path, "T")).language == "ja_jp"
     path.write_text(json.dumps({"series_language": "klingon"}), encoding="utf-8")
     assert SuggestionSettings(SessionStore(path, "T")).language == "en_us"
+
+
+def test_the_authors_mode_is_only_for_characters_and_coordinates(tmp_path):
+    assert SUGGEST_AUTHORS in modes_for("chara") and SUGGEST_AUTHORS in modes_for("outfit")
+    assert SUGGEST_AUTHORS not in modes_for("scene")
+    path = tmp_path / "s.json"
+    s = SuggestionSettings(SessionStore(path, "T"))
+    assert s.set("chara", SUGGEST_AUTHORS) and s.set("outfit", SUGGEST_AUTHORS) and not s.set("scene", SUGGEST_AUTHORS)
+    again = SuggestionSettings(SessionStore(path, "T"))
+    assert (again.mode("chara"), again.mode("outfit"), again.mode("scene")) == (
+        SUGGEST_AUTHORS, SUGGEST_AUTHORS, SUGGEST_ALL)
+    path.write_text(json.dumps({"suggestions": {"scene": SUGGEST_AUTHORS}}), encoding="utf-8")
+    assert SuggestionSettings(SessionStore(path, "T")).mode("scene") == SUGGEST_ALL

@@ -17,7 +17,7 @@ from kkafio.dialogs.library.common import (
     Suggester, chain_moves, dialog_text, existing_folders, is_plain_dir, make_item, rank_suggestions, rename_known,
     seed_known,
 )
-from kkafio.indices.author import canonical_name, load_authors, suggest_authors
+from kkafio.indices.author import canonical_name, get_authors, suggest_authors
 from kkafio.tasks.group_scenes import save_hash_cache, scan_scenes
 from kkafio.cards.mods.parsing import parse_scene_guids
 from kkafio.cards.mods.png_guids import collect_scene_guids_by_file
@@ -110,7 +110,7 @@ def scene_library_tab(folder: Path, use_cache: bool, label: str = ""):
     if use_cache:
         save_hash_cache(folder, cache, new_entries, set())     # hashing is the expensive part
 
-    authors = load_authors()
+    authors = get_authors()
     known = existing_folders(folder)
     seed_known(known, items)
     moves: dict[str, str] = {}

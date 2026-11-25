@@ -107,6 +107,27 @@ def load_authors(client=None, index_dir: Path | None = None) -> list[Author]:
             client.close()
 
 
+_shared: list[Author] | None = None
+
+
+def get_authors() -> list[Author]:
+    """The authors, loaded once per run and shared by every caller (the Scene tab, the other tabs'
+    author suggestions). An empty result (no index available) is not kept, so the next call tries
+    again. `reset_shared()` forgets the kept list."""
+    global _shared
+    if _shared is None:
+        authors = load_authors()
+        if not authors:
+            return authors
+        _shared = authors
+    return _shared
+
+
+def reset_shared() -> None:
+    global _shared
+    _shared = None
+
+
 def canonical_name(text: str, authors: list[Author]) -> str:
     """The author's name when `text` is a name or an alias of one (any case), else `text` stripped."""
     q = text.strip().casefold()

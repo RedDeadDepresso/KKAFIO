@@ -58,7 +58,7 @@ from kkafio.dialogs.common import maximize, new_window, show_and_wait
 from kkafio.dialogs.common import format_size
 from kkafio.dialogs.library.common import is_plain_dir
 from kkafio.dialogs.library.popup_menu import open_popup_menu
-from kkafio.dialogs.library.suggestions import SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
+from kkafio.dialogs.library.suggestions import SUGGEST_AUTHORS, SUGGEST_EXISTING, SUGGEST_NONE, SuggestionSettings
 from kkafio.dialogs.library.viewstate import LibraryViewState, TabView
 from kkafio.dialogs.library.shortcuts import (
     ACTION_ARCHIVE, ACTION_DELETE, ACTION_EXPLORER, ACTION_FOLDER, ACTION_RENAME, ACTION_RESTORE, ShortcutSettings,
@@ -595,14 +595,24 @@ def _build_library(root, parent, tab: LibraryTab, txt: DialogText, search_entry,
     def assign(item, text: str):
         return assign_source(item, text)
 
+    def author_names(text: str) -> list[str]:
+        from kkafio.indices.author import get_authors, suggest_authors      # loaded once, shared with the Scene tab
+        return suggest_authors(text, get_authors(), _MAX_SUGGESTIONS)       # none when nothing is typed
+
     def suggest(text: str) -> list[str]:
         """The names to offer for `text`, as far as the Settings allow for this kind of card."""
         apply_language()
         mode = suggestions.mode(tab.key)
         if mode == SUGGEST_NONE:
             return []
+        existing = getattr(suggest_source, "existing", suggest_source)
         if mode == SUGGEST_EXISTING:
-            return list(getattr(suggest_source, "existing", suggest_source)(text))
+            return list(existing(text))
+        if mode == SUGGEST_AUTHORS:
+            out = list(existing(text))
+            seen = {n.casefold() for n in out}
+            out += [n for n in author_names(text) if n.casefold() not in seen]
+            return out
         return list(suggest_source(text))
     view = view or TabView()                            # how the tab was left last time
     handle = _Library()

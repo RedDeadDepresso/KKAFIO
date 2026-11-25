@@ -7,6 +7,8 @@ Each kind of card (the library's tabs) has its own setting:
     existing  the folders that already exist
     all       the existing folders plus the tab's index: the series (characters), the characters'
               filenames (coordinates) or the known authors (scenes)  — what it always did
+    authors   the existing folders plus the known authors (characters and coordinates only; for
+              scenes that is what "all" already is)
 
 One `SuggestionSettings` is shared by every tab of the window, so a change applies at once. It is
 saved in ``<CONFIG_DIR>/config/library-suggestions.json`` (on Windows: %APPDATA%/KKAFIO/config), a
@@ -35,7 +37,16 @@ CATEGORIES = (CATEGORY_CHARA, CATEGORY_OUTFIT, CATEGORY_SCENE)
 SUGGEST_NONE = "none"
 SUGGEST_EXISTING = "existing"
 SUGGEST_ALL = "all"
-MODES = (SUGGEST_NONE, SUGGEST_EXISTING, SUGGEST_ALL)
+SUGGEST_AUTHORS = "authors"
+MODES = (SUGGEST_NONE, SUGGEST_EXISTING, SUGGEST_ALL, SUGGEST_AUTHORS)
+
+
+def modes_for(category: str) -> tuple[str, ...]:
+    """The modes `category` offers, in the order of its drop-down: the Scene tab's "all" already
+    is the authors, so only the other tabs have a separate authors mode."""
+    if category == CATEGORY_SCENE:
+        return (SUGGEST_NONE, SUGGEST_EXISTING, SUGGEST_ALL)
+    return MODES
 
 DEFAULT_MODE = SUGGEST_ALL
 
@@ -63,7 +74,7 @@ class SuggestionSettings:
 
     def set(self, category: str, mode: str) -> bool:
         """Use `mode` for `category` and save. False (nothing changed) for an unknown one."""
-        if category not in CATEGORIES or mode not in MODES:
+        if category not in CATEGORIES or mode not in modes_for(category):
             return False
         self.modes[category] = mode
         self.save()
@@ -91,7 +102,7 @@ class SuggestionSettings:
             return
         for category in CATEGORIES:
             value = data.get(category, DEFAULT_MODE)
-            if value in MODES:
+            if value in modes_for(category):
                 self.modes[category] = value
             else:
                 logger.warning(TAG, f"Ignoring the saved suggestion mode '{value}' for {category}")

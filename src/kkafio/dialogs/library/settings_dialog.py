@@ -3,7 +3,7 @@ settings_dialog.py — The library window's Settings dialog (the Settings button
 
 Two tabs: Shortcuts (shortcuts_dialog.py) and Folder suggestions, where each kind of card has a
 drop-down: No / Existing folders / Existing folders + Series (characters), Characters
-(coordinates) or Authors (scenes); and a drop-down for the language of the series suggestions. The tabs open the same dialog and change the same settings
+(coordinates) or Authors (scenes), and for characters and coordinates also Existing folders + Authors; and a drop-down for the language of the series suggestions. The tabs open the same dialog and change the same settings
 objects, so a change applies to all of them; every change is saved at once.
 """
 
@@ -14,8 +14,8 @@ from kkafio.core.i18n import t
 from kkafio.dialogs.library.shortcuts import ShortcutSettings
 from kkafio.dialogs.library.shortcuts_dialog import build_shortcuts_panel
 from kkafio.dialogs.library.suggestions import (
-    CATEGORIES, CATEGORY_CHARA, CATEGORY_OUTFIT, CATEGORY_SCENE, SUGGEST_ALL, SUGGEST_EXISTING, SUGGEST_NONE,
-    SuggestionSettings)
+    CATEGORIES, CATEGORY_CHARA, CATEGORY_OUTFIT, CATEGORY_SCENE, SUGGEST_ALL, SUGGEST_AUTHORS, SUGGEST_EXISTING,
+    SUGGEST_NONE, SuggestionSettings, modes_for)
 
 
 def category_labels() -> dict[str, str]:
@@ -30,9 +30,11 @@ def mode_labels(category: str) -> dict[str, str]:
     everything = {CATEGORY_CHARA: t("dialog.settings.mode_all_chara"),
                   CATEGORY_OUTFIT: t("dialog.settings.mode_all_outfit"),
                   CATEGORY_SCENE: t("dialog.settings.mode_all_scene")}[category]
-    return {SUGGEST_NONE: t("dialog.settings.mode_none"),
-            SUGGEST_EXISTING: t("dialog.settings.mode_existing"),
-            SUGGEST_ALL: everything}
+    texts = {SUGGEST_NONE: t("dialog.settings.mode_none"),
+             SUGGEST_EXISTING: t("dialog.settings.mode_existing"),
+             SUGGEST_ALL: everything,
+             SUGGEST_AUTHORS: t("dialog.settings.mode_authors")}
+    return {mode: texts[mode] for mode in modes_for(category)}
 
 
 # Each language in its own writing, so it can be found whatever the interface language is.
