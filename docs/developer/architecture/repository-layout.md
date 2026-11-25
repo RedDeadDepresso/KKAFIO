@@ -99,7 +99,7 @@ KKAFIO-dev/
 │   │   ├── password.py              # kk-password-scraper index: archive filename -> passwords
 │   │   ├── mod.py                   # kk-mod-scraper index: mod GUID -> Telegram message link (Download Missing Mods)
 │   │   ├── modpack.py               # kk-mod-scraper index: Sideloader Modpack: mod GUID -> download URLs (the path inside the modpack is the URL's path)
-│   │   └── author.py                # Known scene authors and their aliases (assets/indices/author.json), for the Scene library (Organize Library)
+│   │   └── author.py                # kk-author-scraper index: known scene authors and their aliases, for the Scene library (Organize Library)
 │   │
 │   ├── services/                    # External accounts, credentials and mod sources
 │   │   ├── content_sources/         # Where Download Contents gets files from (see the task's docstring for the link formats)
@@ -167,7 +167,7 @@ in the subpackage that fits it:
 | `core/` | configuration, logging, paths, or generic file operations |
 | `cards/` | about the contents of card PNGs (classification, GUIDs, outfit matching) |
 | `services/` | tied to an external account, credential store or remote mod source (site sessions, Telegram, BetterRepack, the Download Contents sites) |
-| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, mods, the Sideloader Modpack), or a shipped one (scene authors) |
+| `indices/` | a lookup table: a remote index downloaded on demand and cached (characters, scenes, archive passwords, mods, the Sideloader Modpack, scene authors) |
 | `dialogs/` | a CustomTkinter window the user interacts with (prompts, libraries, review screens) |
 | `system/` | an OS-facing helper (job objects, subprocess quirks, MXU automation, context-menu batching) |
 

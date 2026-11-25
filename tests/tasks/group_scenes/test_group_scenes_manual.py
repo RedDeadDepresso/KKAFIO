@@ -8,8 +8,8 @@ from types import SimpleNamespace
 from unittest import mock
 
 import card_factory as cf
+from index_cache import age
 from kkafio.core.config import _build_task_config
-from kkafio.core.paths import ASSETS_INDICES_DIR
 from kkafio.dialogs.library import scenes as gal
 from kkafio.dialogs.library.common import dialog_text
 from kkafio.indices import author as sa
@@ -22,25 +22,47 @@ AUTHORS = [Author("Alice", ("Al", "wonder")), Author("Bob"), Author("Alucid", ("
 
 # --- the authors file ----------------------------------------------------------------------------------
 
-def test_the_shipped_authors_file_loads():
-    authors = sa.load_authors()
-    assert len(authors) > 100 and all(a.name == a.name.strip() and a.name for a in authors)
-    by_name = {a.name: a for a in authors}
-    assert by_name["0864"].aliases == ("864",) and by_name["123sir"].aliases == ()
-    assert "Skull Prince" in by_name                                 # stray whitespace is stripped
-    assert (ASSETS_INDICES_DIR / sa.AUTHORS_FILE).is_file()
+class _Response:
+    def __init__(self, payload, status=200, etag='"e1"'):
+        self._payload, self.status_code, self.headers = payload, status, {"etag": etag}
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self._payload
 
 
-def test_load_authors_is_forgiving(tmp_path):
-    p = tmp_path / "a.json"
-    p.write_text(json.dumps({"authors": [{"name": " X ", "alias": [" y ", "", 5]}, {"name": ""}, {"alias": ["z"]},
-                                         "junk", {"name": "W", "alias": "oops"}]}), encoding="utf-8")
-    assert sa.load_authors(p) == [Author("X", ("y",)), Author("W")]
-    assert sa.load_authors(tmp_path / "missing.json") == []
-    p.write_text("not json", encoding="utf-8")
-    assert sa.load_authors(p) == []
-    p.write_text(json.dumps({"authors": 3}), encoding="utf-8")
-    assert sa.load_authors(p) == []
+class _Client:
+    def __init__(self, *responses):
+        self.responses, self.urls = list(responses), []
+
+    def get(self, url, headers=None, **kwargs):
+        self.urls.append(url)
+        return self.responses.pop(0)
+
+
+def test_authors_are_downloaded_and_cached(tmp_path):
+    raw = [{"name": " X ", "alias": [" y ", "", 5]}, {"name": ""}, {"alias": ["z"]}, "junk",
+           {"name": "W", "alias": "oops"}, {"name": "V"}]
+    client = _Client(_Response(raw))
+    assert sa.load_authors(client, tmp_path) == [Author("X", ("y",)), Author("W"), Author("V")]
+    assert client.urls == [sa.AUTHOR_INDEX_URL]
+    assert sa.AUTHOR_INDEX_URL == "https://reddeaddepresso.github.io/kk-author-scraper/indices/author.json"
+    assert json.loads((tmp_path / "author.json").read_text(encoding="utf-8")) == raw       # raw copy kept
+
+    again = _Client()                                         # checked less than an hour ago: no request
+    assert sa.load_authors(again, tmp_path) == [Author("X", ("y",)), Author("W"), Author("V")] and again.urls == []
+
+
+def test_a_failed_or_malformed_download_falls_back_to_the_cache_or_nothing(tmp_path):
+    assert sa.load_authors(_Client(_Response({"authors": []})), tmp_path / "none") == []     # old shape: not a list
+    assert sa.load_authors(_Client(_Response([{"name": "A"}])), tmp_path) == [Author("A")]
+    age(tmp_path / "author.json", 2)
+    assert sa.load_authors(_Client(_Response({"authors": []})), tmp_path) == [Author("A")]   # cached copy kept
+    age(tmp_path / "author.json", 2)
+    unchanged = _Client(_Response(None, status=304))
+    assert sa.load_authors(unchanged, tmp_path) == [Author("A")]
 
 
 def test_suggest_authors_ranks_names_then_aliases_then_contains():

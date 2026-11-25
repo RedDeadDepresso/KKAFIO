@@ -16,6 +16,7 @@ copy on disk and when KKAFIO last confirmed it is current (e.g. `password.json` 
 | `mod.json` | `mod.py` | [kk-mod-scraper](https://github.com/RedDeadDepresso/kk-mod-scraper) | Download Missing Mods | [mod index](mod-index.md) |
 | `password.json` | `password.py` | [kk-password-scraper](https://github.com/RedDeadDepresso/kk-password-scraper) | archive extraction | — |
 | `scene.json` | `scene.py` | [pepper-scene-hasher](https://github.com/RedDeadDepresso/pepper-scene-hasher) | Group Scenes | — |
+| `author.json` | `author.py` | [kk-author-scraper](https://github.com/RedDeadDepresso/kk-author-scraper) | Organize Library's Scene tab (known authors, as a list of `{"name", "alias": [...]}`) | — |
 | `modpack.json` | `modpack.py` | [kk-mod-scraper](https://github.com/RedDeadDepresso/kk-mod-scraper) | Archive Cards, Delete Cards, Download Missing Mods | [modpack index](modpack-index.md) |
 
 All of them are refreshed the same way (`src/kkafio/indices/cache.py`):
@@ -36,4 +37,3 @@ All files are safe to delete; the next run downloads a fresh copy.
 | File | Purpose |
 |---|---|
 | `assets/indices/default_coordinate.json` | Default coordinates Group Coordinates leaves alone. Built by a tool, not shipped: see [Default coordinates](default-coordinates.md). |
-| `assets/indices/author.json` | The known scene authors, used by Organize Library's Scene tab: see [Configuration](../configuration.md#files-shipped-with-the-app-not-runtime-config-but-config-adjacent). |

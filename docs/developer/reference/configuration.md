@@ -249,7 +249,6 @@ Two tasks write a plain-text report into their own folder every run, replacing t
 |---|---|
 | `interface.json` | The task/option schema — see [interface.json](interface-json.md). Read only by the GUI. |
 | `assets/indices/default_coordinate.json` | Optional list of default coordinates (a costume pack's stock outfits, say) that Group Coordinates leaves alone. Not shipped: written by `tools/build_default_coordinate.py`; see [Default coordinates](data-formats/default-coordinates.md). Read by `src/kkafio/cards/chara/outfits.py`'s `default_coordinate_digests()`. |
-| `assets/indices/author.json` | The known scene authors, `{"version", "updated", "authors": [{"name", "alias": [...]}]}`. Organize Library's Scene tab suggests these names (matching the aliases too, and resolving an alias to the name) and groups scenes under `<scene folder>/<name>/`. Static; read by `src/kkafio/indices/author.py`. |
 
 ## Quick reference: "where does X live?"
 
