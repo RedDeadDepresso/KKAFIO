@@ -9,7 +9,7 @@ from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.mods.parsing import (
-    _payload_after_png, parse_chara_guids, parse_coord_guids, parse_scene_guids,
+    _payload_after_png, scan_chara_guids, scan_coord_guids, scan_scene_guids,
 )
 from kkafio.core.logger import logger
 
@@ -69,18 +69,27 @@ def collect_png_guids(
     use_cache: bool,
     cache_file: str,
     label: str,
-    is_valid,
-    parse_guids,
+    is_valid=None,
+    parse_guids=None,
+    scan=None,
 ) -> tuple[set[str], dict[str, list[str]]]:
     """Incrementally collect GUIDs from a set of PNG-based card files.
 
     Unchanged PNG files (same mtime + size) reuse their cached GUIDs.
     Only new or changed PNGs are read, and each is read ONCE and only past its
-    PNG image: `is_valid(payload)` gets the bytes after the PNG's IEND chunk (the
-    game's card/scene/coordinate data, where every marker lives) and decides
-    whether the file belongs to this collector's content type; the same bytes
-    are then handed to `parse_guids(path, payload=payload)`. Shared
-    implementation used for chara cards, Studio scenes, and coordinate cards.
+    PNG image. Two ways to say how a file is read:
+
+      scan(path)  — the collector reads the file itself and returns its GUID list,
+                    or None if the file isn't this content type. Used for chara and
+                    coordinate cards, whose parsers seek straight to the header and
+                    the KKEx block instead of loading the whole payload.
+      is_valid(payload) + parse_guids(path, payload=payload) — the collector loads
+                    the bytes after the PNG's IEND chunk; `is_valid` decides whether
+                    the file belongs to this content type and the same bytes are
+                    handed to `parse_guids`. Used for Studio scenes, which are
+                    searched through in full.
+
+    Shared implementation used for chara cards, Studio scenes, and coordinate cards.
 
     Each folder in `dirs` has its own cache file (`<folder>/<cache_file>`)
     holding only the files found under that folder, so the cache is reusable
@@ -102,11 +111,19 @@ def collect_png_guids(
 
     workers = min(32, (os.cpu_count() or 4) * 2)
 
+    if scan is None and (is_valid is None or parse_guids is None):
+        raise TypeError("collect_png_guids needs `scan`, or both `is_valid` and `parse_guids`")
+
     def _proc(png: Path, fp: list[int]):
         try:
-            payload = _payload_after_png(png)
-            if payload is not None and is_valid(payload):
-                return png, fp, [g for g in parse_guids(png, payload=payload) if g]
+            if scan is not None:
+                found = scan(png)
+                if found is not None:
+                    return png, fp, [g for g in found if g]
+            else:
+                payload = _payload_after_png(png)
+                if payload is not None and is_valid(payload):
+                    return png, fp, [g for g in parse_guids(png, payload=payload) if g]
         except Exception as e:
             # The file is left out of the results (and the cache), exactly as
             # before — but say why, so a card whose mods silently aren't
@@ -199,68 +216,44 @@ def collect_png_guids(
 
 def collect_chara_guids(chara_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by chara cards in chara_dirs."""
-    from kkafio.cards.classifier import CardType, get_card_type
     guids, _ = collect_png_guids(
-        chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara",
-        lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS),
-        parse_chara_guids,
-    )
+        chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara", scan=scan_chara_guids)
     return guids
 
 
 def collect_chara_guids_by_file(chara_dirs: list[Path], use_cache: bool) -> dict[str, list[str]]:
     """Same as collect_chara_guids, but returns the per-file GUID mapping
     ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
-    from kkafio.cards.classifier import CardType, get_card_type
     _, by_file = collect_png_guids(
-        chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara",
-        lambda raw: get_card_type(raw) in (CardType.KK, CardType.KKSP, CardType.KKS),
-        parse_chara_guids,
-    )
+        chara_dirs, use_cache, CHARA_GUID_CACHE_FILE, "Chara", scan=scan_chara_guids)
     return by_file
 
 
 def collect_scene_guids(scene_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by Studio scenes in scene_dirs."""
-    from kkafio.cards.classifier import CardType, get_card_type
     guids, _ = collect_png_guids(
-        scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene",
-        lambda raw: get_card_type(raw) == CardType.SCENE,
-        parse_scene_guids,
-    )
+        scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene", scan=scan_scene_guids)
     return guids
 
 
 def collect_scene_guids_by_file(scene_dirs: list[Path], use_cache: bool) -> dict[str, list[str]]:
     """Same as collect_scene_guids, but returns the per-file GUID mapping
     ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
-    from kkafio.cards.classifier import CardType, get_card_type
     _, by_file = collect_png_guids(
-        scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene",
-        lambda raw: get_card_type(raw) == CardType.SCENE,
-        parse_scene_guids,
-    )
+        scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene", scan=scan_scene_guids)
     return by_file
 
 
 def collect_coord_guids(coord_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by coordinate cards in coord_dirs."""
-    from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
     guids, _ = collect_png_guids(
-        coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord",
-        lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw),
-        parse_coord_guids,
-    )
+        coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord", scan=scan_coord_guids)
     return guids
 
 
 def collect_coord_guids_by_file(coord_dirs: list[Path], use_cache: bool) -> dict[str, list[str]]:
     """Same as collect_coord_guids, but returns the per-file GUID mapping
     ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
-    from kkafio.cards.classifier import CardType, get_card_type, is_coordinate
     _, by_file = collect_png_guids(
-        coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord",
-        lambda raw: get_card_type(raw) == CardType.UNKNOWN and is_coordinate(raw),
-        parse_coord_guids,
-    )
+        coord_dirs, use_cache, COORD_GUID_CACHE_FILE, "Coord", scan=scan_coord_guids)
     return by_file

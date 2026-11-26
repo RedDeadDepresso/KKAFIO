@@ -504,3 +504,305 @@ def test_scan_caches_plain_zips_without_manifest_and_skips_reopening_them(tmp_pa
     monkeypatch.setattr(zipmods, "guid_from_zipmod", lambda zp: opened.append(zp.name) or real(zp))
     assert set(zipmods.build_mods_cache(tmp_path, use_cache=True)) == {"g.a", "g.b"}
     assert opened == []                                         # all three served from the cache
+
+
+# --- header-and-KKEx-only reading of chara / coordinate cards --------------------------------
+
+import io
+import struct
+
+
+def _big_chara(guids, face=200_000, other=300_000, marker=cf.CHARA_MARKER, kkex_first=False, kk=None):
+    """A chara card with a big face image and a big block *before* the KKEx block, like a real one."""
+    kk = kk if kk is not None else cf.kkex(guids)
+    blocks = [("Custom", b"c" * other), ("KKEx", kk)]
+    if kkex_first:
+        blocks.reverse()
+    data, lst = b"", []
+    for name, body in blocks:
+        lst.append({"name": name, "pos": len(data), "size": len(body)})
+        data += body
+    header = cf.msgpack.packb({"lstInfo": lst})
+    payload = (struct.pack("<i", 100) + cf._s(marker) + cf._s("0.0.0")
+               + struct.pack("<i", face) + b"f" * face
+               + struct.pack("<i", len(header)) + header + struct.pack("<q", len(data)) + data)
+    return cf.png_bytes() + payload
+
+
+def _big_coord(guids, blob=300_000, kk=None):
+    kk = kk if kk is not None else cf.kkex(guids)
+    payload = (struct.pack("<i", 100) + cf._s(cf.COORD_MARKER) + cf._s("1.0.0") + cf._s("name")
+               + struct.pack("<i", blob) + b"b" * blob
+               + cf._s("KKEx") + struct.pack("<i", 1) + struct.pack("<i", len(kk)) + kk)
+    return cf.png_bytes() + payload
+
+
+class _CountingRaw(io.FileIO):
+    total = 0
+
+    def readinto(self, b):
+        n = super().readinto(b)
+        type(self).total += n or 0
+        return n
+
+
+def _measure_reads(monkeypatch, fn):
+    """Bytes the OS actually handed to the process while `fn` ran (not what Python returned)."""
+    _CountingRaw.total = 0
+    monkeypatch.setattr(parsing, "open",
+                        lambda p, mode="rb", buffering=-1: io.BufferedReader(_CountingRaw(p, mode), max(buffering, 512)),
+                        raising=False)
+    try:
+        return fn(), _CountingRaw.total
+    finally:
+        monkeypatch.setattr(parsing, "open", open, raising=False)
+
+
+@pytest.mark.parametrize("kkex_first", [False, True])
+def test_scan_chara_reads_only_header_and_kkex(tmp_path, monkeypatch, kkex_first):
+    p = cf.write(tmp_path / "c.png", _big_chara([G2, G1], kkex_first=kkex_first))
+    assert p.stat().st_size > 500_000
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_chara_guids(p))
+    assert guids == [G1, G2]
+    assert read < 8_000, read                      # was: the whole ~500 kB payload
+
+
+def test_scan_coord_reads_only_header_and_kkex(tmp_path, monkeypatch):
+    p = cf.write(tmp_path / "k.png", _big_coord([G1, G3]))
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_coord_guids(p))
+    assert guids == [G1, G3]
+    assert read < 8_000, read
+
+
+def test_parse_chara_guids_without_payload_also_seeks(tmp_path, monkeypatch):
+    p = cf.write(tmp_path / "c.png", _big_chara([G1]))
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.parse_chara_guids(p))
+    assert guids == [G1] and read < 8_000
+
+
+def test_scan_chara_claims_only_koikatu_chara_cards(tmp_path):
+    scan = parsing.scan_chara_guids
+    assert scan(cf.write(tmp_path / "a.png", cf.chara_card([G1]))) == [G1]
+    assert scan(cf.write(tmp_path / "b.png", cf.chara_card([G1], marker="【KoiKatuCharaSun】"))) == [G1]
+    assert scan(cf.write(tmp_path / "c.png", cf.chara_card([G1], with_kkex=False))) == []   # a chara, no mods
+    for name, data in (("scene", cf.scene_card([[G1]])), ("coord", cf.coord_card([G1])),
+                       ("plain", cf.png_bytes()), ("junk", b"not a png at all"),
+                       ("eromake", cf.chara_card([G1], marker="【EroMakeChara】")),
+                       ("unknown", cf.chara_card([G1], marker="【NotACard】"))):
+        assert scan(cf.write(tmp_path / f"{name}.png", data)) is None, name
+
+
+def test_scan_coord_claims_only_koikatu_coordinates(tmp_path):
+    scan = parsing.scan_coord_guids
+    assert scan(cf.write(tmp_path / "a.png", cf.coord_card([G1]))) == [G1]
+    assert scan(cf.write(tmp_path / "b.png", cf.coord_card([]))) == []
+    for name, data in (("scene", cf.scene_card([[G1]])), ("chara", cf.chara_card([G1])),
+                       ("plain", cf.png_bytes()), ("junk", b"not a png at all"),
+                       ("ais", cf.coord_card([G1], marker="【AIS_Clothes】"))):
+        assert scan(cf.write(tmp_path / f"{name}.png", data)) is None, name
+
+
+def test_scan_survives_truncated_cards(tmp_path):
+    for data in (cf.chara_card([G1])[:-5], _big_chara([G1])[:300], cf.coord_card([G1])[:-5]):
+        p = cf.write(tmp_path / "t.png", data)
+        for scan in (parsing.scan_chara_guids, parsing.scan_coord_guids):
+            try:
+                assert scan(p) in (None, [])
+            except Exception:
+                pass                                   # the collector logs and skips such files
+
+
+def test_seek_based_and_payload_based_parsing_agree(tmp_path):
+    for name, data in (("c", _big_chara([G1, G2])), ("s", cf.chara_card([G3])), ("k", _big_coord([G2])),
+                       ("e", cf.chara_card([G1], with_kkex=False)), ("x", cf.png_bytes())):
+        p = cf.write(tmp_path / f"{name}.png", data)
+        payload = parsing._payload_after_png(p)
+        assert parsing.parse_chara_guids(p) == parsing.parse_chara_guids(p, payload=payload), name
+        assert parsing.parse_coord_guids(p) == parsing.parse_coord_guids(p, payload=payload), name
+
+
+def test_chara_and_coord_collectors_never_load_the_whole_payload(tmp_path, monkeypatch):
+    cf.write(tmp_path / "chara" / "a.png", _big_chara([G1]))
+    cf.write(tmp_path / "coord" / "k.png", _big_coord([G2]))
+    monkeypatch.setattr(parsing, "_payload_after_png",
+                        lambda p: (_ for _ in ()).throw(AssertionError("whole payload read")), raising=False)
+    monkeypatch.setattr(png_guids, "_payload_after_png",
+                        lambda p: (_ for _ in ()).throw(AssertionError("whole payload read")), raising=False)
+    assert png_guids.collect_chara_guids([tmp_path / "chara"], use_cache=False) == {G1}
+    assert png_guids.collect_coord_guids([tmp_path / "coord"], use_cache=False) == {G2}
+
+
+# --- skipping other plugins' data inside KKEx ------------------------------------------------
+
+def _noisy_kkex(guids, noise=400_000):
+    """A KKEx map where UAR sits between two big non-UAR plugin entries (e.g. KSOX textures)."""
+    infos = [cf.msgpack.packb({"ModID": g, "Slot": 1, "LocalSlot": 1000 + i, "Property": "x"})
+             for i, g in enumerate(guids)]
+    return cf.msgpack.packb({
+        "KSOX": {1: {"tex": b"t" * noise, "names": ["a", "b"]}},
+        cf.UAR: {1: {"info": infos}},
+        "com.deathweasel.bepinex.materialeditor": [None, {"blob": b"m" * noise, "n": 5}],
+    })
+
+
+def test_scan_chara_skips_non_uar_plugin_data_inside_kkex(tmp_path, monkeypatch):
+    p = cf.write(tmp_path / "c.png", _big_chara([G2, G1], kk=_noisy_kkex([G2, G1])))
+    assert p.stat().st_size > 1_200_000
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_chara_guids(p))
+    assert guids == [G1, G2]
+    assert read < 8_000, read              # the 800 kB of KSOX / Material Editor data is never read
+
+
+def test_scan_coord_skips_non_uar_plugin_data_inside_kkex(tmp_path, monkeypatch):
+    p = cf.write(tmp_path / "k.png", _big_coord([G1], kk=_noisy_kkex([G3])))
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_coord_guids(p))
+    assert guids == [G3]
+    assert read < 8_000, read
+
+
+def test_kkex_with_only_other_plugins_gives_no_guids(tmp_path):
+    kk = cf.msgpack.packb({"KSOX": {1: {"tex": b"t" * 1000}}})
+    assert parsing.scan_chara_guids(cf.write(tmp_path / "a.png", _big_chara([], kk=kk))) == []
+    assert parsing.scan_coord_guids(cf.write(tmp_path / "b.png", _big_coord([], kk=kk))) == []
+
+
+def test_uar_only_and_whole_kkex_give_the_same_guids(tmp_path):
+    for kk in (_noisy_kkex([G1, G2], noise=50), cf.kkex([G3]), cf.kkex([G1], ext_id="EC.Core.Sideloader.UniversalAutoResolver"),
+               cf.msgpack.packb({cf.UAR.encode(): {1: {"info": [cf.msgpack.packb({"ModID": G2})]}}})):
+        raw = cf.write(tmp_path / "c.png", _big_chara([], face=10, other=10, kk=kk))
+        payload = parsing._payload_after_png(raw)
+        whole = parsing._chara_kkex_from_stream(io.BytesIO(payload), only_uar=False)[1]
+        assert whole == kk
+        assert sorted(set(parsing._extract_guids_from_kkex(whole))) == parsing.scan_chara_guids(raw)
+
+
+def test_malformed_kkex_falls_back_to_reading_it_whole(tmp_path):
+    # not a map / invalid type byte / value running past the block: reading whole gives the old result ([])
+    for kk in (b"\x91\x01", b"\x81\xa1k\xc1", b"\x81\xa1k\xdb\xff\xff\xff\xff"):
+        p = cf.write(tmp_path / "c.png", _big_chara([], face=10, other=10, kk=kk))
+        assert parsing.scan_chara_guids(p) == []
+
+
+def test_mp_skip_steps_over_every_msgpack_type_exactly():
+    one = {   # raw encodings written by hand, so this doesn't lean on the msgpack library
+        "nil": b"\xc0", "false": b"\xc2", "true": b"\xc3", "posfix": b"\x7f", "negfix": b"\xe0",
+        "fixstr": b"\xa3abc", "str8": b"\xd9\x03abc", "str16": b"\xda\x00\x03abc", "str32": b"\xdb\x00\x00\x00\x03abc",
+        "bin8": b"\xc4\x03abc", "bin16": b"\xc5\x00\x03abc", "bin32": b"\xc6\x00\x00\x00\x03abc",
+        "ext8": b"\xc7\x03\x01abc", "ext16": b"\xc8\x00\x03\x01abc", "ext32": b"\xc9\x00\x00\x00\x03\x01abc",
+        "f32": b"\xca" + bytes(4), "f64": b"\xcb" + bytes(8),
+        "u8": b"\xcc\x01", "u16": b"\xcd" + bytes(2), "u32": b"\xce" + bytes(4), "u64": b"\xcf" + bytes(8),
+        "i8": b"\xd0\x01", "i16": b"\xd1" + bytes(2), "i32": b"\xd2" + bytes(4), "i64": b"\xd3" + bytes(8),
+        "fixext1": b"\xd4" + bytes(2), "fixext2": b"\xd5" + bytes(3), "fixext4": b"\xd6" + bytes(5),
+        "fixext8": b"\xd7" + bytes(9), "fixext16": b"\xd8" + bytes(17),
+        "fixarray": b"\x92\x01\xa1x", "array16": b"\xdc\x00\x02\x01\x02", "array32": b"\xdd\x00\x00\x00\x02\x01\x02",
+        "fixmap": b"\x81\xa1k\x01", "map16": b"\xde\x00\x01\xa1k\x01", "map32": b"\xdf\x00\x00\x00\x01\xa1k\x01",
+    }
+    nested = b"\x82\xa1a\x92\x81\xa1b\xc4\x02xy\xc0\xa1c\xdc\x00\x01\x91\x05"
+    for name, raw in {**one, "nested": nested}.items():
+        s = io.BytesIO(raw + b"TAIL")
+        parsing._mp_skip(s)
+        assert s.tell() == len(raw), name
+    with pytest.raises(ValueError):
+        parsing._mp_skip(io.BytesIO(b"\xc1"))
+    with pytest.raises(EOFError):
+        parsing._mp_skip(io.BytesIO(b"\x92\x01"))
+
+
+# --- streaming scene scan -----------------------------------------------------------------
+
+def _scene_with(guid_lists, pad_before=0, pad_between=0, tail=True, ext_id=cf.UAR):
+    blob = b"\x00" * pad_before
+    for guids in guid_lists:
+        infos = [cf.msgpack.packb({"ModID": g}) for g in guids]
+        blob += b"\x01" + ext_id.encode() + cf.msgpack.packb({1: {"info": infos}}) + b"\x02" * pad_between
+    if tail:
+        blob += cf.SCENE_MARKER.encode("utf-8")
+    return cf.png_bytes() + blob
+
+
+@pytest.mark.parametrize("chunk", [200, 257, 1000])
+def test_scene_stream_matches_in_memory_scan_at_every_chunk_boundary(tmp_path, monkeypatch, chunk):
+    monkeypatch.setattr(parsing, "_SCENE_CHUNK", chunk)
+    monkeypatch.setattr(parsing, "_SCENE_UNPACK_START", 64)       # lookahead = 128: small enough to test
+    many = [f"mod.big.{i}" for i in range(60)]                    # ~1.5 kB value: bigger than the first window
+    for pad in range(0, chunk + 5, 7):                            # slide every needle across a boundary
+        data = _scene_with([[G1], many, [G2, G3]], pad_before=pad, pad_between=pad % 40)
+        p = cf.write(tmp_path / "s.png", data)
+        expected = parsing.parse_scene_guids(p, payload=parsing._payload_after_png(p))
+        assert parsing.scan_scene_guids(p) == expected == sorted({G1, G2, G3, *many}), pad
+        assert parsing.parse_scene_guids(p) == expected
+
+
+def test_scene_stream_handles_both_ids_and_nested_needles(tmp_path, monkeypatch):
+    monkeypatch.setattr(parsing, "_SCENE_CHUNK", 300)
+    monkeypatch.setattr(parsing, "_SCENE_UNPACK_START", 64)
+    data = _scene_with([[G1]], pad_before=100) + b"\x02EC.Core.Sideloader.UniversalAutoResolver" + cf.msgpack.packb(
+        {1: {"info": [cf.msgpack.packb({"ModID": "ec.mod"})]}})
+    p = cf.write(tmp_path / "s.png", data)
+    assert parsing.scan_scene_guids(p) == sorted([G1, "ec.mod"])
+
+
+def test_scene_stream_decodes_a_value_larger_than_the_buffer(tmp_path, monkeypatch):
+    monkeypatch.setattr(parsing, "_SCENE_CHUNK", 256)
+    monkeypatch.setattr(parsing, "_SCENE_UNPACK_START", 64)
+    huge = [f"mod.{i:04d}" for i in range(2000)]                  # ~50 kB value, buffer is ~400 B
+    p = cf.write(tmp_path / "s.png", _scene_with([huge], pad_before=33))
+    assert parsing.scan_scene_guids(p) == sorted(huge)
+
+
+def test_scene_stream_requires_the_kstudio_mark_even_across_a_boundary(tmp_path, monkeypatch):
+    monkeypatch.setattr(parsing, "_SCENE_CHUNK", 200)
+    monkeypatch.setattr(parsing, "_SCENE_UNPACK_START", 64)
+    for pad in range(0, 300, 11):
+        p = cf.write(tmp_path / "s.png", _scene_with([[G1]], pad_before=pad))
+        assert parsing.scan_scene_guids(p) == [G1], pad
+    assert parsing.scan_scene_guids(cf.write(tmp_path / "n.png", _scene_with([[G1]], tail=False))) is None
+    assert parsing.scan_scene_guids(cf.write(tmp_path / "e.png", _scene_with([], pad_before=500))) == []
+    for name, data in (("chara", cf.chara_card([G1])), ("coord", cf.coord_card([G1])),
+                       ("plain", cf.png_bytes()), ("junk", b"not a png")):
+        assert parsing.scan_scene_guids(cf.write(tmp_path / f"{name}.png", data)) is None, name
+
+
+@pytest.mark.parametrize("tail_len", [0, 5, 190, 200, 201, 260, 1000, 5000])
+def test_scene_mark_found_whether_or_not_the_tail_fits_the_probe(tmp_path, monkeypatch, tail_len):
+    monkeypatch.setattr(parsing, "_SCENE_CHUNK", 200)
+    monkeypatch.setattr(parsing, "_SCENE_UNPACK_START", 64)
+    # the mark sits `tail_len` bytes before the end: inside the probe window, straddling it, or far outside
+    data = _scene_with([[G1]], pad_before=300, tail=True) + b"\x07" * tail_len
+    p = cf.write(tmp_path / "s.png", data)
+    assert parsing.scan_scene_guids(p) == [G1]
+    no_mark = cf.png_bytes() + b"\x00" * 700 + b"\x07" * tail_len
+    assert parsing.scan_scene_guids(cf.write(tmp_path / "n.png", no_mark)) is None
+
+
+def test_scene_scan_memory_is_bounded_by_the_chunk_not_the_scene(tmp_path):
+    import tracemalloc
+    pad = 24 * 1024 * 1024
+    p = cf.write(tmp_path / "big.png", _scene_with([[G1], [G2]], pad_before=pad, pad_between=pad // 2))
+    assert p.stat().st_size > 35_000_000
+    tracemalloc.start()
+    try:
+        guids = parsing.scan_scene_guids(p)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert guids == [G1, G2]
+    assert peak < 4_000_000, peak                  # one 1 MiB chunk + lookahead, not ~36 MB
+
+
+def test_scene_scan_reads_each_byte_about_once(tmp_path, monkeypatch):
+    p = cf.write(tmp_path / "s.png", _scene_with([[G1], [G2]], pad_before=3_000_000, pad_between=1_000_000))
+    payload = p.stat().st_size - len(cf.png_bytes())
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_scene_guids(p))
+    assert guids == [G1, G2]
+    assert payload <= read <= payload + parsing._SCENE_CHUNK + 4096, (read, payload)   # + the tail probe
+
+
+def test_scene_collectors_use_the_streaming_scan(tmp_path, monkeypatch):
+    cf.write(tmp_path / "scenes" / "s.png", _scene_with([[G1, G2]]))
+    cf.write(tmp_path / "scenes" / "chara.png", cf.chara_card([G3]))
+    boom = lambda p: (_ for _ in ()).throw(AssertionError("whole payload read"))
+    monkeypatch.setattr(png_guids, "_payload_after_png", boom, raising=False)
+    assert png_guids.collect_scene_guids([tmp_path / "scenes"], use_cache=False) == {G1, G2}
+    by_file = png_guids.collect_scene_guids_by_file([tmp_path / "scenes"], use_cache=False)
+    assert by_file == {str(tmp_path / "scenes" / "s.png"): sorted([G1, G2])}
