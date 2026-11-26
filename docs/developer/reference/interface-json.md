@@ -6,8 +6,10 @@ follows the same schema shape as [MaaFramework's ProjectInterface
 format](https://github.com/MaaXYZ/MaaFramework), because the GUI (MXU) was
 originally built to run MaaFramework automation projects, not KKAFIO. Parts
 of the schema exist purely because the GUI expects them, not because
-KKAFIO uses them (e.g. `pipeline_override`) — this doc calls those out
-explicitly so you don't go looking for code that reads them.
+KKAFIO uses them — this doc calls those out explicitly so you don't go
+looking for code that reads them. Notably, there is **no
+`pipeline_override`** anywhere in this file: that MaaFramework field wired
+option values into an automation pipeline, which KKAFIO doesn't have.
 
 ## Top-level structure
 
@@ -53,8 +55,7 @@ reused by most tasks rather than each task declaring its own copy).
   "name": "input_path",              // camelCase form used in some GUI code paths
   "label": "Input Directory",
   "description": "...",
-  "default": "",
-  "pipeline_override": { "InputPath": "{input_path}" }   // see the warning below
+  "default": ""
 }
 ```
 
@@ -76,50 +77,36 @@ Every one of these is read on the Python side by `_extract_opt()` in
 add a new option `type`, you must add a matching branch there too**, or
 Python will silently see `None` for every value of that option.
 
-### ⚠️ `pipeline_override` doesn't do what it looks like it does
+### Config keys: where an option's value ends up
 
-Every option declares a `pipeline_override`, e.g.:
-
-```jsonc
-"GroupCharaPrompt": {
-  "type": "textarea",
-  ...
-  "pipeline_override": { "Prompt": "{prompt}" }
-}
-```
-
-In a real MaaFramework project, this is what actually wires an option's
-value into the automation pipeline. **KKAFIO does not use this mechanism at
-all.** Python reads option values straight out of the raw, unresolved
-`optionValues` dict using the option's **own ID** (`"GroupCharaPrompt"`),
-not whatever `pipeline_override` says it maps to (`"Prompt"`):
+`interface.json` does not say which Python config key an option feeds.
+Python reads option values straight out of the raw `optionValues` dict using
+the option's **own ID** and stores them under KKAFIO's internal key:
 
 ```python
 # src/kkafio/core/config.py, inside _build_task_config()
 v = _extract_opt(opt_values, "GroupCharaPrompt")   # the option's ID
-if v is not None: cfg["Prompt"] = v                # KKAFIO's own internal key
+if v is not None: cfg["Prompt"] = v                # KKAFIO's internal key
 ```
 
-So `pipeline_override` in this codebase is decorative — kept because it's
-part of the schema shape the GUI expects and because it doubles as
-documentation of "this option ends up as config key X", but changing or
-deleting it has **no effect on Python's behaviour**. If an option's value
-isn't reaching the task that uses it, the bug is almost always a mismatch
-between the option's ID and the string literal passed to `_extract_opt()`
-in `src/kkafio/core/config.py` — check there, not `pipeline_override`.
+That internal key is the option ID **unless** `CONFIG_KEYS` in
+`tools/generate_config.py` says otherwise (e.g. `GroupCharaPrompt` ->
+`Prompt`, `ArchiveFormat` -> `Format`). Only the exceptions are listed.
+A checkbox that is expanded into one boolean per case uses the case name as
+the key, unless `CHECKBOX_CASE_KEYS` overrides it (`BackupFolders`' `Mods`
+case is stored as `mods`). If an option's value isn't reaching its task, the
+bug is almost always a mismatch between the option ID and the string passed
+to `_extract_opt()` in `src/kkafio/core/config.py`, or a missing
+`CONFIG_KEYS` entry.
 
 `_TASK_KEY`, `_TASK_DEFAULTS`, `_build_task_config()`, `_DEFAULT_TASK_PATHS`,
 and the `self.<task> = self.config_data["Task"]` accessor properties at the
 end of `validate_tasks()` don't have to be hand-kept in sync with
-`interface.json` though — `tools/generate_config.py` regenerates all five,
-using exactly this "`pipeline_override` doubles as documentation" signal
-(plus each option's own `"default"`) as its source of truth. It resolves
-the config key an option's value goes into from its `pipeline_override`
-(top-level, or the union of its cases'), which matches the hand-written
-mapping for every option in this file except one (`ContentTypes`, called
-out in the script itself), and reports anything else it can't resolve as a
-warning rather than guessing. The accessor property names come from
-converting each task's PascalCase name to snake_case.
+`interface.json` — `tools/generate_config.py` regenerates all five from the
+task/option declarations (plus each option's own `"default"`) and the two
+key tables above. It warns if either table names an option or case that no
+longer exists. The accessor property names come from converting each task's
+PascalCase name to snake_case.
 
 ```sh
 python tools/generate_config.py            # regenerate src/kkafio/core/config.py
@@ -129,9 +116,9 @@ python tools/generate_config.py --check    # exit 1 if src/kkafio/core/config.py
 ```
 
 Run it (without `--check`) after adding, renaming, or removing a task or
-option, and address any warnings it prints before committing — they mean an
-option's config-key mapping couldn't be resolved automatically and was
-skipped rather than guessed at. The rest of `src/kkafio/core/config.py` (the `Config`
+option, and address any warnings it prints before committing — they mean a
+`CONFIG_KEYS` / `CHECKBOX_CASE_KEYS` entry points at an option or case that
+no longer exists. The rest of `src/kkafio/core/config.py` (the `Config`
 class, path validation, `GameType`, etc.) has no `interface.json` equivalent,
 so the generator emits it unchanged from fixed templates.
 

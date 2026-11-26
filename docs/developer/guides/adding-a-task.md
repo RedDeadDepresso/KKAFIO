@@ -42,8 +42,9 @@ task is built, so the task sees it as if the GUI had set it. See [How CLI option
 In `interface.json`:
 
 - Add the task's options under `"option"` (or reuse existing ones such as `InputPath`). Give each a `type`, a
-  `default` (or `default_case`), `label` / `description` written as `$dotted.key` references, and a
-  `pipeline_override` that names the config key it ends up in. The generator reads that name.
+  `default` (or `default_case`), and `label` / `description` written as `$dotted.key` references. The option's value is stored
+  under a config key equal to the option ID; if it needs a different key, add it to `CONFIG_KEYS` in
+  `tools/generate_config.py`.
 - Add the task under `"task"`: `name` (exactly the `TaskSpec` name), `label`, `entry`, `default_check`,
   `description`, `group`, and the **ordered** `option` list of option IDs it shows.
 - Optionally add it to a `"preset"`.
@@ -58,8 +59,8 @@ python tools/sync_i18n_keys.py
 ```
 
 `generate_config.py` rewrites `src/kkafio/core/config.py` (task keys, defaults, the per-task option mapping, default
-folders and accessor properties). Read any warning it prints: it means an option's config key could not be worked
-out. Never edit that file by hand; see the [warning](../reference/interface-json.md#pipeline_override-doesnt-do-what-it-looks-like-it-does).
+folders and accessor properties). Read any warning it prints: it means a `CONFIG_KEYS` / `CHECKBOX_CASE_KEYS` entry points at something that
+no longer exists. Never edit that file by hand; see [Config keys](../reference/interface-json.md#config-keys-where-an-options-value-ends-up).
 
 `sync_i18n_keys.py` adds the new `$dotted.key` entries to every `assets/i18n/*.json` file, seeded with the English
 text, and reports them as needing a real translation. Translate them in all six languages. Text that Python

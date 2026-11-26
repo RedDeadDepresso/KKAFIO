@@ -48,7 +48,7 @@ Standalone scripts in `tools/` that `kkafio_cli` never imports:
 
 | Script | What it does |
 |---|---|
-| `tools/generate_config.py` | Regenerates `src/kkafio/core/config.py` from `interface.json`. See [interface.json](../reference/interface-json.md#pipeline_override-doesnt-do-what-it-looks-like-it-does). |
+| `tools/generate_config.py` | Regenerates `src/kkafio/core/config.py` from `interface.json`. See [interface.json](../reference/interface-json.md#config-keys-where-an-options-value-ends-up). |
 | `tools/sync_i18n_keys.py` | Adds and removes keys in `assets/i18n/*.json` to match `interface.json`. See [interface.json](../reference/interface-json.md#translations-languages). |
 | `tools/build_default_coordinate.py` | Records a folder of default coordinates for Group Coordinates. See [Default coordinates](../reference/data-formats/default-coordinates.md). |
 | `tools/download_gui.py` | Downloads the MXU-KKAFIO GUI release and saves it as `KKAFIO.exe`. Options: `--arch`, `--tag`, `--prerelease`. |

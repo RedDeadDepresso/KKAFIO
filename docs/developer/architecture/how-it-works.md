@@ -71,7 +71,7 @@ with the config file path and instance index. `Config.__init__` → `.read()`:
      — a big `if/elif` chain, one branch per task, that reads specific
      option IDs out of the raw `optionValues` dict via `_extract_opt()` and
      writes them into a flat config dict under KKAFIO's own internal key
-     names (which often don't match the option IDs — see the [interface.json reference](../reference/interface-json.md#pipeline_override-doesnt-do-what-it-looks-like-it-does)).
+     names (which often don't match the option IDs — see the [interface.json reference](../reference/interface-json.md#config-keys-where-an-options-value-ends-up)).
    - Also collects **task order**: for each *enabled* task (KKAFIO task or
      "special task", see below), appends `{"name": ..., "params": ...}` to
      `task_order` in the order they appear in the GUI's task list. This is

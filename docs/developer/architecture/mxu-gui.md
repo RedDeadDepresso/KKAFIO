@@ -16,8 +16,8 @@ viewer without knowing anything about what the tasks actually do. KKAFIO
 reuses that schema (see [interface.json](../reference/interface-json.md)) to get
 a polished GUI for free, at the cost of some fields in `interface.json`
 existing only because the schema expects them, and some MaaFramework/MAA
-terminology and concepts leaking through (`pipeline_override`,
-"special tasks" for generic automation actions).
+terminology and concepts leaking through ("special tasks" for generic
+automation actions).
 
 ## What's KKAFIO-specific in the fork
 

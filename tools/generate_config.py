@@ -18,20 +18,18 @@ hand-kept in sync every time a task/option is added, renamed, or removed:
   - the `self.<snake_case_task_name> = self.config_data["TaskName"]`
     accessor properties at the end of `validate_tasks()`
 
-This script derives all five straight from interface.json instead, using
-the same signal the interface.json reference (docs/developer/reference/interface-json.md) calls "decorative" for the GUI but still describes
-as documentation of "this option ends up as config key X": each option's
-`pipeline_override` (top-level, or the union of its cases' overrides). In
-this codebase that signal already agrees with the hand-written mapping for
-every option except one (see CHECKBOX_AS_LIST below), so it's treated as
-authoritative and any option pipeline_override can't resolve is reported as
-a warning rather than guessed at. The accessor property names are derived
-by converting each task's PascalCase name to snake_case.
+This script derives all five straight from interface.json instead. Each
+option's value is stored under a config key that, for most options, is simply
+the option's own ID. The ones that differ (e.g. `GroupCharaPrompt` -> `Prompt`)
+are listed in CONFIG_KEYS below; a checkbox case whose config key differs from
+the case name is listed in CHECKBOX_CASE_KEYS. interface.json itself carries no
+config-key information. The accessor property names are derived by converting
+each task's PascalCase name to snake_case.
 
 Option type `ordered_checkbox` ({"type": "ordered_checkbox", "order": [...],
 "checked": [...]} in the saved MXU JSON) is always kept as a raw list under one
 config key: the checked case names, sorted by the user's `order`. The key is the
-option's CONFIG_KEY_OVERRIDES entry if any, else the option's own ID. Its default
+option's CONFIG_KEYS entry if any, else the option's own ID. Its default
 is `default_case` (a list of case names), in `cases` order.
 
 Everything else in src/kkafio/core/config.py (docstring, imports, GameType enum,
@@ -66,26 +64,51 @@ def _camel_to_snake(name: str) -> str:
 
 
 # Checkbox options whose selection should be kept as the raw list of
-# selected case names (stored under the option's own ID) instead of being
-# expanded into one boolean config key per case. This is the one place
-# where pipeline_override's case data ("ScanChara", "ScanScene", ...)
-# doesn't match what the Python side actually stores — DownloadMissingMods
-# keeps the raw ["Chara", "Scene", ...] list under "ContentTypes" rather
-# than three separate Scan* booleans. OnFailedDownloads works the same
-# way: ["OpenReport", "CopyToClipboard"]. (`ordered_checkbox` options need no
-# entry here: they are always kept as a list.)
+# selected case names (stored under the option's config key) instead of being
+# expanded into one boolean config key per case. DownloadMissingMods keeps the
+# raw ["Chara", "Scene", ...] list under "ContentTypes" rather than three
+# separate Scan* booleans. OnFailedDownloads works the same way:
+# ["OpenReport", "CopyToClipboard"]. (`ordered_checkbox` options need no entry
+# here: they are always kept as a list.)
 CHECKBOX_AS_LIST = {"ContentTypes", "OnFailedDownloads", "OnFailedModDownloads"}
 
-# Manual (option_id -> config_key) overrides, for the rare option whose
-# pipeline_override can't be resolved to a single target key automatically.
-# ContentTypes is here because it's in CHECKBOX_AS_LIST above: its
-# pipeline_override describes separate booleans (ScanChara, ...) but the
-# real config key is the option's own ID, holding the raw list.
-CONFIG_KEY_OVERRIDES: dict[str, str] = {
-    "ContentTypes": "ContentTypes",
-    "OnFailedDownloads": "OnFailedDownloads",
-    # Download Missing Mods' own copy of the option (adds OpenWebsites); same config key.
+# option ID -> config key, ONLY for options whose config key differs from the
+# option's own ID (the default). Several options can share one key when they
+# belong to different tasks (e.g. every *Prompt option stores "Prompt").
+CONFIG_KEYS: dict[str, str] = {
+    "BackupOutputPath": "OutputPath",
+    "BackupFilename": "Filename",
+    "DownloadOutputDir": "OutputDir",
+    "DownloadLinks": "Links",
+    "DownloadsInputPath": "InputPath",
+    "CompressMaxSize": "MaxSize",
+    "CompressMode": "Mode",
+    "ArchivePassword": "Password",
+    "KeepStrategy": "Keep",
+    "SimilarityMode": "Mode",
+    "RenameCharaResolveLocally": "ResolveLocally",
+    "RenameCharaPrompt": "Prompt",
+    "GroupCharaPrompt": "Prompt",
+    "GroupCharaIncludeSubfolders": "IncludeSubfolders",
+    "GroupCharaResolveLocally": "ResolveLocally",
+    "GroupScenesIncludeSubfolders": "IncludeSubfolders",
+    "GroupScenesSubgroupByYear": "SubgroupByYear",
+    "GroupCoordinatesIncludeSubfolders": "IncludeSubfolders",
+    "GroupCoordinatesGroupByHair": "GroupByHair",
+    "GroupCoordinatesIgnoreAccessories": "IgnoreAccessories",
+    "GroupCoordinatesClothesTolerance": "ClothesTolerance",
+    "ArchiveFormat": "Format",
+    "ExportOutputPath": "OutputPath",
+    "ArchiveOutputPath": "OutputPath",
     "OnFailedModDownloads": "OnFailedDownloads",
+    "OrganizeLibraryArchiveOutputPath": "ArchiveOutputPath",
+    "OrganizeLibraryArchiveFormat": "ArchiveFormat",
+}
+
+# For checkbox options that are expanded into one boolean per case: the config
+# key of each case, ONLY where it differs from the case name (the default).
+CHECKBOX_CASE_KEYS: dict[str, dict[str, str]] = {
+    "BackupFolders": {"Mods": "mods"},
 }
 
 
@@ -109,34 +132,35 @@ def _pyrepr(value) -> str:
     return repr(value)
 
 
-class Unresolvable(Exception):
-    pass
+def _config_key(option_id: str) -> str:
+    """The config key an option's value is stored under."""
+    return CONFIG_KEYS.get(option_id, option_id)
 
 
-def _override_target_key(option_id: str, option: dict) -> str:
-    """Return the single config key an option's value should be stored
-    under, resolved from its pipeline_override (top-level, else the union
-    of its cases')."""
-    if option_id in CONFIG_KEY_OVERRIDES:
-        return CONFIG_KEY_OVERRIDES[option_id]
+def _checkbox_case_key(option_id: str, case_name: str) -> str:
+    """The config key a checkbox case's boolean is stored under."""
+    return CHECKBOX_CASE_KEYS.get(option_id, {}).get(case_name, case_name)
 
-    top = option.get("pipeline_override")
-    if isinstance(top, dict) and len(top) == 1:
-        return next(iter(top.keys()))
 
-    keys: set[str] = set()
-    for case in option.get("cases", []):
-        po = case.get("pipeline_override")
-        if isinstance(po, dict):
-            keys |= set(po.keys())
-    if len(keys) == 1:
-        return next(iter(keys))
-
-    raise Unresolvable(
-        f"option '{option_id}': can't resolve a single config key from "
-        f"pipeline_override (top-level={top!r}, case keys={keys!r}). "
-        f"Add it to CONFIG_KEY_OVERRIDES in this script."
-    )
+def validate_key_tables(options: dict) -> list[str]:
+    """Warn about CONFIG_KEYS / CHECKBOX_CASE_KEYS entries that no longer match
+    anything in interface.json (renamed or removed option or case)."""
+    problems: list[str] = []
+    for option_id in CONFIG_KEYS:
+        if option_id not in options:
+            problems.append(f"CONFIG_KEYS names unknown option '{option_id}'")
+    for option_id, cases in CHECKBOX_CASE_KEYS.items():
+        option = options.get(option_id)
+        if option is None:
+            problems.append(f"CHECKBOX_CASE_KEYS names unknown option '{option_id}'")
+            continue
+        known = {c["name"] for c in option.get("cases", [])}
+        for case_name in cases:
+            if case_name not in known:
+                problems.append(
+                    f"CHECKBOX_CASE_KEYS['{option_id}'] names unknown case '{case_name}'"
+                )
+    return problems
 
 
 def _default_for(option: dict):
@@ -186,15 +210,7 @@ def resolve_option(option_id: str, option: dict) -> ResolvedOption:
     if t == "checkbox" and option_id not in CHECKBOX_AS_LIST:
         # Expand into one boolean config key per case.
         case_names = [c["name"] for c in option.get("cases", [])]
-        case_targets = {}
-        for case in option.get("cases", []):
-            po = case.get("pipeline_override") or {}
-            if len(po) != 1:
-                raise Unresolvable(
-                    f"checkbox option '{option_id}' case '{case['name']}' "
-                    f"doesn't have exactly one pipeline_override key: {po!r}"
-                )
-            case_targets[case["name"]] = next(iter(po.keys()))
+        case_targets = {name: _checkbox_case_key(option_id, name) for name in case_names}
 
         default_selected = set(option.get("default_case") or [])
         lines = [f'selected = _extract_opt(opt_values, "{option_id}")',
@@ -209,14 +225,14 @@ def resolve_option(option_id: str, option: dict) -> ResolvedOption:
     if t == "ordered_checkbox":
         # Always a single list (checked names, in the user's order) — the
         # order is the whole point, so it's never expanded into booleans.
-        config_key = CONFIG_KEY_OVERRIDES.get(option_id, option_id)
+        config_key = _config_key(option_id)
         lines = [f'_set("{config_key}", "{option_id}")']
         return ResolvedOption("scalar", [config_key], lines,
                               [(config_key, _default_for(option))])
 
     # Every other type (including ContentTypes-style "keep the raw list"
     # checkboxes) is a single scalar/list value under one config key.
-    config_key = _override_target_key(option_id, option)
+    config_key = _config_key(option_id)
     default = _default_for(option)
     cast = ""
     if option["type"] == "input":
@@ -256,11 +272,7 @@ def build_task_defaults(tasks: list[dict], options: dict, warnings: list[str]) -
                     f"task '{name}' references undefined option '{opt_id}' — skipped"
                 )
                 continue
-            try:
-                resolved = resolve_option(opt_id, option)
-            except Unresolvable as e:
-                warnings.append(f"task '{name}': {e}")
-                continue
+            resolved = resolve_option(opt_id, option)
             for key, value in resolved.default_entries:
                 defaults[key] = value
         per_task_defaults[name] = defaults
@@ -299,10 +311,7 @@ def build_task_config_fn(tasks: list[dict], options: dict, warnings: list[str]) 
             option = options.get(opt_id)
             if option is None:
                 continue  # already warned about in build_task_defaults
-            try:
-                resolved = resolve_option(opt_id, option)
-            except Unresolvable:
-                continue  # already warned about in build_task_defaults
+            resolved = resolve_option(opt_id, option)
             body_lines.extend(resolved.set_lines)
         if not body_lines:
             body_lines = ["pass"]
@@ -755,7 +764,7 @@ def find_context_menu_instance(config_file: str) -> int | None:
 
 
 def generate(interface: dict) -> tuple[str, list[str]]:
-    warnings: list[str] = []
+    warnings: list[str] = validate_key_tables(interface.get("option", {}))
     tasks = interface.get("task", [])
     options = interface.get("option", {})
 
@@ -832,7 +841,7 @@ def main() -> None:
     print(f"Wrote {output_path}" + (" (unchanged)" if not stale else ""))
     if warnings:
         print(f"{len(warnings)} warning(s) above need a manual look — "
-              f"affected options were skipped rather than guessed at.")
+              f"see above.")
 
 
 if __name__ == "__main__":

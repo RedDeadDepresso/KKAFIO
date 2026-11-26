@@ -17,24 +17,15 @@
       "cases": [
         {
           "name": "Koikatsu",
-          "label": "$option.GameType.case.Koikatsu.label",
-          "pipeline_override": {
-            "GameType": "Koikatsu"
-          }
+          "label": "$option.GameType.case.Koikatsu.label"
         },
         {
           "name": "KoikatsuParty",
-          "label": "$option.GameType.case.KoikatsuParty.label",
-          "pipeline_override": {
-            "GameType": "KoikatsuParty"
-          }
+          "label": "$option.GameType.case.KoikatsuParty.label"
         },
         {
           "name": "KoikatsuSunshine",
-          "label": "$option.GameType.case.KoikatsuSunshine.label",
-          "pipeline_override": {
-            "GameType": "KoikatsuSunshine"
-          }
+          "label": "$option.GameType.case.KoikatsuSunshine.label"
         }
       ]
     },
@@ -43,22 +34,14 @@
       "name": "game_path",
       "label": "$option.GamePath.label",
       "description": "$option.GamePath.description",
-      "default": "",
-      "pipeline_override": {
-        "Core": {
-          "GamePath": "{game_path}"
-        }
-      }
+      "default": ""
     },
     "BackupOutputPath": {
       "type": "folder",
       "name": "backup_output_path",
       "label": "$option.OutputPath.label",
       "description": "$option.OutputPath.description",
-      "default": "C:/KKAFIO/Backups",
-      "pipeline_override": {
-        "OutputPath": "{backup_output_path}"
-      }
+      "default": "C:/KKAFIO/Backups"
     },
     "BackupFilename": {
       "type": "input",
@@ -71,20 +54,14 @@
           "default": "koikatsu_backup",
           "pipeline_type": "string"
         }
-      ],
-      "pipeline_override": {
-        "Filename": "{filename}"
-      }
+      ]
     },
     "DownloadOutputDir": {
       "type": "folder",
       "name": "output_dir",
       "label": "$option.DownloadOutputDir.label",
       "description": "$option.DownloadOutputDir.description",
-      "default": "C:/KKAFIO/Downloads",
-      "pipeline_override": {
-        "OutputDir": "{output_dir}"
-      }
+      "default": "C:/KKAFIO/Downloads"
     },
     "DownloadLinks": {
       "type": "textarea",
@@ -92,10 +69,7 @@
       "label": "$option.DownloadLinks.label",
       "description": "$option.DownloadLinks.description",
       "placeholder": "https://db.bepis.moe/koikatsu\nhttps://db.bepis.moe/koikatsu | all\nhttps://db.bepis.moe/koikatsu | 3\nhttps://db.bepis.moe/koikatsu | 1 | 5\nhttps://koikatsucards.com/contents/123\nhttps://koikatsucards.com/cards | 5 | 1\nhttps://www.pixiv.net/en/users/85712366\nhttps://www.pixiv.net/en/users/85712366 | 2\nhttps://www.pixiv.net/en/users/85712366 | 1 | 3 | f\nhttps://www.pixiv.net/en/artworks/151074285\nhttps://www.pixiv.net/en/artworks/151074285 | f\nhttps://pawchive.pw/patreon/user/58585170 | all\nhttps://pawchive.pw/patreon/user/58585170/post/173280929\nhttps://pawchive.pw/posts?q=koikatsu | 1 | 3\nhttps://gofile.io/d/AbC123\nhttps://files.catbox.moe/abc123.png\nhttps://catbox.moe/c/abc123\nhttps://www.mediafire.com/file/abc123/name.zip/file\nhttps://www.mediafire.com/folder/abc123/name\nhttps://pixeldrain.com/u/abc123\nhttps://pixeldrain.com/l/abc123\nhttps://mega.nz/file/AbC123#KEY\nhttps://drive.google.com/drive/folders/AbC123",
-      "default": "",
-      "pipeline_override": {
-        "Links": "{links}"
-      }
+      "default": ""
     },
     "SkipDownloaded": {
       "type": "switch",
@@ -105,17 +79,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.SkipDownloaded.case.Yes.label",
-          "pipeline_override": {
-            "SkipDownloaded": true
-          }
+          "label": "$option.SkipDownloaded.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.SkipDownloaded.case.No.label",
-          "pipeline_override": {
-            "SkipDownloaded": false
-          }
+          "label": "$option.SkipDownloaded.case.No.label"
         }
       ]
     },
@@ -124,30 +92,21 @@
       "name": "input_path",
       "label": "$option.InputPath.label",
       "description": "$option.InputPath.description",
-      "default": "",
-      "pipeline_override": {
-        "InputPath": "{input_path}"
-      }
+      "default": ""
     },
     "DownloadsInputPath": {
       "type": "folder",
       "name": "downloads_input_path",
       "label": "$option.InputPath.label",
       "description": "$option.InputPath.description",
-      "default": "C:/KKAFIO/Downloads",
-      "pipeline_override": {
-        "InputPath": "{downloads_input_path}"
-      }
+      "default": "C:/KKAFIO/Downloads"
     },
     "KoiCardTexToolPath": {
       "type": "folder",
       "name": "koi_card_tex_tool_path",
       "label": "$option.KoiCardTexToolPath.label",
       "description": "$option.KoiCardTexToolPath.description",
-      "default": "C:/KoiCardTexTool",
-      "pipeline_override": {
-        "KoiCardTexToolPath": "{koi_card_tex_tool_path}"
-      }
+      "default": "C:/KoiCardTexTool"
     },
     "CompressMaxSize": {
       "type": "input",
@@ -162,10 +121,7 @@
           "verify": "^\\d+$",
           "pattern_msg": "$option.CompressMaxSize.input.max_size.pattern_msg"
         }
-      ],
-      "pipeline_override": {
-        "MaxSize": "{max_size}"
-      }
+      ]
     },
     "DeleteOriginalCards": {
       "type": "switch",
@@ -175,17 +131,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.DeleteOriginalCards.case.Yes.label",
-          "pipeline_override": {
-            "DeleteOriginalCards": true
-          }
+          "label": "$option.DeleteOriginalCards.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.DeleteOriginalCards.case.No.label",
-          "pipeline_override": {
-            "DeleteOriginalCards": false
-          }
+          "label": "$option.DeleteOriginalCards.case.No.label"
         }
       ]
     },
@@ -197,31 +147,19 @@
       "cases": [
         {
           "name": "auto",
-          "label": "$option.CompressMode.case.auto.label",
-          "pipeline_override": {
-            "Mode": "auto"
-          }
+          "label": "$option.CompressMode.case.auto.label"
         },
         {
           "name": "png",
-          "label": "$option.CompressMode.case.png.label",
-          "pipeline_override": {
-            "Mode": "png"
-          }
+          "label": "$option.CompressMode.case.png.label"
         },
         {
           "name": "jpg",
-          "label": "$option.CompressMode.case.jpg.label",
-          "pipeline_override": {
-            "Mode": "jpg"
-          }
+          "label": "$option.CompressMode.case.jpg.label"
         },
         {
           "name": "maintex",
-          "label": "$option.CompressMode.case.maintex.label",
-          "pipeline_override": {
-            "Mode": "maintex"
-          }
+          "label": "$option.CompressMode.case.maintex.label"
         }
       ]
     },
@@ -233,17 +171,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.Convert.case.Yes.label",
-          "pipeline_override": {
-            "Convert": true
-          }
+          "label": "$option.Convert.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.Convert.case.No.label",
-          "pipeline_override": {
-            "Convert": false
-          }
+          "label": "$option.Convert.case.No.label"
         }
       ]
     },
@@ -265,10 +197,7 @@
           "name": "Delete",
           "label": "$option.KKAction.case.Delete.label"
         }
-      ],
-      "pipeline_override": {
-        "KKAction": "{case.name}"
-      }
+      ]
     },
     "KKSAction": {
       "type": "select",
@@ -288,10 +217,7 @@
           "name": "Delete",
           "label": "$option.KKSAction.case.Delete.label"
         }
-      ],
-      "pipeline_override": {
-        "KKSAction": "{case.name}"
-      }
+      ]
     },
     "ExtractArchive": {
       "type": "switch",
@@ -301,17 +227,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.ExtractArchive.case.Yes.label",
-          "pipeline_override": {
-            "ExtractArchive": true
-          }
+          "label": "$option.ExtractArchive.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.ExtractArchive.case.No.label",
-          "pipeline_override": {
-            "ExtractArchive": false
-          }
+          "label": "$option.ExtractArchive.case.No.label"
         }
       ]
     },
@@ -323,17 +243,11 @@
       "cases": [
         {
           "name": "Skip",
-          "label": "$option.ArchivePassword.case.Skip.label",
-          "pipeline_override": {
-            "Password": "Skip"
-          }
+          "label": "$option.ArchivePassword.case.Skip.label"
         },
         {
           "name": "Request",
-          "label": "$option.ArchivePassword.case.Request.label",
-          "pipeline_override": {
-            "Password": "Request Password"
-          }
+          "label": "$option.ArchivePassword.case.Request.label"
         }
       ]
     },
@@ -363,10 +277,7 @@
           "name": "First alphabetically",
           "label": "$option.KeepStrategy.case.First alphabetically.label"
         }
-      ],
-      "pipeline_override": {
-        "Keep": "{case.name}"
-      }
+      ]
     },
     "DuplicateAction": {
       "type": "select",
@@ -386,10 +297,7 @@
           "name": "Delete",
           "label": "$option.DuplicateAction.case.Delete.label"
         }
-      ],
-      "pipeline_override": {
-        "DuplicateAction": "{case.name}"
-      }
+      ]
     },
     "SimilarityMode": {
       "type": "select",
@@ -409,10 +317,7 @@
           "name": "Similar filename",
           "label": "$option.SimilarityMode.case.Similar filename.label"
         }
-      ],
-      "pipeline_override": {
-        "Mode": "{case.name}"
-      }
+      ]
     },
     "InstallContentTypes": {
       "type": "checkbox",
@@ -422,38 +327,23 @@
       "cases": [
         {
           "name": "Scenes",
-          "label": "$option.InstallContentTypes.case.Scenes.label",
-          "pipeline_override": {
-            "Scenes": true
-          }
+          "label": "$option.InstallContentTypes.case.Scenes.label"
         },
         {
           "name": "Chara",
-          "label": "$option.InstallContentTypes.case.Chara.label",
-          "pipeline_override": {
-            "Chara": true
-          }
+          "label": "$option.InstallContentTypes.case.Chara.label"
         },
         {
           "name": "Coords",
-          "label": "$option.InstallContentTypes.case.Coords.label",
-          "pipeline_override": {
-            "Coords": true
-          }
+          "label": "$option.InstallContentTypes.case.Coords.label"
         },
         {
           "name": "Mods",
-          "label": "$option.InstallContentTypes.case.Mods.label",
-          "pipeline_override": {
-            "Mods": true
-          }
+          "label": "$option.InstallContentTypes.case.Mods.label"
         },
         {
           "name": "Overlays",
-          "label": "$option.InstallContentTypes.case.Overlays.label",
-          "pipeline_override": {
-            "Overlays": true
-          }
+          "label": "$option.InstallContentTypes.case.Overlays.label"
         }
       ]
     },
@@ -465,24 +355,15 @@
       "cases": [
         {
           "name": "Chara",
-          "label": "$option.UngroupCardTypes.case.Chara.label",
-          "pipeline_override": {
-            "Chara": true
-          }
+          "label": "$option.UngroupCardTypes.case.Chara.label"
         },
         {
           "name": "Scenes",
-          "label": "$option.UngroupCardTypes.case.Scenes.label",
-          "pipeline_override": {
-            "Scenes": true
-          }
+          "label": "$option.UngroupCardTypes.case.Scenes.label"
         },
         {
           "name": "Coords",
-          "label": "$option.UngroupCardTypes.case.Coords.label",
-          "pipeline_override": {
-            "Coords": true
-          }
+          "label": "$option.UngroupCardTypes.case.Coords.label"
         }
       ]
     },
@@ -494,24 +375,15 @@
       "cases": [
         {
           "name": "Skip",
-          "label": "$option.FileConflicts.case.Skip.label",
-          "pipeline_override": {
-            "FileConflicts": "Skip"
-          }
+          "label": "$option.FileConflicts.case.Skip.label"
         },
         {
           "name": "Replace",
-          "label": "$option.FileConflicts.case.Replace.label",
-          "pipeline_override": {
-            "FileConflicts": "Replace"
-          }
+          "label": "$option.FileConflicts.case.Replace.label"
         },
         {
           "name": "Rename",
-          "label": "$option.FileConflicts.case.Rename.label",
-          "pipeline_override": {
-            "FileConflicts": "Rename"
-          }
+          "label": "$option.FileConflicts.case.Rename.label"
         }
       ]
     },
@@ -523,17 +395,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.OpenLlmWebsite.case.Yes.label",
-          "pipeline_override": {
-            "OpenLlmWebsite": true
-          }
+          "label": "$option.OpenLlmWebsite.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.OpenLlmWebsite.case.No.label",
-          "pipeline_override": {
-            "OpenLlmWebsite": false
-          }
+          "label": "$option.OpenLlmWebsite.case.No.label"
         }
       ]
     },
@@ -548,10 +414,7 @@
           "default": "https://claude.ai/",
           "pipeline_type": "string"
         }
-      ],
-      "pipeline_override": {
-        "LlmWebsiteUrl": "{url}"
-      }
+      ]
     },
     "RenameCharaResolveLocally": {
       "type": "switch",
@@ -561,17 +424,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.RenameCharaResolveLocally.case.Yes.label",
-          "pipeline_override": {
-            "ResolveLocally": true
-          }
+          "label": "$option.RenameCharaResolveLocally.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.RenameCharaResolveLocally.case.No.label",
-          "pipeline_override": {
-            "ResolveLocally": false
-          }
+          "label": "$option.RenameCharaResolveLocally.case.No.label"
         }
       ]
     },
@@ -609,20 +466,14 @@
           "name": "ru_ru",
           "label": "$option.PromptLanguage.case.ru_ru.label"
         }
-      ],
-      "pipeline_override": {
-        "PromptLanguage": "{case.name}"
-      }
+      ]
     },
     "RenameCharaPrompt": {
       "type": "textarea",
       "name": "prompt",
       "label": "$option.RenameCharaPrompt.label",
       "description": "$option.RenameCharaPrompt.description",
-      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's English name.\n\nRules:\n- Use the name the character is commonly known by, not a literal reading of the card.\n- If you do not recognise the character or are not confident, search the web for\n  it if you can. If you still do not know, fall back to your best transliteration\n  of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the\n  name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- An entry may have a \"hints\" list: up to 5 candidate characters from a character\n  database, written \"Last, First (Series)\", most popular first. They are only name\n  matches and can be wrong: use the one that fits the personality and hair colour (take\n  its name from it), and ignore the list if none does. Do not repeat \"hints\" in\n  your answer.\n- Some characters may be VTubers (virtual YouTubers); their hints are written with the series\n  \"VTubers\". Use the name from the hint.\n- If you use a hint whose name is not in English, translate it into English.\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n",
-      "pipeline_override": {
-        "Prompt": "{prompt}"
-      }
+      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key fill in \"lastname\", \"firstname\", and \"nickname\" with the\ncharacter's English name.\n\nRules:\n- Use the name the character is commonly known by, not a literal reading of the card.\n- If you do not recognise the character or are not confident, search the web for\n  it if you can. If you still do not know, fall back to your best transliteration\n  of the name written on the card.\n- Always fill in all three fields; never leave them empty.\n- firstname = given name, lastname = family name, regardless of the order the\n  name is written in the source material.\n- \"nickname\" can be a common short form or the same as firstname.\n- Use the personality and hair colour as additional hints to identify the character.\n- An entry may have a \"hints\" list: up to 5 candidate characters from a character\n  database, written \"Last, First (Series)\", most popular first. They are only name\n  matches and can be wrong: use the one that fits the personality and hair colour (take\n  its name from it), and ignore the list if none does. Do not repeat \"hints\" in\n  your answer.\n- Some characters may be VTubers (virtual YouTubers); their hints are written with the series\n  \"VTubers\". Use the name from the hint.\n- If you use a hint whose name is not in English, translate it into English.\n- Return ONLY the completed JSON object — no explanation, no markdown fences,\n  no extra text before or after.\n\nJSON to fill in:\n"
     },
     "SkipAlreadyRenamed": {
       "type": "switch",
@@ -632,17 +483,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.SkipAlreadyRenamed.case.Yes.label",
-          "pipeline_override": {
-            "SkipAlreadyRenamed": true
-          }
+          "label": "$option.SkipAlreadyRenamed.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.SkipAlreadyRenamed.case.No.label",
-          "pipeline_override": {
-            "SkipAlreadyRenamed": false
-          }
+          "label": "$option.SkipAlreadyRenamed.case.No.label"
         }
       ]
     },
@@ -654,17 +499,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.UpdateMetadata.case.Yes.label",
-          "pipeline_override": {
-            "UpdateMetadata": true
-          }
+          "label": "$option.UpdateMetadata.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.UpdateMetadata.case.No.label",
-          "pipeline_override": {
-            "UpdateMetadata": false
-          }
+          "label": "$option.UpdateMetadata.case.No.label"
         }
       ]
     },
@@ -676,17 +515,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.RenameFiles.case.Yes.label",
-          "pipeline_override": {
-            "RenameFiles": true
-          }
+          "label": "$option.RenameFiles.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.RenameFiles.case.No.label",
-          "pipeline_override": {
-            "RenameFiles": false
-          }
+          "label": "$option.RenameFiles.case.No.label"
         }
       ]
     },
@@ -696,10 +529,7 @@
       "label": "$option.GroupCharaPrompt.label",
       "description": "$option.GroupCharaPrompt.description",
       "placeholder": "You will receive a JSON object whose keys identify Koikatsu character card files…",
-      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from.\n\nA value is either an empty string \"\" or an object {\"series\": \"\", \"hints\": [...]}. \"hints\" lists up to 5 candidate characters from a character database, written \"Last, First (Series)\", most popular first. They are only name matches and can be wrong: use the one that fits the personality and hair colour, and ignore the list if none does.\n\nRules:\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Some characters may be VTubers (virtual YouTubers). Use \"VTubers\" as the series for them.\n- If you use a hint whose series is not in English, translate it into English.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you do not recognise a character and can search the web, look it up online first.\n- If you are still not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY a JSON object that maps every key to the series name as a plain string (do not repeat \"hints\") — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n",
-      "pipeline_override": {
-        "Prompt": "{prompt}"
-      }
+      "default": "You will receive a JSON object whose keys identify Koikatsu character card files.\nEach key has the format:  lastname | firstname | nickname | personality | hair_color\n\nYour task: for every key, write the English name of the anime/game series the character is from.\n\nA value is either an empty string \"\" or an object {\"series\": \"\", \"hints\": [...]}. \"hints\" lists up to 5 candidate characters from a character database, written \"Last, First (Series)\", most popular first. They are only name matches and can be wrong: use the one that fits the personality and hair colour, and ignore the list if none does.\n\nRules:\n- Use the official title of the series.\n- If a character appears in multiple series, use the one they are most associated with.\n- Some characters may be VTubers (virtual YouTubers). Use \"VTubers\" as the series for them.\n- If you use a hint whose series is not in English, translate it into English.\n- Use the personality and hair colour as additional hints to identify the character.\n- If you do not recognise a character and can search the web, look it up online first.\n- If you are still not sure or the character is an original creation, leave the value as an empty string \"\".\n- Return ONLY a JSON object that maps every key to the series name as a plain string (do not repeat \"hints\") — no explanation, no markdown code fences, no extra text before or after.\n\nJSON to fill in:\n"
     },
     "GroupCharaIncludeSubfolders": {
       "type": "switch",
@@ -709,17 +539,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupCharaIncludeSubfolders.case.Yes.label",
-          "pipeline_override": {
-            "IncludeSubfolders": true
-          }
+          "label": "$option.GroupCharaIncludeSubfolders.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupCharaIncludeSubfolders.case.No.label",
-          "pipeline_override": {
-            "IncludeSubfolders": false
-          }
+          "label": "$option.GroupCharaIncludeSubfolders.case.No.label"
         }
       ]
     },
@@ -731,17 +555,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupCharaResolveLocally.case.Yes.label",
-          "pipeline_override": {
-            "ResolveLocally": true
-          }
+          "label": "$option.GroupCharaResolveLocally.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupCharaResolveLocally.case.No.label",
-          "pipeline_override": {
-            "ResolveLocally": false
-          }
+          "label": "$option.GroupCharaResolveLocally.case.No.label"
         }
       ]
     },
@@ -753,17 +571,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupScenesIncludeSubfolders.case.Yes.label",
-          "pipeline_override": {
-            "IncludeSubfolders": true
-          }
+          "label": "$option.GroupScenesIncludeSubfolders.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupScenesIncludeSubfolders.case.No.label",
-          "pipeline_override": {
-            "IncludeSubfolders": false
-          }
+          "label": "$option.GroupScenesIncludeSubfolders.case.No.label"
         }
       ]
     },
@@ -775,17 +587,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupScenesSubgroupByYear.case.Yes.label",
-          "pipeline_override": {
-            "SubgroupByYear": true
-          }
+          "label": "$option.GroupScenesSubgroupByYear.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupScenesSubgroupByYear.case.No.label",
-          "pipeline_override": {
-            "SubgroupByYear": false
-          }
+          "label": "$option.GroupScenesSubgroupByYear.case.No.label"
         }
       ]
     },
@@ -797,17 +603,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupCoordinatesIncludeSubfolders.case.Yes.label",
-          "pipeline_override": {
-            "IncludeSubfolders": true
-          }
+          "label": "$option.GroupCoordinatesIncludeSubfolders.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupCoordinatesIncludeSubfolders.case.No.label",
-          "pipeline_override": {
-            "IncludeSubfolders": false
-          }
+          "label": "$option.GroupCoordinatesIncludeSubfolders.case.No.label"
         }
       ]
     },
@@ -819,17 +619,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupCoordinatesGroupByHair.case.Yes.label",
-          "pipeline_override": {
-            "GroupByHair": true
-          }
+          "label": "$option.GroupCoordinatesGroupByHair.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupCoordinatesGroupByHair.case.No.label",
-          "pipeline_override": {
-            "GroupByHair": false
-          }
+          "label": "$option.GroupCoordinatesGroupByHair.case.No.label"
         }
       ]
     },
@@ -841,17 +635,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.GroupCoordinatesIgnoreAccessories.case.Yes.label",
-          "pipeline_override": {
-            "IgnoreAccessories": true
-          }
+          "label": "$option.GroupCoordinatesIgnoreAccessories.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.GroupCoordinatesIgnoreAccessories.case.No.label",
-          "pipeline_override": {
-            "IgnoreAccessories": false
-          }
+          "label": "$option.GroupCoordinatesIgnoreAccessories.case.No.label"
         }
       ]
     },
@@ -868,10 +656,7 @@
           "verify": "^\\d+$",
           "pattern_msg": "$option.GroupCoordinatesClothesTolerance.input.tolerance.pattern_msg"
         }
-      ],
-      "pipeline_override": {
-        "ClothesTolerance": "{tolerance}"
-      }
+      ]
     },
     "DeleteEmptyFolders": {
       "type": "switch",
@@ -881,17 +666,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.DeleteEmptyFolders.case.Yes.label",
-          "pipeline_override": {
-            "DeleteEmptyFolders": true
-          }
+          "label": "$option.DeleteEmptyFolders.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.DeleteEmptyFolders.case.No.label",
-          "pipeline_override": {
-            "DeleteEmptyFolders": false
-          }
+          "label": "$option.DeleteEmptyFolders.case.No.label"
         }
       ]
     },
@@ -913,10 +692,7 @@
           "name": "copy",
           "label": "$option.ArchiveFormat.case.copy.label"
         }
-      ],
-      "pipeline_override": {
-        "Format": "{case.name}"
-      }
+      ]
     },
     "CombinedArchive": {
       "type": "switch",
@@ -926,17 +702,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.CombinedArchive.case.Yes.label",
-          "pipeline_override": {
-            "CombinedArchive": true
-          }
+          "label": "$option.CombinedArchive.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.CombinedArchive.case.No.label",
-          "pipeline_override": {
-            "CombinedArchive": false
-          }
+          "label": "$option.CombinedArchive.case.No.label"
         }
       ]
     },
@@ -948,17 +718,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.IncludeModpack.case.Yes.label",
-          "pipeline_override": {
-            "IncludeModpack": true
-          }
+          "label": "$option.IncludeModpack.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.IncludeModpack.case.No.label",
-          "pipeline_override": {
-            "IncludeModpack": false
-          }
+          "label": "$option.IncludeModpack.case.No.label"
         }
       ]
     },
@@ -967,40 +731,28 @@
       "name": "chara_dir",
       "label": "$option.CharaDir.label",
       "description": "$option.CharaDir.description",
-      "default": "",
-      "pipeline_override": {
-        "CharaDir": "{chara_dir}"
-      }
+      "default": ""
     },
     "SceneDir": {
       "type": "folder",
       "name": "scene_dir",
       "label": "$option.SceneDir.label",
       "description": "$option.SceneDir.description",
-      "default": "",
-      "pipeline_override": {
-        "SceneDir": "{scene_dir}"
-      }
+      "default": ""
     },
     "CoordDir": {
       "type": "folder",
       "name": "coord_dir",
       "label": "$option.CoordDir.label",
       "description": "$option.CoordDir.description",
-      "default": "",
-      "pipeline_override": {
-        "CoordDir": "{coord_dir}"
-      }
+      "default": ""
     },
     "OverlaysDir": {
       "type": "folder",
       "name": "overlays_dir",
       "label": "$option.OverlaysDir.label",
       "description": "$option.OverlaysDir.description",
-      "default": "",
-      "pipeline_override": {
-        "OverlaysDir": "{overlays_dir}"
-      }
+      "default": ""
     },
     "ContentTypes": {
       "type": "checkbox",
@@ -1010,24 +762,15 @@
       "cases": [
         {
           "name": "Scene",
-          "label": "$option.ContentTypes.case.Scene.label",
-          "pipeline_override": {
-            "ScanScene": true
-          }
+          "label": "$option.ContentTypes.case.Scene.label"
         },
         {
           "name": "Chara",
-          "label": "$option.ContentTypes.case.Chara.label",
-          "pipeline_override": {
-            "ScanChara": true
-          }
+          "label": "$option.ContentTypes.case.Chara.label"
         },
         {
           "name": "Coord",
-          "label": "$option.ContentTypes.case.Coord.label",
-          "pipeline_override": {
-            "ScanCoord": true
-          }
+          "label": "$option.ContentTypes.case.Coord.label"
         }
       ]
     },
@@ -1039,24 +782,15 @@
       "cases": [
         {
           "name": "Skip",
-          "label": "$option.SideloaderModpack.case.Skip.label",
-          "pipeline_override": {
-            "SideloaderModpack": "Skip"
-          }
+          "label": "$option.SideloaderModpack.case.Skip.label"
         },
         {
           "name": "OnlyUsed",
-          "label": "$option.SideloaderModpack.case.OnlyUsed.label",
-          "pipeline_override": {
-            "SideloaderModpack": "OnlyUsed"
-          }
+          "label": "$option.SideloaderModpack.case.OnlyUsed.label"
         },
         {
           "name": "All",
-          "label": "$option.SideloaderModpack.case.All.label",
-          "pipeline_override": {
-            "SideloaderModpack": "All"
-          }
+          "label": "$option.SideloaderModpack.case.All.label"
         }
       ]
     },
@@ -1108,17 +842,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.UseTelegramChatLinks.case.Yes.label",
-          "pipeline_override": {
-            "UseTelegramChatLinks": true
-          }
+          "label": "$option.UseTelegramChatLinks.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.UseTelegramChatLinks.case.No.label",
-          "pipeline_override": {
-            "UseTelegramChatLinks": false
-          }
+          "label": "$option.UseTelegramChatLinks.case.No.label"
         }
       ]
     },
@@ -1128,10 +856,7 @@
       "label": "$option.TelegramChatLinks.label",
       "description": "$option.TelegramChatLinks.description",
       "placeholder": "https://t.me/c/2549022984\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc",
-      "default": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc",
-      "pipeline_override": {
-        "TelegramChatLinks": "{telegram_chat_links}"
-      }
+      "default": "# private - need to join it\n# invite link: https://t.me/+td__jctzxic0NGVi\nhttps://t.me/c/2549022984\n\n# public - no need to join them\nhttps://t.me/KK_archive_modlibrary\nhttps://t.me/KKDOC\nhttps://t.me/koikatu_card_download\nhttps://t.me/kknowcc"
     },
     "ExceptionList": {
       "type": "textarea",
@@ -1139,10 +864,7 @@
       "label": "$option.ExceptionList.label",
       "description": "$option.ExceptionList.description",
       "placeholder": "BetterPenetration\\\nClo\\\nMyMod.zipmod\nAuthor.MyGuid",
-      "default": "BetterPenetration\\\nClo\\\ncom.joan6694.dynamic_bone_collider",
-      "pipeline_override": {
-        "ExceptionList": "{exception_list}"
-      }
+      "default": "BetterPenetration\\\nClo\\\ncom.joan6694.dynamic_bone_collider"
     },
     "Guids": {
       "type": "textarea",
@@ -1150,20 +872,14 @@
       "label": "$option.Guids.label",
       "description": "$option.Guids.description",
       "placeholder": "Anna.Scarf\n  ! GaryuX.Chloe\n  ✗ Evaan.OldMan.Mod\n  + [Makise]Yvonne\n  ~ NightOwlZzz.RemielleWeapon",
-      "default": "",
-      "pipeline_override": {
-        "Guids": "{guids}"
-      }
+      "default": ""
     },
     "ExportOutputPath": {
       "type": "folder",
       "name": "export_output_path",
       "label": "$option.OutputPath.label",
       "description": "$option.OutputPath.description",
-      "default": "C:/KKAFIO/Exported Mods",
-      "pipeline_override": {
-        "OutputPath": "{export_output_path}"
-      }
+      "default": "C:/KKAFIO/Exported Mods"
     },
     "RenameToGuid": {
       "type": "switch",
@@ -1173,17 +889,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.RenameToGuid.case.Yes.label",
-          "pipeline_override": {
-            "RenameToGuid": true
-          }
+          "label": "$option.RenameToGuid.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.RenameToGuid.case.No.label",
-          "pipeline_override": {
-            "RenameToGuid": false
-          }
+          "label": "$option.RenameToGuid.case.No.label"
         }
       ]
     },
@@ -1195,17 +905,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.AutoResolve.case.Yes.label",
-          "pipeline_override": {
-            "AutoResolve": true
-          }
+          "label": "$option.AutoResolve.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.AutoResolve.case.No.label",
-          "pipeline_override": {
-            "AutoResolve": false
-          }
+          "label": "$option.AutoResolve.case.No.label"
         }
       ]
     },
@@ -1214,30 +918,21 @@
       "name": "mods_dir",
       "label": "$option.ModsDir.label",
       "description": "$option.ModsDir.description",
-      "default": "",
-      "pipeline_override": {
-        "ModsDir": "{mods_dir}"
-      }
+      "default": ""
     },
     "InstalledModsDir": {
       "type": "folder",
       "name": "installed_mods_dir",
       "label": "$option.InstalledModsDir.label",
       "description": "$option.InstalledModsDir.description",
-      "default": "",
-      "pipeline_override": {
-        "InstalledModsDir": "{installed_mods_dir}"
-      }
+      "default": ""
     },
     "DownloadedModsDir": {
       "type": "folder",
       "name": "downloaded_mods_dir",
       "label": "$option.DownloadedModsDir.label",
       "description": "$option.DownloadedModsDir.description",
-      "default": "",
-      "pipeline_override": {
-        "DownloadedModsDir": "{downloaded_mods_dir}"
-      }
+      "default": ""
     },
     "UseCache": {
       "type": "switch",
@@ -1247,17 +942,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.UseCache.case.Yes.label",
-          "pipeline_override": {
-            "UseCache": true
-          }
+          "label": "$option.UseCache.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.UseCache.case.No.label",
-          "pipeline_override": {
-            "UseCache": false
-          }
+          "label": "$option.UseCache.case.No.label"
         }
       ]
     },
@@ -1299,10 +988,7 @@
           "name": "ru_ru",
           "label": "$option.HintsLanguage.case.ru_ru.label"
         }
-      ],
-      "pipeline_override": {
-        "HintsLanguage": "{case.name}"
-      }
+      ]
     },
     "ContentPaths": {
       "type": "file_list",
@@ -1310,20 +996,14 @@
       "label": "$option.ContentPaths.label",
       "description": "$option.ContentPaths.description",
       "file_filter": "PNG files (*.png)",
-      "default": [],
-      "pipeline_override": {
-        "ContentPaths": "{content_paths}"
-      }
+      "default": []
     },
     "ArchiveOutputPath": {
       "type": "folder",
       "name": "archive_output_path",
       "label": "$option.OutputPath.label",
       "description": "$option.OutputPath.description",
-      "default": "C:/KKAFIO/Archived Cards",
-      "pipeline_override": {
-        "OutputPath": "{archive_output_path}"
-      }
+      "default": "C:/KKAFIO/Archived Cards"
     },
     "IncludeCoordinates": {
       "type": "switch",
@@ -1333,17 +1013,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.IncludeCoordinates.case.Yes.label",
-          "pipeline_override": {
-            "IncludeCoordinates": true
-          }
+          "label": "$option.IncludeCoordinates.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.IncludeCoordinates.case.No.label",
-          "pipeline_override": {
-            "IncludeCoordinates": false
-          }
+          "label": "$option.IncludeCoordinates.case.No.label"
         }
       ]
     },
@@ -1355,17 +1029,11 @@
       "cases": [
         {
           "name": "OpenReport",
-          "label": "$option.OnFailedDownloads.case.OpenReport.label",
-          "pipeline_override": {
-            "OpenReport": true
-          }
+          "label": "$option.OnFailedDownloads.case.OpenReport.label"
         },
         {
           "name": "CopyToClipboard",
-          "label": "$option.OnFailedDownloads.case.CopyToClipboard.label",
-          "pipeline_override": {
-            "CopyReportToClipboard": true
-          }
+          "label": "$option.OnFailedDownloads.case.CopyToClipboard.label"
         }
       ]
     },
@@ -1377,31 +1045,19 @@
       "cases": [
         {
           "name": "OpenReport",
-          "label": "$option.OnFailedDownloads.case.OpenReport.label",
-          "pipeline_override": {
-            "OpenReport": true
-          }
+          "label": "$option.OnFailedDownloads.case.OpenReport.label"
         },
         {
           "name": "CopyToClipboard",
-          "label": "$option.OnFailedModDownloads.case.CopyToClipboard.label",
-          "pipeline_override": {
-            "CopyReportToClipboard": true
-          }
+          "label": "$option.OnFailedModDownloads.case.CopyToClipboard.label"
         },
         {
           "name": "OpenWebsites",
-          "label": "$option.OnFailedDownloads.case.OpenWebsites.label",
-          "pipeline_override": {
-            "OpenWebsites": true
-          }
+          "label": "$option.OnFailedDownloads.case.OpenWebsites.label"
         },
         {
           "name": "OrganizeLibrary",
-          "label": "$option.OnFailedDownloads.case.OrganizeLibrary.label",
-          "pipeline_override": {
-            "OrganizeLibrary": true
-          }
+          "label": "$option.OnFailedDownloads.case.OrganizeLibrary.label"
         }
       ]
     },
@@ -1411,10 +1067,7 @@
       "label": "$option.WebsiteUrls.label",
       "description": "$option.WebsiteUrls.description",
       "placeholder": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659",
-      "default": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659",
-      "pipeline_override": {
-        "WebsiteUrls": "{website_urls}"
-      }
+      "default": "https://web.telegram.org/k/#-2549022984\nhttps://kknow.cc/threads/illusion-koikatu-mod-search-thread.1854/post-31659"
     },
     "CheckSharedMods": {
       "type": "switch",
@@ -1424,17 +1077,11 @@
       "cases": [
         {
           "name": "Yes",
-          "label": "$option.CheckSharedMods.case.Yes.label",
-          "pipeline_override": {
-            "CheckSharedMods": true
-          }
+          "label": "$option.CheckSharedMods.case.Yes.label"
         },
         {
           "name": "No",
-          "label": "$option.CheckSharedMods.case.No.label",
-          "pipeline_override": {
-            "CheckSharedMods": false
-          }
+          "label": "$option.CheckSharedMods.case.No.label"
         }
       ]
     },
@@ -1447,18 +1094,12 @@
         {
           "name": "CheckSharedMods",
           "label": "$option.CheckSharedMods.label",
-          "description": "$option.CheckSharedMods.description",
-          "pipeline_override": {
-            "CheckSharedMods": true
-          }
+          "description": "$option.CheckSharedMods.description"
         },
         {
           "name": "IncludeCoordinates",
           "label": "$option.IncludeCoordinates.label",
-          "description": "$option.IncludeCoordinates.description",
-          "pipeline_override": {
-            "IncludeCoordinates": true
-          }
+          "description": "$option.IncludeCoordinates.description"
         }
       ]
     },
@@ -1471,18 +1112,12 @@
         {
           "name": "CheckSharedMods",
           "label": "$option.CheckSharedMods.label",
-          "description": "$option.CheckSharedMods.description",
-          "pipeline_override": {
-            "CheckSharedMods": true
-          }
+          "description": "$option.CheckSharedMods.description"
         },
         {
           "name": "IncludeCoordinates",
           "label": "$option.IncludeCoordinates.label",
-          "description": "$option.IncludeCoordinates.description",
-          "pipeline_override": {
-            "IncludeCoordinates": true
-          }
+          "description": "$option.IncludeCoordinates.description"
         }
       ]
     },
@@ -1491,10 +1126,7 @@
       "name": "library_archive_output_path",
       "label": "$option.OrganizeLibraryArchiveOutputPath.label",
       "description": "$option.OrganizeLibraryArchiveOutputPath.description",
-      "default": "C:/KKAFIO/Archived Cards",
-      "pipeline_override": {
-        "ArchiveOutputPath": "{library_archive_output_path}"
-      }
+      "default": "C:/KKAFIO/Archived Cards"
     },
     "OrganizeLibraryArchiveFormat": {
       "type": "select",
@@ -1514,10 +1146,7 @@
           "name": "copy",
           "label": "$option.ArchiveFormat.case.copy.label"
         }
-      ],
-      "pipeline_override": {
-        "ArchiveFormat": "{case.name}"
-      }
+      ]
     },
     "OrganizeLibraryArchiveOptions": {
       "type": "checkbox",
@@ -1528,34 +1157,22 @@
         {
           "name": "ArchiveCombined",
           "label": "$option.CombinedArchive.label",
-          "description": "$option.CombinedArchive.description",
-          "pipeline_override": {
-            "ArchiveCombined": true
-          }
+          "description": "$option.CombinedArchive.description"
         },
         {
           "name": "ArchiveIncludeModpack",
           "label": "$option.IncludeModpack.label",
-          "description": "$option.IncludeModpack.description",
-          "pipeline_override": {
-            "ArchiveIncludeModpack": true
-          }
+          "description": "$option.IncludeModpack.description"
         },
         {
           "name": "ArchiveIncludeCoordinates",
           "label": "$option.IncludeCoordinates.label",
-          "description": "$option.IncludeCoordinates.description",
-          "pipeline_override": {
-            "ArchiveIncludeCoordinates": true
-          }
+          "description": "$option.IncludeCoordinates.description"
         },
         {
           "name": "ArchiveOpenFolder",
           "label": "$option.ArchiveOpenFolder.label",
-          "description": "$option.ArchiveOpenFolder.description",
-          "pipeline_override": {
-            "ArchiveOpenFolder": true
-          }
+          "description": "$option.ArchiveOpenFolder.description"
         }
       ]
     },
@@ -1567,24 +1184,15 @@
       "cases": [
         {
           "name": "Mods",
-          "label": "$option.BackupFolders.case.Mods.label",
-          "pipeline_override": {
-            "mods": true
-          }
+          "label": "$option.BackupFolders.case.Mods.label"
         },
         {
           "name": "UserData",
-          "label": "$option.BackupFolders.case.UserData.label",
-          "pipeline_override": {
-            "UserData": true
-          }
+          "label": "$option.BackupFolders.case.UserData.label"
         },
         {
           "name": "BepInEx",
-          "label": "$option.BackupFolders.case.BepInEx.label",
-          "pipeline_override": {
-            "BepInEx": true
-          }
+          "label": "$option.BackupFolders.case.BepInEx.label"
         }
       ]
     }
