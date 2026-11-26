@@ -9,7 +9,8 @@ from pathlib import Path
 
 from kkafio.cards.cache_io import atomic_write_json, file_fp
 from kkafio.cards.mods.parsing import (
-    _payload_after_png, scan_chara_guids, scan_coord_guids, scan_scene_guids,
+    _payload_after_png, log_scene_scan_summary, scan_chara_guids, scan_coord_guids,
+    scan_scene_guids,
 )
 from kkafio.core.logger import logger
 
@@ -86,8 +87,9 @@ def collect_png_guids(
       is_valid(payload) + parse_guids(path, payload=payload) — the collector loads
                     the bytes after the PNG's IEND chunk; `is_valid` decides whether
                     the file belongs to this content type and the same bytes are
-                    handed to `parse_guids`. Used for Studio scenes, which are
-                    searched through in full.
+                    handed to `parse_guids`. (Studio scenes use `scan` too: their
+                    object tree is walked, and the file is searched through in full
+                    only when the walk fails. See `parsing.scan_scene_guids`.)
 
     Shared implementation used for chara cards, Studio scenes, and coordinate cards.
 
@@ -233,6 +235,7 @@ def collect_scene_guids(scene_dirs: list[Path], use_cache: bool) -> set[str]:
     """Incrementally collect GUIDs referenced by Studio scenes in scene_dirs."""
     guids, _ = collect_png_guids(
         scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene", scan=scan_scene_guids)
+    log_scene_scan_summary()
     return guids
 
 
@@ -241,6 +244,7 @@ def collect_scene_guids_by_file(scene_dirs: list[Path], use_cache: bool) -> dict
     ({absolute_path_str: [guid, ...]}) instead of the aggregated set."""
     _, by_file = collect_png_guids(
         scene_dirs, use_cache, SCENE_GUID_CACHE_FILE, "Scene", scan=scan_scene_guids)
+    log_scene_scan_summary()
     return by_file
 
 

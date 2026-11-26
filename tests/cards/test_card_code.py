@@ -793,7 +793,7 @@ def test_scene_scan_memory_is_bounded_by_the_chunk_not_the_scene(tmp_path):
 def test_scene_scan_reads_each_byte_about_once(tmp_path, monkeypatch):
     p = cf.write(tmp_path / "s.png", _scene_with([[G1], [G2]], pad_before=3_000_000, pad_between=1_000_000))
     payload = p.stat().st_size - len(cf.png_bytes())
-    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_scene_guids(p))
+    guids, read = _measure_reads(monkeypatch, lambda: parsing.scan_scene_guids(p, mode="full"))
     assert guids == [G1, G2]
     assert payload <= read <= payload + parsing._SCENE_CHUNK + 4096, (read, payload)   # + the tail probe
 
