@@ -6,6 +6,7 @@ Needs the ``kkd_session`` cookie (see ``kkafio.services.content_sources.koikatsu
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -22,19 +23,36 @@ def _koikatsu_default_name(url: str) -> str:
     return name + ".png"
 
 
+# The site is a Next.js app: the "Website Download" button is a client
+# component, so its URL is no longer an <a> in the server-rendered HTML. It only
+# appears inside the RSC payload (<script>self.__next_f.push([1,"..."])</script>)
+# as  \\"url\\":\\"/api/downloads/content-file/token/<token>\\"  (JSON escaped).
+_API_DOWNLOAD_RE = re.compile(r'/api/downloads/[^"\\\s<>]+')
+
+
 async def _get_koikatsu_file_url(client, url: str) -> str:
     from bs4 import BeautifulSoup
     r = await get_with_retry(client, url)
-    soup = BeautifulSoup(r.text, "html.parser")
+    html = r.text
+    soup = BeautifulSoup(html, "html.parser")
 
+    # Legacy markup (kept as a fallback in case the old layout returns).
     tag = soup.select_one("div.download-menu-panel > a.download-menu-item")
     if tag and tag.get("href"):
         return urljoin(KOIKATSU_URL, tag["href"])
 
-    tags = soup.select("div.tag-group.download-link-group > a.link-pill")
-    for tag in tags:
-        if tag and "/api/downloads/" in tag.get("href", ""):
+    for tag in soup.select("div.tag-group.download-link-group > a.link-pill"):
+        if "/api/downloads/" in tag.get("href", ""):
             return urljoin(KOIKATSU_URL, tag["href"])
+
+    # Current markup: pull the token URL out of the embedded RSC payload.
+    m = _API_DOWNLOAD_RE.search(html)
+    if m:
+        return urljoin(KOIKATSU_URL, m.group(0))
+
+    if soup.select_one("div.download-link-group .download-locked"):
+        logger.warning("DLOAD",
+            "  Website Download is locked — kkd_session is missing/expired (not logged in).")
     return ""
 
 
