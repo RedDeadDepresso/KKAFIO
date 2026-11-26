@@ -8,28 +8,6 @@
   "documentation": "https://reddeaddepresso.github.io/KKAFIO/tasks/",
   "description": "$root.description",
   "icon": "assets/icon.png",
-  "agent": {
-    "child_exec": "python",
-    "child_args": ["kkafio_cli.exe", "run"]
-  },
-  "controller": [
-    {
-      "name": "Win32-Game",
-      "label": "Koikatsu (Win32)",
-      "type": "Win32",
-      "win32": {
-        "class_regex": "UnityWndClass",
-        "window_regex": "Koikatsu"
-      }
-    }
-  ],
-  "resource": [
-    {
-      "name": "default",
-      "label": "Default Resources",
-      "path": ["."]
-    }
-  ],
   "option": {
     "GameType": {
       "type": "select",

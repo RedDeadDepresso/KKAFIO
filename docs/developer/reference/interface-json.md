@@ -4,10 +4,10 @@
 every task, every option, how they're grouped, and the built-in presets. It
 follows the same schema shape as [MaaFramework's ProjectInterface
 format](https://github.com/MaaXYZ/MaaFramework), because the GUI (MXU) was
-originally built to run MaaFramework automation projects, not KKAFIO. Large
-parts of the schema exist purely because the GUI expects them, not because
-KKAFIO uses them — this doc calls those out explicitly so you don't go
-looking for code that reads them.
+originally built to run MaaFramework automation projects, not KKAFIO. Parts
+of the schema exist purely because the GUI expects them, not because
+KKAFIO uses them (e.g. `pipeline_override`) — this doc calls those out
+explicitly so you don't go looking for code that reads them.
 
 ## Top-level structure
 
@@ -18,10 +18,6 @@ looking for code that reads them.
   "label": ..., "title": ..., "version": "2.0.1",
   "github": ..., "description": ..., "icon": ...,
 
-  "agent":      { ... },          // NOT used to launch kkafio_cli — see below
-  "controller": [ ... ],          // NOT used by KKAFIO at all — see below
-  "resource":   [ ... ],          // NOT used by KKAFIO at all — see below
-
   "option":  { "OptionId": { ... }, ... },   // every option, keyed by ID
   "group":   [ { "name": ..., "label": ..., "default_expand": ... }, ... ],
   "task":    [ { "name": "TaskName", "option": ["OptionId", ...], ... }, ... ],
@@ -29,23 +25,20 @@ looking for code that reads them.
 }
 ```
 
-### `agent` / `controller` / `resource` — present but unused
+### No `agent` / `controller` / `resource`
 
-These three top-level keys exist because the GUI's schema loader expects a
-complete MaaFramework `ProjectInterface`. KKAFIO doesn't use any of them:
+A MaaFramework `ProjectInterface` normally declares `agent`, `controller` and
+`resource`. KKAFIO does file I/O only, so this `interface.json` omits all three,
+and MXU treats `controller` and `resource` as optional (with no controller or
+resource, every task and option is simply considered compatible). If you're
+tracing "how does the GUI know what to run", the answer is not in
+`interface.json` — the CLI is launched by the Rust function `resolve_cli()` in
+`kkafio.rs`, which looks for `kkafio_cli.exe` next to the GUI executable
+(falling back to `python kkafio_cli.py`). See
+[The MXU GUI](../architecture/mxu-gui.md).
 
-- `controller` normally describes how to attach to a game window for
-  automated input — irrelevant here, KKAFIO only does file I/O.
-- `resource` normally points at MaaFramework pipeline/resource folders.
-- `agent`'s `child_exec`/`child_args` look like they might be what launches
-  the CLI, but they aren't — the actual subprocess launch is a bespoke Rust
-  function, `resolve_cli()` in `kkafio.rs`, which looks for
-  `kkafio_cli.exe` next to the GUI executable (falling back to
-  `python kkafio_cli.py`) and ignores this field entirely. See
-  [The MXU GUI](../architecture/mxu-gui.md).
-
-If you're trying to trace "how does the GUI know what to run", the answer
-is not in `interface.json` — it's in `kkafio.rs`.
+Don't add them back, and don't add task- or option-level `controller` /
+`resource` filters: with none declared they'd have nothing to match against.
 
 ## `option` entries
 
