@@ -651,6 +651,11 @@ class SceneWalkError(Exception):
     scan."""
 
 
+class NotASceneError(SceneWalkError):
+    """The file is a plain PNG (nothing follows it).
+    There is nothing to scan, so the caller skips the file instead of falling back to the full scan."""
+
+
 class _Cursor:
     """Read-only, seekable view of a payload with read-ahead, so the walker's many small reads
     cost one disk read per `_WALK_BLOCK` instead of one each. Reads of a block or more, and
@@ -1085,7 +1090,7 @@ def walk_scene(path: Path) -> SceneWalk:
     with open(path, "rb", buffering=_HEAD_BUFFER) as f:
         span = _payload_span(f)
         if span is None:
-            raise SceneWalkError("nothing follows the PNG image")
+            raise NotASceneError("nothing follows the PNG image (a plain picture)")
         cur = _Cursor(f, *span)
         walker = _SceneWalker(cur)
         try:
@@ -1283,6 +1288,8 @@ def scan_scene_guids(path: Path, mode: str | None = None) -> list[str] | None:
         return cmp.result()
     try:
         walk = walk_scene(path)
+    except NotASceneError:
+        return None
     except Exception as e:
         stats.note("fell_back")
         logger.debug("CARD", f"Scene walk fell back to the full scan for {path.name}: "
