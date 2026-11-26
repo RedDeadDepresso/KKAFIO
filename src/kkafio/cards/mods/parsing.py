@@ -1051,6 +1051,10 @@ class _SceneWalker:
 
         if self._str() != _SCENE_TAIL_STR:
             raise SceneWalkError(f"expected the {_SCENE_TAIL_STR} mark after the frame")
+        if self.c.pos == self.c.size:
+            # Scenes saved without ExtensibleSaveFormat (older scenes, or ones saved with no
+            # plugin data) end right after the mark: no KKEx block, so no UAR entries.
+            return
         if self._str() != "KKEx":
             raise SceneWalkError("no KKEx block after the tail mark")
         self._skip(4)                                    # KKEx version
