@@ -51,8 +51,10 @@ Supports:
                                   /channel/topic/123); every file attached to the
                                   message is downloaded, and for a message that is
                                   part of an album the whole album (add ?single to
-                                  take just that message). Needs a Telegram account:
-                                  the same sign-in as Download Missing Mods
+                                  take just that message). The mega, Google Drive,
+                                  gofile, catbox, mediafire and pixeldrain links in the
+                                  message text are downloaded too. Needs a Telegram
+                                  account: the same sign-in as Download Missing Mods
 
 Input line formats (| is the separator — safe because URLs never contain |):
   https://...                   plain URL — single card page or one listing page
@@ -637,7 +639,8 @@ class DownloadContents(BaseTask):
             if run.telegram is None:
                 logger.skipped("DLOAD", f"Skipping Telegram URL (no Telegram session): {url_str}")
                 return None
-            return await download_telegram(run.telegram, url_str, out, history, skip)
+            return await download_telegram(run.telegram, url_str, out, history, skip,
+                                           externals=clients.pawchive_externals)
 
         logger.error("DLOAD",
             f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, terabox.com, dropbox.com, mega.nz, drive.google.com or a t.me message link): {url_str}")

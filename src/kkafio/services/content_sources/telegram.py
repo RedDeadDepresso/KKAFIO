@@ -10,9 +10,14 @@ files of the whole album are downloaded, because that is what the person sees as
 add ``?single`` to the link to take only the file of that one message (Telegram's own "Copy link"
 adds it for a single item of an album).
 
+The Mega, Google Drive, Gofile, Catbox, MediaFire and Pixeldrain links in the text of the message
+(or of any message of the album: the caption sits on one of them) are downloaded too, exactly as
+if they had been pasted as lines of their own, like the links in a pixiv description or a
+Pawchive post. That includes links hidden behind a word ("click here") in the message.
+
 Photos are not downloaded (Telegram recompresses them to JPEG, so a card sent as a photo is no
 longer a card; cards, scenes and mods are sent as files) and neither are stickers or link
-previews. Text-only messages have nothing to download and are reported as failed.
+previews. A message with neither a file nor a supported link has nothing to download and is reported as failed.
 
 Telegram needs an account, not a login cookie: the first time a Telegram link is met KKAFIO asks
 for the API ID / hash from https://my.telegram.org and signs in with a QR code (the same
@@ -32,6 +37,8 @@ from urllib.parse import parse_qsl, urlparse
 
 from kkafio.core import progress
 from kkafio.core.logger import logger
+from kkafio.services.content_sources.pawchive.parsing import pawchive_content_links
+from kkafio.services.content_sources.pawchive.posts import _download_pawchive_link
 from kkafio.services.content_sources.shared.net import safe_filename
 from kkafio.services.content_sources.shared.transfer import part_path
 from kkafio.services.mod_sources.telegram.mods import _retry_flood_wait
@@ -135,6 +142,20 @@ async def _album(client, entity, message) -> list:
                                      context=f"reading the album of message {message.id}")
     group = [m for m in nearby if m is not None and m.grouped_id == message.grouped_id]
     return sorted(group, key=lambda m: m.id) or [message]
+
+
+def message_links(messages: Iterable) -> list[str]:
+    """The supported file-host links in the text of `messages` (Mega, Drive, Gofile, ...), in order,
+    without duplicates. Includes the address behind a link shown as a word, which is not in the
+    text itself but in the message's entities."""
+    chunks: list[str] = []
+    for message in messages:
+        chunks.append(getattr(message, "raw_text", None) or getattr(message, "message", None) or "")
+        for entity in getattr(message, "entities", None) or []:
+            url = getattr(entity, "url", None)          # MessageEntityTextUrl
+            if isinstance(url, str) and url:
+                chunks.append(url)
+    return pawchive_content_links("\n".join(chunks))
 
 
 def _file_name(message, link: TelegramLink) -> str:
@@ -258,9 +279,12 @@ async def _download_message_file(
 
 async def download_telegram(
     telegram, url: str, directory: Path, history: dict[str, str], skip: bool,
+    externals: dict | None = None,
 ) -> tuple[int, int, int]:
     """Returns (succeeded, skipped, failed). `telegram` is what ``telegram_session`` yields:
-    (credentials, connected Telethon client, teleget9527 downloader or None)."""
+    (credentials, connected Telethon client, teleget9527 downloader or None). `externals` maps
+    "gofile" / "catbox" / "mediafire" / "pixeldrain" / "mega" / "gdrive" to their HTTP clients,
+    for the links in the message text (None: those links are not followed)."""
     link = parse_telegram_url(url)
     if link is None:
         logger.error("DLOAD",
@@ -297,15 +321,16 @@ async def download_telegram(
 
     files = [m for m in messages
              if getattr(m, "document", None) is not None and not getattr(m, "sticker", None)]
-    if not files:
-        logger.error("DLOAD", f"  Message {where} has no file to download "
+    links = message_links(messages) if externals else []
+    if not files and not links:
+        logger.error("DLOAD", f"  Message {where} has no file or supported link to download "
                               f"(only text, photos, stickers or a link preview).")
         return 0, 0, 1
     if len(messages) > 1:
         logger.info("DLOAD", f"  Album of {len(messages)} message(s): {len(files)} file(s).")
 
     raw_chat_id: int | None = None
-    if downloader is not None:
+    if downloader is not None and files:
         try:
             from telethon.utils import get_peer_id
             raw_chat_id = get_peer_id(entity)       # the marked id teleget9527 needs (see mods.py)
@@ -323,4 +348,16 @@ async def download_telegram(
             skipped += 1
         else:
             failed += 1
+
+    # One link at a time: mega meters transfer per address and gofile dislikes request bursts.
+    for link in links:
+        logger.info("DLOAD", f"  Link in message: {link}")
+        try:
+            l_ok, l_skipped, l_failed = await _download_pawchive_link(
+                link, externals, directory, history, skip)
+        except Exception as exc:                     # one bad link must not stop the rest
+            logger.error("DLOAD", f"  Failed: {link} — {exc}")
+            l_ok = l_skipped = 0
+            l_failed = 1
+        ok, skipped, failed = ok + l_ok, skipped + l_skipped, failed + l_failed
     return ok, skipped, failed
