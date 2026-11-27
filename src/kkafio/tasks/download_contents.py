@@ -47,6 +47,12 @@ Supports:
                                   the #KEY part is required (it decrypts the
                                   names and the data); subfolders go into
                                   subdirectories
+  https://t.me                  — message links (/channel/123, /c/1234567890/123,
+                                  /channel/topic/123); every file attached to the
+                                  message is downloaded, and for a message that is
+                                  part of an album the whole album (add ?single to
+                                  take just that message). Needs a Telegram account:
+                                  the same sign-in as Download Missing Mods
 
 Input line formats (| is the separator — safe because URLs never contain |):
   https://...                   plain URL — single card page or one listing page
@@ -94,6 +100,12 @@ from kkafio.services.content_sources.gdrive import download_gdrive, is_gdrive_ur
 from kkafio.services.content_sources.gofile import GOFILE_USER_AGENT, download_gofile, is_gofile_url
 from kkafio.services.content_sources.koikatsucards import KOIKATSU_URL, download_koikatsu
 from kkafio.services.content_sources.mega import download_mega, is_mega_url
+from kkafio.services.content_sources.telegram import (
+    download_telegram,
+    is_telegram_url,
+    parse_telegram_url,
+    telegram_chats,
+)
 from kkafio.services.content_sources.shared.net import make_client
 from kkafio.services.content_sources.pawchive import (
     PAWCHIVE_URL,
@@ -110,6 +122,7 @@ from kkafio.services.content_sources.pixiv import (
     is_pixiv_url,
 )
 from kkafio.services.content_sources.pawchive.session import USER_AGENT as PAWCHIVE_USER_AGENT
+from kkafio.services.mod_sources.telegram.session import telegram_session
 from kkafio.tasks.base_task import BaseTask, handle_failed_downloads
 
 if TYPE_CHECKING:
@@ -259,6 +272,9 @@ class _Run:
     pixiv_follow: PixivFollowState
     # The TeraBox `ndus` cookie (None: anonymous).
     terabox_session: str | None = None
+    # What `telegram_session` yields — (credentials, Telethon client, teleget9527 downloader or
+    # None) — or None when no link needs Telegram or it could not be signed in to.
+    telegram: tuple | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -495,8 +511,13 @@ class DownloadContents(BaseTask):
         totals: _Totals, kkd_session: str | None, pixiv_session: str | None,
         results: list[_LinkResult] | None = None, terabox_session: str | None = None,
     ) -> None:
-        async with self._open_clients(kkd_session, pixiv_session) as clients:
-            run = _Run(output_dir, history, clients, kkd_session, PixivFollowState(), terabox_session)
+        # Telegram is only connected (and signed in to) when a link needs it; the chats of the
+        # links are resolved up front so teleget9527's copy of the session already knows them.
+        tg_chats = telegram_chats(url_str for url_str, *_ in urls)
+        async with self._open_clients(kkd_session, pixiv_session) as clients, \
+                telegram_session(bool(tg_chats), tag="DLOAD", warm=tg_chats) as telegram:
+            run = _Run(output_dir, history, clients, kkd_session, PixivFollowState(), terabox_session,
+                       telegram)
             for link in urls:
                 url_str, page_start, page_end, follow_illustrations = link
                 entry = _LinkResult(link)
@@ -605,8 +626,21 @@ class DownloadContents(BaseTask):
             self._note_page_directive_ignored("Google Drive", page_start)
             return await download_gdrive(clients.gdrive, url_str, out, history, skip)
 
+        if is_telegram_url(url_str):
+            self._note_page_directive_ignored("Telegram", page_start)
+            if parse_telegram_url(url_str) is None:
+                logger.error("DLOAD",
+                    f"Unsupported Telegram link (use a message link such as https://t.me/channel/123 "
+                    f"or https://t.me/c/1234567890/123): {url_str}")
+                progress.count("failed")
+                return 0, 0, 1
+            if run.telegram is None:
+                logger.skipped("DLOAD", f"Skipping Telegram URL (no Telegram session): {url_str}")
+                return None
+            return await download_telegram(run.telegram, url_str, out, history, skip)
+
         logger.error("DLOAD",
-            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, terabox.com, dropbox.com, mega.nz or drive.google.com): {url_str}")
+            f"Unsupported URL (must be db.bepis.moe, koikatsucards.com, pixiv.net, pawchive.pw, gofile.io, catbox.moe, mediafire.com, pixeldrain.com, terabox.com, dropbox.com, mega.nz, drive.google.com or a t.me message link): {url_str}")
         progress.count("failed")
         return 0, 0, 1
 

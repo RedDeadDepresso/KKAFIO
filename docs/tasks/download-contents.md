@@ -1,6 +1,6 @@
 # Download Contents
 
-- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [pawchive.pw](https://pawchive.pw), [gofile.io](https://gofile.io), [catbox.moe](https://catbox.moe), [mediafire.com](https://www.mediafire.com), [pixeldrain.com](https://pixeldrain.com), [terabox.com](https://www.terabox.com), [dropbox.com](https://www.dropbox.com), [mega.nz](https://mega.nz) and [Google Drive](https://drive.google.com).
+- Downloads character cards from [db.bepis.moe](https://db.bepis.moe), [koikatsucards.com](https://koikatsucards.com), [pixiv.net](https://www.pixiv.net), [pawchive.pw](https://pawchive.pw), [gofile.io](https://gofile.io), [catbox.moe](https://catbox.moe), [mediafire.com](https://www.mediafire.com), [pixeldrain.com](https://pixeldrain.com), [terabox.com](https://www.terabox.com), [dropbox.com](https://www.dropbox.com), [mega.nz](https://mega.nz), [Google Drive](https://drive.google.com) and [Telegram](https://t.me) message links.
 - **Output Directory** defaults to `C:/KKAFIO/Downloads`.
 - Enter one URL per line in the Download Links field. Supports individual card pages and listing pages.
 - **Pagination formats** (use `|` as separator):
@@ -98,3 +98,12 @@ paste a file link (`https://mega.nz/file/ID#KEY`), a folder link (`https://mega.
 ### Google Drive
 
 public files (`https://drive.google.com/file/d/ID/view`, `open?id=ID`, `uc?id=ID`) and folders (`https://drive.google.com/drive/folders/ID`); subfolders become subfolders. Items must be shared as "anyone with the link". Large files go through Google's confirmation page automatically; if a file has hit Google's download quota you get that reason and can retry in about a day. Google Docs/Sheets/Slides inside a folder are skipped (they aren't files). The page directive is ignored.
+
+### Telegram (t.me message links)
+
+paste a message link such as `https://t.me/KK_archive_modlibrary/6157` (public channel or group), `https://t.me/c/1234567890/123` (private chat; the account must be a member) or a forum-topic message (`https://t.me/channel/<topic>/<message>`). Every file attached to the message is downloaded into the output directory. If the message is part of an album (several files sent at once), the **whole album** is downloaded; add `?single` to the link to take only that message's file. The page directive is ignored.
+
+- Photos, stickers and link previews are skipped (Telegram recompresses photos, so a card sent as a photo is no longer a card). A message with nothing to download is reported as failed.
+- **Account:** uses the same Telegram sign-in as Download Missing Mods: on first use KKAFIO opens [my.telegram.org](https://my.telegram.org) for your API ID / hash and signs in with a QR code (or phone number). Credentials and session are stored in `%APPDATA%/KKAFIO/sessions/telegram/`. Telegram is only connected when the list holds a Telegram link.
+- Files go through teleget9527 when it is installed (much faster), otherwise through Telethon.
+- Files keep their names; if a different file already has that name, the message id is added. **Skip already downloaded** works per file.
