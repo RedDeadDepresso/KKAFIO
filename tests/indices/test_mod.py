@@ -10,37 +10,47 @@ import pytest
 
 from kkafio.core import progress
 from kkafio.indices import mod
-from kkafio.indices.mod import SOURCE_ORDER, load_mod_index, normalize_sources, ordered_links
+from kkafio.indices.mod import SOURCE_ORDER, load_mod_index, normalize_sources, ordered_links, version_label
 from kkafio.services.mod_sources import filehosts
 
 from index_cache import age, read_meta
 
-ENTRY = {"mega": ["https://mega.nz/file/a#k"], "drive": ["https://drive.google.com/file/d/abcdefghij/view"],
+V_NEW = {"version": "2.0", "mega": ["https://mega.nz/file/a#k"], "drive": ["https://drive.google.com/file/d/abcdefghij/view"],
          "telegram": ["https://t.me/KK_archive_modlibrary/25"]}
+V_OLD = {"version": "1.0", "drive": ["https://drive.google.com/file/d/oldoldoldo/view"]}
+V_UNKNOWN = {"version": "unknown", "mega": ["https://mega.nz/file/u#k"]}
+ENTRY = [V_NEW, V_OLD, V_UNKNOWN]                                  # newest first, unknown last (the file's order)
 
 
 # -- format and order -------------------------------------------------------
 
 def test_sources_are_tried_telegram_then_drive_then_mega_then_the_other_hosts():
     assert SOURCE_ORDER == ("telegram", "drive", "mega", "gofile", "catbox", "mediafire", "pixeldrain", "dropbox")
-    assert [s for s, _ in ordered_links(ENTRY)] == ["telegram", "drive", "mega"]
+    assert [s for s, _, _ in ordered_links(ENTRY)] == ["telegram", "drive", "mega", "drive", "mega"]
 
 
-def test_ordered_links_keeps_the_order_of_the_index_within_a_source():
-    entry = {"drive": ["d1", "d2"], "telegram": ["t1", "t2"], "mega": ["m1"]}
-    assert ordered_links(entry) == [("telegram", "t1"), ("telegram", "t2"), ("drive", "d1"),
-                                    ("drive", "d2"), ("mega", "m1")]
-    assert ordered_links({"mega": ["m"]}) == [("mega", "m")]
-    assert ordered_links({"catbox": ["c"], "gofile": ["g"]}) == [("gofile", "g"), ("catbox", "c")]
-    assert ordered_links({}) == [] and ordered_links(None) == []
+def test_ordered_links_goes_by_newest_version_then_source_then_the_order_of_the_index():
+    entry = [{"version": "2.0", "drive": ["d1", "d2"], "telegram": ["t1"]},
+             {"version": "1.0", "drive": ["d3"], "telegram": ["t2"], "mega": ["m1"]}]
+    assert ordered_links(entry) == [("telegram", "t1", "2.0"), ("drive", "d1", "2.0"), ("drive", "d2", "2.0"),
+                                    ("telegram", "t2", "1.0"), ("drive", "d3", "1.0"), ("mega", "m1", "1.0")]
+    assert ordered_links([{"version": "1.0", "mega": ["m"]}]) == [("mega", "m", "1.0")]
+    assert ordered_links([{"version": "1.0", "catbox": ["c"], "gofile": ["g"]}]) == [("gofile", "g", "1.0"), ("catbox", "c", "1.0")]
+    assert ordered_links([]) == [] and ordered_links(None) == []
 
 
 def test_ordered_links_follows_the_given_sources_and_only_uses_them():
-    assert [s for s, _ in ordered_links(ENTRY, ("drive", "mega", "telegram"))] == ["drive", "mega", "telegram"]
-    assert [s for s, _ in ordered_links(ENTRY, ("mega", "drive"))] == ["mega", "drive"]
-    assert ordered_links(ENTRY, ("telegram",)) == [("telegram", "https://t.me/KK_archive_modlibrary/25")]
+    assert [s for s, _, _ in ordered_links(ENTRY, ("drive", "mega", "telegram"))] == \
+        ["drive", "mega", "telegram", "drive", "mega"]
+    assert [s for s, _, _ in ordered_links(ENTRY, ("mega", "drive"))] == ["mega", "drive", "drive", "mega"]
+    assert ordered_links(ENTRY, ("telegram",)) == [("telegram", "https://t.me/KK_archive_modlibrary/25", "2.0")]
     assert ordered_links(ENTRY, ()) == []
-    assert ordered_links({"drive": ["d"]}, ("mega", "telegram")) == []
+    assert ordered_links([{"version": "1.0", "drive": ["d"]}], ("mega", "telegram")) == []
+
+
+def test_version_label():
+    assert version_label("1.2") == "v1.2"
+    assert version_label("unknown") == version_label("") == version_label(None) == "unknown version"
 
 
 def test_normalize_sources_keeps_the_order_and_drops_unknown_names_and_repeats():
@@ -52,12 +62,19 @@ def test_normalize_sources_keeps_the_order_and_drops_unknown_names_and_repeats()
 
 def test_normalize_drops_whatever_is_not_a_list_of_links():
     raw = {
-        "good": {"mega": [], "drive": ["  https://x  ", "", 5, None], "telegram": ["https://t.me/a/1"], "other": ["x"]},
-        "no_links": {"mega": [], "drive": [], "telegram": []},
+        "good": [{"version": " 1.0 ", "mega": [], "drive": ["  https://x  ", "", 5, None], "telegram": ["https://t.me/a/1"], "other": ["x"]},
+                 {"mega": ["https://mega.nz/file/b#k"]},                       # no version: unknown
+                 {"version": "0.5", "mega": [], "drive": []},                  # no link: dropped
+                 "not an object"],
+        "no_links": [{"version": "1.0", "mega": [], "drive": [], "telegram": []}],
+        "empty": [],
         "old_format": "https://t.me/KK_archive_modlibrary/25",
-        "not_lists": {"mega": "https://mega.nz/file/a#k", "drive": None},
+        "previous_format": {"mega": ["https://mega.nz/file/a#k"]},             # {guid: {source: [link]}}
+        "not_lists": [{"version": "1.0", "mega": "https://mega.nz/file/a#k", "drive": None}],
     }
-    assert mod._normalize_index(raw) == {"good": {"drive": ["https://x"], "telegram": ["https://t.me/a/1"]}}
+    assert mod._normalize_index(raw) == {"good": [
+        {"version": "1.0", "drive": ["https://x"], "telegram": ["https://t.me/a/1"]},
+        {"version": "unknown", "mega": ["https://mega.nz/file/b#k"]}]}
     with pytest.raises(ValueError):
         mod._normalize_index([])
 
@@ -97,7 +114,7 @@ def test_load_mod_index_downloads_and_caches_the_new_format(tmp_path):
 
 def test_a_cached_index_in_the_old_format_is_downloaded_again(tmp_path):
     client = _Client(_Response({"com.a": ENTRY}))
-    (tmp_path / "mod.json").write_text(json.dumps({"com.a": "https://t.me/KK_archive_modlibrary/25"}), encoding="utf-8")
+    (tmp_path / "mod.json").write_text(json.dumps({"com.a": {"telegram": ["https://t.me/KK_archive_modlibrary/25"]}}), encoding="utf-8")
     assert asyncio.run(load_mod_index(client, tmp_path)) == {"com.a": ENTRY}
     assert client.urls == [mod.MOD_INDEX_URL]
 
@@ -233,19 +250,21 @@ def test_quiet_counts_without_a_window_is_harmless():
 # -- Gofile / Catbox --------------------------------------------------------
 
 def test_gofile_catbox_and_mediafire_links_are_read_and_misfiled_ones_are_moved():
-    raw = {"com.mod": {"mega": ["https://gofile.io/d/AbC123", "https://mega.nz/file/a#k"],
-                       "gofile": ["https://gofile.io/d/Other1"],
-                       "catbox": ["https://files.catbox.moe/abc.zipmod"]},
-           "com.other": {"drive": ["https://catbox.moe/c/xyz", "https://www.mediafire.com/file/k1234567/x/file", "https://pixeldrain.com/u/AbC12345",
-                                  "https://www.dropbox.com/scl/fi/abc123xyz/x.zipmod?rlkey=k&dl=0"]}}
+    raw = {"com.mod": [{"version": "1.0",
+                        "mega": ["https://gofile.io/d/AbC123", "https://mega.nz/file/a#k"],
+                        "gofile": ["https://gofile.io/d/Other1"],
+                        "catbox": ["https://files.catbox.moe/abc.zipmod"]}],
+           "com.other": [{"version": "2.0",
+                          "drive": ["https://catbox.moe/c/xyz", "https://www.mediafire.com/file/k1234567/x/file", "https://pixeldrain.com/u/AbC12345",
+                                    "https://www.dropbox.com/scl/fi/abc123xyz/x.zipmod?rlkey=k&dl=0"]}]}
     index = mod._normalize_index(raw)
-    assert index["com.mod"] == {"mega": ["https://mega.nz/file/a#k"],
-                                "gofile": ["https://gofile.io/d/Other1", "https://gofile.io/d/AbC123"],
-                                "catbox": ["https://files.catbox.moe/abc.zipmod"]}
-    assert index["com.other"] == {"catbox": ["https://catbox.moe/c/xyz"],
-                                  "mediafire": ["https://www.mediafire.com/file/k1234567/x/file"],
-                                  "pixeldrain": ["https://pixeldrain.com/u/AbC12345"],
-                                  "dropbox": ["https://www.dropbox.com/scl/fi/abc123xyz/x.zipmod?rlkey=k&dl=0"]}
+    assert index["com.mod"] == [{"version": "1.0", "mega": ["https://mega.nz/file/a#k"],
+                                 "gofile": ["https://gofile.io/d/Other1", "https://gofile.io/d/AbC123"],
+                                 "catbox": ["https://files.catbox.moe/abc.zipmod"]}]
+    assert index["com.other"] == [{"version": "2.0", "catbox": ["https://catbox.moe/c/xyz"],
+                                   "mediafire": ["https://www.mediafire.com/file/k1234567/x/file"],
+                                   "pixeldrain": ["https://pixeldrain.com/u/AbC12345"],
+                                   "dropbox": ["https://www.dropbox.com/scl/fi/abc123xyz/x.zipmod?rlkey=k&dl=0"]}]
     assert normalize_sources(["Catbox", "Gofile", "catbox"]) == ("catbox", "gofile")
 
 

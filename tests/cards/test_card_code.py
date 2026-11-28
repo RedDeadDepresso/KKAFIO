@@ -354,7 +354,8 @@ class _Client:
 
 
 def _modpack_payload(n=3):
-    return {"guids": {f"pack.{i}": [modpack_url(f"Sideloader Modpack/{i}.zipmod")] for i in range(n)}}
+    return {f"pack.{i}": [{"version": "1.0", "betterrepack": [modpack_url(f"Sideloader Modpack/{i}.zipmod")]}]
+            for i in range(n)}
 
 
 def test_load_modpack_index_downloads_and_revalidates(tmp_path):
@@ -390,6 +391,20 @@ def test_load_modpack_index_falls_back_to_cache_or_none(tmp_path):
     age(tmp_path / "modpack.json", 2)
     assert len(load_modpack_index(Down(), tmp_path)) == 3          # offline: cached copy
     assert load_modpack_index(_Client('"x"', {"guids": [1]}), tmp_path / "other") is None  # wrong format
+    old = {"guids": {"pack.0": [modpack_url("Sideloader Modpack/0.zipmod")]}}             # the older format
+    assert load_modpack_index(_Client('"y"', old), tmp_path / "older") is None
+
+
+def test_modpack_index_lists_the_urls_newest_version_first_and_knows_their_versions():
+    new, old, other = (modpack_url(f"Sideloader Modpack/{n}.zipmod") for n in ("new", "old", "other"))
+    raw = {"pack.a": [{"version": "2.0", "betterrepack": [new]},
+                      {"version": "1.0", "betterrepack": [old, new]},
+                      {"version": "unknown", "betterrepack": [other]},
+                      {"version": "0.1", "betterrepack": []}],
+           "pack.empty": [{"version": "1.0", "betterrepack": []}]}
+    index = modpack._normalize_index(raw)
+    assert index == {"pack.a": [new, old, other]}                  # flat, best first, no repeats
+    assert index.versions == {new: "2.0", old: "1.0", other: "unknown"}
 
 
 def test_url_to_rel_path():

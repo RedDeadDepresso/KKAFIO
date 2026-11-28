@@ -1,4 +1,4 @@
-"""Sideloader Modpack index: {mod GUID: [download URL, ...]}.
+"""Sideloader Modpack index: {mod GUID: [{"version": "1.2", "betterrepack": [download URL, ...]}, ...]}.
 
 The index is published by https://github.com/RedDeadDepresso/kk-mod-scraper (one file covering
 both Koikatsu and Koikatsu Sunshine, built from the BetterRepack server's listings). A copy is
@@ -6,9 +6,11 @@ kept in CONFIG_DIR/indices/modpack.json; the server is asked at most once an hou
 Download Missing Mods, Archive Cards, Delete Unused Mods and the mods scan tell which GUIDs
 the Sideloader Modpack already provides without opening every zipmod in the modpack folders.
 
-Each GUID has one or more URLs, best first: the later ones are other copies or versions of
-the same mod, tried when an earlier one fails. The path of a mod inside the modpack folder is
-not stored; it is the URL's path below the server's base (see url_to_rel_path).
+A GUID has one entry per known version, newest first and "unknown" last. The loader flattens
+them into one list of URLs per GUID, best first (the newest version's URLs first): the later
+ones are other copies or older versions of the same mod, tried when an earlier one fails.
+ModpackIndex.versions tells the version of each URL, for logging. The path of a mod inside the
+modpack folder is not stored; it is the URL's path below the server's base (see url_to_rel_path).
 """
 
 import json
@@ -44,13 +46,36 @@ def url_to_rel_path(url: str) -> str | None:
     return rel
 
 
-def _normalize_index(raw) -> dict[str, list[str]]:
-    """The {guid: [url, ...]} mapping of an index file ({"guids": {...}}).
-    Raises ValueError if it isn't in that format."""
-    guids = raw.get("guids") if isinstance(raw, dict) else None
-    if not isinstance(guids, dict) or not all(isinstance(urls, list) for urls in guids.values()):
-        raise ValueError("not a {guid: [url, ...]} index")
-    return guids
+class ModpackIndex(dict):
+    """{guid: [url, ...]} (best URL first), plus `versions`: {url: version} for logging."""
+
+    def __init__(self, *args, versions: dict[str, str] | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.versions: dict[str, str] = versions or {}
+
+
+def _normalize_index(raw) -> ModpackIndex:
+    """The {guid: [url, ...]} mapping of an index file ({guid: [{"version", "betterrepack": [url, ...]}, ...]}).
+    Raises ValueError if it isn't in that format (the older {"guids": {...}} format included)."""
+    if not isinstance(raw, dict) or not all(isinstance(entries, list) for entries in raw.values()):
+        raise ValueError("not a {guid: [{version, betterrepack}, ...]} index")
+    index = ModpackIndex()
+    for guid, entries in raw.items():
+        urls: list[str] = []
+        for entry in entries:
+            if not isinstance(entry, dict) or not isinstance(entry.get("betterrepack"), list):
+                continue
+            version = entry.get("version")
+            version = version.strip() if isinstance(version, str) and version.strip() else "unknown"
+            for url in entry["betterrepack"]:
+                if isinstance(url, str) and url.strip() and url.strip() not in urls:
+                    urls.append(url.strip())
+                    index.versions.setdefault(url.strip(), version)
+        if urls:
+            index[guid] = urls
+    if not index:
+        raise ValueError("no usable entry")
+    return index
 
 
 def _load_cached_index(index_path: Path) -> dict | None:
@@ -67,7 +92,7 @@ def _load_cached_index(index_path: Path) -> dict | None:
 
 
 _MEMO_KEY = "modpack"
-_memo: dict[str, dict[str, list[str]] | None] = {}
+_memo: dict[str, ModpackIndex | None] = {}
 
 
 def clear_cache() -> None:
@@ -75,8 +100,9 @@ def clear_cache() -> None:
     _memo.clear()
 
 
-def load_modpack_index(client=None, index_dir: Path | None = None) -> dict[str, list[str]] | None:
-    """Return the Sideloader Modpack index {guid: [url, ...]} (best URL first).
+def load_modpack_index(client=None, index_dir: Path | None = None) -> ModpackIndex | None:
+    """Return the Sideloader Modpack index {guid: [url, ...]} (best URL first; the version of
+    each URL is in its `versions`).
 
     One file (modpack.json) covers every game type.
 
@@ -98,7 +124,7 @@ def load_modpack_index(client=None, index_dir: Path | None = None) -> dict[str, 
     return guids
 
 
-def _fetch_index(client, index_dir: Path | None) -> dict[str, list[str]] | None:
+def _fetch_index(client, index_dir: Path | None) -> ModpackIndex | None:
     url = MODPACK_INDEX_URL
     index_path = (index_dir or cache.default_dir()) / MODPACK_INDEX_FILE
     name = index_path.name

@@ -11,6 +11,7 @@ from pathlib import Path
 from kkafio.cards.mods.zipmods import guid_from_zipmod
 from kkafio.core import progress
 from kkafio.core.logger import logger
+from kkafio.indices.mod import version_label
 from kkafio.indices.modpack import url_to_rel_path
 
 
@@ -50,14 +51,14 @@ def make_http_client(cookies: dict | None = None):
 _DONE, _NEXT_URL, _GIVE_UP = "done", "next", "give up"
 
 
-async def _download_one(client, guid: str, url: str, dest: Path) -> str:
+async def _download_one(client, guid: str, url: str, dest: Path, version: str | None = None) -> str:
     """Download `url` to `dest`. Returns _DONE, _NEXT_URL (this file is unusable: the server
     has no such file, or what came back isn't the mod, so another URL may work) or _GIVE_UP
     (a connection, server or disk problem that another URL of the same server would only
     repeat)."""
     import httpx
 
-    logger.info("DLMOD", f"BetterRepack ↓ {dest.name}")
+    logger.info("DLMOD", f"BetterRepack ↓ {dest.name} ({version_label(version)})")
     # Download to "<name>.part" and rename only once the body is complete and checked.
     part = dest.with_name(dest.name + ".part")
     outcome = _GIVE_UP
@@ -107,10 +108,12 @@ async def _download_one(client, guid: str, url: str, dest: Path) -> str:
 
 async def download_betterrepack(
     client, guid: str, urls: list[str], mods_dir: Path,
-    guid_str_map: dict[str, str],
+    guid_str_map: dict[str, str], versions: dict[str, str] | None = None,
 ) -> bool | str:
     """Download one modpack zipmod, trying its URLs in order (best first). The file is saved
     under mods_dir at the path of its URL, keeping the Sideloader Modpack folder structure.
+
+    `versions` maps a URL to its version (ModpackIndex.versions); it is only logged.
 
     Returns True (downloaded), "skipped" (already present and intact) or False (failed).
     The next URL is only tried after a failure that is about that file (HTTP 4xx, a download
@@ -132,7 +135,7 @@ async def download_betterrepack(
                 return "skipped"
             logger.warning("DLMOD", f"Existing file is incomplete/corrupt, re-downloading: {dest.name}")
 
-        outcome = await _download_one(client, guid, url, dest)
+        outcome = await _download_one(client, guid, url, dest, (versions or {}).get(url))
         if outcome == _DONE:
             guid_str_map[guid] = str(dest)
             return True

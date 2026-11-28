@@ -11,13 +11,22 @@ cached copy is used.
 |---|---|---|
 | `modpack.json` | Koikatsu / Koikatsu Party / Koikatsu Sunshine | `https://reddeaddepresso.github.io/kk-mod-scraper/indices/modpack.json` |
 
-Each maps a mod GUID to the URLs it can be downloaded from on the BetterRepack server, best first:
+Each maps a mod GUID to one entry per known version, newest first and an unknown version (`"unknown"`) last, with the URLs
+that version can be downloaded from on the BetterRepack server:
 
 ```json
 {
- "guids": {"com.example.mod": ["https://sideload.betterrepack.com/download/KKEC/Sideloader%20Modpack/a/mod.zipmod"]}
+ "com.example.mod": [
+  {"version": "1.1", "betterrepack": ["https://sideload.betterrepack.com/download/KKEC/Sideloader%20Modpack/a/mod%20v1.1.zipmod"]},
+  {"version": "1.0", "betterrepack": ["https://sideload.betterrepack.com/download/KKEC/Sideloader%20Modpack/a/mod%20v1.0.zipmod"]}
+ ]
 }
 ```
+
+The versions are normalized by the scraper (`1`, `v1.0` and `1.0.0` are all `1.0`). KKAFIO flattens them into one list of URLs per
+GUID, the newest version's first (`kkafio.indices.modpack.ModpackIndex`), so the older versions are only tried when
+the newer fails; `ModpackIndex.versions` maps each URL to its version, which is only used for logging. The older
+`{"guids": {guid: [url, ...]}}` format is not read: a cached copy in it is downloaded again.
 
 The path of a mod inside the mods folder is not stored: it is the URL's path below
 `/download/KKEC/`, percent-decoded (`Sideloader Modpack/a/mod.zipmod`).

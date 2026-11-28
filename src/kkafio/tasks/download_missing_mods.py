@@ -16,13 +16,15 @@ Strategy
      All      — also download every GUID in the modpack index not installed
 5. For each GUID to download:
      a) In modpack index → BetterRepack (httpx, no auth)
-     b) Not in index → look the GUID up in mod.json (kk-mod-scraper; cached in
+     b) Not in index → look the GUID up in mod.json ({guid: [one entry per version, newest
+        first]}; kk-mod-scraper; cached in
         CONFIG_DIR/indices and checked for updates at most once an hour). It lists links
         on Google Drive, Mega, Telegram, Gofile, Catbox, MediaFire, Pixeldrain and Dropbox; the ones of the sources checked in "Mod
-        Sources" are tried in the order of that option until one downloads the mod.
+        Sources" are tried newest version first and, within a version, in the order of that option
+        until one downloads the mod. The version is only logged.
         Telegram is the only one that needs an account.
      c) Telegram is checked and "Use Telegram Chat Links" is on → right after the
-        index's Telegram link (so in the Telegram slot of the order), search each
+        index's last Telegram link (the Telegram slot of the order), search each
         configured Telegram Chat Links entry (channel, group, or forum topic) via
         Telegram's server-side document search, and download the first result
         whose filename ends in .zipmod or .zip. Also used for mods the index has
@@ -44,7 +46,7 @@ from kkafio.core import progress
 from kkafio.core.i18n import t
 from kkafio.core.logger import logger
 from kkafio.dialogs.progress_dialog import download_progress
-from kkafio.indices.mod import load_mod_index, normalize_sources, ordered_links
+from kkafio.indices.mod import load_mod_index, normalize_sources, ordered_links, version_label
 from kkafio.indices.modpack import load_modpack_index, url_to_rel_path
 from kkafio.services.mod_sources.betterrepack import (
     MAX_CONNECTIONS,
@@ -474,7 +476,8 @@ class DownloadMissingMods(BaseTask):
                         try:
                             async with br_slots:
                                 res = await download_betterrepack(
-                                    br_client, guid, urls, downloaded_mods_dir, guid_str_map)
+                                    br_client, guid, urls, downloaded_mods_dir, guid_str_map,
+                                    getattr(modpack_index, "versions", None))
                         except Exception as exc:
                             res = exc
                         # Tell the progress window as each mod finishes. A failure that is
@@ -551,25 +554,25 @@ class DownloadMissingMods(BaseTask):
                                 progress.set_current(guid)
 
                                 # What to try, in order: the links of the index of every selected
-                                # source (in the order of the index within a source). The Telegram
-                                # Chat Links search comes right after the Telegram links, and is
-                                # also what is left for a mod the index has no link for. Telegram
-                                # (links and chats) is skipped when it couldn't be connected.
+                                # source, newest version first and, within a version, in the order of
+                                # Mod Sources. The Telegram Chat Links search comes right after the
+                                # last Telegram link, and is also what is left (at the end) for a mod
+                                # the index has no Telegram link for. Telegram (links and chats) is
+                                # skipped when it couldn't be connected.
                                 entry = mod_index.get(guid)
-                                attempts: list[tuple[str, str]] = []
-                                for source in source_keys:
-                                    if source == "telegram" and telegram is None:
-                                        continue
-                                    attempts += ordered_links(entry, (source,))
-                                    if source == "telegram" and chat_links:
-                                        attempts.append((CHAT_SEARCH, ""))
+                                usable = tuple(s for s in source_keys if s != "telegram" or telegram is not None)
+                                attempts: list[tuple[str, str, str]] = ordered_links(entry, usable)   # (source, link, version)
+                                if chat_links and telegram is not None:
+                                    last_telegram = max((i for i, (s, _, _) in enumerate(attempts) if s == "telegram"),
+                                                        default=len(attempts) - 1)
+                                    attempts.insert(last_telegram + 1, (CHAT_SEARCH, "", ""))
 
-                                if not any(source != CHAT_SEARCH for source, _ in attempts):
+                                if not any(source != CHAT_SEARCH for source, _, _ in attempts):
                                     logger.warning("DLMOD",
                                         f"  {guid} — no link in the mod index "
                                         f"for the selected sources")
 
-                                for n, (source, link) in enumerate(attempts, 1):
+                                for n, (source, link, version) in enumerate(attempts, 1):
                                     if source == CHAT_SEARCH:
                                         logger.info("DLMOD",
                                             f"  Trying Telegram Chat Links for {guid}...")
@@ -583,7 +586,7 @@ class DownloadMissingMods(BaseTask):
                                         via = "Telegram Chat Links"
                                     else:
                                         found_source = True
-                                        logger.info("DLMOD", f"  Link ({source}): {link}")
+                                        logger.info("DLMOD", f"  Link ({source}, {version_label(version)}): {link}")
                                         # Pass rel_path so the file is saved to the
                                         # same subfolder as the modpack index
                                         if source == "telegram":
